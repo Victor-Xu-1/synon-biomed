@@ -13,6 +13,8 @@ concurrency:
 jobs:
   pr-quality:
     name: PR policy and static analysis
+    outputs:
+      go-matrix: ${{ steps.go-scope.outputs.matrix }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -36,7 +38,9 @@ jobs:
 
       - name: Verify changed-source policy
         run: |
-          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_portable_paths scripts.quality.test_module_topology_gate scripts.quality.test_product_identity_gate scripts.quality.test_release_candidate_manifest scripts.quality.test_release_receipt_gate scripts.quality.test_pr_fast_scope
+          go mod verify
+          go mod tidy -diff
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_portable_paths scripts.quality.test_module_topology_gate scripts.quality.test_product_identity_gate scripts.quality.test_release_candidate_manifest scripts.quality.test_release_receipt_gate scripts.quality.test_pr_fast_scope scripts.quality.test_pr_dependency_scope scripts.quality.test_pr_test_partition scripts.quality.test_verification_scope
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/portable_paths.py --repo .
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/module_topology_gate.py --repo .
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/product_identity_gate.py --repo . --mode candidate
@@ -48,9 +52,20 @@ jobs:
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py --vet \
             --base '${{ github.event.pull_request.base.sha }}' --head '${{ github.sha }}'
 
-  pr-go-tests:
-    name: PR changed Go packages
+      - name: Plan affected Go partitions
+        id: go-scope
+        run: |
+          matrix=$(PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py --matrix \
+            --base '${{ github.event.pull_request.base.sha }}' --head '${{ github.sha }}')
+          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+
+  pr-go-shards:
+    name: PR affected Go partition (${{ matrix.index }})
     needs: pr-quality
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.pr-quality.outputs.go-matrix) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -84,6 +99,7 @@ jobs:
         run: |
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py \
             --base '${{ github.event.pull_request.base.sha }}' --head '${{ github.sha }}' \
+            --shard-index '${{ matrix.index }}' --shard-count '${{ matrix.count }}' \
             --log-dir "$RUNNER_TEMP/runtime-test-evidence"
 
       - name: Audit PR test source residue
@@ -92,12 +108,23 @@ jobs:
 
       - name: Upload PR test evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: pr-runtime-evidence
+          name: pr-runtime-evidence-${{ matrix.index }}
           path: ${{ runner.temp }}/runtime-test-evidence/
           if-no-files-found: warn
           retention-days: 7
+
+  pr-go-tests:
+    name: PR changed Go packages
+    needs: [pr-quality, pr-go-shards]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify every affected Go partition
+        run: |
+          test '${{ needs.pr-quality.result }}' = 'success'
+          test '${{ needs.pr-go-shards.result }}' = 'success'
 
   pr-frontend-tests:
     name: PR frontend scope
@@ -113,7 +140,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up frontend build runtime
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm

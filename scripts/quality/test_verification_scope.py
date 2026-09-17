@@ -55,12 +55,24 @@ class VerificationOwnershipTests(unittest.TestCase):
 
     def test_invalid_paths_cannot_claim_runtime_or_wildcard_ownership(self):
         for path in ["internal/runner.py", "../scripts/check.py", "scripts/../root.py",
-                     "scripts/*.py", "scripts/check.go", "scripts/go.mod", "scripts//check.py"]:
+                     "scripts/*.py", "scripts/check.go", "scripts/go.mod", "scripts//check.py",
+                     ".github/workflows/*.yml", "docs/governance/../runtime.json"]:
             with self.subTest(path=path):
                 self.value["groups"][0]["paths"] = [path]
                 self.save()
                 with self.assertRaises(ValueError):
                     contract.load(self.repo)
+
+    def test_workflow_ownership_runs_mandatory_checks_without_runtime_exemptions(self):
+        group = self.value["groups"][0]
+        group["paths"] += [".github/workflows/quality.yml", "docs/governance/actions.json"]
+        group["checks"] = [["bash", "scripts/check.sh"]]
+        self.save()
+        entries = [{"ImportPath": "fixture", "Dir": str(self.repo)}]
+        self.assertEqual(scope.select_packages(self.repo, [".github/workflows/quality.yml"], entries)[0], [])
+        self.assertEqual(scope.select_packages(self.repo, [".github/workflows/unknown.yml"], entries)[0], ["fixture"])
+        self.assertEqual(contract.checks(contract.matched(self.repo, ["docs/governance/actions.json"])),
+                         [["bash", "scripts/check.sh"]])
 
     def test_empty_checks_duplicate_ownership_and_malformed_contract_are_rejected(self):
         group = self.value["groups"][0]
@@ -111,6 +123,14 @@ class VerificationOwnershipTests(unittest.TestCase):
                         self.assertTrue((repo / (module.replace(".", "/") + ".py")).is_file())
                 else:
                     self.assertTrue((repo / command[-1]).is_file())
+
+    def test_ci_guide_is_verified_without_selecting_unrelated_runtime_packages(self):
+        repo = Path(__file__).resolve().parents[2]
+        paths = ["scripts/quality/README.md"]
+        groups = contract.matched(repo, paths)
+        self.assertTrue(contract.checks(groups), "CI documentation must retain its checker ownership")
+        entries = [{"ImportPath": "fixture/runtime", "Dir": str(repo / "internal/runtime")}]
+        self.assertEqual(scope.select_packages(repo, paths, entries)[0], [])
 
 
 if __name__ == "__main__":

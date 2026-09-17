@@ -57,8 +57,8 @@ required_fragments=(
   'source-tree-digest-mode manifest-only'
   'go test -buildvcs=false ./scripts/quality/github-actions-gate'
   'go run -buildvcs=false ./scripts/quality/github-actions-gate --repo . --policy docs/governance/github-actions-pins.json'
-  'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2'
-  'actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0'
+  'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1'
+  'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1'
   'scripts/release-windows-test.ps1'
   './scripts/release-windows-environment-test.ps1'
   '0 2 * * *'
@@ -72,7 +72,7 @@ for fragment in "${required_fragments[@]}"; do
 done
 
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_runtime_test_shards
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_pr_fast_scope
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_pr_fast_scope scripts.quality.test_pr_dependency_scope scripts.quality.test_pr_test_partition scripts.quality.test_verification_scope
 
 PR_WORKFLOW="$ROOT_DIR/.github/workflows/quality-pr.yml"
 for fragment in \

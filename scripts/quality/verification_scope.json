@@ -17,16 +17,33 @@
     {
       "name": "verification-selection",
       "paths": [
+        "scripts/quality/README.md",
         "scripts/quality/verification_scope.json",
         "scripts/quality/verification_scope.py",
         "scripts/quality/test_verification_scope.py",
         "scripts/quality/pr_fast_scope.py",
-        "scripts/quality/test_pr_fast_scope.py"
+        "scripts/quality/test_pr_fast_scope.py",
+        "scripts/quality/pr_dependency_scope.py",
+        "scripts/quality/test_pr_dependency_scope.py",
+        "scripts/quality/pr_test_partition.py",
+        "scripts/quality/test_pr_test_partition.py"
       ],
       "frontend": false,
       "checks": [
-        ["python3", "-B", "-m", "unittest", "scripts.quality.test_pr_fast_scope", "scripts.quality.test_verification_scope"]
+        ["python3", "-B", "-m", "unittest", "scripts.quality.test_pr_fast_scope", "scripts.quality.test_pr_dependency_scope", "scripts.quality.test_pr_test_partition", "scripts.quality.test_verification_scope"]
       ]
+    },
+    {
+      "name": "workflow-contracts",
+      "paths": [
+        ".github/workflows/quality-pr.yml",
+        ".github/workflows/quality-main.yml",
+        ".github/workflows/quality.yml",
+        "docs/governance/github-actions-pins.json",
+        "scripts/ci-contract-test.sh"
+      ],
+      "frontend": false,
+      "checks": [["bash", "scripts/ci-contract-test.sh"]]
     }
   ]
 }

@@ -128,8 +128,8 @@
     },
     {
       "path": "kernels/synon_biomed_runtime/worker_streams.py",
-      "sha256": "69aeaa2dfe2982c13911be4447867d2b6ef8cb2900cacaa32eef4ddc54863d94",
-      "bytes": 5087
+      "sha256": "c8dade2b928194c30a53cdbafc0fee0b31fd0bc135013366c487a5a4c968a345",
+      "bytes": 5483
     },
     {
       "path": "kernels/synon_biomed_runtime/worker_transport.py",

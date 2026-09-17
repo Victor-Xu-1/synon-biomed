@@ -124,6 +124,14 @@ class VerificationOwnershipTests(unittest.TestCase):
                 else:
                     self.assertTrue((repo / command[-1]).is_file())
 
+    def test_ci_guide_is_verified_without_selecting_unrelated_runtime_packages(self):
+        repo = Path(__file__).resolve().parents[2]
+        paths = ["scripts/quality/README.md"]
+        groups = contract.matched(repo, paths)
+        self.assertTrue(contract.checks(groups), "CI documentation must retain its checker ownership")
+        entries = [{"ImportPath": "fixture/runtime", "Dir": str(repo / "internal/runtime")}]
+        self.assertEqual(scope.select_packages(repo, paths, entries)[0], [])
+
 
 if __name__ == "__main__":
     unittest.main()

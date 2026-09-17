@@ -17,6 +17,7 @@
     {
       "name": "verification-selection",
       "paths": [
+        "scripts/quality/README.md",
         "scripts/quality/verification_scope.json",
         "scripts/quality/verification_scope.py",
         "scripts/quality/test_verification_scope.py",

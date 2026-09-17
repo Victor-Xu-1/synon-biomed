@@ -134,14 +134,19 @@ not authorize deletion, staging, integration, release, or deployment.
 Pull requests use `.github/workflows/quality-pr.yml`: policy/static checks,
 changed Go packages plus their production and test-import dependency closure,
 and the frontend scope when frontend files or product identity changed. A Go
-dependency-manifest change or an unclassified package-external input selects
-the complete Go graph. Documentation-only changes do not run product tests.
+dependency version/checksum change selects its actual module consumers, including
+external indirection and test-only imports. Toolchain/module/replacement authority
+changes or unclassified package-external inputs retain complete-graph coverage.
+Declared verification-only workflow changes run mandatory CI contract checks.
+Documentation-only changes do not run product tests.
 Before frontend dependency installation, the fast path verifies the same
 reviewed migration manifest used by full CI. Run it from a clean candidate or
 clone; stale provenance fails before expensive frontend checks. Do not delete
 unowned local dependencies or build output to force this condition.
-Go tests share the existing inventory/evidence executor in batches of at most
-64 top-level tests, with all subtests retained and failures propagated.
+Go tests share the existing inventory/evidence executor in one to four bounded,
+disjoint partitions and batches of at most 64 top-level tests. All discovered
+tests and subtests remain covered; every partition's failure propagates to the
+required aggregate. Distinct artifacts retain complete planned/executed inventories.
 
 The authoritative full workflow is `.github/workflows/quality.yml`. It runs by
 manual dispatch and daily at 02:00 in the explicit `Asia/Shanghai` timezone on

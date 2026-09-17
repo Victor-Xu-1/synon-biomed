@@ -2,8 +2,8 @@
 """Run the smallest complete Go test or vet scope for an exact change.
 
 The selector uses the real Go package dependency graph. A changed package and
-every in-repository package that imports it are tested; dependency-manifest
-changes intentionally select the complete Go graph. Full runtime and race
+every in-repository package that imports it are tested. Dependency updates
+select the changed modules' real production and test consumers. Full runtime and race
 coverage remains in the full quality workflow. An all-zero push base selects
 every tracked path so a newly created integration branch fails conservatively.
 """
@@ -18,10 +18,12 @@ import subprocess
 import sys
 
 if __package__:
-    from . import verification_scope
+    from . import pr_dependency_scope, pr_test_partition, verification_scope
     from .runtime_test_inventory import discover, execution_plan
     from .runtime_test_shards import execute
 else:
+    import pr_dependency_scope
+    import pr_test_partition
     import verification_scope
     from runtime_test_inventory import discover, execution_plan
     from runtime_test_shards import execute
@@ -31,9 +33,10 @@ def run(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run([*args], cwd=repo, text=True, check=False)
 
 
-def packages(repo: Path) -> list[dict]:
+def packages(repo: Path, *, dependencies: bool = False) -> list[dict]:
+    graph_flags = ["-deps", "-test"] if dependencies else []
     result = subprocess.run(
-        ["go", "list", "-buildvcs=false", "-json", "./..."],
+        ["go", "list", "-buildvcs=false", "-json", *graph_flags, "./..."],
         cwd=repo, text=True, capture_output=True, check=False,
     )
     if result.returncode:
@@ -84,7 +87,8 @@ def documentation_only(path: str) -> bool:
             or path.startswith("docs/assets/") or path.startswith("docs/") and path.endswith(".md"))
 
 
-def select_packages(repo: Path, paths: list[str], entries: list[dict]) -> tuple[list[str], str]:
+def select_packages(repo: Path, paths: list[str], entries: list[dict],
+                    dependency_owners: set[str] | None = None) -> tuple[list[str], str]:
     verification_paths = {path for group in verification_scope.load(repo) for path in group["paths"]}
     local = [entry for entry in entries if Path(entry["Dir"]).is_relative_to(repo)]
     all_packages = sorted(entry["ImportPath"] for entry in local)
@@ -94,6 +98,9 @@ def select_packages(repo: Path, paths: list[str], entries: list[dict]) -> tuple[
         if Path(path).is_absolute() or ".." in Path(path).parts:
             raise ValueError("changed path is outside source")
         if Path(path).name in {"go.mod", "go.sum", "go.work", "go.work.sum"}:
+            if path in {"go.mod", "go.sum"} and dependency_owners is not None:
+                changed.update(dependency_owners.intersection(all_packages))
+                continue
             return all_packages, "Go dependency authority changed"
         if documentation_only(path) or path.startswith("frontend/") and not path.endswith(".go"):
             continue
@@ -124,12 +131,21 @@ def select_packages(repo: Path, paths: list[str], entries: list[dict]) -> tuple[
                 selected.add(entry["ImportPath"])
         if selected == previous:
             break
-    return sorted(selected), "Changed packages and production/test import consumers"
+    return sorted(selected), "Changed packages, dependency modules and production/test import consumers"
+
+
+def resolve_packages(repo: Path, base: str, head: str, paths: list[str]) -> tuple[list[str], str]:
+    owners = None
+    if {"go.mod", "go.sum"}.intersection(paths):
+        modules = pr_dependency_scope.changed_modules(repo, base, head)
+        if modules is not None:
+            owners = pr_dependency_scope.consumers(packages(repo, dependencies=True), modules) if modules else set()
+    return select_packages(repo, paths, packages(repo), owners)
 
 
 def selected_packages(repo: Path, base: str, head: str) -> tuple[list[str], list[str]]:
     paths = changed_paths(repo, base, head)
-    selected, _ = select_packages(repo, paths, packages(repo))
+    selected, _ = resolve_packages(repo, base, head, paths)
     return selected, paths
 
 
@@ -141,13 +157,16 @@ def main() -> int:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--frontend", action="store_true")
     mode.add_argument("--vet", action="store_true")
+    mode.add_argument("--matrix", action="store_true")
     parser.add_argument("--log-dir", type=Path)
+    parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--shard-count", type=int, default=1)
     args = parser.parse_args()
     repo = args.repo.resolve()
     try:
         paths = changed_paths(repo, args.base, args.head)
         groups = verification_scope.matched(repo, paths)
-        if not args.frontend and not args.vet:
+        if not args.frontend and not args.vet and not args.matrix:
             for command in verification_scope.checks(groups):
                 result = run(repo, *command)
                 if result.returncode:
@@ -173,9 +192,13 @@ def main() -> int:
                 if result.returncode:
                     return result.returncode
             return 0
-        selected, reason = select_packages(repo, paths, packages(repo))
+        selected, reason = resolve_packages(repo, args.base, args.head, paths)
+        if args.matrix:
+            print(json.dumps(pr_test_partition.job_matrix(selected)))
+            return 0
         scope = {"base": args.base, "head": args.head, "changed_paths": paths, "packages": selected,
-                 "verification_groups": [group["name"] for group in groups], "reason": reason}
+                 "verification_groups": [group["name"] for group in groups], "reason": reason,
+                 "shard_index": args.shard_index, "shard_count": args.shard_count}
         print(json.dumps(scope, ensure_ascii=False))
         if args.vet:
             if not selected:
@@ -192,7 +215,12 @@ def main() -> int:
             if args.log_dir is None:
                 raise ValueError("Go execution requires an external --log-dir")
             inventory = discover(repo, selected, race=False)
-            test_plan = execution_plan("pr", 0, False, inventory, inventory, batch_size=64)
+            shard = pr_test_partition.select(inventory, args.shard_index, args.shard_count)
+            if not shard:
+                print("No tests assigned to this partition; other partitions retain the inventory.")
+                return 0
+            test_plan = execution_plan("pr", args.shard_index, False, inventory, shard, batch_size=64)
+            test_plan["shard_count"] = args.shard_count
             return execute(repo, test_plan, args.log_dir)
         print("No Go package is affected by this change; frontend and policy gates remain active.")
         return 0

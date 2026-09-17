@@ -15,6 +15,8 @@ concurrency:
 jobs:
   main-quality:
     name: Main integration policy and static analysis
+    outputs:
+      go-matrix: ${{ steps.go-scope.outputs.matrix }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -40,7 +42,7 @@ jobs:
         run: |
           go mod verify
           go mod tidy -diff
-          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_portable_paths scripts.quality.test_module_topology_gate scripts.quality.test_product_identity_gate scripts.quality.test_release_candidate_manifest scripts.quality.test_release_receipt_gate scripts.quality.test_pr_fast_scope
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_portable_paths scripts.quality.test_module_topology_gate scripts.quality.test_product_identity_gate scripts.quality.test_release_candidate_manifest scripts.quality.test_release_receipt_gate scripts.quality.test_pr_fast_scope scripts.quality.test_pr_dependency_scope scripts.quality.test_pr_test_partition scripts.quality.test_verification_scope
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/portable_paths.py --repo .
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/module_topology_gate.py --repo .
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/product_identity_gate.py --repo . --mode candidate
@@ -52,9 +54,20 @@ jobs:
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py --vet \
             --base '${{ github.event.before }}' --head '${{ github.sha }}'
 
+      - name: Plan affected Go partitions
+        id: go-scope
+        run: |
+          matrix=$(PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py --matrix \
+            --base '${{ github.event.before }}' --head '${{ github.sha }}')
+          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+
   main-go-tests:
-    name: Main changed Go packages
+    name: Main changed Go packages (${{ matrix.index }})
     needs: main-quality
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.main-quality.outputs.go-matrix) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -88,6 +101,7 @@ jobs:
         run: |
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py \
             --base '${{ github.event.before }}' --head '${{ github.sha }}' \
+            --shard-index '${{ matrix.index }}' --shard-count '${{ matrix.count }}' \
             --log-dir "$RUNNER_TEMP/runtime-test-evidence"
 
       - name: Audit main test source residue
@@ -98,7 +112,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: main-runtime-evidence-${{ github.sha }}
+          name: main-runtime-evidence-${{ github.sha }}-${{ matrix.index }}
           path: ${{ runner.temp }}/runtime-test-evidence/
           if-no-files-found: warn
           retention-days: 7

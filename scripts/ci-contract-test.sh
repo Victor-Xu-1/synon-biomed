@@ -72,7 +72,7 @@ for fragment in "${required_fragments[@]}"; do
 done
 
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_runtime_test_shards
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_pr_fast_scope
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_pr_fast_scope scripts.quality.test_pr_dependency_scope scripts.quality.test_pr_test_partition scripts.quality.test_verification_scope
 
 PR_WORKFLOW="$ROOT_DIR/.github/workflows/quality-pr.yml"
 for fragment in \

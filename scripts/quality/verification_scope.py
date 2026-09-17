@@ -37,18 +37,18 @@ def load(repo: Path) -> list[dict]:
             raise ValueError("invalid verification scope group")
         names.add(group["name"])
         for item in group["paths"]:
-            if (not isinstance(item, str) or not item.startswith("scripts/")
+            if (not isinstance(item, str) or not item.startswith(("scripts/", ".github/workflows/", "docs/governance/"))
                     or PurePosixPath(item).as_posix() != item
                     or any(part in {".", ".."} for part in item.split("/"))
                     or any(char in item for char in "\\*?[]\x00\r\n")
                     or PurePosixPath(item).name in {"go.mod", "go.sum", "go.work", "go.work.sum"}
                     or item.endswith(".go") or item in paths):
-                raise ValueError("verification ownership requires unique exact non-Go script paths")
+                raise ValueError("verification ownership requires unique exact non-Go tooling paths")
             paths.add(item)
         for command in group["checks"]:
             if (not isinstance(command, list) or len(command) < 2
                     or any(not isinstance(arg, str) or not arg or "\x00" in arg for arg in command)
-                    or command[0] not in {"python3", "go", "npm"}):
+                    or command[0] not in {"python3", "go", "npm", "bash"}):
                 raise ValueError("invalid verification scope check")
     if CONTRACT not in paths:
         raise ValueError("verification scope contract must retain its own verification group")

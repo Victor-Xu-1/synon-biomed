@@ -1,7 +1,7 @@
 {
   "schema": "synon.governance.github-actions-pins.v3",
-  "updated_at": "2026-09-11T00:00:00+08:00",
-  "source": "official Git tag refs reverified read-only with git ls-remote",
+  "updated_at": "2026-09-17T00:00:00+08:00",
+  "source": "official Git tag refs and release metadata reverified read-only with GitHub API",
   "bootstrap_workflow": ".github/workflows/quality.yml",
   "bootstrap_job": "p0-quality",
   "bootstrap_runner": "ubuntu-24.04",
@@ -36,9 +36,9 @@
   "actions": {
     "actions/checkout": {"sha": "3d3c42e5aac5ba805825da76410c181273ba90b1", "version": "v7.0.1"},
     "actions/setup-go": {"sha": "b7ad1dad31e06c5925ef5d2fc7ad053ef454303e", "version": "v7.0.0"},
-    "actions/setup-node": {"sha": "249970729cb0ef3589644e2896645e5dc5ba9c38", "version": "v6.5.0"},
-    "actions/upload-artifact": {"sha": "ea165f8d65b6e75b540449e92b4886f43607fa02", "version": "v4.6.2"},
-    "actions/download-artifact": {"sha": "d3f86a106a0bac45b974a628896c90dbdf5c8093", "version": "v4.3.0"}
+    "actions/setup-node": {"sha": "820762786026740c76f36085b0efc47a31fe5020", "version": "v7.0.0"},
+    "actions/upload-artifact": {"sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a", "version": "v7.0.1"},
+    "actions/download-artifact": {"sha": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c", "version": "v8.0.1"}
   },
   "requirements": {
     "remote_actions_full_sha": true,

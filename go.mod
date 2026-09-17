@@ -8,17 +8,17 @@ require (
 	github.com/dlclark/regexp2 v1.12.0
 	github.com/go-jose/go-jose/v4 v4.1.5
 	github.com/google/uuid v1.6.0
-	github.com/larksuite/oapi-sdk-go/v3 v3.11.0
+	github.com/larksuite/oapi-sdk-go/v3 v3.12.0
 	github.com/mholt/archives v0.1.5
-	github.com/pkg/sftp v1.13.10
-	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
+	github.com/pkg/sftp v1.13.11
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	golang.org/x/crypto v0.54.0
+	golang.org/x/crypto v0.57.0
 	golang.org/x/mod v0.41.0
-	golang.org/x/net v0.57.0
+	golang.org/x/net v0.59.0
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/sys v0.48.0
-	golang.org/x/text v0.40.0
+	golang.org/x/text v0.42.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.58.0
 )

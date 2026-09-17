@@ -1,0 +1,525 @@
+/**
+ * @license
+ * Copyright 2026 Synon-AI
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { ipcBridge } from '@/common';
+import PwaPullToRefresh from '@/renderer/components/layout/PwaPullToRefresh';
+import Titlebar from '@/renderer/components/layout/Titlebar';
+import { Layout as ArcoLayout, Tooltip } from '@arco-design/web-react';
+import classNames from 'classnames';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Outlet, useLocation, useNavigate } from 'react-router';
+import { setGlobalNavigate } from '@/renderer/utils/navigation';
+import { LayoutContext } from '@renderer/hooks/context/LayoutContext';
+import { NavigationHistoryProvider } from '@renderer/hooks/context/NavigationHistoryContext';
+import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
+import { useNotificationClick } from '@renderer/hooks/system/notification/useNotificationClick';
+import { useBrowserNotification } from '@renderer/hooks/system/notification/useBrowserNotification';
+import { useDirectorySelection } from '@renderer/hooks/file/useDirectorySelection';
+import { cleanupSiderTooltips } from '@renderer/utils/ui/siderTooltip';
+import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShortcuts';
+import { isElectronDesktop } from '@renderer/utils/platform';
+import '@renderer/styles/layout.css';
+
+const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox='0 0 48 48'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth={strokeWidth}
+    strokeLinecap='round'
+    strokeLinejoin='round'
+    aria-hidden='true'
+    focusable='false'
+    style={{ display: 'inline-block', verticalAlign: 'middle' }}
+  >
+    <rect x='6' y='10' width='36' height='28' rx='5' />
+    <line x1='18' y1='10' x2='18' y2='38' />
+  </svg>
+);
+
+const SynonBiomedBrand = () => (
+  <img
+    src='./branding/synon-biomed-lockup.png?v=0cac2ebf'
+    alt='SYNON-Biomed'
+    data-testid='synon-biomed-brand-lockup'
+    className='synon-biomed-brand__lockup'
+  />
+);
+
+const useDebug = () => {
+  const [count, setCount] = useState(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onClick = () => {
+    const open = () => {
+      ipcBridge.application.openDevTools.invoke().catch((error) => {
+        console.error('Failed to open dev tools:', error);
+      });
+      setCount(0);
+    };
+    if (count >= 3) {
+      return open();
+    }
+    setCount((prev) => {
+      if (prev >= 2) {
+        open();
+        return 0;
+      }
+      return prev + 1;
+    });
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      clearTimeout(timer.current);
+      setCount(0);
+    }, 1000);
+  };
+
+  return { onClick };
+};
+
+const DEFAULT_SIDER_WIDTH = 260;
+const DESKTOP_COLLAPSED_WIDTH = 0;
+const DESKTOP_SIDER_MIN_WIDTH = 220;
+const DESKTOP_SIDER_MAX_WIDTH = 420;
+const SIDER_DRAG_COLLAPSE_THRESHOLD = 180;
+const SIDER_DRAG_HYSTERESIS = 8;
+const SIDER_KEYBOARD_STEP = 16;
+const SIDER_WIDTH_STORAGE_KEY = 'synon-ai:desktop-sider-width';
+const MOBILE_SIDER_WIDTH_RATIO = 0.67;
+const MOBILE_SIDER_MIN_WIDTH = 260;
+const MOBILE_SIDER_MAX_WIDTH = 420;
+
+const clampDesktopSiderWidth = (width: number): number =>
+  Math.min(DESKTOP_SIDER_MAX_WIDTH, Math.max(DESKTOP_SIDER_MIN_WIDTH, Math.round(width)));
+
+const readStoredSiderWidth = (): number => {
+  if (typeof window === 'undefined') return DEFAULT_SIDER_WIDTH;
+  try {
+    const storedWidth = Number.parseInt(window.localStorage.getItem(SIDER_WIDTH_STORAGE_KEY) ?? '', 10);
+    return Number.isFinite(storedWidth) ? clampDesktopSiderWidth(storedWidth) : DEFAULT_SIDER_WIDTH;
+  } catch {
+    return DEFAULT_SIDER_WIDTH;
+  }
+};
+
+const detectMobileViewportOrTouch = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  if (isElectronDesktop()) {
+    return window.innerWidth < 768;
+  }
+  const width = window.innerWidth;
+  const byWidth = width < 768;
+  // 仅在小屏时才将 coarse/touch 视为移动端，避免触控笔记本被误判
+  // Treat touch/coarse pointer as mobile only on smaller viewports
+  const smallScreen = width < 1024;
+  const byMedia = window.matchMedia('(hover: none)').matches || window.matchMedia('(pointer: coarse)').matches;
+  const byTouchPoints = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
+  return byWidth || (smallScreen && (byMedia || byTouchPoints));
+};
+
+const Layout: React.FC<{
+  sider: React.ReactNode;
+  onSessionClick?: () => void;
+}> = ({ sider, onSessionClick: _onSessionClick }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [desktopSiderWidth, setDesktopSiderWidth] = useState(readStoredSiderWidth);
+  const [isSiderDragging, setIsSiderDragging] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState<number>(() =>
+    typeof window === 'undefined' ? 390 : window.innerWidth
+  );
+  const { onClick } = useDebug();
+  const { contextHolder: directorySelectionContextHolder } = useDirectorySelection();
+  useDeepLink();
+  useNotificationClick();
+  useBrowserNotification();
+  const navigate = useNavigate();
+  useConversationShortcuts({ navigate });
+  // Expose navigate to code running outside the Router tree (e.g. the globally
+  // mounted FeedbackReportModal's "via chat" action).
+  useEffect(() => {
+    setGlobalNavigate(navigate);
+    return () => setGlobalNavigate(null);
+  }, [navigate]);
+  const location = useLocation();
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    document.title = 'Synon Biomed';
+  }, []);
+
+  // The Synon Biomed wordmark acts as Home / Back-to-Chat, but only from settings routes.
+  // In non-settings routes the user is already "home", so it is a no-op (and not actionable).
+  const isSettingsRoute = location.pathname.startsWith('/settings') || location.hash.startsWith('#/settings');
+
+  // The locked settings references use a 260px navigation rail. Preserve the
+  // user's wider rail preference, but migrate older compact settings widths
+  // once so the route geometry matches the reviewed desktop sheets.
+  useEffect(() => {
+    if (!isSettingsRoute || isMobile || desktopSiderWidth >= 260) return;
+    setDesktopSiderWidth(260);
+  }, [desktopSiderWidth, isMobile, isSettingsRoute]);
+  // Only wired to the wordmark in the isSettingsRoute branch below, so the
+  // "no-op outside settings" contract is enforced structurally — no internal
+  // route guard needed (the chat-route wordmark is a plain, inert div).
+  const handleBrandHome = useCallback(() => {
+    // Mirror Titlebar's handleBackToChat convention: return to the last non-settings path.
+    let target: string | null = null;
+    try {
+      target = sessionStorage.getItem('synon-ai:last-non-settings-path');
+    } catch {
+      // ignore
+    }
+    if (target && !target.startsWith('/settings')) {
+      void navigate(target);
+      return;
+    }
+    void navigate('/guid');
+  }, [navigate]);
+  const workspaceAvailable = location.pathname.startsWith('/conversation/');
+  const collapsedRef = useRef(collapsed);
+  const desktopSiderWidthRef = useRef(desktopSiderWidth);
+  const dragStateRef = useRef<{ active: boolean; startX: number; startWidth: number }>({
+    active: false,
+    startX: 0,
+    startWidth: DEFAULT_SIDER_WIDTH,
+  });
+
+  // 检测移动端并响应窗口大小变化
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = detectMobileViewportOrTouch();
+      setIsMobile(mobile);
+      setViewportWidth(window.innerWidth);
+    };
+
+    // 初始检测
+    checkMobile();
+
+    // 监听窗口大小变化
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 进入移动端后立即折叠 / Collapse immediately when switching to mobile
+  useEffect(() => {
+    if (!isMobile || collapsedRef.current) {
+      return;
+    }
+    setCollapsed(true);
+  }, [isMobile]);
+
+  // 清理侧栏 Tooltip 残留节点，避免移动端路由切换后浮层卡在左上角
+  useEffect(() => {
+    cleanupSiderTooltips();
+  }, [isMobile, collapsed, location.pathname, location.search, location.hash]);
+
+  // Bridge Main Process logs to F12 Console
+  useEffect(() => {
+    const unsubscribe = ipcBridge.application.logStream.on((entry) => {
+      const prefix = `%c[Main:${entry.tag}]%c ${entry.message}`;
+      const style = 'color:#7c3aed;font-weight:bold';
+      if (entry.level === 'error') {
+        console.error(prefix, style, 'color:inherit', ...(entry.data !== undefined ? [entry.data] : []));
+      } else if (entry.level === 'warn') {
+        console.warn(prefix, style, 'color:inherit', ...(entry.data !== undefined ? [entry.data] : []));
+      } else {
+        console.log(prefix, style, 'color:inherit', ...(entry.data !== undefined ? [entry.data] : []));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Handle tray events from main process / 处理来自主进程的托盘事件
+  useEffect(() => {
+    if (!isElectronDesktop()) return;
+
+    // Navigate to guid page when requested from tray / 托盘请求导航到 guid 页面
+    const handleNavigateToGuid = () => {
+      void navigate('/guid');
+    };
+
+    // Navigate to conversation when requested from tray / 托盘请求导航到对话页面
+    const handleNavigateToConversation = (event: CustomEvent<{ conversation_id: string }>) => {
+      void navigate(`/conversation/${event.detail.conversation_id}`);
+    };
+
+    // Open about dialog when requested from tray / 托盘请求打开关于对话框
+    const handleOpenAbout = () => {
+      // Navigate to settings/about page / 导航到设置/关于页面
+      void navigate('/settings/about');
+    };
+
+    // Handle pause all tasks request from tray / 托盘请求暂停所有任务
+    const handlePauseAllTasks = async () => {
+      const result = await ipcBridge.task.stopAll.invoke();
+      if (result?.success) {
+        // Navigate to settings page to show task status
+        void navigate('/settings/system');
+      }
+    };
+
+    // Listen for tray events / 监听托盘事件
+    window.addEventListener('tray:navigate-to-guid', handleNavigateToGuid as EventListener);
+    window.addEventListener('tray:navigate-to-conversation', handleNavigateToConversation as EventListener);
+    window.addEventListener('tray:open-about', handleOpenAbout as EventListener);
+    window.addEventListener('tray:pause-all-tasks', handlePauseAllTasks as EventListener);
+
+    return () => {
+      window.removeEventListener('tray:navigate-to-guid', handleNavigateToGuid as EventListener);
+      window.removeEventListener('tray:navigate-to-conversation', handleNavigateToConversation as EventListener);
+      window.removeEventListener('tray:open-about', handleOpenAbout as EventListener);
+      window.removeEventListener('tray:pause-all-tasks', handlePauseAllTasks as EventListener);
+    };
+  }, [navigate]);
+
+  const siderWidth = isMobile
+    ? Math.max(
+        MOBILE_SIDER_MIN_WIDTH,
+        Math.min(MOBILE_SIDER_MAX_WIDTH, Math.round(viewportWidth * MOBILE_SIDER_WIDTH_RATIO))
+      )
+    : desktopSiderWidth;
+  useEffect(() => {
+    collapsedRef.current = collapsed;
+  }, [collapsed]);
+
+  useEffect(() => {
+    desktopSiderWidthRef.current = desktopSiderWidth;
+    try {
+      window.localStorage.setItem(SIDER_WIDTH_STORAGE_KEY, String(desktopSiderWidth));
+    } catch {
+      // The in-memory width remains authoritative when storage is unavailable.
+    }
+  }, [desktopSiderWidth]);
+
+  const updateDesktopSiderWidth = useCallback((width: number) => {
+    const nextWidth = clampDesktopSiderWidth(width);
+    desktopSiderWidthRef.current = nextWidth;
+    setDesktopSiderWidth(nextWidth);
+  }, []);
+
+  const updateSiderCollapsed = useCallback((nextCollapsed: boolean) => {
+    collapsedRef.current = nextCollapsed;
+    setCollapsed(nextCollapsed);
+  }, []);
+
+  const beginSiderResizeDrag = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (isMobile) return;
+      event.preventDefault();
+      dragStateRef.current = {
+        active: true,
+        startX: event.clientX,
+        startWidth: collapsedRef.current ? DESKTOP_COLLAPSED_WIDTH : desktopSiderWidthRef.current,
+      };
+      setIsSiderDragging(true);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    },
+    [isMobile]
+  );
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      const dragState = dragStateRef.current;
+      if (!dragState.active) return;
+
+      const draggedWidth = dragState.startWidth + (event.clientX - dragState.startX);
+      const shouldCollapse = collapsedRef.current
+        ? draggedWidth <= SIDER_DRAG_COLLAPSE_THRESHOLD + SIDER_DRAG_HYSTERESIS
+        : draggedWidth <= SIDER_DRAG_COLLAPSE_THRESHOLD - SIDER_DRAG_HYSTERESIS;
+
+      if (!shouldCollapse) {
+        updateDesktopSiderWidth(draggedWidth);
+      }
+      if (shouldCollapse !== collapsedRef.current) {
+        updateSiderCollapsed(shouldCollapse);
+      }
+    };
+
+    const endDrag = () => {
+      if (!dragStateRef.current.active) return;
+      dragStateRef.current.active = false;
+      setIsSiderDragging(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    const handleBlur = () => endDrag();
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', endDrag);
+      window.removeEventListener('blur', handleBlur);
+      endDrag();
+    };
+  }, [updateDesktopSiderWidth, updateSiderCollapsed]);
+
+  const handleSiderResizeKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isMobile) return;
+      let nextWidth: number | null = null;
+      if (event.key === 'ArrowLeft') {
+        if (desktopSiderWidthRef.current <= DESKTOP_SIDER_MIN_WIDTH) {
+          updateSiderCollapsed(true);
+        } else {
+          nextWidth = desktopSiderWidthRef.current - SIDER_KEYBOARD_STEP;
+        }
+      } else if (event.key === 'ArrowRight') {
+        nextWidth = desktopSiderWidthRef.current + SIDER_KEYBOARD_STEP;
+        updateSiderCollapsed(false);
+      } else if (event.key === 'Home') {
+        updateSiderCollapsed(true);
+      } else if (event.key === 'End') {
+        nextWidth = DESKTOP_SIDER_MAX_WIDTH;
+        updateSiderCollapsed(false);
+      } else {
+        return;
+      }
+      event.preventDefault();
+      if (nextWidth !== null) updateDesktopSiderWidth(nextWidth);
+    },
+    [isMobile, updateDesktopSiderWidth, updateSiderCollapsed]
+  );
+
+  const siderStyle = isMobile
+    ? {
+        position: 'fixed' as const,
+        left: 0,
+        zIndex: 100,
+        transform: collapsed ? 'translateX(-100%)' : 'translateX(0)',
+        transition: 'none',
+        pointerEvents: collapsed ? ('none' as const) : ('auto' as const),
+      }
+    : {
+        position: 'relative' as const,
+        overflow: 'visible' as const,
+      };
+
+  return (
+    <LayoutContext.Provider value={{ isMobile, siderCollapsed: collapsed, setSiderCollapsed: updateSiderCollapsed }}>
+      <NavigationHistoryProvider>
+        <div className='app-shell flex flex-col size-full min-h-0'>
+          <Titlebar workspaceAvailable={workspaceAvailable} />
+          {/* 移动端左侧边栏蒙板 / Mobile left sider backdrop */}
+          {isMobile && !collapsed && (
+            <div className='fixed inset-0 bg-black/30 z-90' onClick={() => setCollapsed(true)} aria-hidden='true' />
+          )}
+
+          <ArcoLayout className={'size-full layout flex-1 min-h-0'}>
+            <ArcoLayout.Sider
+              collapsedWidth={isMobile ? 0 : 0}
+              collapsed={collapsed}
+              width={siderWidth}
+              className={classNames('!bg-2 layout-sider synon-sidebar-shell', {
+                collapsed,
+                'layout-sider--dragging': isSiderDragging,
+                'settings-layout-sider': isSettingsRoute,
+              })}
+              style={siderStyle}
+            >
+              <ArcoLayout.Header
+                className={classNames(
+                  'flex items-center justify-start pt-8px pb-8px pl-18px pr-16px gap-12px layout-sider-header synon-sidebar-header',
+                  isMobile && 'layout-sider-header--mobile',
+                  {
+                    'cursor-pointer group ': collapsed,
+                  }
+                )}
+              >
+                {isSettingsRoute ? (
+                  <Tooltip content={t('common.back')} position='bottom'>
+                    <button
+                      type='button'
+                      className='synon-biomed-brand shrink-0 border-0 bg-transparent p-0 cursor-pointer flex items-center'
+                      aria-label={t('common.back')}
+                      onClick={handleBrandHome}
+                    >
+                      <SynonBiomedBrand />
+                    </button>
+                  </Tooltip>
+                ) : (
+                  <div className='synon-biomed-brand shrink-0 flex items-center' onClick={onClick}>
+                    <SynonBiomedBrand />
+                  </div>
+                )}
+                {isMobile && !collapsed && (
+                  <button
+                    type='button'
+                    data-testid='mobile-sider-close'
+                    className='app-titlebar__button app-titlebar__button--mobile'
+                    onClick={() => setCollapsed(true)}
+                    title={t('common.collapseSidebar')}
+                    aria-label={t('common.collapseSidebar')}
+                  >
+                    <SidebarIcon size={18} strokeWidth={2.5} />
+                  </button>
+                )}
+                {/* 侧栏折叠改由标题栏统一控制 / Sidebar folding handled by Titlebar toggle */}
+              </ArcoLayout.Header>
+              <ArcoLayout.Content className='pt-0 px-8px pb-0 layout-sider-content synon-sidebar-content'>
+                {React.isValidElement(sider)
+                  ? React.cloneElement(
+                      sider as React.ReactElement<{ onSessionClick?: () => void; collapsed?: boolean }>,
+                      {
+                        onSessionClick: () => {
+                          cleanupSiderTooltips();
+                          if (isMobile) setCollapsed(true);
+                        },
+                        collapsed,
+                      }
+                    )
+                  : sider}
+              </ArcoLayout.Content>
+              {!isMobile && (
+                <div
+                  role='separator'
+                  aria-label={t('common.resizeSidebar')}
+                  aria-orientation='vertical'
+                  aria-valuemin={DESKTOP_COLLAPSED_WIDTH}
+                  aria-valuemax={DESKTOP_SIDER_MAX_WIDTH}
+                  aria-valuenow={collapsed ? DESKTOP_COLLAPSED_WIDTH : desktopSiderWidth}
+                  tabIndex={0}
+                  data-testid='sider-resize-handle'
+                  className='absolute top-0 h-full w-8px z-20 cursor-col-resize group'
+                  style={{ right: '-4px' }}
+                  onMouseDown={beginSiderResizeDrag}
+                  onKeyDown={handleSiderResizeKeyDown}
+                >
+                  <div className='absolute top-0 left-1/2 h-full w-1px -translate-x-1/2 bg-transparent group-hover:bg-[var(--color-border-2)] transition-colors duration-150' />
+                </div>
+              )}
+            </ArcoLayout.Sider>
+
+            <ArcoLayout.Content
+              className={'bg-1 layout-content flex flex-col min-h-0'}
+              onClick={() => {
+                if (isMobile && !collapsed) setCollapsed(true);
+              }}
+              style={
+                isMobile
+                  ? {
+                      width: '100%',
+                    }
+                  : undefined
+              }
+            >
+              <Outlet />
+              {directorySelectionContextHolder}
+              <PwaPullToRefresh />
+            </ArcoLayout.Content>
+          </ArcoLayout>
+        </div>
+      </NavigationHistoryProvider>
+    </LayoutContext.Provider>
+  );
+};
+
+export default Layout;

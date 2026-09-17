@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "retrievedAt": "2026-07-29",
+  "conditionsUrl": "https://genome.ucsc.edu/conditions.html",
+  "files": [
+    {
+      "file": "hg38.chrom.sizes",
+      "assembly": "GRCh38 initial",
+      "accession": "GCA_000001405.15",
+      "sourceUrl": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes",
+      "readmeUrl": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/",
+      "bytes": 11672,
+      "md5": "c42e9f75fff906c6a7143cb2fac86602",
+      "sha256": "e1d9152418038457a959e949d99c9caf7ae3e4f87cfbb4ffe7d8b9a54ba1202b"
+    },
+    {
+      "file": "hg19.chrom.sizes",
+      "assembly": "GRCh37 initial",
+      "accession": "GCA_000001405.1",
+      "sourceUrl": "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.chrom.sizes",
+      "readmeUrl": "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/",
+      "bytes": 1971,
+      "md5": "b3b0fcf79b5477ab0b3af02e81eac8dc",
+      "sha256": "b404927655a4aada254ea94ad4da0c8901ed0737e67a0dcabedf673354b1f505"
+    },
+    {
+      "file": "mm39.chrom.sizes",
+      "assembly": "GRCm39",
+      "accession": "GCA_000001635.9",
+      "sourceUrl": "https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/mm39.chrom.sizes",
+      "readmeUrl": "https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/",
+      "bytes": 1350,
+      "md5": "967c609a714df35c86a4f52ac85db377",
+      "sha256": "acd0edeab2409fe5e112444846dd89c4f8873df1f8ee4ca616aed6cf75be2a05"
+    },
+    {
+      "file": "mm10.chrom.sizes",
+      "assembly": "GRCm38 initial",
+      "accession": "GCA_000001635.2",
+      "sourceUrl": "https://hgdownload.soe.ucsc.edu/goldenPath/mm10/bigZips/mm10.chrom.sizes",
+      "readmeUrl": "https://hgdownload.soe.ucsc.edu/goldenPath/mm10/bigZips/",
+      "bytes": 1405,
+      "md5": "5a103c9a15dd660c295a089ef5035672",
+      "sha256": "55463d59f400b2c8260d100f4b521800ee773fa9711fe3f6dad9c7887db2574f"
+    }
+  ]
+}

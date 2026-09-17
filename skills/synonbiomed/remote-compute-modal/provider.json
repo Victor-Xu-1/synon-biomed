@@ -1,0 +1,20 @@
+{
+  "id": "modal",
+  "helperEnv": {
+    "name": "compute-provider-modal",
+    "packages": ["python=3.11", "pip"],
+    "pip": ["modal==1.5.1", "python-socks[asyncio]==2.8.1"]
+  },
+  "requirements": {
+    "path": "requirements.lock",
+    "sha256": "20c8541717b9dcf31bba3f8362e3e2c1adafe011cb2a4a1dbee36bce7d1ad0dd"
+  },
+  "egress": {
+    "control": { "host": "api.modal.com", "port": 443 },
+    "worker": [{ "suffix": ".w.modal.host" }],
+    "blob": [
+      { "suffix": ".amazonaws.com" },
+      { "suffix": ".r2.cloudflarestorage.com" }
+    ]
+  }
+}

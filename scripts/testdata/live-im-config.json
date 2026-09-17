@@ -1,0 +1,16 @@
+{
+  "wechat": {
+    "bot_token": "wechat-package-secret",
+    "user_id": "wechat-adapter-user"
+  },
+  "feishu": {
+    "app_id": "feishu-package-id",
+    "app_secret": "feishu-package-secret"
+  },
+  "live_im_smoke": {
+    "wechat_user_id": "wechat-smoke-user",
+    "feishu_chat_id": "oc-package",
+    "runtime_url": "http://127.0.0.1:38080",
+    "require_all": true
+  }
+}

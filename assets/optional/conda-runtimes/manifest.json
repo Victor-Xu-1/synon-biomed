@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 2,
+  "platform": "linux-x86_64",
+  "runtimes": [
+    {
+      "name": "synon-biomed-python",
+      "platform": "linux-x86_64",
+      "requiredPackages": [
+        {
+          "name": "py3dmol",
+          "version": "2.5.4"
+        },
+        {
+          "name": "python",
+          "version": "3.11.*"
+        },
+        {
+          "name": "rdkit",
+          "version": "2024.03.5"
+        }
+      ],
+      "packageCount": 181,
+      "generation": "d9ea950dc16ade50deed3cbc08079b627826c7bbc4c946fce7fa9233546746ae",
+      "manifestPath": "synon-biomed-python/d9ea950dc16ade50deed3cbc08079b627826c7bbc4c946fce7fa9233546746ae/manifest.json",
+      "explicitPath": "synon-biomed-python/d9ea950dc16ade50deed3cbc08079b627826c7bbc4c946fce7fa9233546746ae/explicit.txt",
+      "licensesPath": "synon-biomed-python/d9ea950dc16ade50deed3cbc08079b627826c7bbc4c946fce7fa9233546746ae/licenses.json",
+      "licenseTextsIncluded": false,
+      "explicitSHA256": "3439fedfa8efddedc5b3706932154f7b5d14b4829058cfd645eded0c284fc418",
+      "licenseInventorySHA256": "bc37e408580a9bd019cd89586808e02f487ea7ebaa1bb51bac05e08b98bb8890"
+    },
+    {
+      "name": "synon-biomed-python-baseline",
+      "platform": "linux-x86_64",
+      "packageCount": 153,
+      "generation": "6eb976fdf84971d799eba0dd89b282d513a8d9ee467cc6541129b578f8a9dabd",
+      "manifestPath": "python-baseline/6eb976fdf84971d799eba0dd89b282d513a8d9ee467cc6541129b578f8a9dabd/manifest.json",
+      "explicitPath": "python-baseline/6eb976fdf84971d799eba0dd89b282d513a8d9ee467cc6541129b578f8a9dabd/explicit.txt",
+      "licensesPath": "python-baseline/6eb976fdf84971d799eba0dd89b282d513a8d9ee467cc6541129b578f8a9dabd/licenses.json",
+      "licenseTextsIncluded": false,
+      "explicitSHA256": "cc77dacd291cf7d59a268e2f41c59da354d70668e29ec7b31bfd9e46e44edb13",
+      "licenseInventorySHA256": "03ba91ab7864ab7d30525b8b13994345ba04276df1359a2a116ff883543d5546"
+    },
+    {
+      "name": "synon-biomed-r",
+      "platform": "linux-x86_64",
+      "packageCount": 200,
+      "generation": "5a9b0919aa948e67bf8ad706e2cbbaaed9556a266f0cdb35211cb1a879f2a3c9",
+      "manifestPath": "r/5a9b0919aa948e67bf8ad706e2cbbaaed9556a266f0cdb35211cb1a879f2a3c9/manifest.json",
+      "explicitPath": "r/5a9b0919aa948e67bf8ad706e2cbbaaed9556a266f0cdb35211cb1a879f2a3c9/explicit.txt",
+      "licensesPath": "r/5a9b0919aa948e67bf8ad706e2cbbaaed9556a266f0cdb35211cb1a879f2a3c9/licenses.json",
+      "licenseTextsIncluded": false,
+      "explicitSHA256": "e6d9af65537bc05d5ea72f604d65c58e0b57e8834ab754d36a1ccdc06f15d425",
+      "licenseInventorySHA256": "ed79c4e3a0f9a26fe167db3d361c81bf3d162126f3d5603fab17489e9b205419"
+    }
+  ],
+  "catalogSHA256": "193cce1a82732795fe971b5b8004f92997a17dcf49522c856e39f3be4b3b5339"
+}

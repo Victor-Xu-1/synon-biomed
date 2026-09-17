@@ -1,0 +1,1 @@
+"""Synon-research MCP package."""

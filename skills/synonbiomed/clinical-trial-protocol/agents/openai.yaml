@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clinical Trial Protocol"
+  short_description: "Draft evidence-based, review-ready clinical trial protocols"
+  default_prompt: "Use $clinical-trial-protocol to build a source-grounded, review-ready plan."

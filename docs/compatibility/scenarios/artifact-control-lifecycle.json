@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "artifact-control-lifecycle",
+  "contracts": [
+    {"kind": "service", "name": "deleteArtifact"},
+    {"kind": "service", "name": "renameArtifact"},
+    {"kind": "service", "name": "updateArtifactPriority"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "reject-missing-delete",
+      "method": "DELETE",
+      "path": "/api/artifacts/missing-artifact",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "reject-blank-rename",
+      "method": "PATCH",
+      "path": "/api/artifacts/missing-artifact/rename",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"filename": "   "},
+      "expectedStatus": [400]
+    },
+    {
+      "name": "reject-missing-rename",
+      "method": "PATCH",
+      "path": "/api/artifacts/missing-artifact/rename",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"filename": "renamed.txt"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "reject-missing-priority",
+      "method": "PATCH",
+      "path": "/api/artifacts/missing-artifact/priority",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"priority": "user_starred"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "reject-invalid-priority",
+      "method": "PATCH",
+      "path": "/api/artifacts/missing-artifact/priority",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"priority": "urgent"},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

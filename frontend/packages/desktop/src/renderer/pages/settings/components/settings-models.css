@@ -1,0 +1,310 @@
+/* Route-scoped desktop geometry from the accepted settings visual contract. */
+
+@media (min-width: 768px) {
+  /* Models: the sheet reserves a 36px header-to-summary lead, a 33px lead
+     before the profile list, and 20px between profile rows. */
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page {
+    display: block !important;
+    row-gap: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page > .settings-summary-strip {
+    margin-top: 36px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='models']
+    .settings-models-page
+    > [data-testid='synon-biomed-model-profiles'] {
+    margin-top: 33px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-list-row {
+    margin-bottom: 20px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-list-row h3 {
+    color: var(--settings-text) !important;
+    font-size: 18px !important;
+    line-height: 24px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-item {
+    justify-content: flex-start !important;
+    gap: 20px !important;
+    padding: 18px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-item__icon {
+    display: block;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    border: 1px solid var(--settings-border);
+    border-radius: 12px;
+    object-fit: contain;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-item__copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-item__label {
+    color: var(--settings-text-secondary) !important;
+    font-size: 13px !important;
+    line-height: 19px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-item strong {
+    max-width: 100% !important;
+    color: var(--settings-text) !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    line-height: 24px !important;
+  }
+
+  /* The reference sheet uses the third summary cell as the add-model action.
+     Keep it in the same measured rail while preserving a keyboard-visible
+     focus treatment and the existing model editor lifecycle. */
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-action {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--settings-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 140ms ease;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-action:hover {
+    background: var(--settings-surface-subtle);
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-action:focus-visible {
+    outline: 2px solid var(--settings-accent);
+    outline-offset: -4px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-action__label {
+    min-width: 0;
+    color: var(--settings-text) !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    line-height: 22px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile {
+    padding: 14px 16px !important;
+  }
+
+  /* The profile row is a five-column information rail.  Keep the identity,
+     provider metadata and actions in their own cells so long names cannot
+     collapse the row into the stacked legacy layout. */
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__main {
+    display: grid !important;
+    grid-template-columns: 195px 132px 178px 96px minmax(0, 1fr) !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+    height: 76px !important;
+    min-width: 0;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__identity {
+    display: flex !important;
+    align-items: flex-start !important;
+    min-width: 0;
+    gap: 14px !important;
+    height: 48px !important;
+    grid-column: 1;
+    padding-top: 3px !important;
+    align-self: flex-start !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-profile__icon {
+    display: block !important;
+    width: 48px !important;
+    height: 48px !important;
+    flex: 0 0 48px !important;
+    object-fit: contain;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__identity-copy {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    min-width: 0;
+    padding-top: 2px !important;
+    gap: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__identity-name {
+    max-width: 154px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--settings-text) !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    line-height: 21px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__identity-model {
+    max-width: 154px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--settings-text-secondary) !important;
+    font-size: 13px !important;
+    line-height: 19px !important;
+    margin-top: 1px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__identity-tags {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-top: 3px !important;
+    min-height: 18px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__identity-tags .arco-tag {
+    margin: 0 !important;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px !important;
+    line-height: 18px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__detail,
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__key {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    min-width: 0;
+    gap: 4px !important;
+    height: 76px !important;
+    margin: 0 !important;
+    padding-left: 0 !important;
+    font-size: 13px !important;
+    line-height: 19px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__model-id {
+    grid-column: 2;
+  }
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__base-url {
+    grid-column: 3;
+  }
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__key {
+    grid-column: 4;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__detail-label {
+    color: var(--settings-text-secondary) !important;
+    font-size: 12px !important;
+    line-height: 18px !important;
+    white-space: nowrap;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__detail-value {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--settings-text) !important;
+    font-size: 13px !important;
+    line-height: 19px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__key-value {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    gap: 7px;
+    color: var(--settings-text-secondary) !important;
+    font-size: 13px !important;
+    line-height: 19px !important;
+    white-space: nowrap;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__key-value.is-saved {
+    color: var(--settings-success) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__key-dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__runtime {
+    display: none !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__actions {
+    grid-column: 5;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    min-width: 0;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__actions .arco-btn {
+    height: 32px !important;
+    min-height: 32px !important;
+    min-width: 32px;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__actions .arco-btn-secondary {
+    min-width: 60px;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='models']
+    .settings-model-profile__actions
+    .settings-model-profile__activate {
+    order: 4;
+    min-width: 92px !important;
+    padding-inline: 10px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='models']
+    .settings-model-profile__actions
+    .settings-model-profile__edit {
+    min-width: 60px !important;
+    padding-inline: 10px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='models']
+    .settings-model-profile__actions
+    .settings-model-profile__delete {
+    min-width: 70px !important;
+    padding-inline: 10px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__actions .arco-btn-text {
+    width: 32px;
+    padding: 0 !important;
+  }
+}

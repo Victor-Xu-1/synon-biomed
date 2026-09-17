@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "id": "annotation-core-errors",
+  "contracts": [
+    {"kind": "service", "name": "getAnnotations"},
+    {"kind": "service", "name": "createAnnotation"},
+    {"kind": "service", "name": "updateAnnotation"},
+    {"kind": "service", "name": "deleteAnnotation"},
+    {"kind": "service", "name": "suggestEdits"},
+    {"kind": "service", "name": "applyEdit"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Annotation Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"project": "/project_id"}
+    },
+    {
+      "name": "create-remote-annotation",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/annotations",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "body": {
+        "target": {"kind": "remote", "provider": "s3:test", "path": "folder/report.txt"},
+        "type": "point", "text": "review", "x_percent": 10, "y_percent": 20
+      },
+      "expectedStatus": [201],
+      "capture": {"annotation": "/id"}
+    },
+    {
+      "name": "list-remote-annotations",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/annotations/list",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "body": {"target": {"kind": "remote", "provider": "s3:test", "path": "folder/report.txt"}},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "update-remote-annotation",
+      "method": "PATCH",
+      "path": "/api/annotations/${capture:annotation}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "body": {"text": "updated"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "delete-remote-annotation",
+      "method": "DELETE",
+      "path": "/api/annotations/${capture:annotation}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "list-missing-artifact-version",
+      "method": "GET",
+      "path": "/api/artifacts/missing-artifact/versions/00000000-0000-4000-8000-000000000201/annotations",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "create-on-missing-artifact-version",
+      "method": "POST",
+      "path": "/api/artifacts/missing-artifact/versions/00000000-0000-4000-8000-000000000201/annotations",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "body": {"type": "point", "text": "review", "x_percent": 10, "y_percent": 20},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "update-missing-annotation",
+      "method": "PATCH",
+      "path": "/api/annotations/00000000-0000-4000-8000-000000000202",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "body": {"text": "updated"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "delete-missing-annotation",
+      "method": "DELETE",
+      "path": "/api/annotations/00000000-0000-4000-8000-000000000202",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "suggest-on-missing-artifact-version",
+      "method": "POST",
+      "path": "/api/artifacts/missing-artifact/versions/00000000-0000-4000-8000-000000000201/suggest-edits",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "body": {"selected_text": "source", "annotation_text": "make concise", "mode": "edit"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "apply-on-missing-artifact-version",
+      "method": "POST",
+      "path": "/api/artifacts/missing-artifact/versions/00000000-0000-4000-8000-000000000201/apply-edit",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}", "X-Synon-User-Id": "local"},
+      "body": {"selected_text": "source", "replacement_text": "replacement"},
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/path",
+    "/steps/2/response/body/id",
+    "/steps/2/response/body/created_at",
+    "/steps/3/request/path",
+    "/steps/3/response/body/annotations/0/id",
+    "/steps/3/response/body/annotations/0/created_at",
+    "/steps/4/request/path",
+    "/steps/4/response/body/id",
+    "/steps/4/response/body/created_at",
+    "/steps/5/request/path"
+  ],
+  "redactions": []
+}

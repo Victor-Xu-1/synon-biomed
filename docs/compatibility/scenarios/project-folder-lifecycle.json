@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "id": "project-folder-lifecycle",
+  "contracts": [
+    {"kind": "service", "name": "listFolders"},
+    {"kind": "service", "name": "createFolder"},
+    {"kind": "service", "name": "updateFolder"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Folder Lifecycle Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"project": "/project_id"}
+    },
+    {
+      "name": "list-empty-folders",
+      "method": "GET",
+      "path": "/api/projects/${capture:project}/folders",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "create-root-folder",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/folders",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Root folder"},
+      "expectedStatus": [201],
+      "capture": {"rootFolder": "/id"}
+    },
+    {
+      "name": "create-child-folder",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/folders",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Child folder", "parent_id": "${capture:rootFolder}"},
+      "expectedStatus": [201],
+      "capture": {"childFolder": "/id"}
+    },
+    {
+      "name": "list-folder-hierarchy",
+      "method": "GET",
+      "path": "/api/projects/${capture:project}/folders",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-folder-cycle",
+      "method": "PATCH",
+      "path": "/api/projects/${capture:project}/folders/${capture:rootFolder}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"parent_id": "${capture:childFolder}"},
+      "expectedStatus": [400]
+    },
+    {
+      "name": "update-child-folder",
+      "method": "PATCH",
+      "path": "/api/projects/${capture:project}/folders/${capture:childFolder}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Renamed child", "parent_id": null, "sort_order": 7},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "empty-folder-update",
+      "method": "PATCH",
+      "path": "/api/projects/${capture:project}/folders/${capture:childFolder}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "allow-empty-folder-name",
+      "method": "PATCH",
+      "path": "/api/projects/${capture:project}/folders/${capture:childFolder}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": ""},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-blank-create",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/folders",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "   "},
+      "expectedStatus": [400]
+    },
+    {
+      "name": "reject-missing-parent",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/folders",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Orphan", "parent_id": "missing-folder"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "list-missing-project-folders",
+      "method": "GET",
+      "path": "/api/projects/missing-project/folders",
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/path",
+    "/steps/2/response/body/0/id",
+    "/steps/2/response/body/0/project_id",
+    "/steps/2/response/body/0/created_at",
+    "/steps/2/response/body/0/updated_at",
+    "/steps/3/request/path",
+    "/steps/3/response/body/id",
+    "/steps/3/response/body/project_id",
+    "/steps/3/response/body/created_at",
+    "/steps/3/response/body/updated_at",
+    "/steps/4/request/path",
+    "/steps/4/request/body/parent_id",
+    "/steps/4/response/body/id",
+    "/steps/4/response/body/project_id",
+    "/steps/4/response/body/parent_id",
+    "/steps/4/response/body/created_at",
+    "/steps/4/response/body/updated_at",
+    "/steps/5/request/path",
+    "/steps/5/response/body/0/id",
+    "/steps/5/response/body/0/project_id",
+    "/steps/5/response/body/0/created_at",
+    "/steps/5/response/body/0/updated_at",
+    "/steps/5/response/body/1/id",
+    "/steps/5/response/body/1/project_id",
+    "/steps/5/response/body/1/created_at",
+    "/steps/5/response/body/1/updated_at",
+    "/steps/5/response/body/2/id",
+    "/steps/5/response/body/2/project_id",
+    "/steps/5/response/body/2/parent_id",
+    "/steps/5/response/body/2/created_at",
+    "/steps/5/response/body/2/updated_at",
+    "/steps/6/request/path",
+    "/steps/6/request/body/parent_id",
+    "/steps/7/request/path",
+    "/steps/7/response/body/id",
+    "/steps/7/response/body/project_id",
+    "/steps/7/response/body/created_at",
+    "/steps/7/response/body/updated_at",
+    "/steps/8/request/path",
+    "/steps/8/response/body/id",
+    "/steps/8/response/body/project_id",
+    "/steps/8/response/body/created_at",
+    "/steps/8/response/body/updated_at",
+    "/steps/9/request/path",
+    "/steps/9/response/body/id",
+    "/steps/9/response/body/project_id",
+    "/steps/9/response/body/created_at",
+    "/steps/9/response/body/updated_at",
+    "/steps/10/request/path",
+    "/steps/11/request/path",
+    "/steps/12/request/path"
+  ],
+  "redactions": []
+}

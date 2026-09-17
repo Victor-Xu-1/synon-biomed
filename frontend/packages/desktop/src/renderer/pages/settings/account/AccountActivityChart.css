@@ -1,0 +1,287 @@
+.account-activity {
+  --account-activity-blue: #2d82cf;
+  --account-activity-blue-strong: #1769aa;
+  position: relative;
+  margin-top: 20px;
+}
+
+.account-section-heading {
+  min-height: 28px;
+  align-items: flex-end;
+}
+
+.account-activity .account-section-heading > div:first-child {
+  min-width: 0;
+}
+
+.account-activity .account-section-heading p {
+  display: block;
+  max-width: 680px;
+  margin: 4px 0 0;
+  color: var(--account-text-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.account-activity-tabs {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--account-activity-blue) 13%, var(--account-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--account-activity-blue) 4%, var(--account-panel));
+}
+
+.account-activity-tabs button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--account-text-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.account-activity-tabs button[aria-selected='true'] {
+  background: var(--account-panel);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--account-text) 10%, transparent);
+  color: var(--account-activity-blue-strong);
+  font-weight: 620;
+}
+
+.account-activity-chart {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 286px;
+  overflow: hidden;
+  margin: 12px 0 0;
+  padding: 24px 20px 36px;
+  border: 1px solid color-mix(in srgb, var(--account-activity-blue) 22%, var(--account-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--account-activity-blue) 2%, var(--account-panel));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--account-activity-blue) 6%, transparent);
+}
+
+.account-activity-chart svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.account-activity-chart__plot {
+  position: relative;
+  height: 226px;
+}
+
+.account-activity-chart__unavailable {
+  min-height: 226px;
+  display: grid;
+  place-items: center;
+  color: var(--account-text-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.account-activity-chart__grid {
+  stroke: color-mix(in srgb, var(--account-activity-blue) 12%, var(--account-border));
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.account-activity-chart__baseline {
+  stroke: color-mix(in srgb, var(--account-activity-blue) 22%, var(--account-border));
+  stroke-width: 1;
+}
+
+.account-activity-chart__y-axis {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 48px;
+  pointer-events: none;
+  color: var(--account-text-tertiary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 14px;
+}
+
+.account-activity-chart__y-axis small {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--account-activity-blue-strong);
+  font-size: 11px;
+  font-weight: 620;
+  line-height: 14px;
+}
+
+.account-activity-chart__y-axis span {
+  position: absolute;
+  right: 0;
+  max-width: 46px;
+  overflow: hidden;
+  transform: translateY(-50%);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-activity-chart__line {
+  fill: none;
+  stroke: var(--account-activity-blue);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.account-activity-chart__point {
+  fill: transparent;
+  stroke: none;
+  cursor: crosshair;
+  pointer-events: all;
+}
+
+.account-activity-chart__point:focus {
+  outline: none;
+}
+
+.account-activity-chart__marker {
+  position: absolute;
+  z-index: 2;
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 2px solid var(--account-panel);
+  border-radius: 50%;
+  background: var(--account-activity-blue);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--account-activity-blue) 20%, transparent);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.account-activity-chart__marker.is-active {
+  width: 10px;
+  height: 10px;
+  border-width: 2px;
+  background: var(--account-activity-blue-strong);
+}
+
+.account-activity-chart__hover-guide {
+  stroke: color-mix(in srgb, var(--account-activity-blue) 34%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.account-activity-chart__tooltip {
+  position: absolute;
+  z-index: 3;
+  min-width: 128px;
+  max-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--account-activity-blue) 42%, transparent);
+  border-radius: 9px;
+  background: var(--account-text);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--account-text) 18%, transparent);
+  color: var(--account-panel);
+  font-size: 11px;
+  line-height: 16px;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 10px));
+}
+
+.account-activity-chart__tooltip.is-below {
+  transform: translate(-50%, 10px);
+}
+
+.account-activity-chart__tooltip strong,
+.account-activity-chart__tooltip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-activity-chart__tooltip strong {
+  font-weight: 620;
+}
+
+.account-activity-chart__tooltip span {
+  color: color-mix(in srgb, var(--account-panel) 82%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.account-activity-chart__labels {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  left: 18px;
+  height: 16px;
+  color: color-mix(in srgb, var(--account-activity-blue-strong) 54%, var(--account-text-tertiary));
+  font-size: 11.5px;
+  line-height: 16px;
+}
+
+.account-activity-chart__labels span {
+  position: absolute;
+  top: 0;
+  max-width: 90px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-activity-chart__labels span:first-child {
+  transform: none;
+}
+
+.account-activity-chart__labels span:last-child {
+  transform: translateX(-100%);
+}
+
+@media (max-width: 600px) {
+  .account-activity-tabs {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .account-activity-tabs button {
+    flex: 1 1 0;
+  }
+
+  .account-activity-chart {
+    min-height: 240px;
+    padding: 20px 12px 34px;
+  }
+
+  .account-activity-chart svg {
+    height: 100%;
+  }
+
+  .account-activity-chart__plot {
+    height: 180px;
+  }
+
+  .account-activity-chart__unavailable {
+    min-height: 180px;
+  }
+
+  .account-activity-chart__labels {
+    right: 12px;
+    left: 12px;
+  }
+}

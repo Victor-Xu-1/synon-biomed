@@ -1,0 +1,4 @@
+interface:
+  display_name: "Postmarketing Lifecycle Management"
+  short_description: "Manage post-approval safety, quality, changes, and commitments"
+  default_prompt: "Use $postmarketing-lifecycle-management to build a source-grounded, review-ready plan."

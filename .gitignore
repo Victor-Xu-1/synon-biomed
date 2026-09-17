@@ -1,0 +1,75 @@
+dist/
+release/
+release-windows/
+coverage.out
+*.test
+*.log
+*.pid
+.env
+.env.*
+!.env.example
+/runtime/
+/workspace/
+/uploads/
+/mcp-output/
+/users/
+/models/
+/vendor/
+node_modules/
+**/out/
+**/coverage/
+.synon-go-audit/
+.superpowers/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.cache/
+**/test-results/
+*.orig
+*.rej
+!skills/synonbiomed/THIRD_PARTY_LICENSES.md.orig
+*~
+*.swp
+*.swo
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db
+.coverage
+
+# Repository-root runtime and local recovery residue.
+/synon
+/mcp-ketcher
+/mcp-ketcher-shm
+/mcp-ketcher-wal
+/.codex-probe/
+/tmp-read-contract/
+/.runtime-diag/
+/timer.dat
+
+# Local live-diagnostic probes are not deterministic regression tests.
+/internal/server/zz_live_clarification_scope2_test.go
+/internal/server/zz_live_memory_snapshots_test.go
+/internal/server/zz_live_replay_events_test.go
+/internal/server/zz_live_task_entries_test.go
+
+# Confirmed one-off browser probes. Keep these exact so future pw_* product
+# modules are not hidden from Git by an over-broad pattern.
+/frontend/complex_probe_no_composer.png
+/frontend/complex_task_probe.mjs
+/frontend/pw_login.mjs
+/frontend/pw_new_task.mjs
+/frontend/pw_new_task_kras.mjs
+/frontend/pw_probe.mjs
+/frontend/pw_probe2.mjs
+/frontend/pw_task1.mjs
+/frontend/pw_task_run.mjs
+/frontend/pw_task_run2.mjs
+
+# npm/package-lock.json is the sole frontend dependency authority.
+/frontend/pnpm-lock.yaml
+/frontend/pnpm-workspace.yaml
+
+# Windows alternate-data-stream exports are never source files.
+*:Zone.Identifier

@@ -1,0 +1,28 @@
+# Instrument Data to Allotrope Skill - Pinned Dependencies
+# Modified for Synon Biomed's managed scientific workflows.
+# Upstream attribution and Apache-2.0 terms remain in the skill/catalog notices.
+#
+# These versions are pinned for reproducibility and determinism.
+# All scientists using this skill should install these exact versions
+# to ensure identical ASM output from the same input files.
+#
+# Provision these exact packages in a dedicated Synon managed environment.
+# Do not install them into the system interpreter.
+#
+# Note: Versions pinned as of 2025-01-05
+
+# Core parsing library - provides native instrument parsers
+allotropy==0.1.55
+
+# Data manipulation and file reading
+pandas==2.0.3
+
+# Excel file support (required by pandas for .xlsx files)
+openpyxl==3.1.2
+
+# PDF parsing support (for instruments that export PDFs)
+pdfplumber==0.9.0
+
+# Scientific computing (optional, but recommended for advanced analysis)
+# numpy==1.24.3  # Uncomment if needed
+# scipy==1.11.1  # Uncomment if needed

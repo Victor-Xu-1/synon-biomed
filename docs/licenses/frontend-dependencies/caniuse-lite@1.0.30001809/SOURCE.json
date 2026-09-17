@@ -1,0 +1,17 @@
+{
+  "name": "caniuse-lite",
+  "version": "1.0.30001809",
+  "sourceArchive": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001809.tgz",
+  "integrity": "sha512-xxWVywk6a6Arlk+hymeycyn/VgqEfLDxupvhH/xiY5SJ/18kmi9o6MiO320DCUzypORHLtvh0I4i04tUhCNHNQ==",
+  "archiveSHA256": "31aa93f13ffd7fef90b767b1b33f92dc251b4578f17764a44a72ba759528364d",
+  "declaredLicense": "CC-BY-4.0",
+  "distributionLicense": "CC-BY-4.0",
+  "licenseFiles": [
+    {
+      "path": "LICENSE",
+      "sourceSHA256": "fd3a263fe19ed8faa9068b43abaebafc02c77897b0c6fc09abc04bb592e5f16e",
+      "sourceBytes": 18651,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    }
+  ]
+}

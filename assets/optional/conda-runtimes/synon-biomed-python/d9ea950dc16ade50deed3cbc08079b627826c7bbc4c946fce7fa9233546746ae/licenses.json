@@ -1,0 +1,1096 @@
+{
+  "schemaVersion": 2,
+  "name": "synon-biomed-python",
+  "platform": "linux-x86_64",
+  "source": "verified-conda-meta-license-fields",
+  "licenseTextsIncluded": false,
+  "packageCount": 181,
+  "packages": [
+    {
+      "name": "_openmp_mutex",
+      "version": "4.5",
+      "build": "20_gnu",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "alsa-lib",
+      "version": "1.2.16.1",
+      "build": "hb03c661_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "asttokens",
+      "version": "3.0.2",
+      "build": "pyhd8ed1ab_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "brotli",
+      "version": "1.2.0",
+      "build": "hed03a55_1",
+      "license": "MIT"
+    },
+    {
+      "name": "brotli-bin",
+      "version": "1.2.0",
+      "build": "hb03c661_1",
+      "license": "MIT"
+    },
+    {
+      "name": "bzip2",
+      "version": "1.0.8",
+      "build": "hda65f42_9",
+      "license": "bzip2-1.0.6"
+    },
+    {
+      "name": "ca-certificates",
+      "version": "2026.6.17",
+      "build": "hbd8a1cb_0",
+      "license": "ISC"
+    },
+    {
+      "name": "cairo",
+      "version": "1.18.4",
+      "build": "h3394656_0",
+      "license": "LGPL-2.1-only or MPL-1.1"
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.4.9",
+      "build": "pyhd8ed1ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "contourpy",
+      "version": "1.3.3",
+      "build": "py311h724c32c_4",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "cycler",
+      "version": "0.12.1",
+      "build": "pyhcf101f3_2",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "cyrus-sasl",
+      "version": "2.1.28",
+      "build": "hd9c7081_0",
+      "license": "BSD-3-Clause-Attribution"
+    },
+    {
+      "name": "dbus",
+      "version": "1.16.2",
+      "build": "h24cb091_1",
+      "license": "AFL-2.1 OR GPL-2.0-or-later"
+    },
+    {
+      "name": "double-conversion",
+      "version": "3.4.0",
+      "build": "hecca717_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "executing",
+      "version": "2.2.1",
+      "build": "pyhd8ed1ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "font-ttf-dejavu-sans-mono",
+      "version": "2.37",
+      "build": "hab24e00_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "font-ttf-inconsolata",
+      "version": "3.000",
+      "build": "h77eed37_0",
+      "license": "OFL-1.1"
+    },
+    {
+      "name": "font-ttf-source-code-pro",
+      "version": "2.038",
+      "build": "h77eed37_0",
+      "license": "OFL-1.1"
+    },
+    {
+      "name": "font-ttf-ubuntu",
+      "version": "0.83",
+      "build": "h77eed37_3",
+      "license": "LicenseRef-Ubuntu-Font-Licence-Version-1.0"
+    },
+    {
+      "name": "fontconfig",
+      "version": "2.18.1",
+      "build": "h27c8c51_0",
+      "license": "MIT"
+    },
+    {
+      "name": "fonts-conda-ecosystem",
+      "version": "1",
+      "build": "0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "fonts-conda-forge",
+      "version": "1",
+      "build": "hc364b38_1",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "fonttools",
+      "version": "4.63.0",
+      "build": "py311h3778330_0",
+      "license": "MIT"
+    },
+    {
+      "name": "freetype",
+      "version": "2.14.3",
+      "build": "ha770c72_0",
+      "license": "GPL-2.0-only OR FTL"
+    },
+    {
+      "name": "freetype-py",
+      "version": "2.3.0",
+      "build": "pyhd8ed1ab_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "fribidi",
+      "version": "1.0.16",
+      "build": "hb03c661_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "graphite2",
+      "version": "1.3.15",
+      "build": "hecca717_0",
+      "license": "LGPL-2.0-or-later"
+    },
+    {
+      "name": "greenlet",
+      "version": "3.5.4",
+      "build": "py311hc665b79_0",
+      "license": "MIT"
+    },
+    {
+      "name": "harfbuzz",
+      "version": "12.2.0",
+      "build": "h15599e2_0",
+      "license": "MIT"
+    },
+    {
+      "name": "icu",
+      "version": "75.1",
+      "build": "he02047a_0",
+      "license": "MIT"
+    },
+    {
+      "name": "ipython",
+      "version": "9.16.0",
+      "build": "pyh53cf698_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "ipython_pygments_lexers",
+      "version": "1.1.1",
+      "build": "pyhd8ed1ab_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "jedi",
+      "version": "0.20.0",
+      "build": "pyhcf101f3_0",
+      "license": "Apache-2.0 AND MIT"
+    },
+    {
+      "name": "keyutils",
+      "version": "1.6.3",
+      "build": "hb9d3cd8_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "kiwisolver",
+      "version": "1.5.0",
+      "build": "py311h724c32c_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "krb5",
+      "version": "1.21.3",
+      "build": "h659f571_0",
+      "license": "MIT"
+    },
+    {
+      "name": "lcms2",
+      "version": "2.19.1",
+      "build": "h0c24ade_1",
+      "license": "MIT"
+    },
+    {
+      "name": "ld_impl_linux-64",
+      "version": "2.45.1",
+      "build": "default_hbd61a6d_102",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "lerc",
+      "version": "4.1.0",
+      "build": "hdb68285_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "libblas",
+      "version": "3.11.0",
+      "build": "8_h4a7cf45_openblas",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libboost",
+      "version": "1.84.0",
+      "build": "h6c02f8c_7",
+      "license": "BSL-1.0"
+    },
+    {
+      "name": "libboost-python",
+      "version": "1.84.0",
+      "build": "py311h5b7b71f_7",
+      "license": "BSL-1.0"
+    },
+    {
+      "name": "libbrotlicommon",
+      "version": "1.2.0",
+      "build": "hb03c661_1",
+      "license": "MIT"
+    },
+    {
+      "name": "libbrotlidec",
+      "version": "1.2.0",
+      "build": "hb03c661_1",
+      "license": "MIT"
+    },
+    {
+      "name": "libbrotlienc",
+      "version": "1.2.0",
+      "build": "hb03c661_1",
+      "license": "MIT"
+    },
+    {
+      "name": "libcblas",
+      "version": "3.11.0",
+      "build": "8_h0358290_openblas",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libclang-cpp21.1",
+      "version": "21.1.8",
+      "build": "default_h99862b1_4",
+      "license": "Apache-2.0 WITH LLVM-exception"
+    },
+    {
+      "name": "libclang-cpp22.1",
+      "version": "22.1.8",
+      "build": "default_h6c227bf_3",
+      "license": "Apache-2.0 WITH LLVM-exception"
+    },
+    {
+      "name": "libclang13",
+      "version": "22.1.8",
+      "build": "default_h9692865_3",
+      "license": "Apache-2.0 WITH LLVM-exception"
+    },
+    {
+      "name": "libcups",
+      "version": "2.3.3",
+      "build": "hb8b1518_5",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "libdeflate",
+      "version": "1.25",
+      "build": "h17f619e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libdrm",
+      "version": "2.4.127",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libedit",
+      "version": "3.1.20250104",
+      "build": "pl5321h7949ede_0",
+      "license": "BSD-2-Clause"
+    },
+    {
+      "name": "libegl",
+      "version": "1.7.0",
+      "build": "ha4b6fd6_3",
+      "license": "LicenseRef-libglvnd"
+    },
+    {
+      "name": "libegl-devel",
+      "version": "1.7.0",
+      "build": "ha4b6fd6_3",
+      "license": "LicenseRef-libglvnd"
+    },
+    {
+      "name": "libexpat",
+      "version": "2.8.1",
+      "build": "hecca717_1",
+      "license": "MIT"
+    },
+    {
+      "name": "libffi",
+      "version": "3.5.2",
+      "build": "h3435931_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libfreetype",
+      "version": "2.14.3",
+      "build": "ha770c72_0",
+      "license": "GPL-2.0-only OR FTL"
+    },
+    {
+      "name": "libfreetype6",
+      "version": "2.14.3",
+      "build": "h73754d4_0",
+      "license": "GPL-2.0-only OR FTL"
+    },
+    {
+      "name": "libgcc",
+      "version": "15.2.0",
+      "build": "he0feb66_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libgcc-ng",
+      "version": "15.2.0",
+      "build": "h69a702a_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libgfortran",
+      "version": "15.2.0",
+      "build": "h69a702a_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libgfortran5",
+      "version": "15.2.0",
+      "build": "h68bc16d_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libgl",
+      "version": "1.7.0",
+      "build": "ha4b6fd6_3",
+      "license": "LicenseRef-libglvnd"
+    },
+    {
+      "name": "libgl-devel",
+      "version": "1.7.0",
+      "build": "ha4b6fd6_3",
+      "license": "LicenseRef-libglvnd"
+    },
+    {
+      "name": "libglib",
+      "version": "2.88.2",
+      "build": "h0d30a3d_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "libglvnd",
+      "version": "1.7.0",
+      "build": "ha4b6fd6_3",
+      "license": "LicenseRef-libglvnd"
+    },
+    {
+      "name": "libglx",
+      "version": "1.7.0",
+      "build": "ha4b6fd6_3",
+      "license": "LicenseRef-libglvnd"
+    },
+    {
+      "name": "libglx-devel",
+      "version": "1.7.0",
+      "build": "ha4b6fd6_3",
+      "license": "LicenseRef-libglvnd"
+    },
+    {
+      "name": "libgomp",
+      "version": "15.2.0",
+      "build": "he0feb66_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libiconv",
+      "version": "1.18",
+      "build": "h3b78370_2",
+      "license": "LGPL-2.1-only"
+    },
+    {
+      "name": "libjpeg-turbo",
+      "version": "3.1.4.1",
+      "build": "hb03c661_0",
+      "license": "IJG AND BSD-3-Clause AND Zlib"
+    },
+    {
+      "name": "liblapack",
+      "version": "3.11.0",
+      "build": "8_h47877c9_openblas",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libllvm21",
+      "version": "21.1.8",
+      "build": "hf7376ad_0",
+      "license": "Apache-2.0 WITH LLVM-exception"
+    },
+    {
+      "name": "libllvm22",
+      "version": "22.1.8",
+      "build": "hf7376ad_1",
+      "license": "Apache-2.0 WITH LLVM-exception"
+    },
+    {
+      "name": "liblzma",
+      "version": "5.8.3",
+      "build": "hb03c661_0",
+      "license": "0BSD"
+    },
+    {
+      "name": "libnsl",
+      "version": "2.0.1",
+      "build": "hb9d3cd8_1",
+      "license": "LGPL-2.1-only"
+    },
+    {
+      "name": "libntlm",
+      "version": "1.8",
+      "build": "hb9d3cd8_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "libopenblas",
+      "version": "0.3.33",
+      "build": "pthreads_h94d23a6_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libopengl",
+      "version": "1.7.0",
+      "build": "ha4b6fd6_3",
+      "license": "LicenseRef-libglvnd"
+    },
+    {
+      "name": "libpciaccess",
+      "version": "0.19",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libpng",
+      "version": "1.6.58",
+      "build": "h421ea60_0",
+      "license": "zlib-acknowledgement"
+    },
+    {
+      "name": "libpq",
+      "version": "18.1",
+      "build": "h5c52fec_2",
+      "license": "PostgreSQL"
+    },
+    {
+      "name": "libsqlite",
+      "version": "3.53.3",
+      "build": "h0c1763c_0",
+      "license": "blessing"
+    },
+    {
+      "name": "libstdcxx",
+      "version": "15.2.0",
+      "build": "h934c35e_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libstdcxx-ng",
+      "version": "15.2.0",
+      "build": "hdf11a46_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libtiff",
+      "version": "4.7.2",
+      "build": "h9d88235_0",
+      "license": "HPND"
+    },
+    {
+      "name": "libuuid",
+      "version": "2.42.2",
+      "build": "h5347b49_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libvulkan-loader",
+      "version": "1.4.341.0",
+      "build": "h5279c79_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "libwebp-base",
+      "version": "1.6.0",
+      "build": "hd42ef1d_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libxcb",
+      "version": "1.17.0",
+      "build": "h8a09558_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libxcrypt",
+      "version": "4.4.36",
+      "build": "hd590300_1",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "libxkbcommon",
+      "version": "1.13.2",
+      "build": "hca5e8e5_0",
+      "license": "MIT/X11 Derivative"
+    },
+    {
+      "name": "libxml2",
+      "version": "2.15.1",
+      "build": "h26afc86_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libxml2-16",
+      "version": "2.15.1",
+      "build": "ha9997c6_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libxslt",
+      "version": "1.1.43",
+      "build": "h711ed8c_1",
+      "license": "MIT"
+    },
+    {
+      "name": "libzlib",
+      "version": "1.3.2",
+      "build": "h25fd6f3_2",
+      "license": "Zlib"
+    },
+    {
+      "name": "matplotlib",
+      "version": "3.10.9",
+      "build": "py311h38be061_0",
+      "license": "PSF-2.0"
+    },
+    {
+      "name": "matplotlib-base",
+      "version": "3.10.9",
+      "build": "py311h0f3be63_0",
+      "license": "PSF-2.0"
+    },
+    {
+      "name": "matplotlib-inline",
+      "version": "0.2.2",
+      "build": "pyhd8ed1ab_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "munkres",
+      "version": "1.1.4",
+      "build": "pyhd8ed1ab_1",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "ncurses",
+      "version": "6.6",
+      "build": "hdb14827_0",
+      "license": "X11 AND BSD-3-Clause"
+    },
+    {
+      "name": "numpy",
+      "version": "2.4.6",
+      "build": "py311h2e04523_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "openjpeg",
+      "version": "2.5.4",
+      "build": "h55fea9a_0",
+      "license": "BSD-2-Clause"
+    },
+    {
+      "name": "openldap",
+      "version": "2.6.10",
+      "build": "he970967_0",
+      "license": "OLDAP-2.8"
+    },
+    {
+      "name": "openssl",
+      "version": "3.6.3",
+      "build": "h35e630c_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "packaging",
+      "version": "26.2",
+      "build": "pyhc364b38_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "pandas",
+      "version": "2.3.3",
+      "build": "py311hed34c8f_2",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "parso",
+      "version": "0.8.7",
+      "build": "pyhcf101f3_0",
+      "license": "MIT"
+    },
+    {
+      "name": "patsy",
+      "version": "1.0.2",
+      "build": "pyhcf101f3_0",
+      "license": "BSD-2-Clause AND PSF-2.0"
+    },
+    {
+      "name": "pcre2",
+      "version": "10.47",
+      "build": "haa7fec5_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "pexpect",
+      "version": "4.9.0",
+      "build": "pyhd8ed1ab_1",
+      "license": "ISC"
+    },
+    {
+      "name": "pillow",
+      "version": "12.3.0",
+      "build": "py311hf88fc01_0",
+      "license": "HPND"
+    },
+    {
+      "name": "pip",
+      "version": "26.1.2",
+      "build": "pyh8b19718_0",
+      "license": "MIT"
+    },
+    {
+      "name": "pixman",
+      "version": "0.46.4",
+      "build": "h54a6638_1",
+      "license": "MIT"
+    },
+    {
+      "name": "prompt-toolkit",
+      "version": "3.0.53",
+      "build": "pyha770c72_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2",
+      "build": "py311haee01d2_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "pthread-stubs",
+      "version": "0.4",
+      "build": "hb9d3cd8_1002",
+      "license": "MIT"
+    },
+    {
+      "name": "ptyprocess",
+      "version": "0.7.0",
+      "build": "pyhd8ed1ab_1",
+      "license": "ISC"
+    },
+    {
+      "name": "pure_eval",
+      "version": "0.2.3",
+      "build": "pyhd8ed1ab_1",
+      "license": "MIT"
+    },
+    {
+      "name": "py3dmol",
+      "version": "2.5.4",
+      "build": "pyhd8ed1ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "pycairo",
+      "version": "1.29.0",
+      "build": "py311hc1a9592_1",
+      "license": "LGPL-2.1-only OR MPL-1.1"
+    },
+    {
+      "name": "pygments",
+      "version": "2.20.0",
+      "build": "pyhd8ed1ab_0",
+      "license": "BSD-2-Clause"
+    },
+    {
+      "name": "pyparsing",
+      "version": "3.3.2",
+      "build": "pyhcf101f3_0",
+      "license": "MIT"
+    },
+    {
+      "name": "pyside6",
+      "version": "6.10.1",
+      "build": "py311he4c1a5a_0",
+      "license": "LGPL-3.0-only"
+    },
+    {
+      "name": "pysocks",
+      "version": "1.7.1",
+      "build": "pyha55dd90_7",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "python",
+      "version": "3.11.15",
+      "build": "h7508c33_1_cpython",
+      "license": "Python-2.0"
+    },
+    {
+      "name": "python_abi",
+      "version": "3.11",
+      "build": "8_cp311",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "python-dateutil",
+      "version": "2.9.0.post0",
+      "build": "pyhe01879c_2",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "python-tzdata",
+      "version": "2026.2",
+      "build": "pyhd8ed1ab_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "pytz",
+      "version": "2026.2",
+      "build": "pyhcf101f3_0",
+      "license": "MIT"
+    },
+    {
+      "name": "qhull",
+      "version": "2020.2",
+      "build": "h434a139_5",
+      "license": "LicenseRef-Qhull"
+    },
+    {
+      "name": "qt6-main",
+      "version": "6.10.1",
+      "build": "h6f76662_3",
+      "license": "LGPL-3.0-only"
+    },
+    {
+      "name": "rdkit",
+      "version": "2024.03.5",
+      "build": "py311hafb272b_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "readline",
+      "version": "8.3",
+      "build": "h853b02a_0",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "reportlab",
+      "version": "5.0.0",
+      "build": "pyhc364b38_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "rlpycairo",
+      "version": "0.4.0",
+      "build": "pyh6c17108_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "scipy",
+      "version": "1.17.1",
+      "build": "py311hbe70eeb_1",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "seaborn",
+      "version": "0.13.2",
+      "build": "hd8ed1ab_3",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "seaborn-base",
+      "version": "0.13.2",
+      "build": "pyhd8ed1ab_3",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "setuptools",
+      "version": "82.0.1",
+      "build": "pyh332efcf_0",
+      "license": "MIT"
+    },
+    {
+      "name": "six",
+      "version": "1.17.0",
+      "build": "pyhe01879c_1",
+      "license": "MIT"
+    },
+    {
+      "name": "socksio",
+      "version": "1.0.0",
+      "build": "pyhd8ed1ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "sqlalchemy",
+      "version": "2.0.51",
+      "build": "py311haee01d2_0",
+      "license": "MIT"
+    },
+    {
+      "name": "stack_data",
+      "version": "0.6.3",
+      "build": "pyhd8ed1ab_1",
+      "license": "MIT"
+    },
+    {
+      "name": "statsmodels",
+      "version": "0.14.6",
+      "build": "py311h0372a8f_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "tk",
+      "version": "8.6.13",
+      "build": "noxft_h366c992_103",
+      "license": "TCL"
+    },
+    {
+      "name": "tornado",
+      "version": "6.5.7",
+      "build": "py311h49ec1c0_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "traitlets",
+      "version": "5.15.1",
+      "build": "pyhcf101f3_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "build": "pyhcf101f3_0",
+      "license": "PSF-2.0"
+    },
+    {
+      "name": "typing-extensions",
+      "version": "4.16.0",
+      "build": "h69aa097_0",
+      "license": "PSF-2.0"
+    },
+    {
+      "name": "tzdata",
+      "version": "2025c",
+      "build": "hc9c84f9_1",
+      "license": "LicenseRef-Public-Domain"
+    },
+    {
+      "name": "unicodedata2",
+      "version": "17.0.1",
+      "build": "py311h49ec1c0_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "wayland",
+      "version": "1.25.0",
+      "build": "hd6090a7_0",
+      "license": "MIT"
+    },
+    {
+      "name": "wcwidth",
+      "version": "0.8.2",
+      "build": "pyhd8ed1ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "wheel",
+      "version": "0.47.0",
+      "build": "pyhd8ed1ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xcb-util",
+      "version": "0.4.1",
+      "build": "h4f16b4b_2",
+      "license": "MIT"
+    },
+    {
+      "name": "xcb-util-cursor",
+      "version": "0.1.6",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xcb-util-image",
+      "version": "0.4.0",
+      "build": "hb711507_2",
+      "license": "MIT"
+    },
+    {
+      "name": "xcb-util-keysyms",
+      "version": "0.4.1",
+      "build": "hb711507_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xcb-util-renderutil",
+      "version": "0.3.10",
+      "build": "hb711507_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xcb-util-wm",
+      "version": "0.4.2",
+      "build": "hb711507_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xkeyboard-config",
+      "version": "2.48",
+      "build": "h280c20c_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libice",
+      "version": "1.1.2",
+      "build": "hb9d3cd8_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libsm",
+      "version": "1.2.6",
+      "build": "he73a12e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libx11",
+      "version": "1.8.13",
+      "build": "he1eb515_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxau",
+      "version": "1.0.12",
+      "build": "hb03c661_1",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxcomposite",
+      "version": "0.4.7",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxcursor",
+      "version": "1.2.3",
+      "build": "hb9d3cd8_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxdamage",
+      "version": "1.1.6",
+      "build": "hb9d3cd8_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxdmcp",
+      "version": "1.1.5",
+      "build": "hb03c661_1",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxext",
+      "version": "1.3.7",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxfixes",
+      "version": "6.0.2",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxi",
+      "version": "1.8.3",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxrandr",
+      "version": "1.5.5",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxrender",
+      "version": "0.9.12",
+      "build": "hb9d3cd8_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxtst",
+      "version": "1.2.5",
+      "build": "hb9d3cd8_3",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxxf86vm",
+      "version": "1.1.7",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-xorgproto",
+      "version": "2025.1",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "zlib-ng",
+      "version": "2.3.3",
+      "build": "hceb46e0_1",
+      "license": "Zlib"
+    },
+    {
+      "name": "zstd",
+      "version": "1.5.7",
+      "build": "hb78ec9c_6",
+      "license": "BSD-3-Clause"
+    }
+  ]
+}

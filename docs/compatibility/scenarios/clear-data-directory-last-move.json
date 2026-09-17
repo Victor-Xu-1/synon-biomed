@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "clear-data-directory-last-move",
+  "contracts": [
+    {"kind": "service", "name": "clearDataDirLastMove"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "clear-absent-last-move",
+      "method": "DELETE",
+      "path": "/api/settings/data-dir/last-move?deleteSource=0",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [204]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

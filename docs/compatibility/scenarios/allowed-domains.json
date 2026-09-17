@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "id": "allowed-domains",
+  "contracts": [
+    {"kind": "service", "name": "getUserAllowedDomains"},
+    {"kind": "service", "name": "setUserAllowedDomains"},
+    {"kind": "service", "name": "addUserAllowedDomain"},
+    {"kind": "service", "name": "removeUserAllowedDomain"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "get-empty-allowlist",
+      "method": "GET",
+      "path": "/api/preferences/allowed-domains",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "replace-allowlist",
+      "method": "PUT",
+      "path": "/api/preferences/allowed-domains",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"domains": ["Example.COM", "*.example.org"]},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-replaced-allowlist",
+      "method": "GET",
+      "path": "/api/preferences/allowed-domains",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "add-domain",
+      "method": "POST",
+      "path": "/api/preferences/allowed-domains",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"domain": "api.example.net"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "remove-domain",
+      "method": "DELETE",
+      "path": "/api/preferences/allowed-domains/example.com",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-final-allowlist",
+      "method": "GET",
+      "path": "/api/preferences/allowed-domains",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-private-address",
+      "method": "POST",
+      "path": "/api/preferences/allowed-domains",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"domain": "127.0.0.1"},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/configDomains",
+    "/steps/1/response/body/deniedDomains",
+    "/steps/3/response/body/configDomains",
+    "/steps/3/response/body/deniedDomains",
+    "/steps/6/response/body/configDomains",
+    "/steps/6/response/body/deniedDomains",
+    "/steps/7/response/body/detail"
+  ],
+  "redactions": []
+}

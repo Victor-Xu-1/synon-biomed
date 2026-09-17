@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "get-agents",
+  "contracts": [
+    {
+      "kind": "service",
+      "name": "getAgents"
+    }
+  ],
+  "steps": [
+    {
+      "name": "list-agents",
+      "method": "GET",
+      "path": "/api/agents",
+      "expectedStatus": [
+        200
+      ]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/0/response/body/11/displayName",
+    "/steps/0/response/body/11/id"
+  ],
+  "redactions": []
+}

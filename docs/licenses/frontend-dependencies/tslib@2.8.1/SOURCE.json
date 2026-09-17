@@ -1,0 +1,23 @@
+{
+  "name": "tslib",
+  "version": "2.8.1",
+  "sourceArchive": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+  "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==",
+  "archiveSHA256": "66f635d5eeabae44807534976913a102cf615b9a045368359c9f79ae6ee2119e",
+  "declaredLicense": "0BSD",
+  "distributionLicense": "0BSD",
+  "licenseFiles": [
+    {
+      "path": "CopyrightNotice.txt",
+      "sourceSHA256": "da16ddb65f8ca390998fb99223d0112498b56b45784d00afd77ff8ce1ac4de8b",
+      "sourceBytes": 822,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    },
+    {
+      "path": "LICENSE.txt",
+      "sourceSHA256": "210b19e543130388c68654b7497e967119ce17145f66ab7d85688fbd70f08751",
+      "sourceBytes": 655,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    }
+  ]
+}

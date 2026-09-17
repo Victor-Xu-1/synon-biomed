@@ -1,0 +1,249 @@
+.delegate-dock {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  color: var(--color-text-1);
+}
+
+.delegate-dock__lineage,
+.delegate-dock__single,
+.delegate-dock__summary-wrap {
+  margin: 0 0 8px;
+}
+
+.delegate-dock__lineage {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.delegate-dock__back {
+  display: grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  color: var(--color-text-2);
+  background: var(--color-fill-2);
+  cursor: pointer;
+}
+
+.delegate-dock__breadcrumbs {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.delegate-dock__breadcrumb {
+  max-width: 180px;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  color: var(--color-text-3);
+  background: transparent;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.delegate-dock__breadcrumb--current {
+  color: var(--color-text-1);
+  font-weight: 500;
+  cursor: default;
+}
+
+.delegate-dock__separator {
+  color: var(--color-text-4);
+}
+
+.delegate-dock__summary-wrap {
+  position: relative;
+}
+
+.delegate-dock__summary,
+.delegate-dock__row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border-2);
+  color: var(--color-text-1);
+  background: var(--color-bg-2);
+  cursor: pointer;
+}
+
+.delegate-dock__summary {
+  min-height: 36px;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.delegate-dock__summary:hover,
+.delegate-dock__row:hover,
+.delegate-dock__back:hover,
+.delegate-dock__breadcrumb:hover {
+  background: var(--color-fill-2);
+}
+
+.delegate-dock__summary-alert {
+  color: var(--workspace-text, var(--color-text-1));
+  font-weight: 500;
+}
+
+.delegate-dock__summary-running {
+  color: rgb(var(--primary-6));
+}
+
+.delegate-dock__chevron {
+  margin-left: auto;
+  transition: transform 160ms ease;
+}
+
+.delegate-dock__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.delegate-dock__popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  left: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+  background: var(--color-bg-2);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+.delegate-dock__popover-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-border-2);
+  color: var(--color-text-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.delegate-dock__list {
+  max-height: 328px;
+  overflow: auto;
+  padding: 4px;
+}
+
+.delegate-dock__row {
+  min-height: 48px;
+  border: 0;
+  border-radius: 4px;
+  padding: 7px 8px;
+  text-align: left;
+}
+
+.delegate-dock__row--compact {
+  min-height: 36px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+}
+
+.delegate-dock__agent-icon {
+  flex: 0 0 auto;
+  color: rgb(var(--primary-6));
+}
+
+.delegate-dock__row-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.delegate-dock__row-title,
+.delegate-dock__row-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delegate-dock__row-title {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.delegate-dock__row-description {
+  color: var(--color-text-3);
+  font-size: 11px;
+}
+
+.delegate-dock__child-count,
+.delegate-dock__message-count {
+  flex: 0 0 auto;
+  color: var(--color-text-3);
+  font-size: 11px;
+}
+
+.delegate-dock__status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-3);
+  font-size: 11px;
+}
+
+.delegate-dock__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-4);
+}
+
+.delegate-dock__status--needs-input .delegate-dock__status-dot {
+  background: rgb(var(--orange-6));
+}
+
+.delegate-dock__status--running .delegate-dock__status-dot {
+  background: rgb(var(--primary-6));
+  box-shadow: 0 0 0 3px rgb(var(--primary-6) / 12%);
+}
+
+.delegate-dock__status--failed .delegate-dock__status-dot {
+  background: rgb(var(--red-6));
+}
+
+.delegate-dock__status--completed .delegate-dock__status-dot {
+  background: rgb(var(--green-6));
+}
+
+.delegate-dock__arrow {
+  flex: 0 0 auto;
+  color: var(--color-text-4);
+}
+
+@media (max-width: 640px) {
+  .delegate-dock__breadcrumb {
+    max-width: 96px;
+  }
+
+  .delegate-dock__summary-running,
+  .delegate-dock__message-count,
+  .delegate-dock__row-description {
+    display: none;
+  }
+
+  .delegate-dock__popover {
+    right: -4px;
+    left: -4px;
+  }
+}

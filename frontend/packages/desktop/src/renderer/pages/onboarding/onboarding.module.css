@@ -1,0 +1,396 @@
+.root {
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px;
+  background: var(--color-bg-1);
+  color: var(--color-text-1);
+  overflow: auto;
+}
+
+.header {
+  width: min(760px, 100%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.brandMark {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.flow {
+  box-sizing: border-box;
+  width: min(760px, 100%);
+  height: min(680px, calc(100dvh - 110px));
+  min-height: min(520px, calc(100dvh - 110px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 24px;
+  padding: 32px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 8px;
+  background: var(--color-bg-2);
+  box-shadow: 0 8px 28px rgb(var(--gray-10) / 8%);
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--color-text-2);
+  font-size: 12px;
+}
+.progressBars {
+  display: flex;
+  gap: 8px;
+}
+.progressBars > span {
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-fill-3);
+}
+.progressBars > .progressActive {
+  background: rgb(var(--primary-6));
+}
+.step {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 4px;
+}
+.centered {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.welcomeMark {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+}
+.step h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+.step p {
+  margin: 0;
+  color: var(--color-text-2);
+  line-height: 1.6;
+}
+.stepHeading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stepHeading > span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-fill-2);
+  color: rgb(var(--primary-6));
+}
+.listHeader,
+.optionList label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.listHeader {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-2);
+  font-weight: 600;
+}
+.optionList {
+  display: flex;
+  flex-direction: column;
+}
+.optionList label {
+  min-height: 64px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-1);
+}
+.optionList label > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.optionList strong,
+.optionList small {
+  overflow-wrap: anywhere;
+}
+.optionList small {
+  color: var(--color-text-3);
+  line-height: 1.45;
+}
+.optionList .runtimeMeta {
+  color: rgb(var(--primary-6));
+  font-variant-numeric: tabular-nums;
+}
+.runtimeTotal {
+  margin-bottom: 6px !important;
+  color: var(--color-text-2) !important;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.tabs {
+  min-height: 0;
+}
+.tabList {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border-2);
+}
+.tabList button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-2);
+  font: inherit;
+  cursor: pointer;
+}
+.tabList .activeTab {
+  border-bottom-color: rgb(var(--primary-6));
+  color: var(--color-text-1);
+  font-weight: 600;
+}
+.capabilityPanel {
+  min-height: 0;
+}
+.searchLabel,
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--color-text-1);
+  font-weight: 600;
+}
+.capabilityNotice,
+.capabilityCount {
+  color: var(--color-text-3) !important;
+  font-size: 12px;
+}
+.capabilityCount {
+  margin-bottom: 6px !important;
+}
+.unavailable {
+  color: var(--workspace-text, var(--color-text-1)) !important;
+  font-weight: 600;
+}
+.empty {
+  padding: 30px 0;
+  text-align: center;
+}
+.dropZoneSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dropZone {
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed var(--color-border-3);
+  border-radius: 8px;
+  color: var(--color-text-2);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+.dropZone:hover,
+.dropZone:focus-visible,
+.dropZoneActive {
+  border-color: rgb(var(--primary-6));
+  background: var(--color-fill-1);
+  outline: none;
+}
+.fileList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fileList li {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--color-fill-2);
+}
+.fileList li span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fileList button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--workspace-text, var(--color-text-1));
+  cursor: pointer;
+}
+.elicit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.elicit > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 8px;
+  background: var(--color-bg-2);
+  color: var(--color-text-1);
+  text-align: left;
+  cursor: pointer;
+}
+.elicit > button:hover,
+.elicit .selectedTask {
+  border-color: rgb(var(--primary-6));
+  background: var(--color-fill-1);
+}
+.root :where(button, [role='button'], [role='switch'], [role='tab']):focus-visible {
+  outline: 3px solid rgb(var(--primary-6));
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--color-bg-2);
+}
+
+.root :where(input, textarea, select):focus-visible {
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
+}
+.root h1:focus {
+  outline: none;
+}
+.elicit button > span:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.elicit small {
+  color: var(--color-text-3);
+  line-height: 1.45;
+}
+.suggestionStatus {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-3) !important;
+  font-size: 12px;
+}
+.optionNumber {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-fill-3);
+  font-size: 12px;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border-1);
+}
+.actions button,
+.elicit > button,
+.fileList button {
+  min-height: 44px;
+}
+.launchError {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .root {
+    min-height: 0;
+    justify-content: flex-start;
+    padding: 12px;
+  }
+  .header {
+    padding: 6px 4px;
+  }
+  .flow {
+    width: 100%;
+    height: calc(100dvh - 84px);
+    min-height: 0;
+    padding: 20px 16px;
+  }
+  .step h1 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 359px) {
+  .root {
+    padding: 8px;
+  }
+  .flow {
+    padding: 16px 10px;
+  }
+  .actions {
+    gap: 8px;
+  }
+  .actions button {
+    min-width: 0;
+    padding-inline: 10px;
+  }
+  .stepHeading {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropZone {
+    transition: none;
+  }
+}

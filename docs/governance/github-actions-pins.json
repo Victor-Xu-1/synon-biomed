@@ -1,0 +1,68 @@
+{
+  "schema": "synon.governance.github-actions-pins.v3",
+  "updated_at": "2026-09-11T00:00:00+08:00",
+  "source": "official Git tag refs reverified read-only with git ls-remote",
+  "bootstrap_workflow": ".github/workflows/quality.yml",
+  "bootstrap_job": "p0-quality",
+  "bootstrap_runner": "ubuntu-24.04",
+  "gate_step_name": "Verify immutable GitHub Actions policy",
+  "allowed_workflows": [
+    ".github/workflows/quality-main.yml",
+    ".github/workflows/quality-pr.yml",
+    ".github/workflows/quality.yml"
+  ],
+  "workflow_bootstrap_jobs": {
+    ".github/workflows/quality-main.yml": "main-quality",
+    ".github/workflows/quality-pr.yml": "pr-quality",
+    ".github/workflows/quality.yml": "p0-quality"
+  },
+  "workflow_checkout_contracts": {
+    ".github/workflows/quality-main.yml": {"ref": "${{ github.sha }}", "fetch_depth": 2},
+    ".github/workflows/quality-pr.yml": {"ref": "${{ github.sha }}", "fetch_depth": 2},
+    ".github/workflows/quality.yml": {"ref": "${{ github.sha }}", "fetch_depth": 1}
+  },
+  "required_aggregate_jobs": {
+    ".github/workflows/quality-main.yml": {
+      "job_id": "main-integration-gate",
+      "display_name": "Main Integration / required",
+      "needs": ["main-frontend-tests", "main-go-tests", "main-quality"]
+    },
+    ".github/workflows/quality-pr.yml": {
+      "job_id": "merge-gate",
+      "display_name": "Merge Gate / CI required",
+      "needs": ["pr-frontend-tests", "pr-go-tests", "pr-quality"]
+    }
+  },
+  "actions": {
+    "actions/checkout": {"sha": "3d3c42e5aac5ba805825da76410c181273ba90b1", "version": "v7.0.1"},
+    "actions/setup-go": {"sha": "b7ad1dad31e06c5925ef5d2fc7ad053ef454303e", "version": "v7.0.0"},
+    "actions/setup-node": {"sha": "249970729cb0ef3589644e2896645e5dc5ba9c38", "version": "v6.5.0"},
+    "actions/upload-artifact": {"sha": "ea165f8d65b6e75b540449e92b4886f43607fa02", "version": "v4.6.2"},
+    "actions/download-artifact": {"sha": "d3f86a106a0bac45b974a628896c90dbdf5c8093", "version": "v4.3.0"}
+  },
+  "requirements": {
+    "remote_actions_full_sha": true,
+    "version_comment_required": true,
+    "unlisted_remote_action_forbidden": true,
+    "continue_on_error_must_be_false": true,
+    "shell_or_list_forbidden": true,
+    "persist_credentials_false_required_for_checkout": true,
+    "local_actions_forbidden": true,
+    "docker_actions_forbidden": true,
+    "yaml_anchors_and_aliases_forbidden": true,
+    "required_run_block_exact": true,
+    "conditionals_forbidden": true,
+    "unconditional_test_evidence_allowed": true,
+    "defaults_forbidden": true,
+    "environment_overrides_forbidden": true,
+    "reusable_workflows_forbidden": true,
+    "containers_forbidden": true,
+    "services_forbidden": true,
+    "job_permission_overrides_forbidden": true,
+    "root_permissions_read_only": true
+  },
+  "required_run_commands": [
+    "go test -buildvcs=false ./scripts/quality/github-actions-gate",
+    "go run -buildvcs=false ./scripts/quality/github-actions-gate --repo . --policy docs/governance/github-actions-pins.json"
+  ]
+}

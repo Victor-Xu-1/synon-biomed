@@ -1,0 +1,234 @@
+@media (max-width: 1199px) {
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .compute-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-balance-content {
+    grid-template-columns: minmax(190px, 0.65fr) minmax(0, 1.35fr);
+    column-gap: 16px;
+  }
+}
+
+/* The locked Skills sheet places the category rail 16px closer to the
+   toolbar than the generic page stack. Its cards then use the wider 24px
+   column gutter visible in the supplied image. */
+.settings-page-wrapper[data-settings-route='skills'] .settings-skills-page > section {
+  margin-top: -16px;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid {
+  column-gap: 24px !important;
+  row-gap: 20px !important;
+}
+
+@container (min-width: 1500px) {
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* At the locked 1536px sheet width the three-column cards reserve the taller
+   editorial blocks shown in the approved captures. The compact four-column
+   treatment above remains the wide-rail default. */
+@container (max-width: 1499px) {
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card {
+    height: 220px;
+    min-height: 220px;
+  }
+
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+    height: 220px;
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 1040px) {
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header {
+    padding-bottom: 20px;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__row,
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__tabs-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+    .settings-page-header__tabs-row
+    > .settings-page-header__tabs {
+    width: 100%;
+    flex: 0 0 auto;
+    overflow-x: auto;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__tabs-actions {
+    width: 100%;
+    justify-content: flex-start;
+    padding-bottom: 0;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+    .settings-page-header__tabs-actions
+    > .flex {
+    width: 100% !important;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__header {
+    padding: 20px 18px 0;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__body {
+    padding: 18px 18px 20px;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__title {
+    font-size: 18px !important;
+    line-height: 26px !important;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__description {
+    font-size: 14px !important;
+    line-height: 21px !important;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-summary-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+    .settings-summary-item
+    + .settings-summary-item {
+    border-top: 1px solid var(--settings-border);
+    border-left: 0;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-toolbar {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-toolbar > * {
+    max-width: 100%;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .general-preferences-grid,
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .storage-secondary-grid,
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .compute-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-balance-content {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-plan-identity {
+    min-height: 0;
+    padding-right: 0;
+    padding-bottom: 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--settings-border);
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-stat-grid,
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-progress {
+    width: 100%;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-stat-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-stat-grid > div {
+    border-top: 1px solid var(--settings-border);
+    border-left: 0;
+  }
+
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+    .plans-usage-stat-grid
+    > div:first-child {
+    border-top: 0;
+  }
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: 18px auto 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  :is(.settings-pagination__page, .settings-pagination__arrow) {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--settings-border) !important;
+  border-radius: 8px;
+  background: var(--settings-surface) !important;
+  color: var(--settings-text-secondary);
+  font: 500 13px/20px inherit;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-pagination__page[aria-current='page'] {
+  border-color: var(--settings-accent) !important;
+  background: var(--settings-accent) !important;
+  color: #fff !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  :is(.settings-pagination__page, .settings-pagination__arrow):hover:not(:disabled) {
+  border-color: var(--settings-accent) !important;
+  color: var(--settings-accent-strong);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-pagination__arrow:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+    :is(.settings-action-button, .arco-btn, .settings-list-row, .settings-entity-card) {
+    transition: none !important;
+  }
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__tabs {
+  margin-top: 24px;
+}

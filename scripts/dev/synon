@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_PATH=$(realpath -e "${BASH_SOURCE[0]}") || {
+  echo "[synon] unable to resolve the installed launcher path" >&2
+  exit 1
+}
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd -P)
+QUICKSTART="$ROOT_DIR/scripts/dev/source-quickstart.sh"
+STATE_DIR=${SYNON_SOURCE_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/synon-biomed-source-quickstart}
+STATE_DIR=$(realpath -m "$STATE_DIR") || {
+  echo "[synon] unable to resolve the source state directory" >&2
+  exit 1
+}
+PID_FILE="$STATE_DIR/quickstart.pid"
+LOCK_FILE="$STATE_DIR/quickstart.lock"
+
+usage() {
+  cat <<'EOF'
+Usage: synon <command> [options]
+
+Commands:
+  start [options]  Start the source backend and Web host.
+  stop             Stop the source hosts owned by this checkout.
+  status           Show whether this checkout owns a running source host.
+  help             Show this help.
+
+Start options are passed to source-quickstart.sh, including --open-browser,
+--state-dir, --backend-port, --web-port, and --timeout-seconds.
+EOF
+}
+
+fail() {
+  echo "[synon] $*" >&2
+  exit 1
+}
+
+[[ -f "$QUICKSTART" ]] || fail "source quickstart is missing: $QUICKSTART"
+
+start_hosts() {
+  local -a args=("$@")
+  local requested_state=''
+  local index=0
+  local argument
+  local value
+  while (( index < ${#args[@]} )); do
+    argument=${args[index]}
+    case "$argument" in
+      --state-dir)
+        (( index + 1 < ${#args[@]} )) || fail "--state-dir requires a value"
+        value=${args[index + 1]}
+        requested_state=$value
+        (( index += 2 ))
+        ;;
+      --state-dir=*)
+        requested_state=${argument#--state-dir=}
+        [[ -n "$requested_state" ]] || fail "--state-dir requires a value"
+        (( index += 1 ))
+        ;;
+      *) (( index += 1 )) ;;
+    esac
+  done
+  if [[ -n "$requested_state" ]]; then
+    STATE_DIR=$(realpath -m "$requested_state") || fail "unable to resolve --state-dir: $requested_state"
+    for (( index = 0; index < ${#args[@]}; index++ )); do
+      case "${args[index]}" in
+        --state-dir) args[index + 1]="$STATE_DIR"; (( index += 1 )) ;;
+        --state-dir=*) args[index]="--state-dir=$STATE_DIR" ;;
+      esac
+    done
+    exec "$QUICKSTART" "${args[@]}"
+  fi
+  exec "$QUICKSTART" --state-dir "$STATE_DIR" "${args[@]}"
+}
+
+read_pid() {
+  local pid
+  [[ -f "$PID_FILE" ]] || return 1
+  pid=$(tr -d '\r\n' <"$PID_FILE")
+  [[ "$pid" =~ ^[1-9][0-9]*$ ]] || return 1
+  printf '%s\n' "$pid"
+}
+
+pid_command_line() {
+  local pid=$1
+  [[ -r "/proc/$pid/cmdline" ]] || return 1
+  tr '\0' ' ' <"/proc/$pid/cmdline"
+}
+
+owned_pid() {
+  local pid=$1
+  local command_line
+  local lock_path
+  local descriptor
+  local descriptor_target
+  kill -0 "$pid" 2>/dev/null || return 1
+  command_line=$(pid_command_line "$pid") || return 1
+  [[ "$command_line" == *"$QUICKSTART"* ]] || return 1
+  [[ "$command_line" == *"--state-dir $STATE_DIR"* ||
+     "$command_line" == *"--state-dir=$STATE_DIR"* ]] || return 1
+  lock_path=$(realpath -e "$LOCK_FILE" 2>/dev/null) || return 1
+  for descriptor in /proc/"$pid"/fd/*; do
+    descriptor_target=$(readlink "$descriptor" 2>/dev/null || true)
+    [[ "$descriptor_target" == "$lock_path" ]] && return 0
+  done
+  return 1
+}
+
+print_status() {
+  local pid
+  if [[ ! -f "$LOCK_FILE" ]]; then
+    echo "STOPPED state=$STATE_DIR"
+    return 0
+  fi
+  if pid=$(read_pid) && owned_pid "$pid"; then
+    echo "RUNNING pid=$pid state=$STATE_DIR"
+    return 0
+  fi
+  echo "STOPPED state=$STATE_DIR"
+}
+
+stop_hosts() {
+  local pid
+  [[ -f "$LOCK_FILE" ]] || { echo "[synon] source hosts are not running"; return 0; }
+  pid=$(read_pid) || fail "state has no valid quickstart PID: $PID_FILE"
+  owned_pid "$pid" || fail "refusing to signal unverified quickstart PID $pid"
+  kill -TERM "$pid" || fail "unable to stop verified quickstart PID $pid"
+  for _ in $(seq 1 200); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "[synon] source hosts stopped"
+      return 0
+    fi
+    sleep .05
+  done
+  fail "quickstart PID $pid did not exit after SIGTERM; no force-kill was attempted"
+}
+
+command_name=${1:-help}
+shift || true
+case "$command_name" in
+  start)
+    start_hosts "$@"
+    ;;
+  stop)
+    (( $# == 0 )) || fail "stop does not accept options"
+    stop_hosts
+    ;;
+  status)
+    (( $# == 0 )) || fail "status does not accept options"
+    print_status
+    ;;
+  help|-h|--help)
+    (( $# == 0 )) || fail "help does not accept options"
+    usage
+    ;;
+  *)
+    fail "unknown command: $command_name (try: synon help)"
+    ;;
+esac

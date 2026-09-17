@@ -1,0 +1,200 @@
+{
+  "schema": "synon.science-task-suite.v1",
+  "suiteId": "drug-chemistry-human-workflow-v1",
+  "browserAuthority": "codex_builtin",
+  "scientificDeliverablePolicy": {
+    "defaultForbiddenExtensions": [
+      ".json",
+      ".jsonl"
+    ],
+    "engineeringEvidenceExtensions": [
+      ".json",
+      ".jsonl"
+    ],
+    "explicitUserExportTool": "session_export"
+  },
+  "tasks": [
+    {
+      "id": "human-chem-01-cdk2-lead-exploration",
+      "title": "Human-style CDK2 structure-guided lead exploration",
+      "initialPrompt": "我想围绕 CDK2 做一轮可以继续推进的小分子先导探索。请先判断有哪些可靠的蛋白–配体复合物结构适合用来理解 ATP 口袋和关键结合模式，选出合理的结构后，基于这些证据设计一批有希望且具备合成可行性的候选分子。请实际完成必要的分子处理和 docking，对结果进行有依据的打分、排序和人工化学合理性复核，挑出最值得继续验证的候选，并为优先候选提出可行的合成路线和后续实验验证建议。\n\n请把文献或数据库事实、真实计算结果、你的设计推断和仍未验证的部分清楚分开，保留来源、中间结果和最终产物，方便我后续继续迭代。如果某个工具、结构或计算条件不够可靠，请直接说明并调整研究方案，不要把估算写成实验结论。",
+      "initialPromptSha256": "9e26d0a5fb1eaa7af0ab9e0ebb89e54e729e8bd7902a157cb7961f7a2c626f11",
+      "acceptance": {
+        "terminalFrameStatuses": [
+          "completed"
+        ],
+        "minimumToolCalls": 4,
+        "requireSingleUserSubmission": true,
+        "requireSingleSoftwareRuntimeProvider": true,
+        "requiredSoftwareRuntimeExecutions": [
+          {
+            "capability": "molecular-docking",
+            "provider": "local-conda",
+            "minOutputCount": 2,
+            "requiredOutputPathPatterns": [
+              "(?i)(rank|pose|dock).*(pdbqt|sdf|csv)$",
+              "(?i)(execution|dock).*(log|txt|md)$"
+            ]
+          }
+        ],
+        "requiredArtifacts": [
+          {
+            "nameRegex": "(?i)(candidate|molecule|design).*\\.(sdf|smi|csv)$",
+            "minCount": 1
+          },
+          {
+            "nameRegex": "(?i)(dock|pose|score|rank).*\\.(sdf|pdbqt|csv)$",
+            "minCount": 1
+          },
+          {
+            "nameRegex": "(?i)(synth|route|report|summary).*\\.(md|pdf)$",
+            "minCount": 1
+          }
+        ],
+        "requiredBrowserChecks": [
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "structure_preview_visible",
+          "refresh_recovery"
+        ]
+      },
+      "reviewRubric": [
+        {
+          "id": "autonomous_research_plan",
+          "criterion": "The system decomposes the goal into an evidence, design, computation, synthesis, and review workflow without merely echoing a hidden checklist.",
+          "evidenceSources": [
+            "transcript",
+            "execution_log"
+          ]
+        },
+        {
+          "id": "structure_and_binding_mode_evidence",
+          "criterion": "The selected CDK2 complex, ligand, chains, preparation choices, and binding-mode claims are traceable to real structural records and coordinates.",
+          "evidenceSources": [
+            "transcript",
+            "artifacts",
+            "source_provenance"
+          ]
+        },
+        {
+          "id": "chemically_valid_candidate_set",
+          "criterion": "Proposed candidates are parseable, unique, structurally linked to the design rationale, and screened for obvious medicinal-chemistry liabilities without fabricated potency.",
+          "evidenceSources": [
+            "artifacts",
+            "rdkit_outputs"
+          ]
+        },
+        {
+          "id": "actual_docking_evidence",
+          "criterion": "Docking is executed with a named engine and reproducible receptor, ligand, box, and parameter inputs; poses and raw scores are inspectable rather than inferred from prose.",
+          "evidenceSources": [
+            "execution_log",
+            "artifacts",
+            "tool_results"
+          ]
+        },
+        {
+          "id": "ranking_and_chemical_review",
+          "criterion": "Ranking distinguishes docking score from broader evidence and includes pose sanity, interactions, strain, diversity, and uncertainty instead of treating one score as affinity.",
+          "evidenceSources": [
+            "transcript",
+            "artifacts"
+          ]
+        },
+        {
+          "id": "synthesis_route_feasibility",
+          "criterion": "Priority compounds have plausible routes with defined starting materials, transformations, conditions, risks, and stereochemical considerations, clearly labeled as proposals.",
+          "evidenceSources": [
+            "transcript",
+            "artifacts"
+          ]
+        },
+        {
+          "id": "provenance_and_uncertainty",
+          "criterion": "Facts, calculations, hypotheses, failures, and unverified claims remain separated and traceable; no fake citations, docking, activity, or experimental success are present.",
+          "evidenceSources": [
+            "transcript",
+            "source_provenance",
+            "failure_ledger"
+          ]
+        },
+        {
+          "id": "durable_single_run",
+          "criterion": "One user submission produces one recoverable task history whose messages, tool evidence, terminal result, and artifacts survive refresh without duplicate automatic execution.",
+          "evidenceSources": [
+            "database",
+            "browser",
+            "transcript"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "human-chem-02-kras-g12d-docking",
+      "title": "Human-style KRAS G12D structure-guided docking exploration",
+      "initialPrompt": "I am a first-year medicinal chemistry student asked to explore a KRAS G12D structure-guided small-molecule program. I have no clear starting structure, binding-site definition, candidate scope, compute budget, timeline, or go/no-go criteria. First use Ask User for at most four focused rounds to resolve only decisions that materially change the plan. Then use real public structural and chemical evidence, prepare real receptor and ligand inputs, and run at least one real, server-verified molecular docking workflow through the unified software_runtime path using the most appropriate available capability for this objective. Discover the required software and runtime yourself; if it is missing, repair it through the same governed software_runtime provider, record setup failures, and continue bounded repairs without switching providers. Do not replace a required docking calculation with a heuristic, model-estimated score, or prose. Preserve the selected engine and version, parameters, ranked-pose output, execution log, durable input/output hashes, cleanup receipt, and a readable report that separates facts, calculations, design hypotheses, and unverified experiments. Ordinary tool errors must be recorded and the task must continue through viable evidence routes. Do not create JSON or JSONL as default user deliverables.",
+      "initialPromptSha256": "9452825da41c066698a30d81f21d33883c54596d4896ebe0d679bec511b11096",
+      "maxAskUserRounds": 4,
+      "askUserResponses": [
+        {
+          "questionPattern": "starting structure|receptor|PDB|binding site|structural evidence",
+          "answer": "Use a real, successfully verified KRAS G12D complex or inhibitor structure from RCSB as the starting point; record the accession and ligand/chain choice before computing."
+        },
+        {
+          "questionPattern": "candidate scope|chemical series|starting series|scaffold",
+          "answer": "Start with a small, synthetically plausible non-covalent series related to the verified reference ligand; make the transformation rules and uncertainty explicit."
+        },
+        {
+          "questionPattern": "compute|docking|resource|exhaustiveness|grid|box",
+          "answer": "Use the available CPU budget for at least one canonical server-verified docking run with a reproducible box and seed; discover and prepare the engine/runtime rather than assuming one in advance; do not silently substitute a cheaper score."
+        },
+        {
+          "questionPattern": "timeline|milestone|success criteria|go/no-go|validation",
+          "answer": "Use a twelve-week discovery gate: a verified structure, reproducible docking evidence, chemically valid candidates, and explicit follow-up assay/no-go criteria."
+        }
+      ],
+      "acceptance": {
+        "terminalFrameStatuses": [
+          "completed"
+        ],
+        "minimumToolCalls": 8,
+        "requireSingleUserSubmission": true,
+        "requireSingleSoftwareRuntimeProvider": true,
+        "requiredSoftwareRuntimeExecutions": [
+          {
+            "capability": "molecular-docking",
+            "provider": "local-conda",
+            "minOutputCount": 2,
+            "requiredOutputPathPatterns": [
+              "(?i)(rank|pose|dock).*(pdbqt|sdf|csv)$",
+              "(?i)(execution|dock).*(log|txt|md)$"
+            ]
+          }
+        ],
+        "requiredArtifacts": [
+          {
+            "nameRegex": "(?i)(ranked-pose|pose|score|docking).*\\.(pdbqt|csv|md)$",
+            "minCount": 1
+          },
+          {
+            "nameRegex": "(?i)(execution|runtime|docking).*\\.(log|txt|md)$",
+            "minCount": 1
+          },
+          {
+            "nameRegex": "(?i)(candidate|design|report|method).*\\.(sdf|smi|csv|md)$",
+            "minCount": 1
+          }
+        ],
+        "requiredBrowserChecks": [
+          "ask_user_rounds_visible",
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "software_runtime_result_visible",
+          "artifact_library_visible",
+          "refresh_recovery"
+        ]
+      }
+    }
+  ]
+}

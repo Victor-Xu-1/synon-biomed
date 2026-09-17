@@ -1,0 +1,131 @@
+.subagent-turn {
+  align-items: center;
+  background: color-mix(in srgb, var(--bg-2) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-light) 55%, transparent);
+  border-radius: 7px;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  max-width: min(100%, 680px);
+  min-height: 38px;
+  padding: 7px 10px;
+  text-align: left;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+  width: fit-content;
+}
+
+.subagent-turn:hover:not(:disabled),
+.subagent-turn:focus-visible {
+  background: var(--bg-2);
+  border-color: var(--border-light);
+  outline: none;
+}
+
+.subagent-turn:disabled {
+  cursor: default;
+  opacity: 0.78;
+}
+
+.subagent-turn__status {
+  border-radius: 50%;
+  flex: 0 0 auto;
+  height: 7px;
+  width: 7px;
+}
+
+.subagent-turn__status--running {
+  animation: subagent-status-pulse 1.6s ease-in-out infinite;
+  background: var(--primary);
+}
+
+.subagent-turn__status--completed {
+  background: #22a06b;
+}
+
+.subagent-turn__status--failed {
+  background: #dc2626;
+}
+
+.subagent-turn__status--canceled {
+  background: var(--text-tertiary);
+}
+
+.subagent-turn__icon,
+.subagent-turn__arrow {
+  color: var(--text-tertiary);
+  flex: 0 0 auto;
+}
+
+.subagent-turn__content {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+}
+
+.subagent-turn__title {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.subagent-turn__activity {
+  color: var(--text-secondary);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subagent-turn__activity--running {
+  color: var(--text-primary);
+}
+
+.subagent-turn__meta {
+  color: var(--text-tertiary);
+  flex: 0 0 auto;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@keyframes subagent-status-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .subagent-turn {
+    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 7px 15px minmax(0, 1fr) 12px;
+    width: 100%;
+  }
+
+  .subagent-turn__status,
+  .subagent-turn__icon,
+  .subagent-turn__arrow {
+    margin-top: 4px;
+  }
+
+  .subagent-turn__content {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .subagent-turn__title,
+  .subagent-turn__activity {
+    white-space: normal;
+  }
+
+  .subagent-turn__meta {
+    grid-column: 3 / 5;
+  }
+}

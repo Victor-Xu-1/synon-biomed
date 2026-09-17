@@ -1,0 +1,311 @@
+/* Workspace component styles */
+
+.workspace-header__toggle {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.workspace-header__toggle:hover {
+  background-color: var(--bg-hover);
+}
+
+.workspace-header__toggle:active {
+  background-color: var(--bg-active);
+}
+
+.workspace-toggle-floating {
+  background-color: var(--bg-2);
+  border: 1px solid var(--bg-3);
+}
+
+.synon-workspace-tablist {
+  --synon-workspace-tab-hover: rgb(245 244 242);
+  --synon-workspace-tab-selected: rgb(239 238 235);
+  gap: 6px;
+  background: var(--bg-1);
+}
+
+[data-theme='dark'] .synon-workspace-tablist {
+  --synon-workspace-tab-hover: #242422;
+  --synon-workspace-tab-selected: #2c2c29;
+}
+
+.synon-workspace-tab {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  gap: 6px;
+  border: 0 !important;
+  border-radius: 6px;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--color-text-2);
+  padding: 6px 12px;
+  font-size: 14px !important;
+  font-weight: 400;
+  line-height: 20px;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.synon-workspace-tab svg path {
+  stroke: currentcolor !important;
+}
+
+.synon-workspace-tab:hover:not(.synon-workspace-tab--selected) {
+  background: var(--synon-workspace-tab-hover) !important;
+  color: var(--color-text-1);
+}
+
+.synon-workspace-tab--selected {
+  background: var(--synon-workspace-tab-selected) !important;
+  box-shadow: none !important;
+  color: var(--color-text-1);
+  font-weight: 400;
+}
+
+.synon-workspace-tab:focus-visible {
+  outline: 2px solid var(--workspace-focus, rgb(17 17 17 / 18%)) !important;
+  outline-offset: 1px;
+}
+
+.synon-workspace-tab--selected:focus-visible {
+  box-shadow: none !important;
+}
+
+.artifact-library {
+  container-name: artifact-library;
+  container-type: inline-size;
+  background: var(--workspace-sidebar, var(--bg-2)) !important;
+}
+
+.artifact-library__search {
+  background: var(--workspace-canvas, var(--bg-base)) !important;
+  border-color: var(--workspace-border, var(--color-border-2)) !important;
+  border-radius: 6px;
+}
+
+.artifact-library__search:focus-within {
+  border-color: var(--workspace-border-strong, var(--color-border-3)) !important;
+  box-shadow: none;
+}
+
+.artifact-library__grid-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 96px));
+  justify-content: start;
+  align-items: start;
+  gap: 8px;
+  padding: 0 10px 8px;
+}
+
+@container artifact-library (min-width: 320px) {
+  .artifact-library__grid-row {
+    grid-template-columns: repeat(3, minmax(0, 96px));
+  }
+}
+
+@container artifact-library (min-width: 430px) {
+  .artifact-library__grid-row {
+    grid-template-columns: repeat(4, minmax(0, 96px));
+  }
+}
+
+.artifact-library__card {
+  overflow: hidden;
+  background: var(--workspace-canvas, var(--bg-base)) !important;
+  border-color: var(--workspace-border, var(--color-border-2)) !important;
+  border-radius: 6px;
+}
+
+.artifact-library__card:hover {
+  border-color: var(--workspace-border-strong, var(--color-border-3)) !important;
+}
+
+.artifact-library__preview {
+  height: auto !important;
+  aspect-ratio: 4 / 3;
+  background: var(--workspace-subtle, var(--bg-2)) !important;
+  border-bottom-color: var(--workspace-border, var(--color-border-2)) !important;
+}
+
+.artifact-library__metadata {
+  display: block;
+  width: 100%;
+  height: 42px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  padding: 5px 7px;
+  color: var(--color-text-1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.artifact-library__name,
+.artifact-library__size {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifact-library__name {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.artifact-library__size {
+  margin-top: 1px;
+  color: var(--color-text-3);
+  font-size: 10px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.artifact-library__actions {
+  z-index: 1;
+  display: flex;
+  border: 1px solid color-mix(in srgb, var(--workspace-border, var(--color-border-2)) 72%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--workspace-canvas, var(--bg-base)) 90%, transparent);
+  box-shadow: 0 2px 7px rgb(0 0 0 / 10%);
+  opacity: 0;
+  transition: opacity 120ms ease;
+  backdrop-filter: blur(6px);
+}
+
+.artifact-library__card:hover .artifact-library__actions,
+.artifact-library__card:focus-within .artifact-library__actions {
+  opacity: 1;
+}
+
+.artifact-library__actions :is(a, button) {
+  border-radius: 5px;
+}
+
+@media (hover: none) {
+  .artifact-library__actions {
+    opacity: 1;
+  }
+}
+
+/* VSCode-style file tree: chevron switcher + per-type icons, no connector lines */
+.chat-workspace .workspace-tree .workspace-tree-chevron {
+  opacity: 0.55;
+  transition: transform 0.15s ease;
+}
+
+/* Chevron points right when collapsed, rotates down when expanded (VSCode-style).
+   Overrides Arco's default switcher rotation (-90deg collapsed / 0 expanded),
+   which is applied to the inner <svg>. */
+.chat-workspace .workspace-tree .arco-tree-node-switcher-icon svg {
+  transform: rotate(0deg) !important;
+  transition: transform 0.15s ease;
+}
+
+.chat-workspace .workspace-tree .arco-tree-node-expanded .arco-tree-node-switcher-icon svg {
+  transform: rotate(90deg) !important;
+}
+
+.chat-workspace .workspace-tree .arco-tree-node-title {
+  display: flex;
+  align-items: center;
+}
+
+/* Full-row hover & selection backgrounds live in styles/arco-override.css
+   (.workspace-tree ...), the project's home for Arco theme overrides. */
+
+/* Mobile: workspace panel adaptation */
+@media (max-width: 767px) {
+  .chat-workspace .workspace-toolbar-search {
+    padding-bottom: 8px !important;
+  }
+
+  .chat-workspace .workspace-search-input .arco-input-inner-wrapper,
+  .chat-workspace .workspace-search-input .arco-input {
+    min-height: 36px;
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  .chat-workspace .workspace-toolbar-row {
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .chat-workspace .workspace-title-label {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  .chat-workspace .workspace-toolbar-actions {
+    gap: 8px !important;
+  }
+
+  .chat-workspace .workspace-toolbar-icon-btn {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chat-workspace .workspace-tree .arco-tree-node-title {
+    font-size: 14px !important;
+    line-height: 20px !important;
+    padding: 3px 4px !important;
+  }
+
+  .chat-workspace .workspace-tree .arco-tree-node-title-wrapper {
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+  }
+
+  .chat-workspace .workspace-node-more-btn {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 6px !important;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .chat-workspace .workspace-tree .arco-tree-node {
+    margin-bottom: 0;
+  }
+
+  .chat-workspace .workspace-tree .arco-tree-node:hover .workspace-node-more-btn,
+  .chat-workspace .workspace-tree .arco-tree-node-selected .workspace-node-more-btn,
+  .chat-workspace .workspace-node-more-btn:focus-visible {
+    opacity: 1;
+  }
+
+  /* Tighter switcher icon column */
+  .chat-workspace .workspace-tree .arco-tree-node-switcher {
+    width: 20px !important;
+    margin-right: 2px !important;
+  }
+
+  .chat-workspace .workspace-tree .arco-tree-node-switcher-icon {
+    font-size: 12px !important;
+  }
+
+  /* Soften the connector lines that look noisy at higher density */
+  .chat-workspace .workspace-tree .arco-tree-node-list-line::before {
+    opacity: 0.45;
+  }
+}

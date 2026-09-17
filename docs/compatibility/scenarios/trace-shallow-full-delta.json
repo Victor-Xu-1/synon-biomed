@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "id": "trace-shallow-full-delta",
+  "contracts": [
+    {"kind": "service", "name": "getTraceFrames"},
+    {"kind": "service", "name": "getTraceDelta"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Trace Shallow Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "submit-request",
+      "method": "POST",
+      "path": "/api/projects/${capture:projectId}/request",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "input_data": {"request": "Create a stable trace fixture without tools."},
+        "target_agent": "OPERON",
+        "plan_mode": false,
+        "intent_id": "00000000-0000-4000-8000-000000000142"
+      },
+      "expectedStatus": [200],
+      "capture": {"rootId": "/root_frame_id"}
+    },
+    {
+      "name": "full-trace",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootId}/trace-shallow",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [200],
+      "async": true,
+      "settleMilliseconds": 500
+    },
+    {
+      "name": "await-full-trace",
+      "await": "full-trace"
+    },
+    {
+      "name": "lite-trace",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootId}/trace-shallow?include_messages=false",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [200],
+      "capture": {"cursor": "/_trace_cursor"}
+    },
+    {
+      "name": "trace-delta",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootId}/trace-shallow?cursor=${capture:cursor}",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "exact",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/path",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/2/response/body/frame_id",
+    "/steps/3/request/path",
+    "/steps/3/response/body/id",
+    "/steps/3/response/body/root_frame_id",
+    "/steps/3/response/body/project_id",
+    "/steps/3/response/body/input_data",
+    "/steps/3/response/body/output_data",
+    "/steps/3/response/body/context_data",
+    "/steps/3/response/body/created_at",
+    "/steps/3/response/body/completed_at",
+    "/steps/3/response/body/updated_at",
+    "/steps/3/response/body/status",
+    "/steps/3/response/body/model",
+    "/steps/3/response/body/effort",
+    "/steps/3/response/body/input_tokens",
+    "/steps/3/response/body/output_tokens",
+    "/steps/3/response/body/cache_read_tokens",
+    "/steps/3/response/body/cache_write_tokens",
+    "/steps/3/response/body/total_cost",
+    "/steps/3/response/body/aux_cost",
+    "/steps/3/response/body/context_used",
+    "/steps/3/response/body/context_usage_percent",
+    "/steps/3/response/body/message_count",
+    "/steps/3/response/body/task_summary",
+    "/steps/3/response/body/status_description",
+    "/steps/3/response/body/mentioned_files",
+    "/steps/4/request/path",
+    "/steps/4/response/body/id",
+    "/steps/4/response/body/root_frame_id",
+    "/steps/4/response/body/project_id",
+    "/steps/4/response/body/input_data",
+    "/steps/4/response/body/output_data",
+    "/steps/4/response/body/context_data",
+    "/steps/4/response/body/created_at",
+    "/steps/4/response/body/completed_at",
+    "/steps/4/response/body/updated_at",
+    "/steps/4/response/body/status",
+    "/steps/4/response/body/model",
+    "/steps/4/response/body/effort",
+    "/steps/4/response/body/input_tokens",
+    "/steps/4/response/body/output_tokens",
+    "/steps/4/response/body/cache_read_tokens",
+    "/steps/4/response/body/cache_write_tokens",
+    "/steps/4/response/body/total_cost",
+    "/steps/4/response/body/aux_cost",
+    "/steps/4/response/body/context_used",
+    "/steps/4/response/body/context_usage_percent",
+    "/steps/4/response/body/message_count",
+    "/steps/4/response/body/task_summary",
+    "/steps/4/response/body/status_description",
+    "/steps/4/response/body/mentioned_files",
+    "/steps/4/response/body/_trace_cursor",
+    "/steps/5/request/path",
+    "/steps/5/response/body/cursor",
+    "/steps/5/response/body/server_max"
+  ],
+  "redactions": []
+}

@@ -1,0 +1,38 @@
+{
+  "asset": "synon-biomed-circuit-tree.png",
+  "source": "User-provided image attached to the 2026-08-04 small-logo replacement request",
+  "sourceSha256": "9b986028e32af159366ee3ecf88b9ffcf2432adc64e45a79a18e62ff2c4a547b",
+  "bytes": 1486360,
+  "dimensions": {
+    "width": 1024,
+    "height": 1024
+  },
+  "transformations": [
+    {
+      "operation": "high-quality proportional resize",
+      "tool": "System.Drawing HighQualityBicubic",
+      "outputs": [
+        {
+          "path": "../pwa/icon-180.png",
+          "width": 180,
+          "height": 180,
+          "sha256": "2e1f6c9e031dc0a5f91ff5111d0b8e0a2485343cbd12ecf2e0c3b8362d2bf0cf"
+        },
+        {
+          "path": "../pwa/icon-192.png",
+          "width": 192,
+          "height": 192,
+          "sha256": "2640c919fd3e5eae1783e0dd60b3f8cc185415abef99f2177729b918e0b2806e"
+        },
+        {
+          "path": "../pwa/icon-512.png",
+          "width": 512,
+          "height": 512,
+          "sha256": "9e96fd137450e314a54355e6c452b339a693082fa84b848f64a3e1700f55906d"
+        }
+      ]
+    }
+  ],
+  "publicationRights": "Project owner supplied the approved brand asset and must confirm redistribution rights before a public release",
+  "updateProcedure": "Resize the approved source proportionally without cropping or redesign, update the PWA outputs, hashes and cache-busting source digest prefix"
+}

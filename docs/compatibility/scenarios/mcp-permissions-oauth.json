@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "mcp-permissions-oauth",
+  "contracts": [
+    {"kind": "service", "name": "getAgentCustomMCPServers"},
+    {"kind": "service", "name": "listMcpToolGrants"},
+    {"kind": "service", "name": "listMcpToolPermissions"},
+    {"kind": "service", "name": "setMcpToolGrant"},
+    {"kind": "service", "name": "getMCPOAuthStatus"},
+    {"kind": "service", "name": "disconnectMCPOAuth"}
+  ],
+  "steps": [
+    {"name": "csrf", "method": "GET", "path": "/api/csrf", "headers": {"Origin": "${origin}"}, "expectedStatus": [204]},
+    {"name": "create-agent", "method": "POST", "path": "/api/agents", "headers": {"X-Synon-User-Id": "local", "Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"}, "body": {"name": "mcp_permissions", "displayName": "MCP Permissions", "description": "MCP permissions fixture", "systemPrompt": "Use approved MCP tools.", "skillNames": [], "unrestricted": false, "enabled": true}, "expectedStatus": [200]},
+    {"name": "create-server", "method": "POST", "path": "/api/mcp-servers", "headers": {"X-Synon-User-Id": "local", "Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"}, "body": {"name": "permissions-oracle", "description": "MCP permissions fixture", "url": "https://1.1.1.1/mcp", "transport": "streamable_http"}, "expectedStatus": [201], "capture": {"server": "/id"}},
+    {"name": "attach-agent", "method": "POST", "path": "/api/mcp-servers/${capture:server}/attach", "headers": {"X-Synon-User-Id": "local", "Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"}, "body": {"agent_names": ["MCP_PERMISSIONS"]}, "expectedStatus": [200]},
+    {"name": "list-agent-servers", "method": "GET", "path": "/api/agents/MCP_PERMISSIONS/mcp-servers?include_tools=false", "headers": {"X-Synon-User-Id": "local"}, "expectedStatus": [200]},
+    {"name": "list-empty-grants", "method": "GET", "path": "/api/mcp-servers/${capture:server}/tool-grants", "headers": {"X-Synon-User-Id": "local"}, "expectedStatus": [200]},
+    {"name": "missing-tool-permissions", "method": "GET", "path": "/api/mcp-servers/00000000-0000-4000-8000-000000000301/tool-permissions?source=custom", "headers": {"X-Synon-User-Id": "local"}, "expectedStatus": [200]},
+    {"name": "set-tool-grant", "method": "POST", "path": "/api/mcp-servers/${capture:server}/tool-grants", "headers": {"X-Synon-User-Id": "local", "Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"}, "body": {"toolName": "search", "decision": "allow"}, "expectedStatus": [200]},
+    {"name": "list-tool-grants", "method": "GET", "path": "/api/mcp-servers/${capture:server}/tool-grants", "headers": {"X-Synon-User-Id": "local"}, "expectedStatus": [200]},
+    {"name": "oauth-status-disconnected", "method": "GET", "path": "/api/mcp-servers/${capture:server}/oauth/status", "headers": {"X-Synon-User-Id": "local"}, "expectedStatus": [200]},
+    {"name": "oauth-disconnect", "method": "DELETE", "path": "/api/mcp-servers/${capture:server}/oauth/disconnect", "headers": {"X-Synon-User-Id": "local", "Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"}, "expectedStatus": [200]},
+    {"name": "oauth-status-after-disconnect", "method": "GET", "path": "/api/mcp-servers/${capture:server}/oauth/status", "headers": {"X-Synon-User-Id": "local"}, "expectedStatus": [200]}
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body",
+    "/steps/2/response/body/id",
+    "/steps/2/response/body/created_at",
+    "/steps/2/response/body/updated_at",
+    "/steps/3/request/path",
+    "/steps/3/response/body/mcp_server_id",
+    "/steps/4/response/body/0/id",
+    "/steps/5/request/path",
+    "/steps/7/request/path",
+    "/steps/8/request/path",
+    "/steps/9/request/path",
+    "/steps/9/response/body/mcp_server_id",
+    "/steps/10/request/path",
+    "/steps/11/request/path",
+    "/steps/11/response/body/mcp_server_id"
+  ],
+  "redactions": []
+}

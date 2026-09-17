@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "description": "A set of durable memory changes. Omitted operation arrays contain no changes.",
+  "properties": {
+    "append": {
+      "type": "array",
+      "description": "New facts not already represented by the memory manifest.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string", "description": "A self-contained fact supported by the conversation." },
+          "evidence": { "type": "string", "enum": ["stated", "observed", "inferred"], "description": "How the fact is supported; omitted values are treated as inferred." },
+          "entity": { "type": "string", "description": "The destination: project (the current scope), profile, project:<id>, or artifact:<id>. Omit to use the current scope. Use only identifiers present in the conversation." },
+          "category": { "type": "string", "description": "An existing user-defined category name whose guidance fits the fact; otherwise omit." }
+        },
+        "required": ["text"],
+        "additionalProperties": false
+      }
+    },
+    "replace": {
+      "type": "array",
+      "description": "Corrections or consolidations of mutable facts identified in the manifest.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "The existing memory identifier." },
+          "text": { "type": "string", "description": "The complete replacement fact, preserving still-valid identifiers and details." },
+          "evidence": { "type": "string", "enum": ["stated", "observed", "inferred"], "description": "The replacement's evidence type; omit to preserve the existing type." }
+        },
+        "required": ["id", "text"],
+        "additionalProperties": false
+      }
+    },
+    "remove": {
+      "type": "array",
+      "description": "Identifiers of mutable manifest facts that the conversation establishes should be removed.",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

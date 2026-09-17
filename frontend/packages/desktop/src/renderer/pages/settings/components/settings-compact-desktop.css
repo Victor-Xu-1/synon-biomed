@@ -1,0 +1,377 @@
+/*
+ * Real Chrome compact sheet.
+ *
+ * The reference capture is 3200x1662 at device scale 2, therefore the CSS
+ * viewport is 1600x831. Each route surface is transformed as one unit (type,
+ * cards, spacing and controls stay proportional). Width is compensated so
+ * the four-column rhythm remains unchanged; unlike CSS zoom this leaves
+ * container queries and grid breakpoints based on the real layout width.
+ */
+@media (min-width: 1200px) and (max-height: 900px) {
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    min-height: 700px !important;
+  }
+
+  /* The approved Skills strip keeps tabs on the left and search/create
+     controls on the same baseline. Preserve the heading in the accessibility
+     tree, but remove its repeated visual title block. */
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__row {
+    min-height: 1px !important;
+    height: 1px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__title {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__description {
+    display: none !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-row {
+    display: flex !important;
+    min-height: 46px !important;
+    height: 46px !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    margin-top: 0 !important;
+    border-bottom: 1px solid var(--settings-border) !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='skills']
+    .settings-page-header__tabs-row
+    > .settings-page-header__tabs {
+    display: flex !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    align-items: flex-end !important;
+    gap: 30px !important;
+    margin-top: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-actions {
+    display: flex !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    padding-bottom: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-actions > .flex {
+    width: auto !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    gap: 96px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-toolbar__search {
+    width: 248px !important;
+    min-width: 248px !important;
+    flex: 0 0 248px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] [data-testid='add-skill-button'] {
+    width: 232px !important;
+    min-width: 232px !important;
+    flex: 0 0 232px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .synon-skill-category-filter__options {
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .synon-skill-category-filter__option {
+    padding-inline: 8px !important;
+  }
+
+  /* Keep the 15-card sheet and its pager inside the shortest supported
+     desktop Chrome viewport instead of clipping the final row of controls. */
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-pagination {
+    margin-top: 10px !important;
+  }
+
+  /* The compact reference keeps only search plus the create action in the top
+     strip; the secondary status filter remains available in wider layouts. */
+  html body .settings-page-wrapper[data-settings-route='skills'] [data-testid='synon-biomed-skills-filter'],
+  html body .settings-page-wrapper[data-settings-route='skills'] [data-testid='settings-tab-marketplace'] {
+    display: none !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  /* Both catalog pagers stay anchored below a complete three-row card sheet.
+     Sparse final pages preserve the missing row as whitespace instead of
+     pulling pagination upward and changing the page rhythm. */
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
+    min-height: 700px !important;
+  }
+
+  /* Keep the longer MCP copy readable on the locked compact desktop sheet.
+     This final layer prevents the locked card rules from collapsing the
+     description back to one line or center-aligning it. */
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__description {
+    min-height: 54px !important;
+    text-align: justify !important;
+    text-align-last: left !important;
+    text-justify: inter-ideograph !important;
+    word-break: break-word !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='compute'] .settings-compute-page {
+    transform: scale(0.68);
+    transform-origin: top left;
+    width: 147.059% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='governance'] .settings-governance-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='network'] .settings-network-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='experts'] .settings-experts-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='account'] .account-settings {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+    --account-accent: #3aaec8 !important;
+    --account-accent-strong: #1684a5 !important;
+    --account-accent-soft: #f0fafc !important;
+    --account-panel-subtle: var(--settings-surface-subtle, var(--settings-surface)) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='account'] .account-settings > .settings-page-header {
+    width: 100% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='account'] .account-insight-panel {
+    height: 276px !important;
+    min-height: 276px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='account'] .account-profile-hero {
+    background: var(--settings-surface) !important;
+  }
+
+  /* The account route is scaled as one unit in the short Chrome sheet. Cancel
+     that scale for chart markers so their interactive 8px/10px targets remain
+     visually stable while their positions continue to follow the chart. */
+  html body .settings-page-wrapper[data-settings-route='account'] .account-activity-chart__marker {
+    transform: translate(-50%, -50%) scale(1.388889);
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  /* Account and plans contain dense operational copy. Compensate their text
+     hierarchy inside the short Chrome sheet without enlarging card geometry
+     or changing the unscaled 1185px desktop layout. */
+  html
+    body
+    .settings-page-wrapper[data-settings-route='account']
+    .account-settings
+    :is(p, span, small, time, dt, dd, button) {
+    font-size: 13px !important;
+    line-height: 17px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='account'] .account-settings :is(h2, h3, strong) {
+    font-size: 15px !important;
+    line-height: 20px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='account']
+    .account-settings
+    :is(.account-profile-hero__copy h2, .account-metric__value) {
+    font-size: 20px !important;
+    line-height: 25px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page .text-11px {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page .text-12px {
+    font-size: 14px !important;
+    line-height: 19px !important;
+  }
+
+  /* The reference sheets use the full content rail. These routes carry
+     measured pixel widths in the locked layer; make their inner surfaces
+     follow the compensated route width before the whole unit is scaled. */
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-message-channels-section,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-about-section,
+  html body .settings-page-wrapper[data-settings-route='governance'] .memory-manager,
+  html body .settings-page-wrapper[data-settings-route='governance'] .memory-manager__layer-tabs,
+  html body .settings-page-wrapper[data-settings-route='governance'] .memory-manager__workspace {
+    width: 100% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='credentials'] [data-testid='synon-credentials-settings'] {
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 138.889% !important;
+  }
+
+  /* Closed disclosures must stay closed in the compact fold. */
+  html body .settings-page-wrapper[data-settings-route='network'] details:not([open]) > div {
+    display: none !important;
+  }
+
+  /* Keep long network content inside its card after the route surface is
+     scaled. Card headers remain fixed while only the list body scrolls. */
+  html body .settings-page-wrapper[data-settings-route='network'] [data-testid='builtin-network-groups'],
+  html body .settings-page-wrapper[data-settings-route='network'] [data-testid='allowed-domain-list'] {
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='network'] .network-section--preset-groups,
+  html body .settings-page-wrapper[data-settings-route='network'] .settings-network-page > section:first-of-type {
+    height: 420px !important;
+    min-height: 420px !important;
+    max-height: 420px !important;
+    overflow: hidden !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='network'] .network-section--allowed,
+  html body .settings-page-wrapper[data-settings-route='network'] .settings-network-page > section:nth-of-type(2) {
+    height: 340px !important;
+    min-height: 280px !important;
+    max-height: 340px !important;
+    overflow: hidden !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='network']
+    .network-section--allowed
+    [data-testid='allowed-domain-list'] {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+}
+
+/*
+ * Chrome's usable content viewport can be shorter than the 1600x831 reference
+ * capture (for example 1600x775 when browser chrome is visible). Keep the
+ * same measured composition, but scale each complete route as one unit so its
+ * final card/section remains visible without introducing a page scrollbar.
+ */
+@media (min-width: 1200px) and (min-height: 768px) and (max-height: 800px) {
+  html body .settings-page-wrapper[data-settings-route='account'] .account-settings {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='experts'] .settings-experts-page {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='compute'] .settings-compute-page {
+    transform: scale(0.68);
+    width: 147.059% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='governance'] .settings-governance-page {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='network'] .settings-network-page {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='credentials'] [data-testid='synon-credentials-settings'] {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page {
+    transform: scale(0.72);
+    width: 138.889% !important;
+  }
+}

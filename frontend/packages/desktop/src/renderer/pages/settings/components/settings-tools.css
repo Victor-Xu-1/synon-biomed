@@ -1,0 +1,179 @@
+/* Route-scoped desktop geometry from the accepted settings visual contract. */
+
+@media (min-width: 768px) {
+  /* Tools: the installed connector surface begins immediately below the
+     header.  Tabs and the section label remain in the accessibility tree but
+     no longer consume a second visual header row. */
+  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
+    display: block !important;
+    gap: 0 !important;
+    row-gap: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-header {
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-content {
+    padding-top: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-content-inner {
+    margin-top: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-pane > div:first-child {
+    position: relative !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    visibility: hidden;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-pane > div:first-child > :last-child {
+    position: absolute !important;
+    top: 21px !important;
+    right: 0 !important;
+    z-index: 4;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-toolbar {
+    position: relative !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    margin-top: 21px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    gap: 24px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-toolbar > .arco-input-group-wrapper {
+    width: 387px !important;
+    min-width: 387px !important;
+    flex: 0 0 387px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-toolbar > .arco-select {
+    width: 307px !important;
+    min-width: 307px !important;
+    flex: 0 0 307px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='tools']
+    .synon-mcp-toolbar
+    > [data-testid='synon-biomed-mcp-directory-health'] {
+    width: 267px !important;
+    min-width: 267px !important;
+    height: 46px !important;
+    flex: 0 0 267px !important;
+    justify-content: flex-end !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-toolbar .arco-btn[type='text'] {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='tools']
+    .arco-tabs-pane
+    > div:first-child
+    > :last-child
+    > [data-testid='synon-biomed-mcp-reconcile'] {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='tools']
+    .arco-tabs-pane
+    > div:first-child
+    > :last-child
+    > [data-testid='synon-biomed-mcp-add'] {
+    width: 154px !important;
+    min-width: 154px !important;
+    height: 46px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-section-heading {
+    display: none !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-pane > .arco-spin {
+    margin-top: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-pane .synon-mcp-grid {
+    margin-top: 29px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+    height: 220px !important;
+    min-height: 220px !important;
+    padding: 14px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__icon,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-connector-visual--badge {
+    width: 48px !important;
+    height: 48px !important;
+    flex-basis: 48px !important;
+    border-radius: 12px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__top {
+    gap: 12px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__identity {
+    max-width: calc(100% - 60px) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row > span {
+    font-size: 15px !important;
+    line-height: 22px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__description {
+    width: 100% !important;
+    min-height: 40px !important;
+    margin-top: 6px !important;
+    font-size: 13px !important;
+    line-height: 18px !important;
+    text-align: center !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__configure.arco-btn {
+    min-height: 34px !important;
+    padding-inline: 12px !important;
+    font-size: 13px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
+    width: 104px !important;
+    min-width: 104px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    line-height: 18px !important;
+  }
+}

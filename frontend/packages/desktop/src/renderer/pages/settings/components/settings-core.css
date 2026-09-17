@@ -1,0 +1,484 @@
+/*
+ * Scientific connectors v3
+ * -------------------------
+ * This is the single visual grammar for settings pages. Route components own
+ * data and interactions; this file owns spacing, type, surfaces and controls.
+ * Keep additions semantic and scoped to the settings wrapper so the rest of
+ * the desktop application is not affected.
+ */
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] {
+  --settings-control-height: 46px;
+  --settings-card-radius: 12px;
+  --settings-card-gap: 16px;
+  --settings-section-gap: 24px;
+  /* Entity-card typography and geometry move together.  Route styles should
+     consume these tokens instead of changing a font without reserving the
+     matching line box and card space. */
+  --settings-entity-card-padding: 20px;
+  --settings-entity-card-title-size: 15px;
+  --settings-entity-card-title-line: 21px;
+  --settings-entity-card-body-size: 13px;
+  --settings-entity-card-body-line: 19px;
+  --settings-entity-card-height: 256px;
+  --settings-focus: color-mix(in srgb, var(--settings-accent) 52%, transparent);
+}
+
+/* Keep the shell hierarchy balanced: navigation is one step larger while
+   section copy remains compact enough to preserve the generous card whitespace
+   from the approved sheets. */
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__body {
+  font-size: 13px !important;
+  line-height: 20px !important;
+}
+
+/* workspace-theme.css intentionally supplies a compact global h2 scale for chat.
+   Settings sheets have their own editorial hierarchy, so restore that scale
+   only inside this scoped visual system. Route-specific card selectors below
+   may opt into the smaller 18px entity title token. */
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-body h2 {
+  font-size: 16px !important;
+  font-weight: 650 !important;
+  line-height: 22px !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header {
+  padding-bottom: 1px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__row {
+  display: flex;
+  min-height: 44px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__title {
+  min-width: 0;
+  margin: 0;
+  color: var(--settings-text) !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  line-height: 36px !important;
+  letter-spacing: -0.035em;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__description {
+  max-width: 880px;
+  margin: 4px 0 0;
+  color: var(--settings-text-secondary) !important;
+  font-size: 15px !important;
+  font-weight: 450;
+  line-height: 22px !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-left: auto;
+  gap: 10px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-page-header__actions
+  > .flex.flex-1 {
+  flex: 0 1 auto !important;
+  width: auto !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 30px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--settings-border);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-page-header__tabs
+  > [role='tab'] {
+  min-height: 38px;
+  padding: 0 2px 14px !important;
+  color: var(--settings-text-secondary);
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-page-header__tabs
+  > [role='tab'][aria-selected='true'] {
+  color: var(--settings-accent-strong) !important;
+  font-weight: 650 !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-page-header__tabs
+  > [role='tab']
+  > span.absolute {
+  background: var(--settings-accent) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar {
+  min-height: 48px;
+  padding-block: 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar > .flex {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 12px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar .arco-input-wrapper {
+  width: min(420px, 100%);
+  min-width: 220px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skills-toolbar__search {
+  margin-right: auto;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar .arco-btn-primary {
+  min-width: 124px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-body > :first-child {
+  gap: var(--settings-section-gap) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-page-body
+  .settings-page-header {
+  margin: 0 !important;
+}
+
+/* Buttons and form controls */
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-action-button,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-btn {
+  box-sizing: border-box;
+  min-height: var(--settings-control-height);
+  border: 1px solid var(--settings-border) !important;
+  border-radius: 9px !important;
+  background: var(--settings-surface) !important;
+  color: var(--settings-text) !important;
+  box-shadow: none !important;
+  font-size: 14px;
+  font-weight: 520;
+  line-height: 22px;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-action-button:hover:not(:disabled),
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-btn:hover:not(:disabled),
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-icon-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--settings-accent) 42%, var(--settings-border)) !important;
+  background: var(--settings-surface-subtle) !important;
+  color: var(--settings-accent-strong) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-btn-primary {
+  border-color: var(--settings-accent) !important;
+  background: var(--settings-accent) !important;
+  color: var(--settings-accent-contrast) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-btn-primary:hover:not(:disabled) {
+  border-color: var(--settings-accent-strong) !important;
+  background: var(--settings-accent-strong) !important;
+  color: var(--settings-canvas) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-action-button:disabled,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-icon-button,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-text-danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--settings-text-secondary);
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-text-danger-button {
+  min-height: 36px;
+  padding: 0 10px;
+  color: #b24b61;
+  font-size: 13px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-text-danger-button:hover:not(:disabled) {
+  border-color: #f0d7dc;
+  background: color-mix(in srgb, #c43d5b 7%, var(--settings-surface));
+  color: #a8324e;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-input-wrapper,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-input-inner-wrapper,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-select-view,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-input-number {
+  min-height: var(--settings-control-height);
+  border: 1px solid var(--settings-border) !important;
+  border-radius: 9px !important;
+  background: var(--settings-surface) !important;
+  box-shadow: none !important;
+  color: var(--settings-text) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-input-inner,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-select-view-value {
+  color: var(--settings-text) !important;
+  font-size: 14px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  :is(button, a, [role='switch'], [role='tab'], input, textarea, select):focus-visible {
+  outline: 2px solid var(--settings-focus) !important;
+  outline-offset: 2px;
+}
+
+/* Switches in the approved sheets are quiet teal pills with a white thumb;
+   keep the behavior and aria state from Arco while replacing its dark theme
+   skin inside settings only. */
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] [role='switch'] {
+  width: 46px !important;
+  height: 28px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--workspace-selected, #dce7ee) !important;
+  box-shadow: none !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] [role='switch'][aria-checked='true'],
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] [role='switch'].arco-switch-checked {
+  background: var(--settings-accent) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] [role='switch'] .arco-switch-dot {
+  top: 4px !important;
+  right: auto !important;
+  left: 4px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: var(--settings-surface) !important;
+  box-shadow: 0 1px 2px rgb(13 27 62 / 12%);
+  transition: left 140ms ease;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  [role='switch'][aria-checked='true']
+  .arco-switch-dot,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  [role='switch'].arco-switch-checked
+  .arco-switch-dot {
+  left: 22px !important;
+}
+
+/* Cards and lists */
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--settings-border) !important;
+  border-radius: var(--settings-card-radius) !important;
+  background: var(--settings-surface) !important;
+  box-shadow: none !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 18px 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__heading {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__icon {
+  display: block;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+  object-fit: contain;
+  user-select: none;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__title {
+  margin: 0;
+  color: var(--settings-text) !important;
+  font-size: 16px !important;
+  font-weight: 650 !important;
+  line-height: 22px !important;
+  letter-spacing: -0.018em;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__description {
+  max-width: 760px;
+  margin: 4px 0 0;
+  color: var(--settings-text-secondary) !important;
+  font-size: 13px !important;
+  line-height: 20px !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__actions {
+  flex: 0 0 auto;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__body {
+  min-width: 0;
+  padding: 16px 18px 18px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-empty-state {
+  display: flex;
+  min-height: 148px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--settings-text-secondary);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-list {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--settings-border) !important;
+  border-radius: var(--settings-card-radius) !important;
+  background: var(--settings-surface) !important;
+  box-shadow: none !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-list-row {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 76px;
+  padding: 14px 20px !important;
+  border-color: var(--settings-border) !important;
+  background: var(--settings-surface);
+  transition: background-color 140ms ease;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-list-row + .settings-list-row {
+  border-top: 1px solid var(--settings-border);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-list-row:hover {
+  background: var(--settings-surface-subtle);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-list-icon {
+  background: color-mix(in srgb, var(--settings-module-accent) 10%, var(--settings-surface)) !important;
+  color: var(--settings-module-accent) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-list-generated-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  object-fit: contain;
+  user-select: none;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-empty-artwork-panel {
+  display: flex;
+  min-height: 260px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-load-error-panel {
+  box-sizing: border-box;
+  display: flex;
+  min-height: 148px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid #efd8de;
+  border-radius: var(--settings-card-radius);
+  background: color-mix(in srgb, #c43d5b 5%, var(--settings-surface));
+  color: #a8324e;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-empty-artwork-icon {
+  display: block;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  object-fit: contain;
+  user-select: none;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-empty-artwork-illustration {
+  display: block;
+  width: 156px;
+  height: 112px;
+  object-fit: contain;
+  opacity: 0.72;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  user-select: none;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-toolbar {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--settings-border) !important;
+  border-radius: var(--settings-card-radius) !important;
+  background: var(--settings-surface) !important;
+}

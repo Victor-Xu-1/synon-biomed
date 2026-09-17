@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "compute-provider-management",
+  "contracts": [
+    {"kind": "http-route", "name": "GET /api/compute/providers/:name"},
+    {"kind": "http-route", "name": "PATCH /api/compute/providers/:name"},
+    {"kind": "http-route", "name": "DELETE /api/compute/providers/:name"},
+    {"kind": "http-route", "name": "PUT /api/compute/providers/:name/data-roots"},
+    {"kind": "http-route", "name": "PUT /api/compute/providers/:name/scratch-root"},
+    {"kind": "http-route", "name": "POST /api/compute/ssh-hosts"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-provider",
+      "method": "POST",
+      "path": "/api/compute/inference-providers",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "oracle-manage", "endpoint": 38990, "skillName": "using-model-endpoint"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-provider",
+      "method": "GET",
+      "path": "/api/compute/providers/infer:oracle-manage",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "patch-provider",
+      "method": "PATCH",
+      "path": "/api/compute/providers/infer:oracle-manage",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"detailsMd": "oracle provider notes"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "get-patched-provider",
+      "method": "GET",
+      "path": "/api/compute/providers/infer:oracle-manage",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "set-data-roots",
+      "method": "PUT",
+      "path": "/api/compute/providers/infer:oracle-manage/data-roots",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"roots": ["/datasets", "relative", " /archive "]},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "get-provider-with-roots",
+      "method": "GET",
+      "path": "/api/compute/providers/infer:oracle-manage",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "set-non-ssh-scratch-root",
+      "method": "PUT",
+      "path": "/api/compute/providers/infer:oracle-manage/scratch-root",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"scratchRoot": "/scratch/jobs"},
+      "expectedStatus": [204, 400]
+    },
+    {
+      "name": "delete-through-generic-route",
+      "method": "DELETE",
+      "path": "/api/compute/providers/infer:oracle-manage",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-unknown-ssh-host",
+      "method": "POST",
+      "path": "/api/compute/ssh-hosts",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"alias": ""},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 1048576,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

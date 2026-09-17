@@ -1,0 +1,1929 @@
+{
+  "schemaVersion": 1,
+  "source": "synonbiomed-v1.1/runtime/assets/skills",
+  "skills": [
+    "alphafold2",
+    "analytical-method-lifecycle",
+    "antibody-design-strategy",
+    "autodock-vina",
+    "binding-mode-analysis",
+    "boltz",
+    "boltz2-nim",
+    "borzoi",
+    "capability-acquisition",
+    "chai1",
+    "cheminfo-render",
+    "chem-physical-properties",
+    "citation-management",
+    "clinical-biostatistics",
+    "clinical-development-plan",
+    "clinical-trial-protocol",
+    "cmc-control-strategy",
+    "complexa-design",
+    "complexa-evaluate-pdbs",
+    "complexa-setup",
+    "complexa-slurm",
+    "complexa-sweep",
+    "complexa-target",
+    "compound-sourcing",
+    "compute-env-setup",
+    "cuequivariance",
+    "customize",
+    "deep-literature-investigation",
+    "diffdock",
+    "diffdock-nim",
+    "dmpk-adme-strategy",
+    "document-workbench",
+    "drug-development-lifecycle",
+    "drug-discovery-pipeline",
+    "electronic-lab-notebook",
+    "esmfold2",
+    "evo2",
+    "evo2-nim",
+    "fair-esm2",
+    "figure-composer",
+    "figure-style",
+    "formulation-development",
+    "genmol-nim",
+    "genomics-workflow-acceleration",
+    "indication-dossier",
+    "instrument-data-to-allotrope",
+    "kermt-add-cmim-pretrain",
+    "kermt-continue-pretrain",
+    "kermt-embed",
+    "kermt-finetune",
+    "kermt-infer",
+    "kermt-monitor",
+    "kermt-pretrain-scratch",
+    "kermt-setup",
+    "ligandmpnn",
+    "literature-review",
+    "managed-model-endpoints",
+    "medicinal-chemistry-optimization",
+    "molmim-nim",
+    "msa-search-nim",
+    "msa-structure-prediction-pipeline",
+    "nextflow-development",
+    "ngs-analysis-router",
+    "nonclinical-safety-strategy",
+    "nvmolkit-usage",
+    "openfold2-nim",
+    "openfold3",
+    "openfold3-nim",
+    "p2rank-pocket-detection",
+    "paper-narrative",
+    "parabricks",
+    "patent-search",
+    "pdf-explore",
+    "pharmacovigilance-risk-management",
+    "pocket2mol-local",
+    "postmarketing-lifecycle-management",
+    "presentations",
+    "process-development-scale-up",
+    "product-self-knowledge",
+    "protein-design-strategy",
+    "proteinmpnn",
+    "proteinmpnn-nim",
+    "quantum-chemistry-postprocessing",
+    "reaction-engineering",
+    "regulatory-submission-strategy",
+    "remote-compute-modal",
+    "remote-compute-ssh",
+    "rfdiffusion-nim",
+    "rna-design-strategy",
+    "sbdd-ppi-workflow",
+    "scgpt",
+    "scientific-problem-selection",
+    "scvi-tools",
+    "self-awareness",
+    "single-cell-rna-analysis",
+    "skill-creator",
+    "solublempnn",
+    "stability-shelf-life",
+    "structure-based-molecule-generation",
+    "synon-research",
+    "using-model-endpoint"
+  ],
+  "files": [
+    {
+      "path": "alphafold2/SKILL.md",
+      "sha256": "562520a36043c09f6e740b28a097e1e11a68b73bcc3c4c7cb0e269a644b4427a",
+      "bytes": 4965
+    },
+    {
+      "path": "analytical-method-lifecycle/agents/openai.yaml",
+      "sha256": "01f4d639cbf4e44b39f8a6dafbeb8f34d71c4cb9a0aa99c31ffd6cb076d76732",
+      "bytes": 248
+    },
+    {
+      "path": "analytical-method-lifecycle/SKILL.md",
+      "sha256": "4774d6378e5f51eff7b4f157a67657d1b3bb6cb41ec9c27833ac373cf5c33f30",
+      "bytes": 2018
+    },
+    {
+      "path": "antibody-design-strategy/references/methods.md",
+      "sha256": "86d016044c210ac0d4aeafc65ee8b7c9394befd9865488d6fb782776ca24856e",
+      "bytes": 2452
+    },
+    {
+      "path": "antibody-design-strategy/SKILL.md",
+      "sha256": "242676cdec62b5d3491752306ecb7c7d404d9eb60a92c140f18be8d63e9ec2cd",
+      "bytes": 8598
+    },
+    {
+      "path": "autodock-vina/scripts/autodock_vina.py",
+      "sha256": "2a05abaca845afb28838a63e107d3c051433ff44d14d2cec0b81ee43fa545172",
+      "bytes": 63629
+    },
+    {
+      "path": "autodock-vina/scripts/autodock_vina_inputs.py",
+      "sha256": "d8be79d79d24fa6e2939bc0d57a33b8c5b6a96288d1026fa96a25ddd48412366",
+      "bytes": 1262
+    },
+    {
+      "path": "autodock-vina/scripts/autodock_vina_outputs.py",
+      "sha256": "ab7ce5b3403ded9ce004d438e56095195e946ab5a629c4157f09663004fa7f97",
+      "bytes": 9914
+    },
+    {
+      "path": "autodock-vina/scripts/autodock_vina_pockets.py",
+      "sha256": "52e0c571a8244555a3fc90a03ca507fa14241a832d2cc93337b60874066bed99",
+      "bytes": 4856
+    },
+    {
+      "path": "autodock-vina/SKILL.md",
+      "sha256": "b42684e9a667c427e6c2157a0214064bc43645fc6d17c0641069d3d1443c80da",
+      "bytes": 14202
+    },
+    {
+      "path": "binding-mode-analysis/scripts/analyze_binding_pocket.py",
+      "sha256": "5bfe6b2387ec02573eeeaf14e1565c07f0144a65c4bffda7719269556bbe271e",
+      "bytes": 8562
+    },
+    {
+      "path": "binding-mode-analysis/SKILL.md",
+      "sha256": "d2f937b73a68bdee2f21fb200dd5896b37e7e3e8d87d2ed9309191adfd671b48",
+      "bytes": 4919
+    },
+    {
+      "path": "boltz/SKILL.md",
+      "sha256": "4205a08363955f762f45a2065263de0dabedd898eba13460830b70b621b26700",
+      "bytes": 5305
+    },
+    {
+      "path": "boltz2-nim/references/api.md",
+      "sha256": "c8a62e0a8f3b1a52751ad21821e424c52168309317084c397dd1f0faefc3911c",
+      "bytes": 5786
+    },
+    {
+      "path": "boltz2-nim/references/examples.md",
+      "sha256": "01eb5749cbf60296792891f170c8003174423c8e0382eb82f83f9f34cb619124",
+      "bytes": 2086
+    },
+    {
+      "path": "boltz2-nim/references/parameters.md",
+      "sha256": "131b8a9ecd6c13bce6b741eef237e42ad82b084d760fed9fb9385f6fa3eac30d",
+      "bytes": 1707
+    },
+    {
+      "path": "boltz2-nim/references/science.md",
+      "sha256": "048f7a5ef31051051ccb61f976509d5968c797b3acbae8118fe8b1a5bd65da9c",
+      "bytes": 1752
+    },
+    {
+      "path": "boltz2-nim/references/validation.md",
+      "sha256": "0940c9a8ca5b65a07f1cb862386d0a77d89da63986233b691674bd8b0a913493",
+      "bytes": 1321
+    },
+    {
+      "path": "boltz2-nim/SKILL.md",
+      "sha256": "97f2d6d21d6d9ce36b1870135295e19b330403ef4b6e35ed2441fecb7d7e9b88",
+      "bytes": 6192
+    },
+    {
+      "path": "borzoi/SKILL.md",
+      "sha256": "47923dff126612f722ec4fed07d8bb16ec1c5addb9d7a8c7496053c4c5b8950d",
+      "bytes": 3907
+    },
+    {
+      "path": "capability-acquisition/agents/openai.yaml",
+      "sha256": "86b0ed1b4caade18f6d058a5734e57028dd2435d8754f4b40ee9fdec748f38cf",
+      "bytes": 244
+    },
+    {
+      "path": "capability-acquisition/SKILL.md",
+      "sha256": "26f340de3ed2e9526d650fa565ae1dc3ecd1fada33df4dfb08abf0bf6be59934",
+      "bytes": 10560
+    },
+    {
+      "path": "catalog-ui.json",
+      "sha256": "2b2453ce7dae17bbf45bca74ad63f9a03bd8c516fe27382631a564c6c00137c7",
+      "bytes": 19981
+    },
+    {
+      "path": "chai1/SKILL.md",
+      "sha256": "8a542fde20ce8de017b679321765d689f459eefccd109213a756ce4e610de7f7",
+      "bytes": 6597
+    },
+    {
+      "path": "cheminfo-render/cheminfo_render_helpers.py",
+      "sha256": "416f27ebbb08a05a574eb88704bbdc10dc993c0b2081c05c267b2195479345ca",
+      "bytes": 309
+    },
+    {
+      "path": "cheminfo-render/kernel.py",
+      "sha256": "38ecb7115b221882012f6b6c0d5b2bafa987f223c60bfbb8df9e5439fd9fd0b8",
+      "bytes": 298
+    },
+    {
+      "path": "cheminfo-render/SKILL.md",
+      "sha256": "153953723a0f8a2120b0966991b96be7c17f53d17baca3952f1c55e54d856337",
+      "bytes": 4830
+    },
+    {
+      "path": "chem-physical-properties/SKILL.md",
+      "sha256": "8c902278e57a54b9330feac4dede5b22274d54c81bfdd0fbcfd89ccf082511ff",
+      "bytes": 8460
+    },
+    {
+      "path": "citation-management/SKILL.md",
+      "sha256": "3aabb2a7c4c2fa6b10cc63ebb32c63a714acaa6902dd760b299e466d476d28d6",
+      "bytes": 1066
+    },
+    {
+      "path": "clinical-biostatistics/agents/openai.yaml",
+      "sha256": "1172fb22a2a619ee2c0568f4ad87c14e2a2b4f8873a22cf8027febf6de026144",
+      "bytes": 238
+    },
+    {
+      "path": "clinical-biostatistics/SKILL.md",
+      "sha256": "2e7f23f8faf10212b6b4962ba2c7cee7111ede5c0099ce707ab8173e0697a570",
+      "bytes": 1994
+    },
+    {
+      "path": "clinical-development-plan/agents/openai.yaml",
+      "sha256": "eb9baa4f7a7a89a93fef522e58672c2c35cab946fd9cf2d9484e952d59a6237e",
+      "bytes": 242
+    },
+    {
+      "path": "clinical-development-plan/SKILL.md",
+      "sha256": "8797dae3dafff1609ba9a01ca0bf3b40167ed44af2748905b899edb594379720",
+      "bytes": 6313
+    },
+    {
+      "path": "clinical-trial-protocol/agents/openai.yaml",
+      "sha256": "44ff7e3557b65d047cddbfe232c97617f45bbc662186497385404402bd4fb094",
+      "bytes": 236
+    },
+    {
+      "path": "clinical-trial-protocol/SKILL.md",
+      "sha256": "01aeff18b87119eab7a63f23d38e82662dc22f26a00ff4aac94108ee276d1ef5",
+      "bytes": 2427
+    },
+    {
+      "path": "cmc-control-strategy/agents/openai.yaml",
+      "sha256": "fdde103407ab8c524f410fb04dd161d77f6c1aade4994dcbca87e889b9c10b1f",
+      "bytes": 232
+    },
+    {
+      "path": "cmc-control-strategy/SKILL.md",
+      "sha256": "6acdccfbda11e65639966ee6007b4a28a091003f3c5559277eba85722b7ce79f",
+      "bytes": 2202
+    },
+    {
+      "path": "complexa-design/reference/overrides.md",
+      "sha256": "f1523d0d97bfa5cd1ef7484781a952ead817e68a4e570cb431280fdf45b60d4e",
+      "bytes": 23688
+    },
+    {
+      "path": "complexa-design/reference/pipelines.md",
+      "sha256": "9c05cac96905196f410109b53fb3424350154d5fec17a6d332c90a1142db3913",
+      "bytes": 8486
+    },
+    {
+      "path": "complexa-design/reference/troubleshooting.md",
+      "sha256": "5a0916fba22eb7f994026a953598f2388e8cbd8f8eee64907c395400218a4eec",
+      "bytes": 10050
+    },
+    {
+      "path": "complexa-design/SKILL.md",
+      "sha256": "d736788cde1e4de07d3471161703412395a8229b2e5111b1f66b7dfc78ccc0f5",
+      "bytes": 20342
+    },
+    {
+      "path": "complexa-evaluate-pdbs/reference/eval_configs.md",
+      "sha256": "b2aa12f2f350f469d433088bb047656c32b8701ed77231c2e0af07e53595dfc8",
+      "bytes": 10558
+    },
+    {
+      "path": "complexa-evaluate-pdbs/SKILL.md",
+      "sha256": "5743adccdca8ad969fe8ee1e5921429af66a6573ca67a13a85b87e192999b3e4",
+      "bytes": 14320
+    },
+    {
+      "path": "complexa-setup/reference/downloads.md",
+      "sha256": "5bd88bfa4a5ff6913cb0a82e9c01a05368aa348c2b26696f9d56b8fe49a3e3d6",
+      "bytes": 8432
+    },
+    {
+      "path": "complexa-setup/reference/env_keys.md",
+      "sha256": "8ff17e3bb5c954cc3309790e2c42869969ba1e89379e24cdc07b5aa38786eae3",
+      "bytes": 11398
+    },
+    {
+      "path": "complexa-setup/SKILL.md",
+      "sha256": "db0acef4ceee62e56d03f8686f048728f8619f76dbf162fca50b8d46c8e98fd8",
+      "bytes": 8967
+    },
+    {
+      "path": "complexa-slurm/reference/cluster_env.md",
+      "sha256": "086a8597b2b4ec13149a1cefd06e7c5621bb4bdb96c383a4950e033adce78910",
+      "bytes": 9390
+    },
+    {
+      "path": "complexa-slurm/reference/slurm_workloads.md",
+      "sha256": "69e3bdfb6a0e1fd063d1cb1cee5ea5e6d637ef11a3d75bdb934a68ca0d2c6875",
+      "bytes": 12534
+    },
+    {
+      "path": "complexa-slurm/reference/troubleshooting.md",
+      "sha256": "90eba116a4c2ce3de127dc98c2cbfc4392b3d68fb3e8cd17d8ba67b058a6b9e4",
+      "bytes": 10207
+    },
+    {
+      "path": "complexa-slurm/scripts/cluster_preflight.sh",
+      "sha256": "47137935034aa330717382ba868d7ca1a1b56b646188be71479df234c9cd888f",
+      "bytes": 8760
+    },
+    {
+      "path": "complexa-slurm/SKILL.md",
+      "sha256": "fb5bb344d4fece07f8cd82cbfa67c4cebd11b19be027ee55cf7c2824ee0c4861",
+      "bytes": 14870
+    },
+    {
+      "path": "complexa-slurm/THIRD_PARTY_NOTICES.md",
+      "sha256": "d3a553ce49359dd00b37386a2c14cf1dae07c582e1a6e5c4bd10e07f2d738b41",
+      "bytes": 1291
+    },
+    {
+      "path": "complexa-sweep/reference/sweep_axes.md",
+      "sha256": "7fe24b8b9fef52abe971ba6c2171e1483e2bf9055866a1fcd092d67e4c9bdba0",
+      "bytes": 11149
+    },
+    {
+      "path": "complexa-sweep/SKILL.md",
+      "sha256": "51ebd1b9393400aed569c5d95639fd5ef210d6332b7bc11e15e362c0dacc2c09",
+      "bytes": 14337
+    },
+    {
+      "path": "complexa-target/reference/target_schema.md",
+      "sha256": "2d1f1a82bab36753273ea06b3fc27bb3b58634b43331fbf27df6e08bcd1dee3f",
+      "bytes": 10113
+    },
+    {
+      "path": "complexa-target/SKILL.md",
+      "sha256": "cc4565c4073a850437e917922dc2ef394c6d80c680cd10f23394099fab479233",
+      "bytes": 17237
+    },
+    {
+      "path": "compound-sourcing/SKILL.md",
+      "sha256": "27f5c3f2493ce5af09efc9513308d8c9ac7e96eacae698eff537ea2bb6eade63",
+      "bytes": 2303
+    },
+    {
+      "path": "compute-env-setup/references/envs_reference.md",
+      "sha256": "38fb57ba577e1676f1b4955a4044a5e535bda1a6dba23ea6737b47d8cf3d328d",
+      "bytes": 18247
+    },
+    {
+      "path": "compute-env-setup/SKILL.md",
+      "sha256": "f7f2f516a34b817a6c5d70abaaf126b57fddf4ffeead46ee349db3aba08c153f",
+      "bytes": 17844
+    },
+    {
+      "path": "cuequivariance/SKILL.md",
+      "sha256": "5297f6d212d1d1608407c334d227793d6c59713955579c146adca0281ce73b90",
+      "bytes": 15620
+    },
+    {
+      "path": "customize/SKILL.md",
+      "sha256": "c0465ac5cd4913821780609cc93f0bbd1dbed9e87a07192c5be1a1bf96a6d4dc",
+      "bytes": 21872
+    },
+    {
+      "path": "deep-literature-investigation/SKILL.md",
+      "sha256": "10914d29615b1b9dbbdb2f87dba1c5d9ac02a46397fdd82c24096a973574c748",
+      "bytes": 9524
+    },
+    {
+      "path": "diffdock/references/workflows.md",
+      "sha256": "4f4d780abb02650e475c6e2392db44dc615ecc9c0676a6442847118481c980f9",
+      "bytes": 1984
+    },
+    {
+      "path": "diffdock/SKILL.md",
+      "sha256": "1a40aab257746f27a5b0af282343ab2b8ee3d534994cab50d823e17b02899df1",
+      "bytes": 4470
+    },
+    {
+      "path": "diffdock-nim/references/api.md",
+      "sha256": "a63c7349a3374b5110f8cf38dcdbaaff1915b29b516afcf89344092636882bbe",
+      "bytes": 4755
+    },
+    {
+      "path": "diffdock-nim/references/examples.md",
+      "sha256": "93a13d335e3ebae3d7ac394c40df0c85a25a35d692b213326880192b3e2ac966",
+      "bytes": 2208
+    },
+    {
+      "path": "diffdock-nim/references/parameters.md",
+      "sha256": "9c5d4c82fb22448f71bd5431ea21ea575fd7722ddb9e72378923f8906d9b28b0",
+      "bytes": 1854
+    },
+    {
+      "path": "diffdock-nim/references/science.md",
+      "sha256": "34086c8a7d5d0c32cbccd9fbcc0f065ff595ae8132236ed5bb440da1fdf7cc34",
+      "bytes": 1974
+    },
+    {
+      "path": "diffdock-nim/references/validation.md",
+      "sha256": "8e07b78b1b7c9685d23547951d2af98368a01cd4e4627650f00ebb8cd58a1fc3",
+      "bytes": 1793
+    },
+    {
+      "path": "diffdock-nim/SKILL.md",
+      "sha256": "3c288df2af8fec17e4d93e7ade529b1a19c8722ebfba1292efce2abfebc6e2cd",
+      "bytes": 6007
+    },
+    {
+      "path": "dmpk-adme-strategy/agents/openai.yaml",
+      "sha256": "99f5ac27714938b6108277b4a9ec95230b24cfe6152d75165c9429821ad03757",
+      "bytes": 228
+    },
+    {
+      "path": "dmpk-adme-strategy/SKILL.md",
+      "sha256": "d39f24b8eab0645140209505f63cceb9ca063dd163f17df25bbd35ecd1a2d05d",
+      "bytes": 6634
+    },
+    {
+      "path": "document-workbench/evals/evals.json",
+      "sha256": "1269af8c13813a5acacea11247632fd480da61f977efe7aeeece167c4de9a619",
+      "bytes": 924
+    },
+    {
+      "path": "document-workbench/examples/deck.json",
+      "sha256": "23311a5f65e4a46d1adda3475bcb99b4e2e310944652a7508d9f6fcee7b1e895",
+      "bytes": 424
+    },
+    {
+      "path": "document-workbench/examples/notebook.json",
+      "sha256": "34c844dab097d412c94bd99b85e0e5c2ce52594352e6f0b53a94db8f6190ae31",
+      "bytes": 343
+    },
+    {
+      "path": "document-workbench/examples/report.json",
+      "sha256": "2350b7a1802d89baee4f2a08180256979f4c6e61d52eda7747cb33c9a142dd0e",
+      "bytes": 842
+    },
+    {
+      "path": "document-workbench/examples/workbook.json",
+      "sha256": "5fe7a0516a83ab4da6d78c4e160280a135e482b3530496a89af2df1ed031f88b",
+      "bytes": 400
+    },
+    {
+      "path": "document-workbench/references/contract.md",
+      "sha256": "d5025e574c0e6cba600e54813e7ff22772dc9b9cb77f51ce887ef0dccfc3fea7",
+      "bytes": 6966
+    },
+    {
+      "path": "document-workbench/requirements.lock",
+      "sha256": "b81f1bd0209257cc4586591073ca2e93a45e251dffda7a7467f5d79d212dbf3c",
+      "bytes": 314
+    },
+    {
+      "path": "document-workbench/scripts/document_workbench.py",
+      "sha256": "251fdfff856b1341cf0600503eebb86575d7c9bad0352c2ccffcead1ef482a48",
+      "bytes": 79645
+    },
+    {
+      "path": "document-workbench/scripts/test_document_workbench.py",
+      "sha256": "94bc73c421ec8517537f4a2b71b79028823087315dc7112dd846f8fca86cd164",
+      "bytes": 12997
+    },
+    {
+      "path": "document-workbench/SKILL.md",
+      "sha256": "4056d0d6c8d09f8a9dfe3d6ff1626753bee8b084613a30e44cc1ac1f49288818",
+      "bytes": 9797
+    },
+    {
+      "path": "document-workbench/THIRD_PARTY_NOTICES.md",
+      "sha256": "fa1eadfd6c3be18d41ed00f3a8404d14f72b70c398b5115f3e910074cbc98767",
+      "bytes": 1229
+    },
+    {
+      "path": "drug-development-lifecycle/agents/openai.yaml",
+      "sha256": "b91512bb2e46a2d243f9eca7177ef306d0682995408596a943a160f0de8582cb",
+      "bytes": 241
+    },
+    {
+      "path": "drug-development-lifecycle/SKILL.md",
+      "sha256": "9248c2c38beebb2eb68ebf395822fe8ecb42fa58b22c8c5ff97b43aa1f9a9844",
+      "bytes": 2733
+    },
+    {
+      "path": "drug-discovery-pipeline/scripts/assemble_docking_results.py",
+      "sha256": "0b197a2380008fdf261e0b111a1362e159320664b45fd13ff7f4e37856ef3c4a",
+      "bytes": 35015
+    },
+    {
+      "path": "drug-discovery-pipeline/SKILL.md",
+      "sha256": "3a78d9cd845f68d9cc6395628f409d2453cc9cf9f90ffbdce5f4dae8bbb5d632",
+      "bytes": 14229
+    },
+    {
+      "path": "electronic-lab-notebook/SKILL.md",
+      "sha256": "9b389cd144e5afb064ab991b7bbf4110e77afc5129c1d67e0b0b98fc4d4224f0",
+      "bytes": 3774
+    },
+    {
+      "path": "esmfold2/references/design-hook.md",
+      "sha256": "f100def8706fcadd5ffba599137b910ed7b2896b23e46473f81c414f5335f75a",
+      "bytes": 1452
+    },
+    {
+      "path": "esmfold2/references/esmc.md",
+      "sha256": "62ce8706e7493a537af64e1550c6203d36e2c29a36a46fc2d3afc1b87681abce",
+      "bytes": 3052
+    },
+    {
+      "path": "esmfold2/SKILL.md",
+      "sha256": "28e625bab51a5d33e278b5ee6f304d76afa35c424fd919e1914d649df7600175",
+      "bytes": 10208
+    },
+    {
+      "path": "evo2/SKILL.md",
+      "sha256": "3a05ad987d9758b8796e7de92ee6fafa0c3cf52c2e289b69e4b6c2deeb517227",
+      "bytes": 5409
+    },
+    {
+      "path": "evo2-nim/references/api.md",
+      "sha256": "24b190d47b99c071b28b9587e37a5825d6c105bc9756c0997dff4b73576eebe0",
+      "bytes": 8981
+    },
+    {
+      "path": "evo2-nim/references/examples.md",
+      "sha256": "1dbec9fb4e6696d6418068e17246bc55c969d92d4289edb3b1f8c99acb685689",
+      "bytes": 1170
+    },
+    {
+      "path": "evo2-nim/references/parameters.md",
+      "sha256": "1606277d60aa029efb1ce7c878b4ad880d7f824614a3fb75eac1b7059b453fb7",
+      "bytes": 1392
+    },
+    {
+      "path": "evo2-nim/references/science.md",
+      "sha256": "feadc56efddf96e4516f1ddfe1ff9f9c02aeb86922afe1aec3bae23cf6d0af59",
+      "bytes": 1387
+    },
+    {
+      "path": "evo2-nim/references/validation.md",
+      "sha256": "78e0677bbfde939872694135bb217a68296a4184043c8ecc5c5258c4e9135051",
+      "bytes": 1308
+    },
+    {
+      "path": "evo2-nim/SKILL.md",
+      "sha256": "1873c9cf54c328f46a6999fbd04eea4ff6be1af342544fe466fe74823d948329",
+      "bytes": 7259
+    },
+    {
+      "path": "fair-esm2/SKILL.md",
+      "sha256": "dc459acdfb9c992fb6435bb06d0cd9504b91fd848fc6e22ce3a06ed22481e99b",
+      "bytes": 4896
+    },
+    {
+      "path": "figure-composer/kernel.py",
+      "sha256": "4ea47d1f970ded08679072de67a9b179400278ec87afc2aa198df6f28c783421",
+      "bytes": 13942
+    },
+    {
+      "path": "figure-composer/SKILL.md",
+      "sha256": "c287e9e03c38aaf4f791443d497a42a14b54695f607b6bbf4c718436e32c5b42",
+      "bytes": 6779
+    },
+    {
+      "path": "figure-style/kernel.py",
+      "sha256": "362eed04c9a99ed58d611c7ea4c1b51ec69599715637b2d5c38115a62d179532",
+      "bytes": 13366
+    },
+    {
+      "path": "figure-style/SKILL.md",
+      "sha256": "c9b5de0d557235585410b1ed82939ce2f3b8d0f993ecf13059490a795f604a42",
+      "bytes": 16586
+    },
+    {
+      "path": "formulation-development/agents/openai.yaml",
+      "sha256": "9715d10f725fbf08a67d6130cb669a0735fe9e1a6f47712fb367446e2e0d75fc",
+      "bytes": 235
+    },
+    {
+      "path": "formulation-development/SKILL.md",
+      "sha256": "515c7260bf92127bfcf2820b5ef2dbe8b120fa5554a45fd2c3564908550dc4cf",
+      "bytes": 10772
+    },
+    {
+      "path": "genmol-nim/references/api.md",
+      "sha256": "5de0d51e3af9a8b40037d46711d409ad2101d37f9c0651d00b8a45dc921417dc",
+      "bytes": 6832
+    },
+    {
+      "path": "genmol-nim/references/examples.md",
+      "sha256": "630cfd5f731f8cb45bd940b0125dd27292b652ee1cd5ff25116de6c39080704c",
+      "bytes": 1547
+    },
+    {
+      "path": "genmol-nim/references/parameters.md",
+      "sha256": "f95c81ff32fcce091f35f7a939bcebe0afad35252f55f8d47c815bb429060240",
+      "bytes": 1872
+    },
+    {
+      "path": "genmol-nim/references/science.md",
+      "sha256": "444b2e9b9b45bb706e0f15c995642a074fb876ce1ae4c7e96737ca156c282385",
+      "bytes": 1860
+    },
+    {
+      "path": "genmol-nim/references/validation.md",
+      "sha256": "d5afe08d1df0bab03cc49793601c6c98c2f52f3d18d07847401faf97ac938022",
+      "bytes": 1549
+    },
+    {
+      "path": "genmol-nim/SKILL.md",
+      "sha256": "85a27d313228ef720649b5c63eaefd5541d585ba4ec3b5aabfec4dcf75a314f3",
+      "bytes": 8511
+    },
+    {
+      "path": "genomics-workflow-acceleration/references/comparison-checklist.md",
+      "sha256": "02b82138f6041ad4665df1d0a0de2c8add4d1eeba822ac6127e27da3b194a004",
+      "bytes": 2078
+    },
+    {
+      "path": "genomics-workflow-acceleration/references/nf-core-parabricks-map.md",
+      "sha256": "0e04ecffd2eaf31224ae232adcf095959bf901aa160de438fb8b4d1a3925785a",
+      "bytes": 3002
+    },
+    {
+      "path": "genomics-workflow-acceleration/references/parabricks-runtime-readiness.md",
+      "sha256": "cc676678a44a4b239164a51da7a67a804b013410f5b3726fdee139ffa26a7f73",
+      "bytes": 2556
+    },
+    {
+      "path": "genomics-workflow-acceleration/references/parabricks-tool-map.md",
+      "sha256": "7ebdebfc6b268a87f7986251827767b2524640e4558c47a55a02a1d9e4251785",
+      "bytes": 2555
+    },
+    {
+      "path": "genomics-workflow-acceleration/references/step-consolidation.md",
+      "sha256": "983383f703f8b66adf3dd14a71dc769e0d9529b76d4dc2276e92f7f48596f0e2",
+      "bytes": 3573
+    },
+    {
+      "path": "genomics-workflow-acceleration/references/workflow-frameworks.md",
+      "sha256": "a800c60773906985649075e3b2ee6c4f46d5ac38c9da74c13a5206c474e870c8",
+      "bytes": 4910
+    },
+    {
+      "path": "genomics-workflow-acceleration/references/workflow-layout.md",
+      "sha256": "85f904d15f4293034dc1e450f51d6b16ac173b50abc791c9f31dfb641d4b7b95",
+      "bytes": 3674
+    },
+    {
+      "path": "genomics-workflow-acceleration/SKILL.md",
+      "sha256": "6d2f53ec9f72594e5265350e7043098062458e7b0aa818aa49aa41e49f0eae65",
+      "bytes": 13331
+    },
+    {
+      "path": "indication-dossier/references/00-research-standards.md",
+      "sha256": "f4fad6faa98f43c20f80517be606bd03b4020f2bf4d03d5d717885b2341d685b",
+      "bytes": 3101
+    },
+    {
+      "path": "indication-dossier/references/01-meta-initialization.md",
+      "sha256": "c09d1266e85c5aedc04d24d0c36b19c3e46444c6398c2be64896d58d9c6dba2c",
+      "bytes": 1724
+    },
+    {
+      "path": "indication-dossier/references/02-epidemiology-research.md",
+      "sha256": "1f21827754dd56076cb9edb16aee8dc3f75b16681fa5ee7255f1b7ee2f4e0a06",
+      "bytes": 2109
+    },
+    {
+      "path": "indication-dossier/references/03-biology-soc-research.md",
+      "sha256": "722ed3409705ed2822c16d6e9d6f0e0a3026cef3670b0547299669b1f7ce6d58",
+      "bytes": 2368
+    },
+    {
+      "path": "indication-dossier/references/04-regulatory-trials-research.md",
+      "sha256": "322c2c6129fcfb5b1f3d03e2c2c69557872567cf26899a8538483c4c3e385eae",
+      "bytes": 3154
+    },
+    {
+      "path": "indication-dossier/references/05-synthesis.md",
+      "sha256": "4964f5549ae408969257c79b9edeb5359a1ee78e3d5e3ddc527071046f43ff81",
+      "bytes": 5323
+    },
+    {
+      "path": "indication-dossier/references/06-writing-style.md",
+      "sha256": "c4282e80b9c418a67019061c01e4a50c5496a06e8d2c70e62a80ca2d43970617",
+      "bytes": 1746
+    },
+    {
+      "path": "indication-dossier/references/waypoint-schemas.md",
+      "sha256": "4af35fff41a58b20fdb1d80e433ca2d27a8d02d83130175d8abf3c39957cd4e7",
+      "bytes": 2923
+    },
+    {
+      "path": "indication-dossier/SKILL.md",
+      "sha256": "865fbab6047da8ad18a4e8e90c6bbd9639c50cad5d26d18f5cb5da460d20add2",
+      "bytes": 6793
+    },
+    {
+      "path": "instrument-data-to-allotrope/agents/openai.yaml",
+      "sha256": "f2dd1116ad207ac37bf48a0ce910a77ad6a56f8f10d7bc1f1539b225ec14fb83",
+      "bytes": 246
+    },
+    {
+      "path": "instrument-data-to-allotrope/LICENSE.txt",
+      "sha256": "ce0425693ae5db9d7bb987e22c044065b10ea653859f30f817cf5aae891da867",
+      "bytes": 10455
+    },
+    {
+      "path": "instrument-data-to-allotrope/references/asm_schema_overview.md",
+      "sha256": "d83ec6e2ba9f62ede6bc443455d79b1342aed6953fe9a766154977a487164396",
+      "bytes": 6336
+    },
+    {
+      "path": "instrument-data-to-allotrope/references/field_classification_guide.md",
+      "sha256": "4ff046aa68851dfe4377032b304f5f37debb274a77ec036ae2839ad3ab831110",
+      "bytes": 18168
+    },
+    {
+      "path": "instrument-data-to-allotrope/references/flattening_guide.md",
+      "sha256": "6642f004c819dfe43eeea447bf16ed823b0ff77f7de3d0bf4f1f18961df6fd8c",
+      "bytes": 7754
+    },
+    {
+      "path": "instrument-data-to-allotrope/references/supported_instruments.md",
+      "sha256": "8aca41b58c1b44be5c4992cff7ffd5f4d5bfd909de81c3c01af85b4e95a08a9c",
+      "bytes": 5455
+    },
+    {
+      "path": "instrument-data-to-allotrope/requirements.txt",
+      "sha256": "4f85b4e55a9f6e7f48f3065381f8787dd10f267914ffdaa43aba3e22fe200d87",
+      "bytes": 1025
+    },
+    {
+      "path": "instrument-data-to-allotrope/scripts/convert_to_asm.py",
+      "sha256": "5b351c9eac11de1e0d5b2f670fc13c2c0dde436fe16b9f5ffd2764f20dfe3acf",
+      "bytes": 17920
+    },
+    {
+      "path": "instrument-data-to-allotrope/scripts/export_parser.py",
+      "sha256": "667185a6f076ab1cef858349cbe7f14f0b1b429581669d99eedb1ba81920c44f",
+      "bytes": 14508
+    },
+    {
+      "path": "instrument-data-to-allotrope/scripts/flatten_asm.py",
+      "sha256": "5eeaa3f57cfe93d4bd2e3c9de963063309644ffa3e521e6fa0f78bc98639dc1d",
+      "bytes": 7741
+    },
+    {
+      "path": "instrument-data-to-allotrope/scripts/validate_asm.py",
+      "sha256": "e0054f1e9b3a5a16d6ac212aecd587b843ad492f894332c5da1b1032aaa64876",
+      "bytes": 37821
+    },
+    {
+      "path": "instrument-data-to-allotrope/SKILL.md",
+      "sha256": "708e3eb661c8909bb997a699882cafdc2e339b39fe454a84211ad7b25c4d1e80",
+      "bytes": 2602
+    },
+    {
+      "path": "kermt-add-cmim-pretrain/SKILL.md",
+      "sha256": "2e834e23b04a9a120b24151614500c4074bfd0b552efb8ae5a066a489092e7e2",
+      "bytes": 8164
+    },
+    {
+      "path": "kermt-continue-pretrain/SKILL.md",
+      "sha256": "cba87183b53d757d42e93331980cac368ef4e817e01c15ce8b9b7a37a2cf9034",
+      "bytes": 12802
+    },
+    {
+      "path": "kermt-embed/SKILL.md",
+      "sha256": "b7f2726ff1d78406daf6336678019f7189af865599bfdc0339228ccc857f6c1c",
+      "bytes": 4800
+    },
+    {
+      "path": "kermt-finetune/SKILL.md",
+      "sha256": "6c1515d8520d6c6076bffbf8cb047910bc79abde6a490d1093197018943134ff",
+      "bytes": 13220
+    },
+    {
+      "path": "kermt-infer/SKILL.md",
+      "sha256": "a4a80273f4fb9248be76e23011680325cdc9ff34ef9ad520a41fdb73eb2718d9",
+      "bytes": 5749
+    },
+    {
+      "path": "kermt-monitor/SKILL.md",
+      "sha256": "0c1fc4ccda1f6b630466398859a7feff1a223ab230a6a812cbf0b9e64a896cf8",
+      "bytes": 7175
+    },
+    {
+      "path": "kermt-pretrain-scratch/SKILL.md",
+      "sha256": "99f2107d127fc914b3105624924a017c0201ed787cb25b21da74f0e502569bf4",
+      "bytes": 9043
+    },
+    {
+      "path": "kermt-setup/SKILL.md",
+      "sha256": "d042008da9bbc09eedd52975fc1f80b51920e538af3476ebdd0f2e8cf3ca5c30",
+      "bytes": 6385
+    },
+    {
+      "path": "ligandmpnn/SKILL.md",
+      "sha256": "004f25fe7caab394424fb7e2660b9428ad7079d0b9ff1d573079ab6340938396",
+      "bytes": 6217
+    },
+    {
+      "path": "literature-review/kernel.py",
+      "sha256": "72db18812f893f281bd4a9236a44431f38d912d275057115817aa006b074a412",
+      "bytes": 18702
+    },
+    {
+      "path": "literature-review/SKILL.md",
+      "sha256": "06e03ddae319d75fadfb03da48927939a205eb7c41064dd4081805917e67f447",
+      "bytes": 27069
+    },
+    {
+      "path": "managed-model-endpoints/SKILL.md",
+      "sha256": "fea8795baaf29791f1061978759b770e2306c52fe46f80b37333624946325a48",
+      "bytes": 10790
+    },
+    {
+      "path": "medicinal-chemistry-optimization/agents/openai.yaml",
+      "sha256": "c280c1437dc74576541fc9b387c29e5d843122ee40203c512c5f6e6547764f93",
+      "bytes": 253
+    },
+    {
+      "path": "medicinal-chemistry-optimization/scripts/rdkit_analog_generator.py",
+      "sha256": "b0914a520624a17a352399fe9b6fdf0b2d0800bc51b1b437676bb02b4e506c57",
+      "bytes": 16922
+    },
+    {
+      "path": "medicinal-chemistry-optimization/SKILL.md",
+      "sha256": "f258c6cbe2a6337c3ff75144e38e333e34b56a14916afdcc9d96b86be8e93181",
+      "bytes": 8553
+    },
+    {
+      "path": "molmim-nim/references/api.md",
+      "sha256": "5a4f8bd1f14b0d5b8c7761bdacbe73f9ee8ba3c1eaddc2ed7940ab6c3f7c2ad7",
+      "bytes": 4684
+    },
+    {
+      "path": "molmim-nim/references/examples.md",
+      "sha256": "463d14b9895bf07dd684aafc004cd779cdd9fe345adb8e28decf6e391e741a51",
+      "bytes": 2285
+    },
+    {
+      "path": "molmim-nim/references/parameters.md",
+      "sha256": "56a47045dec865b3313f45abc27813d761225bc30d388bc9da0541e050e66d5c",
+      "bytes": 2005
+    },
+    {
+      "path": "molmim-nim/references/science.md",
+      "sha256": "3b2a8d4705639ca7344f52c6885e4201940fe32c655262c93e310123d4679176",
+      "bytes": 2255
+    },
+    {
+      "path": "molmim-nim/references/validation.md",
+      "sha256": "17325fc106f68d3c34fb18fe7e0bdbf8ee486000cc647936499890d7a9bf4bc6",
+      "bytes": 1759
+    },
+    {
+      "path": "molmim-nim/SKILL.md",
+      "sha256": "21345f2688356aca169f5fd38037dfab75debab4f2bf84e4d0ec01c3a8d780d1",
+      "bytes": 9233
+    },
+    {
+      "path": "msa-search-nim/references/api.md",
+      "sha256": "a2aac550b9fb2ba0ee06095f089c8f93856c172d08fe79f877fdb7746ce46224",
+      "bytes": 5547
+    },
+    {
+      "path": "msa-search-nim/references/examples.md",
+      "sha256": "4232c5a77e061159a823f14988857081a9c32f5ccd41bfe546a3a01d8b009f5d",
+      "bytes": 1208
+    },
+    {
+      "path": "msa-search-nim/references/parameters.md",
+      "sha256": "aa537cb208996ae3d1d0eb8cf7dbe45e3b2d38833d01723564e0fccbca0a3a73",
+      "bytes": 1241
+    },
+    {
+      "path": "msa-search-nim/references/science.md",
+      "sha256": "e06293e4aee41fa4d8641fc85195503d966ac402a47ba85bfef436d23a7f75ad",
+      "bytes": 1164
+    },
+    {
+      "path": "msa-search-nim/references/validation.md",
+      "sha256": "f8d05cb2635bbff265aa9122dcf1d5156bde9664b203f2e69e096d2db1172d71",
+      "bytes": 1074
+    },
+    {
+      "path": "msa-search-nim/SKILL.md",
+      "sha256": "a6c424562c50780615edaa9ed32af07105a83996aa27185e29b606df0a79563d",
+      "bytes": 6809
+    },
+    {
+      "path": "msa-structure-prediction-pipeline/SKILL.md",
+      "sha256": "ad4c1b705c0d4283fe51f329bf90fde412b2f6a84e756512afabd891a5b4a328",
+      "bytes": 6482
+    },
+    {
+      "path": "nextflow-development/agents/openai.yaml",
+      "sha256": "8555afc5d7f7fe354d971c9a8a5eb72d45092fcbe3728722bc090048b11e631a",
+      "bytes": 242
+    },
+    {
+      "path": "nextflow-development/LICENSE.txt",
+      "sha256": "ce0425693ae5db9d7bb987e22c044065b10ea653859f30f817cf5aae891da867",
+      "bytes": 10455
+    },
+    {
+      "path": "nextflow-development/references/geo-sra-acquisition.md",
+      "sha256": "b92a599b590739dc1de7f32919879648dd348c824b0f5324b75fe978d43476b4",
+      "bytes": 14750
+    },
+    {
+      "path": "nextflow-development/references/installation.md",
+      "sha256": "deb05a837ca7213967a2b4e41fe1b221f1a1e2169178cff261da82be3c560832",
+      "bytes": 1856
+    },
+    {
+      "path": "nextflow-development/references/pipelines/atacseq.md",
+      "sha256": "4fcda95289b197fb8ea76133c696bd60dafb594fe4eaf3957952f77645bb8251",
+      "bytes": 4319
+    },
+    {
+      "path": "nextflow-development/references/pipelines/rnaseq.md",
+      "sha256": "975ac78b3988dd7fb3a1383246cfe756e4a68d2f7985446045bde86ccbf14452",
+      "bytes": 3732
+    },
+    {
+      "path": "nextflow-development/references/pipelines/sarek.md",
+      "sha256": "2b148fec6fd2a939dd8e145ffdde4160329f2bbbf4eb4b4c206f1a7be4900ce7",
+      "bytes": 4163
+    },
+    {
+      "path": "nextflow-development/references/troubleshooting.md",
+      "sha256": "8d779bc3f39d0ca38c2811b27f854b8fd320e8436a6366b37414434c45c93352",
+      "bytes": 3505
+    },
+    {
+      "path": "nextflow-development/scripts/check_environment.py",
+      "sha256": "061f219a5f2f8d8907ae5a39d40e8685289ffff9100f6d900bd26f7a2ea38598",
+      "bytes": 14776
+    },
+    {
+      "path": "nextflow-development/scripts/config/genomes.yaml",
+      "sha256": "05e07c116e3b3e503b9132ff29a5888665fb20a2abf1c1f38329b740d393b260",
+      "bytes": 3668
+    },
+    {
+      "path": "nextflow-development/scripts/config/pipelines/atacseq.yaml",
+      "sha256": "4d8246c03af88ddfb35eb9da46c8b9ae54bdd78c2c5f8e42f4e0fe40337312a1",
+      "bytes": 5345
+    },
+    {
+      "path": "nextflow-development/scripts/config/pipelines/rnaseq.yaml",
+      "sha256": "230fe3a4caa74f7be81df2adc23d36cf6f3438535f81bb0b4364957a76d84ccd",
+      "bytes": 4320
+    },
+    {
+      "path": "nextflow-development/scripts/config/pipelines/sarek.yaml",
+      "sha256": "de591fda3d463dd8599b5ab32a5a145e4f1ac71ea3449b699a6d3f96f66c3d27",
+      "bytes": 6511
+    },
+    {
+      "path": "nextflow-development/scripts/detect_data_type.py",
+      "sha256": "55c6702c57cb311e55c276d7c97140c85a6b613a284233028241e7c47534e20c",
+      "bytes": 10253
+    },
+    {
+      "path": "nextflow-development/scripts/generate_samplesheet.py",
+      "sha256": "d254021aa806e6117d4a5ef0bc920aa0a287f18bcefa74697a4d2b86b9d1ba7e",
+      "bytes": 15895
+    },
+    {
+      "path": "nextflow-development/scripts/manage_genomes.py",
+      "sha256": "76981f7fd6f1187e2f6f345cfb7a8b62ae6a09f4dc105a8475e626abfb1c566c",
+      "bytes": 17407
+    },
+    {
+      "path": "nextflow-development/scripts/sra_geo_fetch.py",
+      "sha256": "8eb81fdfd2d11d2f22e3137d9bd99d75a05e3df045f53b37b2b225d86769f01d",
+      "bytes": 25714
+    },
+    {
+      "path": "nextflow-development/scripts/utils/__init__.py",
+      "sha256": "308e6ae5d20aadc08a5ad03d6af886e3d6f79d424a6644656e2ba5fa36c8b1af",
+      "bytes": 1857
+    },
+    {
+      "path": "nextflow-development/scripts/utils/file_discovery.py",
+      "sha256": "96f384ae972db44fb05d7a2392d8f9678759f312a27b9b3c9e39998ece485e85",
+      "bytes": 5358
+    },
+    {
+      "path": "nextflow-development/scripts/utils/ncbi_utils.py",
+      "sha256": "ae7a9a06429f44c32d552ddab1bd8ff28b7394d78b5d6d772dc2c0102758092f",
+      "bytes": 29288
+    },
+    {
+      "path": "nextflow-development/scripts/utils/sample_inference.py",
+      "sha256": "b2c26f4c16ee3908be3924922be472b40ebea6862ea856e7c9293e6b1387b77a",
+      "bytes": 8138
+    },
+    {
+      "path": "nextflow-development/scripts/utils/validators.py",
+      "sha256": "70bd546b879d63ecb2170a506afbff349751a4bae89e586a5e4566fb074e45e3",
+      "bytes": 8675
+    },
+    {
+      "path": "nextflow-development/SKILL.md",
+      "sha256": "d6785bbaed68bcc8175327216ff6d3bc424b8a68b5f0395da4de15a1cde11cb3",
+      "bytes": 2641
+    },
+    {
+      "path": "ngs-analysis-router/scripts/ngs_preflight.py",
+      "sha256": "8f0d74e47919609784ffc7f03245ae9a02fa878b33b8bb642b0f132958bbadfe",
+      "bytes": 7942
+    },
+    {
+      "path": "ngs-analysis-router/scripts/test_ngs_preflight.py",
+      "sha256": "08e9707def5bc92257ea1bb1eaa7cbf148161bf4b9aae687b99a9806e79b0c75",
+      "bytes": 5204
+    },
+    {
+      "path": "ngs-analysis-router/SKILL.md",
+      "sha256": "bdc2cdd83c5d4870060f049d5e97bb9b37704dc53c9c15975e08a951f204e538",
+      "bytes": 7727
+    },
+    {
+      "path": "ngs-analysis-router/THIRD_PARTY_NOTICES.md",
+      "sha256": "d8707c2af9dfea5261f6490f7d14c74fa402364efe9b38013b8c53e765c4a201",
+      "bytes": 1885
+    },
+    {
+      "path": "nonclinical-safety-strategy/agents/openai.yaml",
+      "sha256": "f658adf954b013730fe83a02496ca51f039af52bbb17830e92df47c31efccff4",
+      "bytes": 244
+    },
+    {
+      "path": "nonclinical-safety-strategy/SKILL.md",
+      "sha256": "2963f3652a6f9c7bd673d6bb6408e6c796638130e2022a6f038a1e633c2ddfee",
+      "bytes": 2232
+    },
+    {
+      "path": "nvmolkit-usage/SKILL.md",
+      "sha256": "b6bfae93d788088b3e5d4ad1924bb914616f5aa54a814dfb401c6b726c171466",
+      "bytes": 15800
+    },
+    {
+      "path": "openfold2-nim/references/api.md",
+      "sha256": "e614c809233bb1a03f3405eeee44db48c227a7e52d6a7d53cc25c4091e94547c",
+      "bytes": 4659
+    },
+    {
+      "path": "openfold2-nim/references/examples.md",
+      "sha256": "ebf0736f50bc953ae72c34caf102a399c1f55f0345451e9bdc8a5dce4fc3b1b4",
+      "bytes": 2000
+    },
+    {
+      "path": "openfold2-nim/references/parameters.md",
+      "sha256": "8ad9a1213e09b6d513c08b888cfd332d91f4bde5939f7fdb88a4cec086f71d03",
+      "bytes": 1852
+    },
+    {
+      "path": "openfold2-nim/references/science.md",
+      "sha256": "bca999505c6b63b332fdfc347a27be800ebfee78ba5d345dfa29fc490e19dad0",
+      "bytes": 2949
+    },
+    {
+      "path": "openfold2-nim/references/validation.md",
+      "sha256": "ca866196d1b59b032e3c0cfcb230bd9f93d29c2abb4a891bc5f9af9373214980",
+      "bytes": 1516
+    },
+    {
+      "path": "openfold2-nim/SKILL.md",
+      "sha256": "7e44b28b5d418973a013bb0b719997dc12752fb5cdf715672a3587cdc7df2715",
+      "bytes": 7968
+    },
+    {
+      "path": "openfold3/SKILL.md",
+      "sha256": "eef2b03a2c7e1c4b94cd29bb27f3e02499a77be5c414a494f3d78e9c7cc443de",
+      "bytes": 7378
+    },
+    {
+      "path": "openfold3-nim/references/api.md",
+      "sha256": "f71bfb3593287d79a86ce69627aa5de4c5c3858a9c1a859516b10bdccb63b294",
+      "bytes": 5518
+    },
+    {
+      "path": "openfold3-nim/references/examples.md",
+      "sha256": "96545d286adb5e4af7d19b3f0a46a1dd04bbc80e5810e7eba1e2466ae59905b4",
+      "bytes": 2419
+    },
+    {
+      "path": "openfold3-nim/references/parameters.md",
+      "sha256": "e761afbbb9b05e52d722e54d526b82fe70cc61f524b37f9f9afdbd82613bb696",
+      "bytes": 2935
+    },
+    {
+      "path": "openfold3-nim/references/science.md",
+      "sha256": "d6abed1fc620c1e4afcaf3cbef2fa289a126dfe009380f327181da7f376f8e54",
+      "bytes": 2642
+    },
+    {
+      "path": "openfold3-nim/references/validation.md",
+      "sha256": "4353739ef4d883182fc1f0887ed227da1859c76642e0ad4d5568bc5796f37167",
+      "bytes": 2543
+    },
+    {
+      "path": "openfold3-nim/SKILL.md",
+      "sha256": "e5b1fe56bd1b2106ee5b6d96667831f967705847d813bc9f6b92417c6e02a588",
+      "bytes": 8096
+    },
+    {
+      "path": "p2rank-pocket-detection/scripts/p2rank_binding_pockets.py",
+      "sha256": "40dd1d770128506f164da66385469646e5b3d1cbb573518ae94de0eb9f059994",
+      "bytes": 23262
+    },
+    {
+      "path": "p2rank-pocket-detection/SKILL.md",
+      "sha256": "43195dfe599375b408867f02d4fa2c138400ce2a85000c77d98c5c2e8af3765c",
+      "bytes": 5653
+    },
+    {
+      "path": "paper-narrative/kernel.py",
+      "sha256": "b2b894de7132e2ff43b671ae20b2574d025f192108bec0308bbe7c467fc3fc83",
+      "bytes": 4995
+    },
+    {
+      "path": "paper-narrative/SKILL.md",
+      "sha256": "40e090750f98b3ebe8e435e4430f3fbbe11c03f12c7f44594a21f193831f8f87",
+      "bytes": 2706
+    },
+    {
+      "path": "parabricks/references/parabricks-rna-validate.md",
+      "sha256": "994aa7700325337dfe1b823694f00b8883688117d8f58fd5df3bbf56925b2bf1",
+      "bytes": 6362
+    },
+    {
+      "path": "parabricks/references/pbrun-applybqsr.md",
+      "sha256": "dd3480dd275277e9de247135009a0bd03863adfcb044c57c64d243d9d37e7457",
+      "bytes": 4556
+    },
+    {
+      "path": "parabricks/references/pbrun-bam2fq.md",
+      "sha256": "8119d47d5465ed4e157ff90d4c413d9e62355f070e6bb1abd948bc910cdf8ddf",
+      "bytes": 4561
+    },
+    {
+      "path": "parabricks/references/pbrun-bammetrics.md",
+      "sha256": "ecebbc7950bdf5b4f9f9825e644204aa6fe15b035cd76477ad8341695df947f9",
+      "bytes": 6992
+    },
+    {
+      "path": "parabricks/references/pbrun-bamsort.md",
+      "sha256": "b46002a8e323a7f3ae982fc72b146e670700c82ba46860c6f7b97ae29f2c2ac3",
+      "bytes": 4399
+    },
+    {
+      "path": "parabricks/references/pbrun-bqsr.md",
+      "sha256": "2e62873a247c10e50dba1e718038bfd3dcc683870d2e972f0648efeb3d889c1a",
+      "bytes": 4172
+    },
+    {
+      "path": "parabricks/references/pbrun-collectmultiplemetrics.md",
+      "sha256": "a9520580499dcfb03ae42266894200d84a0faf2bf5aa7520db37078ae78905aa",
+      "bytes": 8164
+    },
+    {
+      "path": "parabricks/references/pbrun-dbsnp.md",
+      "sha256": "94281451e5d1b20f9f486607e8380ca46a61d3aec39f35eb6f83f62159c79191",
+      "bytes": 3180
+    },
+    {
+      "path": "parabricks/references/pbrun-deepsomatic.md",
+      "sha256": "ccdb1d822de4641721e4d34159c0577a2492db44a7e2dcd6f1ec4949266bd8f2",
+      "bytes": 4657
+    },
+    {
+      "path": "parabricks/references/pbrun-deepvariant.md",
+      "sha256": "6b5f554b8986173a59e24b4a5b775ef73f796802c9d5aaadbdbfb7b395137998",
+      "bytes": 5330
+    },
+    {
+      "path": "parabricks/references/pbrun-deepvariant_germline.md",
+      "sha256": "29d81a47f2662e05e6e35bfbf5fd5fd66ff784e40c7a9eb8bf16b66f06620ca4",
+      "bytes": 5683
+    },
+    {
+      "path": "parabricks/references/pbrun-fq2bam.md",
+      "sha256": "86221771172c705292ffcac1cc558ec02b796d05b69dbb2694238596ace67b9c",
+      "bytes": 11387
+    },
+    {
+      "path": "parabricks/references/pbrun-fq2bam_meth.md",
+      "sha256": "ddc810886d2405b3beefcded3fa95a2469e8f1214c75dc3870b4ca412b075253",
+      "bytes": 8486
+    },
+    {
+      "path": "parabricks/references/pbrun-genotypegvcf.md",
+      "sha256": "8bf78857f350104ff527c2616ec0402c803cb735602c83a506aee3d33f0a187c",
+      "bytes": 3440
+    },
+    {
+      "path": "parabricks/references/pbrun-germline.md",
+      "sha256": "7b7272b76fab10abf36e1259bce5882bb59d37b724a9da4128365ba83b866011",
+      "bytes": 5530
+    },
+    {
+      "path": "parabricks/references/pbrun-giraffe.md",
+      "sha256": "ed30e556ea9073cf6e76eaa05eb9497c057fd18074e26dc4e6cc328032e3b47a",
+      "bytes": 7415
+    },
+    {
+      "path": "parabricks/references/pbrun-haplotypecaller.md",
+      "sha256": "4b0bc12b074f843426b3bb5e9aa0605046144adb54a8269d75b248226524f050",
+      "bytes": 5771
+    },
+    {
+      "path": "parabricks/references/pbrun-indexgvcf.md",
+      "sha256": "3b5f6477f84f11c0eac4042b7decddad1fded3e156a156775860d1e7da8e2566",
+      "bytes": 3203
+    },
+    {
+      "path": "parabricks/references/pbrun-markdup.md",
+      "sha256": "f3ecb8dfa763d8905144a59912ea8258c8f8faac4771fc36e939820a8e127c4c",
+      "bytes": 5703
+    },
+    {
+      "path": "parabricks/references/pbrun-minimap2.md",
+      "sha256": "0dc59b1232d3027273062f2dda626d385ec265521c0facce909b3ae5117783be",
+      "bytes": 6263
+    },
+    {
+      "path": "parabricks/references/pbrun-mutectcaller.md",
+      "sha256": "89a40a2973fe85d8e4ed4663ac41eee3f5f120fa04189695a1f1e4388533fcc8",
+      "bytes": 4618
+    },
+    {
+      "path": "parabricks/references/pbrun-ont_germline.md",
+      "sha256": "5c1848897f7126e78a68299e89516a3471267c6fafee7a93900f68bde14b9268",
+      "bytes": 4671
+    },
+    {
+      "path": "parabricks/references/pbrun-pacbio_germline.md",
+      "sha256": "5958d6d8287b05d7a7fb6c99e5aa475b12f6f3c85de5599b95577348bc5a5105",
+      "bytes": 5037
+    },
+    {
+      "path": "parabricks/references/pbrun-pangenome_aware_deepvariant.md",
+      "sha256": "069c90d0c8d689a067d89752541e9537ba6ce05d9ac73905f99b7ca4c6a1f175",
+      "bytes": 4455
+    },
+    {
+      "path": "parabricks/references/pbrun-pangenome_germline.md",
+      "sha256": "e8635415d0288dc6159d4b32335deb55670676f6cff36f187a637ac85558a355",
+      "bytes": 4964
+    },
+    {
+      "path": "parabricks/references/pbrun-postpon.md",
+      "sha256": "e0cdf66148db92514eeb53d436bcc425113108654068e238525a847a9a587bf9",
+      "bytes": 3243
+    },
+    {
+      "path": "parabricks/references/pbrun-prepon.md",
+      "sha256": "329fe06dd47fb84b1d8bb4296d1abf8179f8794a49234436a06197975e6b7bc4",
+      "bytes": 3423
+    },
+    {
+      "path": "parabricks/references/pbrun-rna_fq2bam.md",
+      "sha256": "ee9fef9b21a462077c54c6f41feeb3d64b00a7ec6f2789b9fc154802fe7e079d",
+      "bytes": 10840
+    },
+    {
+      "path": "parabricks/references/pbrun-somatic.md",
+      "sha256": "882b7fe4884afad618778292027c5b5c58ee58fa0ec0f6d7cc43b6b820d06e54",
+      "bytes": 5149
+    },
+    {
+      "path": "parabricks/references/pbrun-starfusion.md",
+      "sha256": "56d5bc57e29469d235909727cab3f360faff1dd7b803932319345d2dab625333",
+      "bytes": 10487
+    },
+    {
+      "path": "parabricks/references/runtime-environment.md",
+      "sha256": "cd5221de3be4cdcb93f2bc1efe9dcb4f0ee0cef6c07043d55c515bd1d8a54426",
+      "bytes": 8530
+    },
+    {
+      "path": "parabricks/references/tool-index.md",
+      "sha256": "c951f9aa8f8adb57ce6233bd0837684b91bf0171153168aa0903deb470b98b03",
+      "bytes": 3583
+    },
+    {
+      "path": "parabricks/scripts/check_parabricks_runtime.py",
+      "sha256": "733d6d2f3a4d02968a1a492862fef962ea1948b531d8796d7ccb2b3cc4c9be3e",
+      "bytes": 20328
+    },
+    {
+      "path": "parabricks/SKILL.md",
+      "sha256": "bfb39342b2fca4ca4048065b010ea8c2bda156a7ca8c09d636361db818585445",
+      "bytes": 8385
+    },
+    {
+      "path": "patent-search/references/source-access.md",
+      "sha256": "c8dd62212df070ade3a23eb69bc31efcc339e8df43750cae05b499d0d4d84709",
+      "bytes": 2617
+    },
+    {
+      "path": "patent-search/SKILL.md",
+      "sha256": "e7b485fe368f00105084eb66bee74478d279fe241d58c2cf92338b30876db5bb",
+      "bytes": 4674
+    },
+    {
+      "path": "pdf-explore/kernel.py",
+      "sha256": "d53e9b1c708056260d2bd56ea25cdf00112920c23828777b7e89d16b18de9cde",
+      "bytes": 52486
+    },
+    {
+      "path": "pdf-explore/SKILL.md",
+      "sha256": "d5d291024122188b594a36d8f9f86f39f44b3c890c03191a6e48aa1868126b0d",
+      "bytes": 14468
+    },
+    {
+      "path": "pharmacovigilance-risk-management/agents/openai.yaml",
+      "sha256": "64fd22d70906c71825bf3b93f656fe5a8b2748ef401044c732622ecfed99ea9c",
+      "bytes": 251
+    },
+    {
+      "path": "pharmacovigilance-risk-management/SKILL.md",
+      "sha256": "15a3e0ac15abdff863b6e0e290e54b6c99db0673585a7235dbaec4fa453c1bad",
+      "bytes": 2153
+    },
+    {
+      "path": "pocket2mol-local/scripts/acquire_checkpoint.py",
+      "sha256": "ce3d4c9d3683578b9093651e1e97ea97db96cc9ecbc1ffb8ca14a82325937f4f",
+      "bytes": 4411
+    },
+    {
+      "path": "pocket2mol-local/scripts/run_pocket2mol.py",
+      "sha256": "ec49c50df374f9aaf2e615df00e3e26ae0cfc7dafc54cf975b5e99da61817f4f",
+      "bytes": 14360
+    },
+    {
+      "path": "pocket2mol-local/SKILL.md",
+      "sha256": "6ddba04daf097a660024ad7fd1afc85a32879474efc0c548f31573983b96e904",
+      "bytes": 12281
+    },
+    {
+      "path": "postmarketing-lifecycle-management/agents/openai.yaml",
+      "sha256": "56bd5c3f5b2c14037a1ef9183e79235b0445dd0b10a42b130ce11f7b007359bc",
+      "bytes": 261
+    },
+    {
+      "path": "postmarketing-lifecycle-management/SKILL.md",
+      "sha256": "485b680e7b09af6da301b41dcec1719a7ac9c8e7b9305326342256e5d4410e5e",
+      "bytes": 2165
+    },
+    {
+      "path": "presentations/SKILL.md",
+      "sha256": "b172f8c2dabd7439fa6b94dcee2805bc77e4005443e16eb67cffc8ded7852757",
+      "bytes": 3745
+    },
+    {
+      "path": "process-development-scale-up/agents/openai.yaml",
+      "sha256": "b1f54692cb53e77120383e365db2731cfa297160866023498d19a5574c90f0db",
+      "bytes": 253
+    },
+    {
+      "path": "process-development-scale-up/SKILL.md",
+      "sha256": "39f3500c73b71155493611ea0c26ce1a81ce64d2339ec406848882f11916a1da",
+      "bytes": 5446
+    },
+    {
+      "path": "product-self-knowledge/SKILL.md",
+      "sha256": "ee019fee106543bf9926c92960b34e6680a2f746b9bac5ae71c6fa687451601e",
+      "bytes": 1778
+    },
+    {
+      "path": "protein-design-strategy/references/methods.md",
+      "sha256": "6e8f7482cab0606e4210900eb43a461baa52ba5e78da100d5eaca4099b1e0873",
+      "bytes": 2371
+    },
+    {
+      "path": "protein-design-strategy/SKILL.md",
+      "sha256": "031410266a8be8d29b9ce93aecdc9344e64611ca96fbce67e04bdc608379b7eb",
+      "bytes": 8381
+    },
+    {
+      "path": "proteinmpnn/SKILL.md",
+      "sha256": "9873f4f800d457a6b6a7139df133e8b4b259694c9433e188ca551929373f47b8",
+      "bytes": 4587
+    },
+    {
+      "path": "proteinmpnn-nim/references/api.md",
+      "sha256": "81c4fe07cd2edd38c251a1209592bb1d4e56e633a6f3af356947c6fd2933eaab",
+      "bytes": 4345
+    },
+    {
+      "path": "proteinmpnn-nim/references/examples.md",
+      "sha256": "f044b1eb0fbf4c8f1f183023cd6e78efca1cbad5224d7a6663511bd153b55444",
+      "bytes": 821
+    },
+    {
+      "path": "proteinmpnn-nim/references/parameters.md",
+      "sha256": "6528fdced77b75ddb06f3d434cc3065583682b9e2d8d480e421fbdb1fa49deb7",
+      "bytes": 1158
+    },
+    {
+      "path": "proteinmpnn-nim/references/science.md",
+      "sha256": "740fd45c526f5a1abfffb337a3cc30d3fbb4f7c00156f8e5f224c9fedb55a5d2",
+      "bytes": 1125
+    },
+    {
+      "path": "proteinmpnn-nim/references/validation.md",
+      "sha256": "a68174cc4995026e6c943193ea859006833f66f3e6a0a4084b12c42c3ababdd4",
+      "bytes": 927
+    },
+    {
+      "path": "proteinmpnn-nim/SKILL.md",
+      "sha256": "96cb57cb92d1a32572ea61c8550f57d25f12c02ca2492db3d78375d2c8f8fa1a",
+      "bytes": 5675
+    },
+    {
+      "path": "quantum-chemistry-postprocessing/SKILL.md",
+      "sha256": "e3e83a93fcfd9a59abaca03065eea1bbf6856ef69360cd2592550c9c502d7691",
+      "bytes": 3451
+    },
+    {
+      "path": "reaction-engineering/SKILL.md",
+      "sha256": "a7249e5de6265b0973282dc266a237ecf4febf98e57713b4c60d00e41ac7bf97",
+      "bytes": 3961
+    },
+    {
+      "path": "regulatory-submission-strategy/agents/openai.yaml",
+      "sha256": "67ac3587cd410360a7a6cb2c27ee4a512bbc6771991d8d64cf1c4a4fb71b888a",
+      "bytes": 245
+    },
+    {
+      "path": "regulatory-submission-strategy/SKILL.md",
+      "sha256": "35abad2da16aa1c0ef6c0f4cddff69cefc8dfd07edce929b59eb5da2c4cdeacb",
+      "bytes": 2338
+    },
+    {
+      "path": "remote-compute-modal/env-setup.md",
+      "sha256": "2a09851a1fd3389b2d19f5fd8dc1e3cca475ae6ef6b609f58f6e240c5cf22e28",
+      "bytes": 14418
+    },
+    {
+      "path": "remote-compute-modal/envs/chemistry_gpu.py",
+      "sha256": "1b0315f1fda5c30f8f57b86cae18967e252a0fe8ff4c17e1bdee27573794ff78",
+      "bytes": 1080
+    },
+    {
+      "path": "remote-compute-modal/envs/esmfold2_gpu.py",
+      "sha256": "5167c8315ce35129b6f00887eab41dea6a9048cc0d3638cab15a1eb375f6530d",
+      "bytes": 7120
+    },
+    {
+      "path": "remote-compute-modal/envs/genomics_evo2_gpu.py",
+      "sha256": "5d04ee1f48d348b34323a65c86086e88580ff09ec02cf12fe89383e278731e70",
+      "bytes": 2966
+    },
+    {
+      "path": "remote-compute-modal/envs/md_openmm_gpu.py",
+      "sha256": "1d546064c2f866e017300c18fa56598c8790d106e2642401c178240773877d5f",
+      "bytes": 1352
+    },
+    {
+      "path": "remote-compute-modal/envs/proteomics_boltz_gpu.py",
+      "sha256": "16208a77e336cf3f3a45f9b85b42e2f9f4ee1f2876bea1e18f1f990b3ca58d06",
+      "bytes": 2270
+    },
+    {
+      "path": "remote-compute-modal/envs/proteomics_gpu.py",
+      "sha256": "c82174cb3f6d58471008ee41bdb66893d59c3a77762b8baaa5cdf094c43a158d",
+      "bytes": 3196
+    },
+    {
+      "path": "remote-compute-modal/envs/proteomics_jax_gpu.py",
+      "sha256": "becbdc97c55d7fc49f869ad9a4010535d9ef187e3ad12b67baae14ac4ab5970e",
+      "bytes": 2778
+    },
+    {
+      "path": "remote-compute-modal/envs/proteomics_openfold_gpu.py",
+      "sha256": "cf59fee05cef2cf73272865a9acc1725fde80e5f2d95c759e4a2ff6429f0ecc8",
+      "bytes": 5216
+    },
+    {
+      "path": "remote-compute-modal/envs/proteomics_rfd_diffdock_gpu.py",
+      "sha256": "8e0fdcb818ad7ece9b63d254eb8f65232568b15d5fd199648c2e61dd22dc7f39",
+      "bytes": 5136
+    },
+    {
+      "path": "remote-compute-modal/envs/singlecell_gpu.py",
+      "sha256": "9df512e645f9bd2a73301e47be0c3b0df83f585ee6d186afd2a708a95f7896ef",
+      "bytes": 4564
+    },
+    {
+      "path": "remote-compute-modal/provider.json",
+      "sha256": "5c6c5853bcec63a35df3f496bd0b8df8ad18895271da62aee96f526649cedb59",
+      "bytes": 548
+    },
+    {
+      "path": "remote-compute-modal/provider.py",
+      "sha256": "0674970dc5483334c6be21ba226f0bd95c9830eba5398a94f192ab296b6723b9",
+      "bytes": 45103
+    },
+    {
+      "path": "remote-compute-modal/requirements.lock",
+      "sha256": "20c8541717b9dcf31bba3f8362e3e2c1adafe011cb2a4a1dbee36bce7d1ad0dd",
+      "bytes": 72112
+    },
+    {
+      "path": "remote-compute-modal/SKILL.md",
+      "sha256": "0e61af1f71cf079df84079e71ccfe002bbb95891afb8d32120e64046fa433a38",
+      "bytes": 43921
+    },
+    {
+      "path": "remote-compute-ssh/SKILL.md",
+      "sha256": "739934d69eae8b6b7caeebd21d6734f8653b7b5f15cd2bc4f29ab3998d80d41d",
+      "bytes": 18355
+    },
+    {
+      "path": "rfdiffusion-nim/references/api.md",
+      "sha256": "22c4740501b8d81c75a6df8ee8f8e77abca364260e2c86b1e3dd03ae41ef5a1c",
+      "bytes": 4212
+    },
+    {
+      "path": "rfdiffusion-nim/references/examples.md",
+      "sha256": "f408b189bde8b8a018359175bf526d77a167b78cc8ad753b10843e9ae0b383b9",
+      "bytes": 857
+    },
+    {
+      "path": "rfdiffusion-nim/references/parameters.md",
+      "sha256": "80544cbfc63d739f5e7c76c987bd17ea860a719a2a381dc21662517c3ba7a5a6",
+      "bytes": 1015
+    },
+    {
+      "path": "rfdiffusion-nim/references/science.md",
+      "sha256": "ebaa31f4e40063b63ebc327c080a269394ebb04633c5a2a7369096dc3385d09c",
+      "bytes": 975
+    },
+    {
+      "path": "rfdiffusion-nim/references/validation.md",
+      "sha256": "e4dc872d573810f63e2d9791fe3ff7bd6a5322ce4d523144556267d11dbfc148",
+      "bytes": 855
+    },
+    {
+      "path": "rfdiffusion-nim/SKILL.md",
+      "sha256": "78e27ac7e9cd21258f7f33f59b937d160f440ff0418c935ca2c261bced288379",
+      "bytes": 6213
+    },
+    {
+      "path": "rna-design-strategy/references/methods.md",
+      "sha256": "9e09016cc5a4a7a1778e6e22e3241c244cccde95a54df4931ba08a9391fafdb4",
+      "bytes": 2660
+    },
+    {
+      "path": "rna-design-strategy/SKILL.md",
+      "sha256": "2405ca3f11dbb1a13dd3c15ba7a6d28fcf1127bbd7cebba19cfbd6ada214ec6c",
+      "bytes": 9047
+    },
+    {
+      "path": "sbdd-ppi-workflow/SKILL.md",
+      "sha256": "a41f166f9c505b0b42406d2d4d2a6303e8b28ea64cf23b5c6ebed2919786d334",
+      "bytes": 5868
+    },
+    {
+      "path": "scgpt/SKILL.md",
+      "sha256": "4ed6c2c4197875dbc7fdc4203c546ea05db2474901aa53b6db48450831548f45",
+      "bytes": 5329
+    },
+    {
+      "path": "scientific-problem-selection/agents/openai.yaml",
+      "sha256": "f64f6c56fafa226e06afc6b87e490e4355f08b78b68388eda27a640bc449a28c",
+      "bytes": 250
+    },
+    {
+      "path": "scientific-problem-selection/LICENSE.txt",
+      "sha256": "ce0425693ae5db9d7bb987e22c044065b10ea653859f30f817cf5aae891da867",
+      "bytes": 10455
+    },
+    {
+      "path": "scientific-problem-selection/references/01-intuition-pumps.md",
+      "sha256": "2104e2a252c76e8b9758cb8366c6e7ceeaf5aef7e5899b7ce31fcf28be8a3d26",
+      "bytes": 12948
+    },
+    {
+      "path": "scientific-problem-selection/references/02-risk-assessment.md",
+      "sha256": "cb79e871d4d907dca1d60c2ed3eeee10626e2dd3a3285b362bb1118ec65716b8",
+      "bytes": 13713
+    },
+    {
+      "path": "scientific-problem-selection/references/03-optimization-function.md",
+      "sha256": "0816152325f88f6aebf98deb6c9bab2eac912cfdd4b880c749c84d16c288f01b",
+      "bytes": 18831
+    },
+    {
+      "path": "scientific-problem-selection/references/04-parameter-strategy.md",
+      "sha256": "74bc6ae69822c5c262277999e3ff09e75202c8b92d5250ac4a9b2dbb371ae350",
+      "bytes": 14819
+    },
+    {
+      "path": "scientific-problem-selection/references/05-decision-tree.md",
+      "sha256": "9340af586447c285944dd5aec4e6022dcd7e304969db482f222e351d5d982f2c",
+      "bytes": 3380
+    },
+    {
+      "path": "scientific-problem-selection/references/06-adversity-planning.md",
+      "sha256": "40a12d8000e4b7fb7339e8f20d35272110fee32581bd32e270cfc1796f757913",
+      "bytes": 4857
+    },
+    {
+      "path": "scientific-problem-selection/references/07-problem-inversion.md",
+      "sha256": "d61a1cdc05d6c0fab78b12625b1dc3b0fb7cee16a0d2cbb6a33cc066edec558c",
+      "bytes": 5823
+    },
+    {
+      "path": "scientific-problem-selection/references/08-integration-synthesis.md",
+      "sha256": "6efcd5fd4ea7369227ca4ed4a223a742eeda0e21758506093ed0dcc86361ac9b",
+      "bytes": 5589
+    },
+    {
+      "path": "scientific-problem-selection/references/09-meta-framework.md",
+      "sha256": "2fad37f92b54b07bde03fa3b8b2536e4df202e0ad40f5acd8ea9830f3ccd903d",
+      "bytes": 17043
+    },
+    {
+      "path": "scientific-problem-selection/SKILL.md",
+      "sha256": "b7975664594b55f1f41258de52ded82ed74c6cf5a8c2b0474402ef160b5284e8",
+      "bytes": 1990
+    },
+    {
+      "path": "scvi-tools/kernel.py",
+      "sha256": "2bee319ad79e46adcf7ed76a9b8e409a636845ea44ff399c338141067739a9ad",
+      "bytes": 2248
+    },
+    {
+      "path": "scvi-tools/SKILL.md",
+      "sha256": "e11e405dc0f5864072bffe82f08a35d53c9b6033ece869ac5965158db581e46a",
+      "bytes": 10335
+    },
+    {
+      "path": "self-awareness/SKILL.md",
+      "sha256": "3f8b204e7e27f9d3d2fc5b8b3667c668bc27eb70293e5b865187424f3a5fa324",
+      "bytes": 13690
+    },
+    {
+      "path": "single-cell-rna-analysis/agents/openai.yaml",
+      "sha256": "cdd18f6a2dc782f7508f4ec485fdb09435b5f782616d76b33f26b2dcf5f56324",
+      "bytes": 241
+    },
+    {
+      "path": "single-cell-rna-analysis/LICENSE.txt",
+      "sha256": "ce0425693ae5db9d7bb987e22c044065b10ea653859f30f817cf5aae891da867",
+      "bytes": 10455
+    },
+    {
+      "path": "single-cell-rna-analysis/references/scverse_qc_guidelines.md",
+      "sha256": "b777473deb5ce4518f02d401aebec874fee0a314281daa9f306b74437768ecbe",
+      "bytes": 7773
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/analysis_core.py",
+      "sha256": "4d23c97c4de3c3f951cbba2dba2863036e17ad125e2f1655cc1085ab3213f693",
+      "bytes": 10100
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/analysis_pipeline.py",
+      "sha256": "4f31515bd80c87baa88eefdd9e3df88d40cf827bb26c56b73d3d2b80068198f6",
+      "bytes": 13985
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/annotation_core.py",
+      "sha256": "ebd6933459d17631c53a91c303788fa78d76051c0877832038fcd48daf7d27f1",
+      "bytes": 4020
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/annotation_pipeline.py",
+      "sha256": "2b72c5417a089adeea716b09e6ab899c1f78fcdf7798799eb8c1ab6d0f3c0ba2",
+      "bytes": 5102
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/comparison_core.py",
+      "sha256": "cc41c181744ce71d0c79542a1cca5dc9abd9d339c1bcc967cdd5a3eef0017c91",
+      "bytes": 7246
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/matrix_manifest.py",
+      "sha256": "594666f3081c8c47ad3b1ff61fa0bba5adeeeb45936f098ff1c421ae1232f40d",
+      "bytes": 14612
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/qc_analysis.py",
+      "sha256": "901f4e9046caee34c6de19fa66fae73591c16498effb47fc580f7022a4fc9e3c",
+      "bytes": 9765
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/qc_core.py",
+      "sha256": "f075812d0617184020d40b522f14fc979aaee298c3ef07bd1be6c0b8619e119e",
+      "bytes": 6908
+    },
+    {
+      "path": "single-cell-rna-analysis/scripts/qc_plotting.py",
+      "sha256": "627f92f9052f7a6aaa6ba13073421174aeebffa20883eb9e5788a2e52f41e594",
+      "bytes": 8736
+    },
+    {
+      "path": "single-cell-rna-analysis/SKILL.md",
+      "sha256": "59d15c3d15c89e540e5d39b3cb35fe670ee18a97b75688df30ee38e864feb6d9",
+      "bytes": 9593
+    },
+    {
+      "path": "skill-creator/agents/analyzer.md",
+      "sha256": "7346037b62ace5ef79113a1e26a223b49974de82b6eeab6306237bbd711a2e61",
+      "bytes": 10677
+    },
+    {
+      "path": "skill-creator/agents/comparator.md",
+      "sha256": "8ad26b18b62332467631e5f261e5a1a8016a74e7dfa4c3165d98a5b3ddfa7d4b",
+      "bytes": 7501
+    },
+    {
+      "path": "skill-creator/agents/grader.md",
+      "sha256": "1e55e3cd0ac4aadb1541448041dac63a067c202edf7448c3d9e11016743a4ce2",
+      "bytes": 9184
+    },
+    {
+      "path": "skill-creator/assets/eval_review.html",
+      "sha256": "2bf53d694cf89a5ab31660dd9d9e251fe504fb6f928b3c703457b84579a6dcee",
+      "bytes": 8597
+    },
+    {
+      "path": "skill-creator/eval-viewer/generate_review.py",
+      "sha256": "fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb",
+      "bytes": 16365
+    },
+    {
+      "path": "skill-creator/eval-viewer/viewer.html",
+      "sha256": "2f0c5c440916afea095ca0f04f21ad3d5befdddeb03fc3bad716859cbc3747b1",
+      "bytes": 51084
+    },
+    {
+      "path": "skill-creator/LICENSE.txt",
+      "sha256": "14099b9c79d031b9d4b32c736a4e20f2b941f52dd79500532d62d26dd716110c",
+      "bytes": 11346
+    },
+    {
+      "path": "skill-creator/NOTICE.md",
+      "sha256": "bf5f3eb550eb3ea9783d713de0507b66f20d771d4c5d89e2cdf332108ef8ed8a",
+      "bytes": 1176
+    },
+    {
+      "path": "skill-creator/references/schemas.md",
+      "sha256": "844f13f84ad29aafdb3e74935cb79c48e77608bd746a8b0dbc4a58eb223a6aaa",
+      "bytes": 12219
+    },
+    {
+      "path": "skill-creator/scripts/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skill-creator/scripts/aggregate_benchmark.py",
+      "sha256": "923173248e761ba7326a67b13f767570e6174129a5ce459c88008f2f65ad20a0",
+      "bytes": 14626
+    },
+    {
+      "path": "skill-creator/scripts/generate_report.py",
+      "sha256": "affd30b3b160ad0becab4ddee328c890cce3855ed17865c9d9578b3fffe9b978",
+      "bytes": 13012
+    },
+    {
+      "path": "skill-creator/scripts/package_skill.py",
+      "sha256": "cdd1a898263498ecd6c08092cf602c64ffe256772d9451400b4b503b5e634a47",
+      "bytes": 4324
+    },
+    {
+      "path": "skill-creator/scripts/quick_validate.py",
+      "sha256": "1e99018154b26982880ff1fd08c55a7e4fa7f089f7120fba6dbf6429d017ea6d",
+      "bytes": 7638
+    },
+    {
+      "path": "skill-creator/scripts/test_quick_validate.py",
+      "sha256": "ced46048befa9ca369f367674dbae46a8120310009b758a4fc23b6ff992bb2e3",
+      "bytes": 2717
+    },
+    {
+      "path": "skill-creator/scripts/utils.py",
+      "sha256": "3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1",
+      "bytes": 1661
+    },
+    {
+      "path": "skill-creator/SKILL.md",
+      "sha256": "d5eac7c20035b36ce8d9f1ca45bb52befa722cbc447ec229f786d8cd2c103fc7",
+      "bytes": 38033
+    },
+    {
+      "path": "solublempnn/SKILL.md",
+      "sha256": "c5c9b5cba2668bfafc54e899e5165a68e07a1425ab25667cab8c86807d3f6e0c",
+      "bytes": 4277
+    },
+    {
+      "path": "stability-shelf-life/agents/openai.yaml",
+      "sha256": "5df055dd71f2223f3fa095910e3a25a3bc4c5b91c26ec2d19d449d421bc73833",
+      "bytes": 232
+    },
+    {
+      "path": "stability-shelf-life/scripts/stability_analysis.py",
+      "sha256": "3d770e7d63f481e39dc5f4caee9cf3e138e1302d4ee93f578884beb6729adbb3",
+      "bytes": 11736
+    },
+    {
+      "path": "stability-shelf-life/scripts/stability_report.py",
+      "sha256": "0b494682390c28fca760451e6cfdc370b2572f60cb64f356afe8e3293c263662",
+      "bytes": 6594
+    },
+    {
+      "path": "stability-shelf-life/scripts/test_stability_analysis.py",
+      "sha256": "db59f0e98f1daf7558402c0e404ff8d0fce51eddd03e126b9561f3026a3c9549",
+      "bytes": 4991
+    },
+    {
+      "path": "stability-shelf-life/SKILL.md",
+      "sha256": "ca1019762b5650cc3fe54bda06389e0a50bb00d41f7faa280aaceb9c6240ad12",
+      "bytes": 7054
+    },
+    {
+      "path": "structure-based-molecule-generation/references/generation-methods.md",
+      "sha256": "8c119a30e5f50f6c3cf2369a716c6fb84f85d39aaa911b5a64fa3b404e5d23ad",
+      "bytes": 8793
+    },
+    {
+      "path": "structure-based-molecule-generation/SKILL.md",
+      "sha256": "83986c53be30f699b26d18eb40cb51764e53ec9835f83d8b2faee8374f4b05bb",
+      "bytes": 18436
+    },
+    {
+      "path": "synon-research/references/evidence-synthesis.md",
+      "sha256": "69346ff1736980e668314433b31de9cb3b112c95020be2da5093ecd85dcdc709",
+      "bytes": 2750
+    },
+    {
+      "path": "synon-research/references/source-selection.md",
+      "sha256": "d85ef89486d932a67a44ca6c19750ae37a6bd9bdc3ce13e299dfb2c0b5d89e7e",
+      "bytes": 4023
+    },
+    {
+      "path": "synon-research/SKILL.md",
+      "sha256": "4ccefb765b78dc649419529f2e01c17414004fbdeb2a7f27ff2aa74aaf5a4c65",
+      "bytes": 2492
+    },
+    {
+      "path": "THIRD_PARTY_LICENSES.md",
+      "sha256": "3c88057f6885e11f5f50a5c51a52fefeea38f8be7bc2688323e49c832b90f194",
+      "bytes": 66579
+    },
+    {
+      "path": "using-model-endpoint/provider.json",
+      "sha256": "6e53876eed107136678a2a76b26b9a427a480804ed2f3338d02c341994dcd66b",
+      "bytes": 243
+    },
+    {
+      "path": "using-model-endpoint/provider.py",
+      "sha256": "e6cb83fcb3257809be7125e28671083515ad716e8e39d0a8e7780ebc73417f63",
+      "bytes": 5246
+    },
+    {
+      "path": "using-model-endpoint/requirements.lock",
+      "sha256": "8ec4de650015bb499b861f2950b8af52156f622f610406760e261c4868ff3fa5",
+      "bytes": 1580
+    },
+    {
+      "path": "using-model-endpoint/SKILL.md",
+      "sha256": "909b87c8e85642b90e6e3ec509abb81cc3b707bb48341e9a4cc38fdf0ac835da",
+      "bytes": 1850
+    }
+  ]
+}

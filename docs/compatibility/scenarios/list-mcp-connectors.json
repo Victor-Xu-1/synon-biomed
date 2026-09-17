@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "list-mcp-connectors",
+  "contracts": [{"kind": "service", "name": "listMCPConnectors"}],
+  "steps": [
+    {"name": "list-connectors", "method": "GET", "path": "/api/mcp-servers/connectors", "expectedStatus": [200]}
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

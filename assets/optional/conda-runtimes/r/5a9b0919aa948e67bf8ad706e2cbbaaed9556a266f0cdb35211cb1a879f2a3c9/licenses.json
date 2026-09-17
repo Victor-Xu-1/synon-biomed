@@ -1,0 +1,1210 @@
+{
+  "schemaVersion": 2,
+  "name": "synon-biomed-r",
+  "platform": "linux-x86_64",
+  "source": "verified-conda-meta-license-fields",
+  "licenseTextsIncluded": false,
+  "packageCount": 200,
+  "packages": [
+    {
+      "name": "_openmp_mutex",
+      "version": "4.5",
+      "build": "20_gnu",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "_r-mutex",
+      "version": "1.0.1",
+      "build": "anacondar_1",
+      "license": "BSD"
+    },
+    {
+      "name": "binutils_impl_linux-64",
+      "version": "2.45.1",
+      "build": "default_hfdba357_102",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "binutils_linux-64",
+      "version": "2.45.1",
+      "build": "default_h4852527_102",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "bwidget",
+      "version": "1.10.1",
+      "build": "ha770c72_1",
+      "license": "TCL"
+    },
+    {
+      "name": "bzip2",
+      "version": "1.0.8",
+      "build": "hda65f42_9",
+      "license": "bzip2-1.0.6"
+    },
+    {
+      "name": "c-ares",
+      "version": "1.34.6",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "ca-certificates",
+      "version": "2026.6.17",
+      "build": "hbd8a1cb_0",
+      "license": "ISC"
+    },
+    {
+      "name": "cairo",
+      "version": "1.18.4",
+      "build": "he90730b_1",
+      "license": "LGPL-2.1-only or MPL-1.1"
+    },
+    {
+      "name": "curl",
+      "version": "8.21.0",
+      "build": "hae6b9f4_2",
+      "license": "curl"
+    },
+    {
+      "name": "font-ttf-dejavu-sans-mono",
+      "version": "2.37",
+      "build": "hab24e00_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "font-ttf-inconsolata",
+      "version": "3.000",
+      "build": "h77eed37_0",
+      "license": "OFL-1.1"
+    },
+    {
+      "name": "font-ttf-source-code-pro",
+      "version": "2.038",
+      "build": "h77eed37_0",
+      "license": "OFL-1.1"
+    },
+    {
+      "name": "font-ttf-ubuntu",
+      "version": "0.83",
+      "build": "h77eed37_3",
+      "license": "LicenseRef-Ubuntu-Font-Licence-Version-1.0"
+    },
+    {
+      "name": "fontconfig",
+      "version": "2.18.1",
+      "build": "h27c8c51_0",
+      "license": "MIT"
+    },
+    {
+      "name": "fonts-conda-ecosystem",
+      "version": "1",
+      "build": "0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "fonts-conda-forge",
+      "version": "1",
+      "build": "hc364b38_1",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "freetype",
+      "version": "2.14.3",
+      "build": "ha770c72_0",
+      "license": "GPL-2.0-only OR FTL"
+    },
+    {
+      "name": "fribidi",
+      "version": "1.0.16",
+      "build": "hb03c661_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "gcc_impl_linux-64",
+      "version": "15.2.0",
+      "build": "he0086c7_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "gcc_linux-64",
+      "version": "15.2.0",
+      "build": "h7be306e_27",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "gfortran_impl_linux-64",
+      "version": "15.2.0",
+      "build": "h281d09f_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "graphite2",
+      "version": "1.3.15",
+      "build": "hecca717_0",
+      "license": "LGPL-2.0-or-later"
+    },
+    {
+      "name": "gsl",
+      "version": "2.7",
+      "build": "he838d99_0",
+      "license": "GPL-3.0-or-later"
+    },
+    {
+      "name": "gxx_impl_linux-64",
+      "version": "15.2.0",
+      "build": "hda75c37_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "gxx_linux-64",
+      "version": "15.2.0",
+      "build": "hcb00b6d_27",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "harfbuzz",
+      "version": "14.2.1",
+      "build": "ha770c72_1",
+      "license": "MIT"
+    },
+    {
+      "name": "icu",
+      "version": "78.3",
+      "build": "h33c6efd_0",
+      "license": "MIT"
+    },
+    {
+      "name": "kernel-headers_linux-64",
+      "version": "6.12.0",
+      "build": "he073ed8_6",
+      "license": "LGPL-2.0-or-later AND LGPL-2.0-or-later WITH exceptions AND GPL-2.0-or-later"
+    },
+    {
+      "name": "keyutils",
+      "version": "1.6.3",
+      "build": "hb9d3cd8_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "krb5",
+      "version": "1.22.2",
+      "build": "hbde042b_1",
+      "license": "MIT"
+    },
+    {
+      "name": "ld_impl_linux-64",
+      "version": "2.45.1",
+      "build": "default_hbd61a6d_102",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "lerc",
+      "version": "4.1.0",
+      "build": "hdb68285_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "libblas",
+      "version": "3.11.0",
+      "build": "8_h4a7cf45_openblas",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libcblas",
+      "version": "3.11.0",
+      "build": "8_h0358290_openblas",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libcurl",
+      "version": "8.21.0",
+      "build": "hae6b9f4_2",
+      "license": "curl"
+    },
+    {
+      "name": "libdeflate",
+      "version": "1.25",
+      "build": "h17f619e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libedit",
+      "version": "3.1.20250104",
+      "build": "pl5321h7949ede_0",
+      "license": "BSD-2-Clause"
+    },
+    {
+      "name": "libev",
+      "version": "4.33",
+      "build": "hd590300_2",
+      "license": "BSD-2-Clause"
+    },
+    {
+      "name": "libexpat",
+      "version": "2.8.1",
+      "build": "hecca717_1",
+      "license": "MIT"
+    },
+    {
+      "name": "libffi",
+      "version": "3.5.2",
+      "build": "h3435931_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libfreetype",
+      "version": "2.14.3",
+      "build": "ha770c72_0",
+      "license": "GPL-2.0-only OR FTL"
+    },
+    {
+      "name": "libfreetype6",
+      "version": "2.14.3",
+      "build": "h73754d4_0",
+      "license": "GPL-2.0-only OR FTL"
+    },
+    {
+      "name": "libgcc",
+      "version": "15.2.0",
+      "build": "he0feb66_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libgcc-devel_linux-64",
+      "version": "15.2.0",
+      "build": "hcc6f6b0_119",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libgcc-ng",
+      "version": "15.2.0",
+      "build": "h69a702a_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libgfortran",
+      "version": "15.2.0",
+      "build": "h69a702a_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libgfortran5",
+      "version": "15.2.0",
+      "build": "h68bc16d_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libglib",
+      "version": "2.88.2",
+      "build": "h0d30a3d_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "libgomp",
+      "version": "15.2.0",
+      "build": "he0feb66_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libharfbuzz",
+      "version": "14.2.1",
+      "build": "h17a8019_1",
+      "license": "MIT"
+    },
+    {
+      "name": "libharfbuzz-devel",
+      "version": "14.2.1",
+      "build": "h17a8019_1",
+      "license": "MIT"
+    },
+    {
+      "name": "libiconv",
+      "version": "1.18",
+      "build": "h3b78370_2",
+      "license": "LGPL-2.1-only"
+    },
+    {
+      "name": "libjpeg-turbo",
+      "version": "3.1.4.1",
+      "build": "hb03c661_0",
+      "license": "IJG AND BSD-3-Clause AND Zlib"
+    },
+    {
+      "name": "liblapack",
+      "version": "3.11.0",
+      "build": "8_h47877c9_openblas",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "liblzma",
+      "version": "5.8.3",
+      "build": "hb03c661_0",
+      "license": "0BSD"
+    },
+    {
+      "name": "libnghttp2",
+      "version": "1.68.1",
+      "build": "h877daf1_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libopenblas",
+      "version": "0.3.33",
+      "build": "pthreads_h94d23a6_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libpng",
+      "version": "1.6.58",
+      "build": "h421ea60_0",
+      "license": "zlib-acknowledgement"
+    },
+    {
+      "name": "libpsl",
+      "version": "0.22.0",
+      "build": "hd9031aa_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libsanitizer",
+      "version": "15.2.0",
+      "build": "h90f66d4_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libssh2",
+      "version": "1.11.1",
+      "build": "hcf80075_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libstdcxx",
+      "version": "15.2.0",
+      "build": "h934c35e_19",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libstdcxx-devel_linux-64",
+      "version": "15.2.0",
+      "build": "hd446a21_119",
+      "license": "GPL-3.0-only WITH GCC-exception-3.1"
+    },
+    {
+      "name": "libtiff",
+      "version": "4.7.2",
+      "build": "h9d88235_0",
+      "license": "HPND"
+    },
+    {
+      "name": "libuuid",
+      "version": "2.42.2",
+      "build": "h5347b49_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libuv",
+      "version": "1.52.1",
+      "build": "h280c20c_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libwebp-base",
+      "version": "1.6.0",
+      "build": "hd42ef1d_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "libxcb",
+      "version": "1.17.0",
+      "build": "h8a09558_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libxml2",
+      "version": "2.15.3",
+      "build": "h49c6c72_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libxml2-16",
+      "version": "2.15.3",
+      "build": "hca6bf5a_0",
+      "license": "MIT"
+    },
+    {
+      "name": "libzlib",
+      "version": "1.3.2",
+      "build": "h25fd6f3_2",
+      "license": "Zlib"
+    },
+    {
+      "name": "make",
+      "version": "4.4.1",
+      "build": "hb9d3cd8_2",
+      "license": "GPL-3.0-or-later"
+    },
+    {
+      "name": "ncurses",
+      "version": "6.6",
+      "build": "hdb14827_0",
+      "license": "X11 AND BSD-3-Clause"
+    },
+    {
+      "name": "openssl",
+      "version": "3.6.3",
+      "build": "h35e630c_0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "pandoc",
+      "version": "3.10",
+      "build": "ha770c72_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "pango",
+      "version": "1.56.4",
+      "build": "hda50119_1",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "pcre2",
+      "version": "10.47",
+      "build": "haa7fec5_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "pixman",
+      "version": "0.46.4",
+      "build": "h54a6638_1",
+      "license": "MIT"
+    },
+    {
+      "name": "pthread-stubs",
+      "version": "0.4",
+      "build": "hb9d3cd8_1002",
+      "license": "MIT"
+    },
+    {
+      "name": "r-askpass",
+      "version": "1.2.1",
+      "build": "r45h54b55ab_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-assertthat",
+      "version": "0.2.1",
+      "build": "r45hc72bb7e_6",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "r-backports",
+      "version": "1.5.1",
+      "build": "r45h54b55ab_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-base",
+      "version": "4.5.3",
+      "build": "h502d0c9_3",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-base64enc",
+      "version": "0.1_6",
+      "build": "r45h54b55ab_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-bit",
+      "version": "4.6.0",
+      "build": "r45h54b55ab_1",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-bit64",
+      "version": "4.8.2",
+      "build": "r45h54b55ab_0",
+      "license": "GPL-2.0-only"
+    },
+    {
+      "name": "r-blob",
+      "version": "1.3.0",
+      "build": "r45hc72bb7e_0",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "r-broom",
+      "version": "1.0.13",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-bslib",
+      "version": "0.11.0",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-cachem",
+      "version": "1.1.0",
+      "build": "r45h54b55ab_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-callr",
+      "version": "3.7.6",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-cellranger",
+      "version": "1.1.0",
+      "build": "r45hc72bb7e_1008",
+      "license": "MIT"
+    },
+    {
+      "name": "r-cli",
+      "version": "3.6.6",
+      "build": "r45h3697838_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-clipr",
+      "version": "0.8.1",
+      "build": "r45hc72bb7e_0",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "r-colorspace",
+      "version": "2.1_2",
+      "build": "r45h54b55ab_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "r-conflicted",
+      "version": "1.2.0",
+      "build": "r45h785f33e_3",
+      "license": "MIT"
+    },
+    {
+      "name": "r-cpp11",
+      "version": "0.5.5",
+      "build": "r45h785f33e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-crayon",
+      "version": "1.5.3",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-curl",
+      "version": "7.1.0",
+      "build": "r45h10955f1_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-data.table",
+      "version": "1.17.8",
+      "build": "r45h1c8cec4_1",
+      "license": "MPL-2.0"
+    },
+    {
+      "name": "r-dbi",
+      "version": "1.3.0",
+      "build": "r45hc72bb7e_0",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "r-dbplyr",
+      "version": "2.6.0",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-digest",
+      "version": "0.6.39",
+      "build": "r45h3697838_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-dplyr",
+      "version": "1.2.1",
+      "build": "r45h3697838_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-dtplyr",
+      "version": "1.3.3",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-ellipsis",
+      "version": "0.3.3",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-evaluate",
+      "version": "1.0.5",
+      "build": "r45hc72bb7e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-fansi",
+      "version": "1.0.7",
+      "build": "r45h54b55ab_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-farver",
+      "version": "2.1.2",
+      "build": "r45h3697838_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-fastmap",
+      "version": "1.2.0",
+      "build": "r45h3697838_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-fontawesome",
+      "version": "0.5.3",
+      "build": "r45hc72bb7e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-forcats",
+      "version": "1.0.1",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-fs",
+      "version": "2.1.0",
+      "build": "r45h3697838_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-gargle",
+      "version": "1.6.1",
+      "build": "r45h785f33e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-generics",
+      "version": "0.1.4",
+      "build": "r45hc72bb7e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-ggplot2",
+      "version": "4.0.3",
+      "build": "r45h785f33e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-glue",
+      "version": "1.8.1",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-googledrive",
+      "version": "2.1.2",
+      "build": "r45hc72bb7e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-googlesheets4",
+      "version": "1.1.2",
+      "build": "r45h785f33e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-gtable",
+      "version": "0.3.6",
+      "build": "r45hc72bb7e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-haven",
+      "version": "2.5.5",
+      "build": "r45h6d565e7_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-highr",
+      "version": "0.12",
+      "build": "r45hc72bb7e_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-hms",
+      "version": "1.1.4",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-htmltools",
+      "version": "0.5.9",
+      "build": "r45h3697838_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-httr",
+      "version": "1.4.8",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-ids",
+      "version": "1.0.1",
+      "build": "r45hc72bb7e_5",
+      "license": "MIT"
+    },
+    {
+      "name": "r-isoband",
+      "version": "0.3.0",
+      "build": "r45h3697838_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-jquerylib",
+      "version": "0.1.4",
+      "build": "r45hc72bb7e_4",
+      "license": "MIT"
+    },
+    {
+      "name": "r-jsonlite",
+      "version": "2.0.0",
+      "build": "r45h54b55ab_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-knitr",
+      "version": "1.51",
+      "build": "r45hc72bb7e_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-labeling",
+      "version": "0.4.3",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-lifecycle",
+      "version": "1.0.5",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-lubridate",
+      "version": "1.9.5",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-magrittr",
+      "version": "2.0.5",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-memoise",
+      "version": "2.0.1",
+      "build": "r45hc72bb7e_4",
+      "license": "MIT"
+    },
+    {
+      "name": "r-mime",
+      "version": "0.13",
+      "build": "r45h54b55ab_1",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-modelr",
+      "version": "0.1.11",
+      "build": "r45hc72bb7e_3",
+      "license": "GPL-3"
+    },
+    {
+      "name": "r-munsell",
+      "version": "0.5.1",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-openssl",
+      "version": "2.4.2",
+      "build": "r45h68c19f5_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-pillar",
+      "version": "1.11.1",
+      "build": "r45hc72bb7e_0",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "r-pkgconfig",
+      "version": "2.0.3",
+      "build": "r45hc72bb7e_5",
+      "license": "MIT"
+    },
+    {
+      "name": "r-prettyunits",
+      "version": "1.2.0",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-processx",
+      "version": "3.9.0",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-progress",
+      "version": "1.2.3",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-ps",
+      "version": "1.9.3",
+      "build": "r45h54b55ab_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "r-purrr",
+      "version": "1.2.2",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-r6",
+      "version": "2.6.1",
+      "build": "r45hc72bb7e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-ragg",
+      "version": "1.5.2",
+      "build": "r45h9f1dc4d_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-rappdirs",
+      "version": "0.3.4",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-rcolorbrewer",
+      "version": "1.1_3",
+      "build": "r45h785f33e_4",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "r-readr",
+      "version": "2.2.0",
+      "build": "r45h3697838_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-readxl",
+      "version": "1.5.0",
+      "build": "r45h10e25cc_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-rematch",
+      "version": "2.0.0",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-rematch2",
+      "version": "2.1.2",
+      "build": "r45hc72bb7e_5",
+      "license": "MIT"
+    },
+    {
+      "name": "r-reprex",
+      "version": "2.1.1",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-rlang",
+      "version": "1.2.0",
+      "build": "r45h3697838_0",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "r-rmarkdown",
+      "version": "2.31",
+      "build": "r45hc72bb7e_0",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "r-rstudioapi",
+      "version": "0.19.0",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-rvest",
+      "version": "1.0.5",
+      "build": "r45hc72bb7e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-s7",
+      "version": "0.2.2",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-sass",
+      "version": "0.4.10",
+      "build": "r45h3697838_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-scales",
+      "version": "1.4.0",
+      "build": "r45hc72bb7e_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-selectr",
+      "version": "0.6_0",
+      "build": "r45hc72bb7e_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "r-stringi",
+      "version": "1.8.7",
+      "build": "r45h3d52c89_2",
+      "license": "FOSS"
+    },
+    {
+      "name": "r-stringr",
+      "version": "1.6.0",
+      "build": "r45h785f33e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-sys",
+      "version": "3.4.3",
+      "build": "r45h54b55ab_1",
+      "license": "MIT"
+    },
+    {
+      "name": "r-systemfonts",
+      "version": "1.3.2",
+      "build": "r45h74f4acd_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-textshaping",
+      "version": "1.0.5",
+      "build": "r45h74f4acd_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-tibble",
+      "version": "3.3.1",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-tidyr",
+      "version": "1.3.2",
+      "build": "r45h3697838_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-tidyselect",
+      "version": "1.2.1",
+      "build": "r45hc72bb7e_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-tidyverse",
+      "version": "2.0.0",
+      "build": "r45h785f33e_3",
+      "license": "MIT"
+    },
+    {
+      "name": "r-timechange",
+      "version": "0.4.0",
+      "build": "r45h3697838_0",
+      "license": "GPL-3.0-only AND Apache-2.0"
+    },
+    {
+      "name": "r-tinytex",
+      "version": "0.60",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-tzdb",
+      "version": "0.5.0",
+      "build": "r45h3697838_2",
+      "license": "MIT"
+    },
+    {
+      "name": "r-utf8",
+      "version": "1.2.6",
+      "build": "r45h54b55ab_1",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "r-uuid",
+      "version": "1.2_2",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-vctrs",
+      "version": "0.7.3",
+      "build": "r45h3697838_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-viridislite",
+      "version": "0.4.3",
+      "build": "r45hc72bb7e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-vroom",
+      "version": "1.7.1",
+      "build": "r45h3697838_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-withr",
+      "version": "3.0.3",
+      "build": "r45hc72bb7e_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-xfun",
+      "version": "0.59",
+      "build": "r45h54b55ab_0",
+      "license": "MIT"
+    },
+    {
+      "name": "r-xml2",
+      "version": "1.6.0",
+      "build": "r45he78afff_0",
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "name": "r-yaml",
+      "version": "2.3.12",
+      "build": "r45h54b55ab_0",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "readline",
+      "version": "8.3",
+      "build": "h853b02a_0",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "sed",
+      "version": "4.10",
+      "build": "h19d0853_0",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "sysroot_linux-64",
+      "version": "2.39",
+      "build": "hc4b9eeb_6",
+      "license": "LGPL-2.0-or-later AND LGPL-2.0-or-later WITH exceptions AND GPL-2.0-or-later"
+    },
+    {
+      "name": "tk",
+      "version": "8.6.13",
+      "build": "noxft_h366c992_103",
+      "license": "TCL"
+    },
+    {
+      "name": "tktable",
+      "version": "2.10",
+      "build": "h5a7a40f_8",
+      "license": "TCL"
+    },
+    {
+      "name": "tzdata",
+      "version": "2025c",
+      "build": "hc9c84f9_1",
+      "license": "LicenseRef-Public-Domain"
+    },
+    {
+      "name": "xorg-libice",
+      "version": "1.1.2",
+      "build": "hb9d3cd8_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libsm",
+      "version": "1.2.6",
+      "build": "he73a12e_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libx11",
+      "version": "1.8.13",
+      "build": "he1eb515_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxau",
+      "version": "1.0.12",
+      "build": "hb03c661_1",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxdmcp",
+      "version": "1.1.5",
+      "build": "hb03c661_1",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxext",
+      "version": "1.3.7",
+      "build": "hb03c661_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxrender",
+      "version": "0.9.12",
+      "build": "hb9d3cd8_0",
+      "license": "MIT"
+    },
+    {
+      "name": "xorg-libxt",
+      "version": "1.3.1",
+      "build": "hb9d3cd8_0",
+      "license": "MIT"
+    },
+    {
+      "name": "zstd",
+      "version": "1.5.7",
+      "build": "hb78ec9c_6",
+      "license": "BSD-3-Clause"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "synon.governance.product-identity-reference.v1",
+  "authority_path": "product-identity.json",
+  "authority_owner": "controller",
+  "status": "authoritative-reference-external-release-authorization",
+  "current_workspace_schema": {
+    "target": 67,
+    "authority_path": "internal/persistence/workspace/versioned_schema.go"
+  },
+  "planned_schema_integration": {
+    "classification": "no-pending-schema-integration",
+    "migration_numbers": [],
+    "not_current_schema": true
+  },
+  "rules": [
+    "Product identity values exist only in the root machine authority.",
+    "Full display text and a future tag are derived outputs, not stored identity authorities.",
+    "The current workspace schema target is production code fact; future migration cohorts, when present, are never product versions.",
+    "Release and tag authorization require a signed external receipt and cannot be granted by tracked source."
+  ]
+}

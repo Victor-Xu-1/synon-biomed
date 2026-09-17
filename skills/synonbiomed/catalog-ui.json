@@ -1,0 +1,611 @@
+{
+  "schema_version": 1,
+  "skills": {
+    "alphafold2": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "预测蛋白质结构，为结构分析和药物研究提供模型结果。"
+      }
+    },
+    "analytical-method-lifecycle": {
+      "category": "cmc-manufacturing",
+      "description_i18n": {
+        "zh-CN": "开发、验证、转移并持续管理药物分析方法。"
+      }
+    },
+    "antibody-design-strategy": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "制定抗体发现、设计、可开发性与验证策略。"
+      }
+    },
+    "autodock-vina": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "执行基于受体结构的分子对接、虚拟筛选与姿态排序。"
+      }
+    },
+    "binding-mode-analysis": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "分析公开 PDB 结构中的蛋白质—配体结合方式和关键接触。"
+      }
+    },
+    "boltz": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "预测蛋白质、核酸与小分子复合物的结构及相互作用。"
+      }
+    },
+    "boltz2-nim": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "使用 Boltz2 NIM 进行生物分子结构与结合亲和力预测。"
+      }
+    },
+    "borzoi": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "从 DNA 序列预测全基因组功能信号和调控轨迹。"
+      }
+    },
+    "capability-acquisition": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "在任务中发现、审查、安装并验证缺失的 Skill、MCP 或科研软件能力。"
+      }
+    },
+    "chai1": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "预测蛋白质、核酸和小分子复合物的三维结构。"
+      }
+    },
+    "chem-physical-properties": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "查询或估算化合物理化性质，为药物研发提供基础数据。"
+      }
+    },
+    "cheminfo-render": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "生成分子结构图、SMILES 表格和可复现的化学可视化结果。"
+      }
+    },
+    "citation-management": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "解析 DOI、校验文献记录并生成 BibTeX 引用。"
+      }
+    },
+    "clinical-biostatistics": {
+      "category": "clinical-regulatory",
+      "description_i18n": {
+        "zh-CN": "设计临床试验估计目标、样本量、分析与敏感性方案。"
+      }
+    },
+    "clinical-development-plan": {
+      "category": "clinical-regulatory",
+      "description_i18n": {
+        "zh-CN": "规划从早期临床到确证性研究的完整临床开发路径。"
+      }
+    },
+    "clinical-trial-protocol": {
+      "category": "clinical-regulatory",
+      "description_i18n": {
+        "zh-CN": "检索试验先例并起草可审阅的临床试验方案。"
+      }
+    },
+    "cmc-control-strategy": {
+      "category": "cmc-manufacturing",
+      "description_i18n": {
+        "zh-CN": "建立分阶段的 CMC、质量属性与综合控制策略。"
+      }
+    },
+    "complexa-design": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "设计蛋白质—复合物结构方案并生成可验证的设计结果。"
+      }
+    },
+    "complexa-evaluate-pdbs": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "评估现有 PDB 结构，检查蛋白质—复合物建模质量。"
+      }
+    },
+    "complexa-setup": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "准备 Protein—Complexa 建模环境、输入数据和运行依赖。"
+      }
+    },
+    "complexa-slurm": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "在 Slurm 集群上提交、监控并收集 Protein—Complexa 任务结果。"
+      }
+    },
+    "complexa-sweep": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "批量扫描 Protein—Complexa 参数并比较结构建模结果。"
+      }
+    },
+    "complexa-target": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "为 Protein—Complexa 任务准备目标结构和建模约束。"
+      }
+    },
+    "compound-sourcing": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "从公开来源检索、核验并整理可采购的化合物信息。"
+      }
+    },
+    "compute-env-setup": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "检查并准备科研计算环境、依赖和可用的运行能力。"
+      }
+    },
+    "cuequivariance": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "构建等变张量、不可约表示和群论多项式计算流程。"
+      }
+    },
+    "customize": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "通过对话创建专家、编写 Skill 并管理其能力配置。"
+      }
+    },
+    "deep-literature-investigation": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "围绕复杂科研问题开展多来源深度文献调查和证据综合。"
+      }
+    },
+    "diffdock": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "预测小分子与蛋白质的结合姿态并整理对接结果。"
+      }
+    },
+    "diffdock-nim": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "使用 DiffDock NIM 进行蛋白质—配体结合姿态预测。"
+      }
+    },
+    "dmpk-adme-strategy": {
+      "category": "dmpk-nonclinical",
+      "description_i18n": {
+        "zh-CN": "规划 ADME、药代、生物分析、暴露与药物相互作用证据。"
+      }
+    },
+    "document-workbench": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "创建、编辑、审阅并导出结构化科研文档。"
+      }
+    },
+    "drug-development-lifecycle": {
+      "category": "clinical-regulatory",
+      "description_i18n": {
+        "zh-CN": "统筹药物从发现、非临床、CMC、临床到上市后的全生命周期。"
+      }
+    },
+    "drug-discovery-pipeline": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "编排从靶点、分子设计到筛选评估的药物发现流程。"
+      }
+    },
+    "electronic-lab-notebook": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "记录、检索并导出结构化的湿实验过程和结果。"
+      }
+    },
+    "esmfold2": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "基于序列预测蛋白质结构并生成可复核的结构结果。"
+      }
+    },
+    "evo2": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "分析和预测基因组序列中的功能信号与变异影响。"
+      }
+    },
+    "evo2-nim": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "使用 Evo2 NIM 执行基因组序列建模和预测任务。"
+      }
+    },
+    "fair-esm2": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "使用 ESM-2 模型进行蛋白质序列表示和结构相关分析。"
+      }
+    },
+    "figure-composer": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "编排多面板科研图形，统一布局、标注和质量检查。"
+      }
+    },
+    "figure-style": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "按科研出版规范检查图表的数据准确性、可读性和版式。"
+      }
+    },
+    "formulation-development": {
+      "category": "cmc-manufacturing",
+      "description_i18n": {
+        "zh-CN": "基于 QTPP、理化性质和患者需求开展药剂与剂型开发。"
+      }
+    },
+    "genmol-nim": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "使用 GenMol NIM 生成并筛选具有目标性质的分子。"
+      }
+    },
+    "genomics-workflow-acceleration": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "加速基因组学工作流的数据准备、分析和结果整理。"
+      }
+    },
+    "indication-dossier": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "整理疾病适应证、靶点、竞争格局和药物开发证据。"
+      }
+    },
+    "instrument-data-to-allotrope": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "将实验仪器数据转换为可追溯的 Allotrope 标准格式。"
+      }
+    },
+    "kermt-add-cmim-pretrain": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "将 KERMT 检查点转换为混合训练格式并继续预训练。"
+      }
+    },
+    "kermt-continue-pretrain": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "基于现有 KERMT 检查点验证数据并继续预训练。"
+      }
+    },
+    "kermt-embed": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "从 KERMT 检查点提取分子表示和结构化嵌入结果。"
+      }
+    },
+    "kermt-finetune": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "使用分子数据对 KERMT 模型进行任务微调和验证。"
+      }
+    },
+    "kermt-infer": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "使用微调后的 KERMT 检查点执行分子性质预测。"
+      }
+    },
+    "kermt-monitor": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "监控 KERMT 训练任务的进度、日志和运行状态。"
+      }
+    },
+    "kermt-pretrain-scratch": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "从用户数据集开始训练全新的 KERMT 模型。"
+      }
+    },
+    "kermt-setup": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "准备 KERMT 的容器、GPU 和训练运行环境。"
+      }
+    },
+    "ligandmpnn": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "根据蛋白质结构设计配体结合位点附近的氨基酸序列。"
+      }
+    },
+    "literature-review": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "检索、核验并综合科研文献，保留可追溯的证据链。"
+      }
+    },
+    "managed-model-endpoints": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "注册并管理本地或远程的模型推理服务端点。"
+      }
+    },
+    "medicinal-chemistry-optimization": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "结合 SAR、DMPK、安全性与合成可行性优化先导化合物。"
+      }
+    },
+    "molmim-nim": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "使用 MolMIM NIM 进行分子生成、优化和性质筛选。"
+      }
+    },
+    "msa-search-nim": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "搜索并整理多序列比对，为结构预测准备输入。"
+      }
+    },
+    "msa-structure-prediction-pipeline": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "从多序列比对到结构预测编排完整蛋白质建模流程。"
+      }
+    },
+    "nextflow-development": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "使用固定版本的 nf-core 流程开展可复现的测序分析。"
+      }
+    },
+    "ngs-analysis-router": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "根据测序数据类型选择并编排合适的 NGS 分析流程。"
+      }
+    },
+    "nonclinical-safety-strategy": {
+      "category": "dmpk-nonclinical",
+      "description_i18n": {
+        "zh-CN": "规划支持临床试验和申报的非临床药理与毒理证据。"
+      }
+    },
+    "nvmolkit-usage": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "使用 nvMolKit 加速分子指纹、构象和相似性计算。"
+      }
+    },
+    "openfold2-nim": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "使用 OpenFold2 NIM 预测蛋白质结构和相关置信度。"
+      }
+    },
+    "openfold3": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "基于序列和复合物信息进行蛋白质结构预测。"
+      }
+    },
+    "openfold3-nim": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "使用 OpenFold3 NIM 执行可复现的蛋白质结构预测。"
+      }
+    },
+    "paper-narrative": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "规划科研论文的图表顺序、论证主线和结果叙事。"
+      }
+    },
+    "parabricks": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "使用 NVIDIA Parabricks 加速常见的基因组分析流程。"
+      }
+    },
+    "patent-search": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "检索并整理生物医药专利、化学权利要求和先前技术线索。"
+      }
+    },
+    "pdf-explore": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "提取、检索并分析 PDF 文档中的结构化科研信息。"
+      }
+    },
+    "pharmacovigilance-risk-management": {
+      "category": "clinical-regulatory",
+      "description_i18n": {
+        "zh-CN": "设计药物警戒、信号管理、风险管理与风险最小化体系。"
+      }
+    },
+    "p2rank-pocket-detection": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "使用 P2Rank 预测 apo 蛋白的结合口袋并生成可审计的对接盒子。"
+      }
+    },
+    "pocket2mol-local": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "在本地受体口袋约束下生成并筛选候选分子。"
+      }
+    },
+    "postmarketing-lifecycle-management": {
+      "category": "clinical-regulatory",
+      "description_i18n": {
+        "zh-CN": "管理上市后承诺、安全性、质量变更与产品生命周期。"
+      }
+    },
+    "presentations": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "制作结构清晰、证据可追溯且适合专业沟通的演示文稿。"
+      }
+    },
+    "process-development-scale-up": {
+      "category": "cmc-manufacturing",
+      "description_i18n": {
+        "zh-CN": "开展药物生产工艺开发、放大、技术转移与验证。"
+      }
+    },
+    "product-self-knowledge": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "回答 Synon Biomed 的产品能力、部署和运行边界问题。"
+      }
+    },
+    "protein-design-strategy": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "围绕目标功能、结构约束和实验验证规划蛋白设计。"
+      }
+    },
+    "proteinmpnn": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "基于蛋白质结构设计满足约束的蛋白质序列。"
+      }
+    },
+    "proteinmpnn-nim": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "使用 ProteinMPNN NIM 进行蛋白质序列设计和筛选。"
+      }
+    },
+    "quantum-chemistry-postprocessing": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "后处理量子化学结果并分析电荷、轨道和电子密度。"
+      }
+    },
+    "reaction-engineering": {
+      "category": "cmc-manufacturing",
+      "description_i18n": {
+        "zh-CN": "计算反应动力学、热力学和过程工程参数。"
+      }
+    },
+    "regulatory-submission-strategy": {
+      "category": "clinical-regulatory",
+      "description_i18n": {
+        "zh-CN": "规划 IND、NDA、BLA、CTD 与 eCTD 的申报路径和就绪度。"
+      }
+    },
+    "remote-compute-modal": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "通过统一软件运行时使用对话中已选择的 Modal 计算资源。"
+      }
+    },
+    "remote-compute-ssh": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "通过统一软件运行时使用对话中已选择的 SSH 或调度集群。"
+      }
+    },
+    "rfdiffusion-nim": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "使用 RFdiffusion NIM 设计满足约束的蛋白质骨架。"
+      }
+    },
+    "rna-design-strategy": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "围绕 RNA 结构、序列和功能约束规划设计流程。"
+      }
+    },
+    "sbdd-ppi-workflow": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "围绕蛋白质相互作用界面开展结构驱动的分子设计工作流。"
+      }
+    },
+    "scgpt": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "使用单细胞基础模型分析细胞状态和转录组数据。"
+      }
+    },
+    "scientific-problem-selection": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "通过假设、风险和信息增益选择并去风险科研问题。"
+      }
+    },
+    "scvi-tools": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "使用 scvi-tools 进行单细胞数据建模、整合和差异分析。"
+      }
+    },
+    "self-awareness": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "查询当前会话的历史、令牌使用、执行记录和产物元数据。"
+      }
+    },
+    "single-cell-rna-analysis": {
+      "category": "omics-bioinformatics",
+      "description_i18n": {
+        "zh-CN": "使用轻量 scverse 流程完成单细胞质控、整合、聚类、注释、标志基因与组间比较。"
+      }
+    },
+    "skill-creator": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "创建、改进并评测可复用的 Skill 工作流。"
+      }
+    },
+    "solublempnn": {
+      "category": "structural-biology",
+      "description_i18n": {
+        "zh-CN": "设计具有较高可溶性倾向的蛋白质序列。"
+      }
+    },
+    "stability-shelf-life": {
+      "category": "cmc-manufacturing",
+      "description_i18n": {
+        "zh-CN": "设计稳定性方案、趋势分析并形成货架期证据。"
+      }
+    },
+    "structure-based-molecule-generation": {
+      "category": "drug-discovery",
+      "description_i18n": {
+        "zh-CN": "基于受体口袋结构生成、筛选并评估候选分子。"
+      }
+    },
+    "synon-research": {
+      "category": "research-workflows",
+      "description_i18n": {
+        "zh-CN": "组织可追溯的科研问题、证据检索、分析和结果交付。"
+      }
+    },
+    "using-model-endpoint": {
+      "category": "compute-platform",
+      "description_i18n": {
+        "zh-CN": "调用已注册的模型端点执行可追溯的推理任务。"
+      }
+    }
+  }
+}

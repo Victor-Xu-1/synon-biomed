@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "source": "Synon Link browser extension v0.6.10",
+  "runtime": {
+    "kind": "chrome-extension",
+    "minimumVersion": "114",
+    "optional": false
+  },
+  "files": [
+    {
+      "path": "synon-link-extension-v0.6.10.zip",
+      "sha256": "2cb251ad8aedf940f6d3a11b41b74ed55f9b912ab48257a21789b78a1ca0c90b",
+      "bytes": 94621
+    }
+  ]
+}

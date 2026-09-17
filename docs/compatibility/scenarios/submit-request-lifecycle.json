@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "id": "submit-request-lifecycle",
+  "contracts": [
+    {"kind": "service", "name": "submitRequest"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "name": "Submit Request Oracle",
+        "description": "Isolated runtime submission fixture",
+        "find_or_create": true
+      },
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "submit-new-request",
+      "method": "POST",
+      "path": "/api/request",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "target_agent": "ONBOARDING",
+        "project_id": "${capture:projectId}",
+        "input_data": {"request": "Record this isolated submission without external tools."},
+        "plan_mode": false,
+        "intent_id": "00000000-0000-4000-8000-000000000011"
+      },
+      "expectedStatus": [200],
+      "capture": {
+        "rootFrameId": "/root_frame_id",
+        "frameId": "/frame_id"
+      }
+    },
+    {
+      "name": "retry-identical-request",
+      "method": "POST",
+      "path": "/api/request",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "target_agent": "ONBOARDING",
+        "project_id": "${capture:projectId}",
+        "input_data": {"request": "Record this isolated submission without external tools."},
+        "plan_mode": false,
+        "intent_id": "00000000-0000-4000-8000-000000000011"
+      },
+      "expectedStatus": [409]
+    },
+    {
+      "name": "get-submitted-frame",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}?shallow=true",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/2/response/body/frame_id",
+    "/steps/3/request/body/project_id",
+    "/steps/4/request/path",
+    "/steps/4/response/body/id",
+    "/steps/4/response/body/project_id",
+    "/steps/4/response/body/root_frame_id",
+    "/steps/4/response/body/created_at",
+    "/steps/4/response/body/updated_at",
+    "/steps/4/response/body/message_count"
+  ],
+  "redactions": []
+}

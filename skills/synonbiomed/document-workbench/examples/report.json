@@ -1,0 +1,33 @@
+{
+  "title": "Synon Biomed document workbench",
+  "subtitle": "Native artifact and preview acceptance sample",
+  "author": "Synon Biomed",
+  "sections": [
+    {
+      "heading": "Executive summary",
+      "level": 1,
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "This sample verifies native document generation, Unicode text, tables, and visual preview. 中文内容应保持可读。"
+        },
+        {
+          "type": "bullets",
+          "items": ["Editable native content", "Offline preview", "Deterministic validation"]
+        }
+      ]
+    },
+    {
+      "heading": "Evidence table",
+      "level": 1,
+      "blocks": [
+        {
+          "type": "table",
+          "headers": ["Artifact", "Expected"],
+          "rows": [["DOCX", "opens"], ["Preview", "readable"]]
+        }
+      ]
+    }
+  ]
+}
+

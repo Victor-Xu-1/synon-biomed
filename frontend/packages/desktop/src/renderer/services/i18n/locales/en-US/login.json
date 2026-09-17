@@ -1,0 +1,70 @@
+{
+  "pageTitle": "Synon Biomed - Sign In",
+  "brand": "Synon Biomed",
+  "subtitle": "Welcome back to your Synon Biomed workspace",
+  "username": "Username",
+  "usernamePlaceholder": "Enter your username",
+  "password": "Password",
+  "passwordPlaceholder": "Enter your password",
+  "rememberMe": "Remember me",
+  "submit": "Sign In",
+  "submitting": "Signing in...",
+  "success": "Login successful! Redirecting...",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "languageToggle": "Change language",
+  "footerPrimary": "Biomedical AI workbench",
+  "footerSecondary": "Projects, experts, skills, and MCP in one place",
+  "oauth": {
+    "methodsLabel": "Secure sign-in methods",
+    "alternativeMethods": "Use another sign-in method",
+    "continueWith": "Continue with {{provider}}",
+    "provider": {
+      "google": "Google",
+      "apple": "Apple",
+      "wechat": "WeChat"
+    },
+    "orPassword": "or use a local password",
+    "errors": {
+      "cancelled": "Sign-in was cancelled. You can choose a method and try again.",
+      "emailLinkRequired": "That email already belongs to a local account. To prevent account takeover, this release will not merge it automatically; sign in with the local password.",
+      "verifiedEmailRequired": "This sign-in provider must provide a verified email address.",
+      "wechatUnionIDRequired": "WeChat did not return the stable UnionID required for secure account identification. Ask an administrator to check the Open Platform binding.",
+      "providerUnavailable": "That sign-in method is temporarily unavailable. Try again or use your local password.",
+      "failed": "External sign-in did not complete. Try again or use your local password."
+    }
+  },
+  "unavailable": {
+    "eyebrow": "Local service temporarily unavailable",
+    "title": "Unable to connect to your workspace",
+    "hint": "Your page and data are safe. You can continue when the connection is restored.",
+    "retry": "Reconnect"
+  },
+  "errors": {
+    "empty": "Please enter username and password",
+    "invalidCredentials": "Invalid username or password",
+    "tooManyAttempts": "Too many attempts, please try again later",
+    "networkError": "Connection failed, please try again",
+    "serverError": "Server error, please try again later",
+    "csrfError": "The browser security token could not be refreshed. Clear this site's data and try again.",
+    "sessionExpired": "Your session has expired. Sign in again to return to the previous page.",
+    "unknown": "Sign-in failed, please try again",
+    "invalidName": "Name must be 2 to 64 characters",
+    "invalidEmail": "Enter a valid email address",
+    "invalidPassword": "Password must be at least 8 characters",
+    "usernameExists": "That name is already in use",
+    "emailExists": "That email is already in use"
+  },
+  "loginTitle": "Sign in",
+  "registerTitle": "Create account",
+  "registerSubtitle": "Create a local Synon Biomed workspace account",
+  "name": "Name",
+  "namePlaceholder": "Enter your name",
+  "email": "Email (optional but recommended)",
+  "emailPlaceholder": "name@example.com",
+  "newPasswordPlaceholder": "At least 8 characters",
+  "createAccount": "Create new account",
+  "existingAccount": "Already have an account? Sign in",
+  "createAndLogin": "Create and sign in",
+  "registerSuccess": "Account created. Opening your workspace..."
+}

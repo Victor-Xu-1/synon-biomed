@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "vm-restart-running-frames-real",
+  "contracts": [
+    {"kind": "service", "name": "restartVM"},
+    {"kind": "service", "name": "getRunningFrameCount"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "get-running-frame-count",
+      "method": "GET",
+      "path": "/api/preferences/running-frames",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "restart-vm",
+      "method": "POST",
+      "path": "/api/preferences/vm-resources/restart",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [202]
+    },
+    {
+      "name": "get-pending-restart",
+      "method": "GET",
+      "path": "/api/preferences/vm-resources/restart",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-duplicate-restart",
+      "method": "POST",
+      "path": "/api/preferences/vm-resources/restart",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [409]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/2/response/body/status/requestedAt",
+    "/steps/3/response/body/requestedAt"
+  ],
+  "redactions": []
+}

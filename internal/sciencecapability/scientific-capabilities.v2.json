@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 2,
+  "capabilities": [
+    {
+      "id": "molecule-generation",
+      "description": "Generate novel molecular structures with a recorded model or algorithm execution.",
+      "acceptedEngines": [
+        {
+          "id": "genmol",
+          "package": "genmol",
+          "requiredInputs": ["generation-request"],
+          "scoreKinds": ["generation-confidence"],
+          "requiredArtifacts": ["generated-molecules", "execution-log"],
+          "requiresWeights": true,
+          "executionPack": {
+            "id": "molecule-generation.genmol",
+            "mode": "unavailable",
+            "skill": "genmol-nim",
+            "unavailableReason": "No locally verified GenMol weights or authenticated remote execution adapter is installed."
+          }
+        },
+        {
+          "id": "molmim",
+          "package": "molmim",
+          "requiredInputs": ["generation-request"],
+          "scoreKinds": ["generation-confidence"],
+          "requiredArtifacts": ["generated-molecules", "execution-log"],
+          "requiresWeights": true,
+          "executionPack": {
+            "id": "molecule-generation.molmim",
+            "mode": "unavailable",
+            "skill": "molmim-nim",
+            "unavailableReason": "No locally verified MolMIM weights or authenticated remote execution adapter is installed."
+          }
+        }
+      ]
+    },
+    {
+      "id": "binding-pocket-prediction",
+      "description": "Predict and rank ligand-binding pockets on a protein surface with a recorded scientific engine execution.",
+      "acceptedEngines": [
+        {
+          "id": "p2rank",
+          "package": "p2rank",
+          "requiredInputs": ["protein-structure", "p2rank-release-archive"],
+          "scoreKinds": ["pocket-probability", "pocket-score"],
+          "requiredArtifacts": ["pocket-candidates", "pocket-selection", "execution-log"],
+          "requiresWeights": true,
+          "executionPack": {
+            "id": "binding-pocket-prediction.p2rank",
+            "mode": "local",
+            "skill": "p2rank-pocket-detection",
+            "provider": "local-conda",
+            "language": "python",
+            "packages": [
+              {"manager": "conda", "spec": "openjdk=17"}
+            ],
+            "channels": ["conda-forge"],
+            "executable": "python",
+            "script": "executionpacks/p2rank_binding_pockets.py",
+            "cliWitnesses": [
+              {"executable": "java", "arguments": ["-version"]}
+            ],
+            "inputs": [
+              {"kind": "protein-structure", "argument": "--structure", "extensions": [".pdb"]},
+              {"kind": "p2rank-release-archive", "argument": "--p2rank-archive", "extensions": [".tar.gz", ".tgz"]}
+            ],
+            "downloads": [
+              {
+                "inputKind": "p2rank-release-archive",
+                "url": "https://github.com/rdk/p2rank/releases/download/2.5.1/p2rank_2.5.1.tar.gz",
+                "filename": "p2rank_2.5.1.tar.gz",
+                "sha256": "d243f2d9036ac053fefb9407b5fe1c85f4fe077c519fd975ac585e995feab274",
+                "sizeBytes": 275625956,
+                "redirectHosts": ["release-assets.githubusercontent.com"]
+              }
+            ],
+            "parameters": [
+              {"name": "method", "argument": "--method", "type": "string", "required": true, "evidence": "selected-evidence-resolver"},
+              {"name": "profile", "argument": "--profile", "type": "string", "required": false, "default": "auto"},
+              {"name": "top_k", "argument": "--top-k", "type": "integer", "required": false, "default": 5, "minimum": 1, "maximum": 20},
+              {"name": "threads", "argument": "--threads", "type": "integer", "required": false, "default": 4, "minimum": 1, "maximum": 8},
+              {"name": "minimum_box_size", "argument": "--minimum-box-size", "type": "number", "required": false, "default": 20, "minimum": 8, "maximum": 100},
+              {"name": "box_padding", "argument": "--box-padding", "type": "number", "required": false, "default": 6, "minimum": 0, "maximum": 30}
+            ],
+            "outputs": [
+              {"kind": "pocket-candidates", "path": "pocket_detection/pocket_candidates.csv", "format": "csv", "minBytes": 64, "minRecords": 1},
+              {"kind": "pocket-selection", "path": "pocket_detection/pocket_selection.json", "format": "json", "minBytes": 128},
+              {"kind": "selected-pocket-atoms", "path": "pocket_detection/selected_pocket_atoms.pdb", "format": "text", "minBytes": 64},
+              {"kind": "execution-log", "path": "pocket_detection/p2rank.log", "format": "text", "minBytes": 32},
+              {"kind": "validation-record", "path": "pocket_detection/pocket_validation.json", "format": "json", "minBytes": 128, "requiredJsonTrue": ["/overall_pass", "/checks/source_integrity", "/checks/archive_integrity", "/checks/engine_identity", "/checks/rank_integrity", "/checks/probability_integrity", "/checks/box_integrity", "/checks/output_integrity"]}
+            ],
+            "comparisons": [
+              {"path": "pocket_detection/pocket_candidates.csv", "derivedColumns": ["rank"], "basisColumns": ["score", "probability", "center_x", "center_y", "center_z", "size_x", "size_y", "size_z"]}
+            ],
+            "scoreKind": "pocket-probability"
+          }
+        }
+      ]
+    },
+    {
+      "id": "molecular-docking",
+      "description": "Generate receptor-bound ligand poses with a real docking engine.",
+      "acceptedEngines": [
+        {
+          "id": "diffdock",
+          "package": "diffdock",
+          "requiredInputs": ["receptor", "ligand"],
+          "scoreKinds": ["pose-confidence"],
+          "requiredArtifacts": ["ranked-pose", "docking-complex", "execution-log"],
+          "requiresWeights": true,
+          "executionPack": {
+            "id": "molecular-docking.diffdock",
+            "mode": "unavailable",
+            "skill": "diffdock",
+            "unavailableReason": "No locally verified DiffDock weights or authenticated remote execution adapter is installed."
+          }
+        },
+        {
+          "id": "autodock-vina",
+          "package": "vina",
+          "requiredInputs": ["receptor", "ligand"],
+          "scoreKinds": ["affinity-kcal-mol"],
+          "requiredArtifacts": ["ranked-pose", "docking-complex", "execution-log"],
+          "requiresWeights": false,
+          "executionPack": {
+            "id": "molecular-docking.autodock-vina",
+            "mode": "local",
+            "skill": "autodock-vina",
+            "provider": "local-conda",
+            "language": "python",
+            "packages": [
+              {"manager": "conda", "spec": "vina=1.2.7"},
+              {"manager": "conda", "spec": "meeko=0.8.0"},
+              {"manager": "conda", "spec": "rdkit=2026.03.1"},
+              {"manager": "conda", "spec": "gemmi=0.7.5"},
+              {"manager": "conda", "spec": "prody=2.6.1"},
+              {"manager": "conda", "spec": "biopython=1.88"},
+              {"manager": "conda", "spec": "openbabel=3.2.1"}
+            ],
+            "channels": ["conda-forge"],
+            "imports": ["vina", "meeko", "rdkit", "gemmi", "prody", "Bio", "openbabel"],
+            "executable": "python",
+            "script": "executionpacks/autodock_vina.py",
+            "modules": [
+              "executionpacks/autodock_vina_inputs.py",
+              "executionpacks/autodock_vina_outputs.py",
+              "executionpacks/autodock_vina_pockets.py"
+            ],
+            "cliWitnesses": [
+              {"executable": "vina", "arguments": ["--help"]},
+              {"executable": "obabel", "arguments": ["-H"]},
+              {"executable": "mk_prepare_ligand.py", "arguments": ["--help"]},
+              {"executable": "mk_prepare_receptor.py", "arguments": ["--help"]}
+            ],
+            "inputs": [
+              {"kind": "receptor", "argument": "--receptor", "extensions": [".pdb", ".pdbqt", ".cif", ".mmcif"]},
+              {"kind": "ligand", "argument": "--ligand", "extensions": [".cdx", ".sdf", ".mol", ".mol2", ".pdbqt"]}
+            ],
+            "parameters": [
+              {"name": "reference_ligand", "argument": "--reference-ligand", "type": "string", "required": false},
+              {"name": "pocket_selection", "argument": "--pocket-selection", "type": "string", "required": false},
+              {"name": "pocket_validation", "argument": "--pocket-validation", "type": "string", "required": false},
+              {"name": "report_language", "argument": "--report-language", "type": "string", "required": false, "default": "en", "evidence": "runtime-response-language"},
+              {"name": "center_x", "argument": "--center-x", "type": "number", "required": false, "evidence": "resolved-user-input", "evidenceGroup": "binding-site-center", "evidenceTerms": ["binding-site center", "binding pocket", "pocket prediction", "docking center", "grid box center", "box center", "center coordinates", "docking box", "结合位点中心", "结合口袋", "口袋预测", "对接中心", "对接盒子", "盒子中心", "网格中心", "中心坐标"]},
+              {"name": "center_y", "argument": "--center-y", "type": "number", "required": false, "evidence": "resolved-user-input", "evidenceGroup": "binding-site-center"},
+              {"name": "center_z", "argument": "--center-z", "type": "number", "required": false, "evidence": "resolved-user-input", "evidenceGroup": "binding-site-center"},
+              {"name": "center_authority", "argument": "--center-authority", "type": "string", "required": false},
+              {"name": "size_x", "argument": "--size-x", "type": "number", "required": false, "minimum": 1, "maximum": 100},
+              {"name": "size_y", "argument": "--size-y", "type": "number", "required": false, "minimum": 1, "maximum": 100},
+              {"name": "size_z", "argument": "--size-z", "type": "number", "required": false, "minimum": 1, "maximum": 100},
+              {"name": "seed", "argument": "--seed", "type": "integer", "required": false, "default": 42, "minimum": 0, "maximum": 2147483647},
+              {"name": "repeat_count", "argument": "--repeat-count", "type": "integer", "required": false, "default": 3, "minimum": 1, "maximum": 64},
+              {"name": "exhaustiveness", "argument": "--exhaustiveness", "type": "integer", "required": false, "default": 8, "minimum": 1, "maximum": 128},
+              {"name": "num_modes", "argument": "--num-modes", "type": "integer", "required": false, "default": 9, "minimum": 1, "maximum": 100}
+            ],
+            "evidenceResolvers": [
+              {"evidenceGroup": "binding-site-center", "skill": "p2rank-pocket-detection", "implementation": "P2Rank"}
+            ],
+            "outputs": [
+              {"kind": "docking-scores", "path": "out/docking_scores.csv", "format": "csv", "delivery": "snapshot", "minBytes": 64, "minRecords": 1},
+              {"kind": "docking-pose-scores", "path": "out/docking_pose_scores.csv", "format": "csv", "minBytes": 64, "minRecords": 1},
+              {"kind": "docking-pose-samples", "path": "out/docking_pose_samples.csv", "format": "csv", "minBytes": 64, "minRecords": 1},
+              {"kind": "ranked-pose", "path": "out/ranked_poses.pdbqt", "format": "text", "delivery": "snapshot", "minBytes": 64},
+              {"kind": "docking-complex", "path": "out/docking_complex_ensemble.pdb", "format": "text", "delivery": "snapshot", "minBytes": 64},
+              {"kind": "docking-components", "path": "out/docking_components.csv", "format": "csv", "delivery": "snapshot", "minBytes": 64, "minRecords": 1},
+              {"kind": "primary-pose-manifest", "path": "out/primary_pose_manifest.csv", "format": "csv", "delivery": "snapshot", "minBytes": 64, "minRecords": 1},
+              {"kind": "docking-report", "path": "out/docking_report.md", "format": "text", "delivery": "snapshot", "minBytes": 64},
+              {"kind": "execution-log", "path": "out/vina.log", "format": "text", "delivery": "working_data", "minBytes": 32},
+              {"kind": "validation-record", "path": "out/validation.json", "format": "json", "delivery": "working_data", "minBytes": 64, "requiredJsonTrue": ["/overall_pass", "/checks/input_fidelity", "/checks/pose_count_fidelity", "/checks/source_integrity", "/checks/output_integrity", "/checks/report_language", "/checks/process_cleanup"]}
+            ],
+            "comparisons": [
+              {"path": "out/docking_scores.csv", "derivedColumns": ["best_affinity_kcal_mol", "rank"], "basisColumns": ["receptor_sha256", "center_x", "center_y", "center_z", "size_x", "size_y", "size_z", "seed", "repeat_count", "exhaustiveness", "num_modes", "poses_per_candidate"]}
+            ],
+            "scoreKind": "affinity-kcal-mol"
+          }
+        },
+        {
+          "id": "gnina",
+          "package": "gnina",
+          "requiredInputs": ["receptor", "ligand"],
+          "scoreKinds": ["affinity-kcal-mol", "cnn-affinity", "cnn-pose-score"],
+          "requiredArtifacts": ["ranked-pose", "execution-log"],
+          "requiresWeights": true,
+          "executionPack": {
+            "id": "molecular-docking.gnina",
+            "mode": "unavailable",
+            "skill": "capability-acquisition",
+            "unavailableReason": "No locally verified GNINA executable and weights pack is installed."
+          }
+        }
+      ]
+    },
+    {
+      "id": "binding-affinity",
+      "description": "Estimate or calculate binding affinity independently from pose confidence.",
+      "acceptedEngines": [
+        {
+          "id": "boltz-affinity",
+          "package": "boltz",
+          "requiredInputs": ["target", "ligand"],
+          "scoreKinds": ["binding-probability", "affinity-log10-ic50"],
+          "requiredArtifacts": ["affinity-results", "execution-log"],
+          "requiresWeights": true,
+          "executionPack": {
+            "id": "binding-affinity.boltz-affinity",
+            "mode": "unavailable",
+            "skill": "boltz",
+            "unavailableReason": "No locally verified Boltz affinity weights pack is installed."
+          }
+        },
+        {
+          "id": "gnina",
+          "package": "gnina",
+          "requiredInputs": ["receptor", "ligand"],
+          "scoreKinds": ["cnn-affinity"],
+          "requiredArtifacts": ["affinity-results", "execution-log"],
+          "requiresWeights": true,
+          "executionPack": {
+            "id": "binding-affinity.gnina",
+            "mode": "unavailable",
+            "skill": "capability-acquisition",
+            "unavailableReason": "No locally verified GNINA executable and weights pack is installed."
+          }
+        },
+        {
+          "id": "mmgbsa",
+          "package": "ambertools",
+          "requiredInputs": ["complex-structure"],
+          "scoreKinds": ["delta-g-kcal-mol"],
+          "requiredArtifacts": ["affinity-results", "execution-log"],
+          "requiresWeights": false,
+          "executionPack": {
+            "id": "binding-affinity.mmgbsa",
+            "mode": "unavailable",
+            "skill": "capability-acquisition",
+            "unavailableReason": "No validated MM/GBSA preparation, force-field, and execution pack is installed."
+          }
+        }
+      ]
+    },
+    {
+      "id": "document-workbench",
+      "description": "Create, inspect, validate, convert, and render governed document artifacts.",
+      "acceptedEngines": [{
+        "id": "python-document-workbench",
+        "package": "python-docx",
+        "requiredInputs": ["document-request"],
+        "scoreKinds": ["validation-status"],
+        "requiredArtifacts": ["document-artifact", "execution-log"],
+        "requiresWeights": false,
+        "executionPack": {
+          "id": "document-workbench.python-document-workbench",
+          "mode": "unavailable",
+          "skill": "document-workbench",
+          "unavailableReason": "The prior model-authored package and argv route was retired; a fixed action/output execution pack has not yet passed dynamic acceptance."
+        }
+      }]
+    },
+    {
+      "id": "pdf-exploration",
+      "description": "Render and inspect bounded PDF pages through a verified local document runtime.",
+      "acceptedEngines": [{
+        "id": "pypdfium",
+        "package": "pypdfium2",
+        "requiredInputs": ["pdf-document"],
+        "scoreKinds": ["validation-status"],
+        "requiredArtifacts": ["pdf-analysis", "execution-log"],
+        "requiresWeights": false,
+        "executionPack": {
+          "id": "pdf-exploration.pypdfium",
+          "mode": "unavailable",
+          "skill": "pdf-explore",
+          "unavailableReason": "The prior model-authored package and argv route was retired; a fixed PDF action pack has not yet passed dynamic acceptance."
+        }
+      }]
+    },
+    {
+      "id": "single-cell-rna-analysis",
+      "description": "Run a reproducible lightweight scverse workflow for single-cell quality control, integration, clustering, annotation, markers, composition, and response analysis.",
+      "acceptedEngines": [{
+        "id": "scanpy-harmony",
+        "package": "scanpy",
+        "requiredInputs": ["single-cell-matrix"],
+        "scoreKinds": ["qc-status", "analysis-status"],
+        "requiredArtifacts": ["annotated-single-cell-data", "analysis-results", "execution-log"],
+        "requiresWeights": false,
+        "executionPack": {
+          "id": "single-cell-rna-analysis.scanpy-harmony",
+          "mode": "unavailable",
+          "skill": "single-cell-rna-analysis",
+          "unavailableReason": "The prior model-authored environment route was retired; a fixed Scanpy-Harmony execution pack has not yet passed dynamic acceptance."
+        }
+      }]
+    },
+    {
+      "id": "instrument-data-allotrope",
+      "description": "Convert supported instrument exports into validated Allotrope ASM artifacts.",
+      "acceptedEngines": [{
+        "id": "allotropy",
+        "package": "allotropy",
+        "requiredInputs": ["instrument-export"],
+        "scoreKinds": ["validation-status"],
+        "requiredArtifacts": ["asm-document", "execution-log"],
+        "requiresWeights": false,
+        "executionPack": {
+          "id": "instrument-data-allotrope.allotropy",
+          "mode": "unavailable",
+          "skill": "instrument-data-to-allotrope",
+          "unavailableReason": "The prior model-authored environment route was retired; a fixed parser/validator pack has not yet passed dynamic acceptance."
+        }
+      }]
+    },
+    {
+      "id": "nextflow-development",
+      "description": "Validate and run pinned nf-core/Nextflow workflows with an approved container profile.",
+      "acceptedEngines": [{
+        "id": "nextflow",
+        "package": "nextflow",
+        "requiredInputs": ["workflow-request"],
+        "scoreKinds": ["validation-status"],
+        "requiredArtifacts": ["workflow-results", "execution-log"],
+        "requiresWeights": false,
+        "executionPack": {
+          "id": "nextflow-development.nextflow",
+          "mode": "unavailable",
+          "skill": "nextflow-development",
+          "unavailableReason": "No fixed Java, Nextflow, container-profile, and genome-assets execution pack has passed dynamic acceptance."
+        }
+      }]
+    }
+  ]
+}

@@ -1,0 +1,614 @@
+.synon-biomed-task-center {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: min(291px, 100%);
+  height: 32px;
+  max-width: 100%;
+  min-width: 0;
+  margin-inline-start: var(--conversation-composer-inline-offset, 0);
+  font-family: var(--conversation-font-sans, inherit);
+  font-size: var(--conversation-meta-font-size, 12px);
+  line-height: var(--conversation-meta-line-height, 18px);
+}
+
+/* Keep one compact return dock when the capsule is viewport-positioned. The
+   dock is intentionally capsule-height only: it preserves a clear reattachment
+   target without restoring the former extra composer margin. */
+.synon-biomed-task-center[data-detached='true'] {
+  height: 32px;
+  margin-bottom: 0 !important;
+}
+
+.synon-biomed-task-center__pill {
+  --task-status-accent: var(--conversation-stream-accent, var(--workspace-text-secondary, var(--color-text-2)));
+
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  min-width: 0;
+  padding: 2px 4px 2px 6px;
+  overflow: hidden;
+  color: var(--workspace-text-secondary, var(--color-text-2));
+  background: color-mix(
+    in srgb,
+    var(--conversation-stream-surface, var(--color-fill-1)) 96%,
+    var(--workspace-overlay-surface-muted, var(--color-fill-2)) 4%
+  );
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 6%);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition:
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+}
+
+.synon-biomed-task-center__pill:hover {
+  background: color-mix(
+    in srgb,
+    var(--conversation-stream-surface, var(--color-fill-1)) 92%,
+    var(--workspace-overlay-surface-muted, var(--color-fill-2)) 8%
+  );
+  box-shadow: 0 6px 20px rgb(0 0 0 / 8%);
+}
+
+.synon-biomed-task-center__pill[data-open='true'] {
+  box-shadow: 0 8px 28px rgb(0 0 0 / 7%);
+}
+
+.synon-biomed-task-center__pill[data-dragging='true'] {
+  z-index: 8;
+  cursor: grabbing;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 12%);
+}
+
+.synon-biomed-task-center__pill[data-detached='true']:not([data-minimized='true']) {
+  width: min(291px, calc(100vw - 16px));
+}
+
+.synon-biomed-task-center__pill--minimized {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  justify-content: center;
+  padding: 0;
+  overflow: visible;
+  color: #0284c7;
+  background: color-mix(in srgb, var(--workspace-overlay-surface, #fff) 72%, #7dd3fc 28%);
+  box-shadow:
+    0 4px 16px rgb(0 0 0 / 7%),
+    0 0 0 1px rgb(56 189 248 / 20%),
+    0 0 11px rgb(56 189 248 / 28%);
+  animation: synon-biomed-task-orb-breathe 1.45s ease-in-out infinite;
+}
+
+.synon-biomed-task-center__pill--minimized:hover {
+  background: color-mix(in srgb, var(--workspace-overlay-surface, #fff) 54%, #7dd3fc 46%);
+  box-shadow:
+    0 7px 20px rgb(0 0 0 / 10%),
+    0 0 0 7px rgb(56 189 248 / 40%),
+    0 0 25px rgb(56 189 248 / 62%);
+  animation: none;
+}
+
+.synon-biomed-task-center__pill--minimized[data-dragging='true'] {
+  animation-play-state: paused;
+}
+
+.synon-biomed-task-center__orb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: inherit;
+}
+
+.synon-biomed-task-center__orb:focus-visible {
+  outline: 2px solid var(--workspace-focus-ring, var(--color-primary-light-3));
+  outline-offset: 2px;
+}
+
+.synon-biomed-task-center__orb .synon-biomed-task-center__icon {
+  width: 15px;
+  height: 15px;
+  transform: scale(0.9);
+}
+
+@keyframes synon-biomed-task-orb-breathe {
+  0%,
+  100% {
+    background: color-mix(in srgb, var(--workspace-overlay-surface, #fff) 74%, #7dd3fc 26%);
+    box-shadow:
+      0 4px 16px rgb(0 0 0 / 7%),
+      0 0 0 1px rgb(56 189 248 / 20%),
+      0 0 11px rgb(56 189 248 / 28%);
+  }
+
+  50% {
+    background: color-mix(in srgb, var(--workspace-overlay-surface, #fff) 56%, #7dd3fc 44%);
+    box-shadow:
+      0 7px 20px rgb(0 0 0 / 9%),
+      0 0 0 7px rgb(56 189 248 / 38%),
+      0 0 23px rgb(56 189 248 / 58%);
+  }
+}
+
+.synon-biomed-task-center__summary-trigger {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
+  height: 28px;
+  gap: 5px;
+  padding: 0 3px;
+  overflow: hidden;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: grab;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.synon-biomed-task-center__summary-trigger:hover {
+  background: color-mix(in srgb, var(--task-status-accent) 5%, transparent);
+}
+
+.synon-biomed-task-center__summary-trigger:focus-visible,
+.synon-biomed-task-center__control:focus-visible {
+  outline: 2px solid var(--workspace-focus-ring, var(--color-primary-light-3));
+  outline-offset: -1px;
+}
+
+.synon-biomed-task-center__summary-trigger--static {
+  cursor: grab;
+}
+
+.synon-biomed-task-center__summary-trigger--static:hover {
+  background: transparent;
+}
+
+.synon-biomed-task-center__icon,
+.synon-biomed-task-center__chevron,
+.synon-biomed-task-center__control {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  line-height: 0;
+}
+
+.synon-biomed-task-center__icon {
+  width: 16px;
+  height: 16px;
+  color: var(--workspace-text-secondary, var(--color-text-2));
+  background: transparent;
+  transition:
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+.synon-biomed-task-center__chevron {
+  width: 12px;
+  height: 16px;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+}
+
+.synon-biomed-task-center__control {
+  width: 26px;
+  height: 26px;
+  margin-left: 1px;
+  padding: 0;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.synon-biomed-task-center__pill[data-dragging='true'] .synon-biomed-task-center__summary-trigger {
+  cursor: grabbing;
+}
+
+.synon-biomed-task-center__control:hover {
+  color: var(--workspace-text, var(--color-text-1));
+  background: var(--workspace-subtle, var(--color-fill-2));
+}
+
+.synon-biomed-task-center__control:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.synon-biomed-task-center__spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  line-height: 0;
+}
+
+.synon-biomed-task-center__title {
+  display: block;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--workspace-text, var(--color-text-1));
+  font-weight: 600;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.synon-biomed-task-center__metric {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 94px;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.synon-biomed-task-center__pill[data-state='failed'] .synon-biomed-task-center__icon,
+.synon-biomed-task-center__pill[data-state='completed-review-interrupted'] .synon-biomed-task-center__icon,
+.synon-biomed-task-center__pill[data-state='completed-review-findings'] .synon-biomed-task-center__icon,
+.synon-biomed-task-center__pill[data-state='completed-review-warnings'] .synon-biomed-task-center__icon {
+  color: var(--color-warning-6, #b45309);
+}
+
+.synon-biomed-task-center__pill[data-state='completed'] .synon-biomed-task-center__icon,
+.synon-biomed-task-center__pill[data-state='completed-reviewed'] .synon-biomed-task-center__icon {
+  color: var(--color-success-6, #2f855a);
+}
+
+.synon-biomed-task-center__icon svg,
+.synon-biomed-task-center__chevron svg,
+.synon-biomed-task-center__control svg {
+  display: block;
+  flex: none;
+}
+
+.synon-biomed-task-center__chevron svg {
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.synon-biomed-task-center__chevron[data-open='true'] svg {
+  transform: rotate(90deg);
+}
+
+html body .synon-biomed-task-center-popover {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.synon-biomed-task-center-panel {
+  --task-panel-accent: var(--conversation-stream-accent, var(--workspace-text-secondary, #525252));
+  --task-panel-state-accent: var(--task-panel-accent);
+
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(404px, calc(100vw - 24px));
+  min-width: min(312px, calc(100vw - 24px));
+  min-height: 168px;
+  max-width: calc(100vw - 16px);
+  max-height: min(420px, calc(100vh - 96px));
+  padding: 14px;
+  overflow: hidden;
+  color: var(--workspace-text, #171717);
+  background: var(--workspace-overlay-surface, #fff);
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 7%);
+  transform-origin: 50% 100%;
+  transition:
+    box-shadow 150ms ease,
+    opacity 120ms ease;
+}
+
+.synon-biomed-task-center-panel[data-phase='completed'] {
+  --task-panel-state-accent: var(--color-success-6, #2f855a);
+}
+
+.synon-biomed-task-center-panel[data-phase='failed'],
+.synon-biomed-task-center-panel[data-phase='cancelled'] {
+  --task-panel-state-accent: var(--color-warning-6, #b45309);
+}
+
+.synon-biomed-task-center-panel__summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.synon-biomed-task-center-panel__summary-icon {
+  display: inline-flex;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--task-panel-state-accent);
+  background: color-mix(in srgb, var(--task-panel-state-accent) 7%, transparent);
+  border-radius: 6px;
+}
+
+.synon-biomed-task-center-panel__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  gap: 12px;
+  margin-top: 12px;
+  padding-right: 1px;
+  overflow: auto;
+}
+
+.synon-biomed-task-center-panel__snapshot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 11px;
+  background: color-mix(in srgb, var(--workspace-overlay-surface-muted, #f3f2ef) 72%, transparent);
+  border-radius: 10px;
+}
+
+.synon-biomed-task-center-panel__title {
+  margin: 0;
+  color: var(--workspace-text, #171717);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.synon-biomed-task-center-panel__timeline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+}
+
+.synon-biomed-task-center-panel__timeline div {
+  min-width: 0;
+}
+
+.synon-biomed-task-center-panel__timeline dt {
+  color: var(--workspace-text-tertiary, #737373);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.synon-biomed-task-center-panel__timeline dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--workspace-text-secondary, #525252);
+  font-size: 12px;
+  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.012em;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.synon-biomed-task-center-panel__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+}
+
+.synon-biomed-task-center-panel__metric-card {
+  min-width: 0;
+  padding: 0 7px;
+}
+
+.synon-biomed-task-center-panel__metric-card:first-child {
+  padding-left: 0;
+}
+
+.synon-biomed-task-center-panel__metric-card:last-child {
+  padding-right: 0;
+}
+
+.synon-biomed-task-center-panel__metric-card dt,
+.synon-biomed-task-center-panel__metric-card span {
+  display: block;
+  color: var(--workspace-text-tertiary, #737373);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.synon-biomed-task-center-panel__metric-card dd {
+  margin: 2px 0 1px;
+  overflow: hidden;
+  color: var(--workspace-text, #171717);
+  font-size: 17px;
+  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 23px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.synon-biomed-task-center-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.synon-biomed-task-center-panel__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.synon-biomed-task-center-panel__section h3 {
+  margin: 0;
+  color: var(--workspace-text-tertiary, #737373);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.synon-biomed-task-center-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.synon-biomed-task-center-panel__action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 8px;
+  color: var(--workspace-text-secondary, #525252);
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.synon-biomed-task-center-panel__action:hover {
+  color: var(--workspace-text, #171717);
+  background: var(--workspace-overlay-hover, #f3f2ef);
+}
+
+.synon-biomed-task-center-panel__action:focus-visible {
+  outline: 2px solid var(--workspace-focus-ring, var(--color-primary-light-3));
+  outline-offset: -2px;
+}
+
+.synon-biomed-task-center-panel__action--static {
+  cursor: default;
+}
+
+.synon-biomed-task-center-panel__action--static:hover {
+  color: var(--workspace-text-secondary, #525252);
+  background: transparent;
+}
+
+.synon-biomed-task-center-panel__action--attention .synon-biomed-task-center-panel__action-label {
+  color: var(--workspace-text, #171717);
+  font-weight: 600;
+}
+
+.synon-biomed-task-center-panel__action-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.synon-biomed-task-center-panel__action-label,
+.synon-biomed-task-center-panel__action-meta {
+  display: block;
+  overflow: hidden;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.synon-biomed-task-center-panel__action-meta {
+  color: var(--workspace-text-tertiary, #737373);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.synon-biomed-task-center-panel__count {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  color: var(--workspace-text-secondary, #525252);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+  background: var(--workspace-overlay-hover, #f3f2ef);
+  border-radius: 999px;
+}
+
+@media (max-width: 520px) {
+  .synon-biomed-task-center-panel {
+    width: min(392px, calc(100vw - 20px));
+    min-width: min(292px, calc(100vw - 20px));
+    max-height: min(380px, calc(100vh - 84px));
+    padding: 13px 14px;
+  }
+
+  .synon-biomed-task-center-panel__metric-card {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .synon-biomed-task-center-panel__metric-card dd {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .synon-biomed-task-center__pill,
+  .synon-biomed-task-center__summary-trigger,
+  .synon-biomed-task-center__icon,
+  .synon-biomed-task-center__chevron svg,
+  .synon-biomed-task-center-panel {
+    transition: none;
+  }
+
+  .synon-biomed-task-center__pill--minimized {
+    animation: none;
+  }
+}

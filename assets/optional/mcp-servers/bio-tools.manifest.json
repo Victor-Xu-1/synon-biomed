@@ -1,0 +1,1757 @@
+{
+    "schemaVersion": 1,
+    "source": "synonbiomed-v1.1/runtime/assets/mcp-servers/bio-tools",
+    "entrypoint": "run_server.py",
+    "runtime": {
+        "minimumVersion": "3.11",
+        "optional": true,
+        "kind": "python"
+    },
+    "files": [
+        {
+            "path": "lib/alphafold_structures/__init__.py",
+            "sha256": "725c3065efaa6bd10ecc4fc1c85341c4ec71febcf88238b879fdb1527f368d15",
+            "bytes": 622
+        },
+        {
+            "path": "lib/alphafold_structures/client.py",
+            "sha256": "8aafc665643f8fac8aa56cd9cd03364dd48863e50c66453b509e963100737b1d",
+            "bytes": 4441
+        },
+        {
+            "path": "lib/alphafold_structures/records.py",
+            "sha256": "9e16fb0cc5298d695393d62f1108f3d0680ccf7382880c7cdd545020d4321544",
+            "bytes": 5811
+        },
+        {
+            "path": "lib/antibody_registry/__init__.py",
+            "sha256": "8c36725937a323828fb2898a35e1bcde006c91142145cf5cc4f92a533f90b76e",
+            "bytes": 394
+        },
+        {
+            "path": "lib/antibody_registry/client.py",
+            "sha256": "9c56644eb445f66fc93104a86890fd73c3650403084eaa7d7a4aed71f4d459f2",
+            "bytes": 10474
+        },
+        {
+            "path": "lib/arrayexpress_experiments/__init__.py",
+            "sha256": "be9a8fea59be2d6082e72e824e532784851be7f98e90bc71fcef3a44eb3892b6",
+            "bytes": 1059
+        },
+        {
+            "path": "lib/arrayexpress_experiments/client.py",
+            "sha256": "9685deaeb8cb7cb586bad8300aa89a454bb6f4b00760656a914fb5c26592c55f",
+            "bytes": 5321
+        },
+        {
+            "path": "lib/arrayexpress_experiments/files.py",
+            "sha256": "03abc022ea11680f0e3ab5690a96d71a83feb32ed74b16f293e0afd2220ebee5",
+            "bytes": 6221
+        },
+        {
+            "path": "lib/arrayexpress_experiments/flatten.py",
+            "sha256": "0bc8c94ac629d3b1977b9e636c40b3bb5e46496f5b306cc132fd6c594fab8399",
+            "bytes": 10955
+        },
+        {
+            "path": "lib/arrayexpress_experiments/search.py",
+            "sha256": "8a3b187d9ed74e6cfd7a3c0aa85728436a04bd4fc9982222a05d333e6a3ab844",
+            "bytes": 8911
+        },
+        {
+            "path": "lib/arxiv_fetch/__init__.py",
+            "sha256": "345cad4154f9782f2654b78b72a097a31367aa1943615a7e8b610b4164d5b1c5",
+            "bytes": 439
+        },
+        {
+            "path": "lib/arxiv_fetch/client.py",
+            "sha256": "a7fa9768a57e83cfe41dd1be2d65110ce341db5eb746407f9381375ea4c0d9be",
+            "bytes": 3383
+        },
+        {
+            "path": "lib/arxiv_fetch/tool.py",
+            "sha256": "c8376973e0d49de4a80be9151b01584e32619020ef37250fc18258692b3fb942",
+            "bytes": 9620
+        },
+        {
+            "path": "lib/bindingdb_affinities/__init__.py",
+            "sha256": "7eb2ac1f37bc263d5e9f054019c3baf8f862081012da097e8dbaa25e0e7e6ce1",
+            "bytes": 451
+        },
+        {
+            "path": "lib/bindingdb_affinities/client.py",
+            "sha256": "e8348abe330d5c84d94e9f35c32f2cb5b4ba9e83f59dd3ed95470e05bf47730e",
+            "bytes": 5725
+        },
+        {
+            "path": "lib/bindingdb_affinities/tool.py",
+            "sha256": "ea7e9ab3d8e076c9deee1dab39f95afe42c70c55e73b1c7cb8e6b95b9f9a3e02",
+            "bytes": 4228
+        },
+        {
+            "path": "lib/biomart_query/__init__.py",
+            "sha256": "d4f3891d7fa254bc7650960686491ec1b4588e71a31b374a17d500dafda14087",
+            "bytes": 1091
+        },
+        {
+            "path": "lib/biomart_query/canonical.py",
+            "sha256": "9aff5359e1b61f1a32e49b2eea67f34e75a52ede9f8cdb0d58e518b2b704b24f",
+            "bytes": 4680
+        },
+        {
+            "path": "lib/biomart_query/client.py",
+            "sha256": "587284a7ce603d789cbaee566f04a70e2654ba20bc4f3a26de0191a28dedd101",
+            "bytes": 11329
+        },
+        {
+            "path": "lib/biomart_query/introspect.py",
+            "sha256": "a5dea5ecc0120a9b2550ebc753efc0e0ff3db53d809cb2b69bb66a8ec82bd160",
+            "bytes": 10161
+        },
+        {
+            "path": "lib/biomart_query/runner.py",
+            "sha256": "8fa4a9fe502a63d5efb8ebd6908e8fa9ec510dcc54b26df6067cacddf59be39f",
+            "bytes": 2694
+        },
+        {
+            "path": "lib/biorxiv_fetch/__init__.py",
+            "sha256": "8b551904e32fcfa413a9cba19f85f7b775500c25622e324b2d18a4200caa0f35",
+            "bytes": 600
+        },
+        {
+            "path": "lib/biorxiv_fetch/__main__.py",
+            "sha256": "31a092f6801c2ec23bcc406936e2297f90ce4ccfe88d70a229c652db1fd0c5d8",
+            "bytes": 2382
+        },
+        {
+            "path": "lib/biorxiv_fetch/client.py",
+            "sha256": "59df608c9651180e8c2791c2451f4e5d67ffc0701f867edc1d7f8c881fcf091a",
+            "bytes": 3507
+        },
+        {
+            "path": "lib/biorxiv_fetch/tool.py",
+            "sha256": "448177d105bbb0dcedea0bc7fcbbab6b4c1f35c76adb26e694617f5d7d7b46c7",
+            "bytes": 12720
+        },
+        {
+            "path": "lib/cadd_scores/__init__.py",
+            "sha256": "12e18a4323b31d8f5854cfc680f003aff4254e1200e3939b920a2c64ad86390c",
+            "bytes": 602
+        },
+        {
+            "path": "lib/cadd_scores/__main__.py",
+            "sha256": "41cdd220a82cdfbb2178db336e17147b7ec7821a5585a20003786f9b0cdb7e6b",
+            "bytes": 1571
+        },
+        {
+            "path": "lib/cadd_scores/client.py",
+            "sha256": "7aa344701af939636bedb81f8e071cf300188194a2d4a819a472cf341844e5c8",
+            "bytes": 3682
+        },
+        {
+            "path": "lib/cadd_scores/records.py",
+            "sha256": "8219e48c7a5282a6376d3f5e613f3e8ec6d3e7a1ed26bb2d42a4d5767a8ec10d",
+            "bytes": 2788
+        },
+        {
+            "path": "lib/cadd_scores/tool.py",
+            "sha256": "045c1b1e279e6c7e6f7da0d8ca9ed63eb351394d96b3104a786a3e4d4dac5b29",
+            "bytes": 7262
+        },
+        {
+            "path": "lib/cbioportal_studies/__init__.py",
+            "sha256": "c599f0a3ce0229592d17a02389f9c149bd3f76270088a780a6c8a2a62f020ca6",
+            "bytes": 674
+        },
+        {
+            "path": "lib/cbioportal_studies/__main__.py",
+            "sha256": "897f373f8f07a20267c1d8d1d472346ae6a9bed2d3490da197e27df243529515",
+            "bytes": 1366
+        },
+        {
+            "path": "lib/cbioportal_studies/client.py",
+            "sha256": "d1c89f825af78d2c58e701ceb8990858f7e60a3378ef822b18bf151106f07ef1",
+            "bytes": 6849
+        },
+        {
+            "path": "lib/cbioportal_studies/records.py",
+            "sha256": "4441c94d9bfde75cc35649f133c4d66a4d0fc4fc848a8f125e66527f3ceb4ee7",
+            "bytes": 4517
+        },
+        {
+            "path": "lib/cbioportal_studies/tool.py",
+            "sha256": "494cbe494b5358cb9b5865dc4fd45a2fb4bec2588abd7266dba82b825367efe0",
+            "bytes": 15952
+        },
+        {
+            "path": "lib/chebi_ontology/__init__.py",
+            "sha256": "30d88ac96ce8a88b03e965ae560bfca9126b67180dc678715b8d49b0232c9e6d",
+            "bytes": 475
+        },
+        {
+            "path": "lib/chebi_ontology/client.py",
+            "sha256": "55a1b0cf93e897eda923a07d3f2499d9a8e8b4094bb09feffb22bb922803b8d7",
+            "bytes": 4233
+        },
+        {
+            "path": "lib/chebi_ontology/tool.py",
+            "sha256": "4d2cc08eb9b87dc23573da8022e82d64f4159a78cf5448d2fca95e26144d4693",
+            "bytes": 5339
+        },
+        {
+            "path": "lib/chembl_bioactivity/__init__.py",
+            "sha256": "c16fc51c61f894c3f41eab179b8f762a030b49bd53dec4ff58e59c464dc2c4a6",
+            "bytes": 570
+        },
+        {
+            "path": "lib/chembl_bioactivity/canonical.py",
+            "sha256": "f040e4cbe385cb2bfe81fdfb5bc76bdd4981edd0b98eb4bb8af0b8d58c39ed3a",
+            "bytes": 2346
+        },
+        {
+            "path": "lib/chembl_bioactivity/client.py",
+            "sha256": "3406853c5e681634b007d64106e7e2a3a60b4ab344a3a02a1d67d6675756d945",
+            "bytes": 8567
+        },
+        {
+            "path": "lib/chembl_drug_search/__init__.py",
+            "sha256": "50d18cec64e8694d3131f4cdf71dfe74c11d1254e82cf4fd681080dd3ea5c463",
+            "bytes": 595
+        },
+        {
+            "path": "lib/chembl_drug_search/client.py",
+            "sha256": "6b8e5fadd9b8e79d5f29dd7da0c03aa36b0472cd4ae66db08d58fdd947b2091b",
+            "bytes": 19885
+        },
+        {
+            "path": "lib/chembl_drug_search/records.py",
+            "sha256": "b6cc74e75af00c2da30046cc4ea24952d464bb4b4d609e695e9309e2f6ed42cf",
+            "bytes": 2401
+        },
+        {
+            "path": "lib/chembl_targets/__init__.py",
+            "sha256": "ce6b739f899bf4f4f206b25ef68edb5f8f59c330436132d23d6e6444aa4fd8df",
+            "bytes": 1027
+        },
+        {
+            "path": "lib/chembl_targets/client.py",
+            "sha256": "715dbc1f94ec6f16a77ba0070f853b886a566338b6d90d0147cf90a4576d9511",
+            "bytes": 12652
+        },
+        {
+            "path": "lib/chembl_targets/records.py",
+            "sha256": "2f61b116720246b4b959d995bdbcdf6fba7c29c85fab1a3d555bc9150e5f3d56",
+            "bytes": 6275
+        },
+        {
+            "path": "lib/civic_evidence/__init__.py",
+            "sha256": "a89d339ab39ed3d9dd0d3f02c12911707279584100eff7992b8352a15bfd3e39",
+            "bytes": 461
+        },
+        {
+            "path": "lib/civic_evidence/__main__.py",
+            "sha256": "aacbfd3a9f430a33d260f0fd8cefdb7ad5a349126dba0c2c996e3fa7f95470ac",
+            "bytes": 2900
+        },
+        {
+            "path": "lib/civic_evidence/client.py",
+            "sha256": "b2ac8d53cd98e0f04cd559052fc7478817babd62db91c90c7fe690a13c97f076",
+            "bytes": 5103
+        },
+        {
+            "path": "lib/civic_evidence/records.py",
+            "sha256": "f5b2cc41ff9c16b07645edf7da77320c37aa162f1bd84fabed6d6fc806ed2562",
+            "bytes": 4663
+        },
+        {
+            "path": "lib/civic_evidence/tool.py",
+            "sha256": "749239252e75bf821c48d9b3a182dfd00caba1d1dd6b5884b84dda025148b3aa",
+            "bytes": 13423
+        },
+        {
+            "path": "lib/clingen_curations/__init__.py",
+            "sha256": "480b522720bb8f481b6537ecd88f6505fa5884e0bf7e2708325aaf223d4fca8a",
+            "bytes": 878
+        },
+        {
+            "path": "lib/clingen_curations/__main__.py",
+            "sha256": "665c9a7a774c8e67ae0755608aac8e3b7a8d493db6320bb7746771a0165d37f4",
+            "bytes": 1634
+        },
+        {
+            "path": "lib/clingen_curations/client.py",
+            "sha256": "10afe5683bbcb95c50cf8d75342d0f4bf99aad17e11e8d151e64f66c57da1c16",
+            "bytes": 4373
+        },
+        {
+            "path": "lib/clingen_curations/records.py",
+            "sha256": "592bf54b7ad70565f3e6e9d1bb92f4375a7cb9f065d93a20f596a2d214ef876f",
+            "bytes": 8581
+        },
+        {
+            "path": "lib/clingen_curations/tool.py",
+            "sha256": "7c3689ba8b6c314b22974e5fc8ffee23fb198b05f6d52116130e61bb4f6b7b6e",
+            "bytes": 7826
+        },
+        {
+            "path": "lib/clinicaltrials_essie/__init__.py",
+            "sha256": "98ee96ebd81574540d58c1fd8b5ea6d4485efd2bf2bdc00117395b58eb88ebd0",
+            "bytes": 1083
+        },
+        {
+            "path": "lib/clinicaltrials_essie/api.py",
+            "sha256": "fbbfcd1628682a6b19c3a01607238eb0fe259abb66d7e68fed0efa1967509970",
+            "bytes": 11948
+        },
+        {
+            "path": "lib/clinicaltrials_essie/client.py",
+            "sha256": "62f66e5a86abb92c292e240c31625ae3fefbc9f91913affc75d0853dbcfbf6d5",
+            "bytes": 6193
+        },
+        {
+            "path": "lib/clinicaltrials_essie/essie.py",
+            "sha256": "9b82f2ba248fc163ed100e23c985849a7ffe5f927b05a8be7ace7b9cbb1cc0ab",
+            "bytes": 2853
+        },
+        {
+            "path": "lib/clinicaltrials_fetch/__init__.py",
+            "sha256": "618f3cd5fa509b998a163bd67ca6fe181ae9d57b802dadf28d22f15b3d79af1e",
+            "bytes": 1195
+        },
+        {
+            "path": "lib/clinicaltrials_fetch/client.py",
+            "sha256": "23240686f46c17d0c77ee161e6ee7abe2af8fa504c6752eb7084c3e578016c46",
+            "bytes": 5543
+        },
+        {
+            "path": "lib/clinicaltrials_fetch/fetch.py",
+            "sha256": "7aa417ed77631940e8cb0d9d8811956a66d272fe190123eb7cdc1210752f16ff",
+            "bytes": 2087
+        },
+        {
+            "path": "lib/clinicaltrials_fetch/postfilter.py",
+            "sha256": "1200a2fdf0c375bd4a3eca4c1b8635250e1a3120abe7f937459daa630702fe8d",
+            "bytes": 4947
+        },
+        {
+            "path": "lib/clinicaltrials_fetch/query.py",
+            "sha256": "e51be06a8699fe4741c146c8c75f09794355479731144088fcae1d3cc30fa060",
+            "bytes": 6169
+        },
+        {
+            "path": "lib/clinicaltrials_fetch/records.py",
+            "sha256": "44a72026694874d3ed9b011a5bb539c9e126e9e2f69a2a143c00a7f026dc58a0",
+            "bytes": 1832
+        },
+        {
+            "path": "lib/clinicaltrials_fetch/spec.py",
+            "sha256": "14a4902ae7a0a08bb304886617e920fca17f9020750e4aca7d0b5d746cab0738",
+            "bytes": 8266
+        },
+        {
+            "path": "lib/clinvar_records/__init__.py",
+            "sha256": "61f24f2eb6f631f6cfac4153a7668449313cd2aab0d225135354bc333be228b0",
+            "bytes": 699
+        },
+        {
+            "path": "lib/clinvar_records/client.py",
+            "sha256": "9c14b95c005874995c6e81b612aaad6f2a3fc36a8729bbca9b9e1c824f17b58f",
+            "bytes": 5934
+        },
+        {
+            "path": "lib/clinvar_records/records.py",
+            "sha256": "166953bd410fbab9d5a819a00c7a5c3fd4a2a42982c2dd4fa27ca5d848175307",
+            "bytes": 5682
+        },
+        {
+            "path": "lib/clinvar_records/tool.py",
+            "sha256": "64315a7cfccebe82d19c30eef6bf0aebc4bf015c0d5263be02df9903924b0306",
+            "bytes": 7701
+        },
+        {
+            "path": "lib/complexportal_fetch/__init__.py",
+            "sha256": "4884db6f7436137e1ceb70b1190c85577b0f1eb16e9740ef7db0a0607df4714e",
+            "bytes": 836
+        },
+        {
+            "path": "lib/complexportal_fetch/__main__.py",
+            "sha256": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+            "bytes": 79
+        },
+        {
+            "path": "lib/complexportal_fetch/cli.py",
+            "sha256": "298c15606b667f3769021c0ae9faa7afe48de43ab0f0f0cec02e5df350fc02c5",
+            "bytes": 2334
+        },
+        {
+            "path": "lib/complexportal_fetch/client.py",
+            "sha256": "81ea26a922a21652be98a84fd7720b1d32dee8e3bb33ea5aae5361c7b2855947",
+            "bytes": 5547
+        },
+        {
+            "path": "lib/complexportal_fetch/fetch.py",
+            "sha256": "2d8e1de5d9650aca11b137866c6859263f866b5e572b34c66eae6c50895fe322",
+            "bytes": 3707
+        },
+        {
+            "path": "lib/complexportal_fetch/parse.py",
+            "sha256": "fe1066e455601644e5fecef30987f3b61af6295ba5b971d0b152147ead7c720d",
+            "bytes": 5216
+        },
+        {
+            "path": "lib/complexportal_fetch/table.py",
+            "sha256": "70ca0a4886fe996f4ef2590dfa56c00e89a2a2c55198c7c0c47bf1a67b54c6a8",
+            "bytes": 3271
+        },
+        {
+            "path": "lib/dbsnp_records/__init__.py",
+            "sha256": "db1746593ef39c5a9cf746ff789dbaab1d63495f9bb7c2bb913967504ad73c73",
+            "bytes": 642
+        },
+        {
+            "path": "lib/dbsnp_records/client.py",
+            "sha256": "0c3d3cf070d740cf37459a0edfc879f7bbd32a42acd2f8082f3506273d274e14",
+            "bytes": 6572
+        },
+        {
+            "path": "lib/dbsnp_records/records.py",
+            "sha256": "0b112b97121fe45d62b8bc042fe010b318251d4a8590c90da1adda9d6a5799b9",
+            "bytes": 7310
+        },
+        {
+            "path": "lib/dbsnp_records/tool.py",
+            "sha256": "7ade71b9fe5a9c79cd33b6e2f13ce950c6047c7b94418f0456bf4ec2702f2fe6",
+            "bytes": 4317
+        },
+        {
+            "path": "lib/depmap_models/__init__.py",
+            "sha256": "7fec4e3d4b39df185501255ec9a3ccdb0698ff8f3627d2bd40ba2b6d55ca726a",
+            "bytes": 332
+        },
+        {
+            "path": "lib/depmap_models/__main__.py",
+            "sha256": "3cd8b3f9bfc2663ff049af720f68ced5049699db50d0c3b31d93524b946d65be",
+            "bytes": 1473
+        },
+        {
+            "path": "lib/depmap_models/client.py",
+            "sha256": "203de7be22294c8a9a06416eb735af139dcae3b52681cc60930c4b765805d1e4",
+            "bytes": 3713
+        },
+        {
+            "path": "lib/depmap_models/records.py",
+            "sha256": "3f207c9b2946d5aeda5ce122ac8262943e541f830a72ad56c87125626afb8c86",
+            "bytes": 4858
+        },
+        {
+            "path": "lib/depmap_models/tool.py",
+            "sha256": "5f7d6ee1aed130f35a8432330834d943b03ec805e8fc3d23f43115607febb138",
+            "bytes": 7276
+        },
+        {
+            "path": "lib/emdb_meta/__init__.py",
+            "sha256": "a7951602682dd26f06025dd1546e2d66aa2bb827434f5e7bfab1092c2a22d3d0",
+            "bytes": 877
+        },
+        {
+            "path": "lib/emdb_meta/cli.py",
+            "sha256": "52f6befdf72f562a136175e6df05b81ee5c5dcaa9f8e2d7c67165effff92317e",
+            "bytes": 1928
+        },
+        {
+            "path": "lib/emdb_meta/client.py",
+            "sha256": "a3239e217f4f765a53ad30c0c0b19429c2385e517589ed14918362cae4e6ef0c",
+            "bytes": 6126
+        },
+        {
+            "path": "lib/emdb_meta/records.py",
+            "sha256": "11f1981f2202ee3d5f3dadab09340286eb6c15236b73c879769b35d6693950ac",
+            "bytes": 9149
+        },
+        {
+            "path": "lib/emdb_meta/search.py",
+            "sha256": "f4eecb76e230ce67170595280afa19eb96fd83c5faf27ddaeceb09ef7e3f706a",
+            "bytes": 3921
+        },
+        {
+            "path": "lib/emdb_meta/sections.py",
+            "sha256": "8c080c88422df86af217b50d87577da8ae23f1b8aef6145961773a3dba78423e",
+            "bytes": 17513
+        },
+        {
+            "path": "lib/encode_search/__init__.py",
+            "sha256": "f5e0812f0712d425b94b7bc038aeb9d0d9b7ca123f3ec7ff5b7df895e031f45e",
+            "bytes": 720
+        },
+        {
+            "path": "lib/encode_search/__main__.py",
+            "sha256": "908328ffd4c52bab7af94b33221062d3932cdb55d2bcab676b6072a28172205a",
+            "bytes": 1540
+        },
+        {
+            "path": "lib/encode_search/client.py",
+            "sha256": "d4ea2563e4ef2bc7634fb9132f7765f7fd160ec9dd9b3a78120e6d925528fd5d",
+            "bytes": 3033
+        },
+        {
+            "path": "lib/encode_search/records.py",
+            "sha256": "8590b226669f0a274b31e4bc584f19b8d41fc43b1d9e5940b9ca5f8c693997e9",
+            "bytes": 5317
+        },
+        {
+            "path": "lib/encode_search/tool.py",
+            "sha256": "7ba0b372ed5352e07a812a4d2739c6b1f104dac5edf7601af269250377476c3c",
+            "bytes": 10322
+        },
+        {
+            "path": "lib/ensembl_rest/__init__.py",
+            "sha256": "0572e059903260c1a0e6a22690c9099d2efc1763523dc78e954b47bc55635cc4",
+            "bytes": 306
+        },
+        {
+            "path": "lib/ensembl_rest/client.py",
+            "sha256": "7d9117db1399baa2223099fe4c7437bff9c8adb86ce96562bf744e27cdf9bffa",
+            "bytes": 4477
+        },
+        {
+            "path": "lib/ensembl_rest/tool.py",
+            "sha256": "80c7db911e76ea724ed23570bbe6a1606b66d29a4950d4f27ac23a07f31bc564",
+            "bytes": 5724
+        },
+        {
+            "path": "lib/eqtl_catalogue/__init__.py",
+            "sha256": "b3e355a86b977b041e39dc0df8d5a5b3ccf3d4dccfd3eea72a0e26e3e0f28b67",
+            "bytes": 259
+        },
+        {
+            "path": "lib/eqtl_catalogue/client.py",
+            "sha256": "bf945f3ea9f72962ed2a5ef8f27827021ec4ed609469c1e2d96aeb9d354ee445",
+            "bytes": 7821
+        },
+        {
+            "path": "lib/europepmc_fulltext/__init__.py",
+            "sha256": "ee726c80bf8d7ee0670e8fd50a1824b9d17e20471a02221a859de9c0c83e8963",
+            "bytes": 513
+        },
+        {
+            "path": "lib/europepmc_fulltext/client.py",
+            "sha256": "0c602e3e04115691d9ae44c8b9ed0bfeab5ba32f176d0434804f5f97912c6a83",
+            "bytes": 4030
+        },
+        {
+            "path": "lib/europepmc_fulltext/core.py",
+            "sha256": "279b71abc26e8209165030bdbe59c8d1445daef18629023c0dca70d3dd48bd79",
+            "bytes": 11214
+        },
+        {
+            "path": "lib/europepmc_fulltext/extract.py",
+            "sha256": "f47bfec55fe87f99109e4a4a02e8eb3aa7799c11b16f54621dca811c21bd53f8",
+            "bytes": 8160
+        },
+        {
+            "path": "lib/geo_meta/__init__.py",
+            "sha256": "b0094dfc34cc6238453a1989a241466d66a6c8348ef1e2cd60ff19f911609738",
+            "bytes": 771
+        },
+        {
+            "path": "lib/geo_meta/__main__.py",
+            "sha256": "c6d0f3162116c8956f0c9b354f1a512938a55a992dffd39c56e2207f671fc5c3",
+            "bytes": 1303
+        },
+        {
+            "path": "lib/geo_meta/client.py",
+            "sha256": "4f258f5786b0561370d021a7688899f5da29c87b8fa309c23cb1fc90acb47c27",
+            "bytes": 5030
+        },
+        {
+            "path": "lib/geo_meta/core.py",
+            "sha256": "fd56f05a1c3e7f5558ab903ff2194f5b54c36eb5deb7eda181b0f10d706fa5ed",
+            "bytes": 11589
+        },
+        {
+            "path": "lib/geo_meta/soft.py",
+            "sha256": "70064b14f96e4a01e2ae302670f761319fc9c708ee62a4670764bab548bc3f47",
+            "bytes": 5674
+        },
+        {
+            "path": "lib/gnomad_variants/__init__.py",
+            "sha256": "09974091c36854c879b344e1ac4f53d050f834f05d766f4468f87e5e879692f1",
+            "bytes": 670
+        },
+        {
+            "path": "lib/gnomad_variants/__main__.py",
+            "sha256": "b529fc63866acc361be057e6117926b76119001c6573351009ab559bb5bd9c79",
+            "bytes": 817
+        },
+        {
+            "path": "lib/gnomad_variants/client.py",
+            "sha256": "aa3e26d3bf5a15aef9be24d57a802df3648d91330d87ffdb2028887aa622e37d",
+            "bytes": 5621
+        },
+        {
+            "path": "lib/gnomad_variants/queries.py",
+            "sha256": "22031d6a7c8eede650ac403dc44390d16905c454338e781367c92b0e384568cc",
+            "bytes": 4053
+        },
+        {
+            "path": "lib/gnomad_variants/records.py",
+            "sha256": "6e670968ec30bf70783c571310d32c716d361ed84f18c218fd642f4f3c177ded",
+            "bytes": 4123
+        },
+        {
+            "path": "lib/gnomad_variants/tool.py",
+            "sha256": "6bffe2742c01b8706af04a645354ec10e47d78d7f97f7003c9d76921728b9b3f",
+            "bytes": 10920
+        },
+        {
+            "path": "lib/grants_gov_search/__init__.py",
+            "sha256": "0ef45e8dc65295433b8a7f022306c7d56f0f789acb4beaed0525b931c89eaa73",
+            "bytes": 723
+        },
+        {
+            "path": "lib/grants_gov_search/client.py",
+            "sha256": "bfa03ded76b60c6cd566ef650ae5f35313f67d990574b0e79c137ca2bf18d0e9",
+            "bytes": 8091
+        },
+        {
+            "path": "lib/grants_gov_search/records.py",
+            "sha256": "45ca59ed654c7fd5cb86e0526050ede601b9fe169d9eb49899a552ac24005f36",
+            "bytes": 990
+        },
+        {
+            "path": "lib/grants_gov_search/spec.py",
+            "sha256": "ea509ee577a83ba94400f34885f569879fbe78c9e459603f79c76a680a99e1f5",
+            "bytes": 3176
+        },
+        {
+            "path": "lib/gtex_expression/__init__.py",
+            "sha256": "09d3a2e2001f5a325bd9c32db083276397dd645dc9f240b98b9e5f8365276f19",
+            "bytes": 408
+        },
+        {
+            "path": "lib/gtex_expression/__main__.py",
+            "sha256": "516d7a874ebd62573881f61779dc037326a124527134cd81dafbd8f9e29a2653",
+            "bytes": 1257
+        },
+        {
+            "path": "lib/gtex_expression/battery.py",
+            "sha256": "62c93347f08585006a4833729197da2eb90d8db3b8bf696a6172e33547dfb09a",
+            "bytes": 1883
+        },
+        {
+            "path": "lib/gtex_expression/client.py",
+            "sha256": "d846ab75b7e8656542b601bbe819a08e4869172af79dd28fb2fed612d6dd953a",
+            "bytes": 4434
+        },
+        {
+            "path": "lib/gtex_expression/tool.py",
+            "sha256": "0189be233bd435acc4489914de43f979b971ae207b4d3d8dbc6cbc6826a45108",
+            "bytes": 16359
+        },
+        {
+            "path": "lib/gwas_catalog/__init__.py",
+            "sha256": "c98a0d85ffa7d6e36f8571e6d5ef298d29fdcb786078a5193e0399e0c4fd674f",
+            "bytes": 612
+        },
+        {
+            "path": "lib/gwas_catalog/client.py",
+            "sha256": "8270358c50c17a390bc697eeb65a7a123d7d04a67feebe8735c0d04d7cfaba9d",
+            "bytes": 4552
+        },
+        {
+            "path": "lib/gwas_catalog/tool.py",
+            "sha256": "dd70499c9ffc3c0ac919a26d19135195134f5ca439737194ebd8788941cf91a7",
+            "bytes": 12256
+        },
+        {
+            "path": "lib/intact_interactions/__init__.py",
+            "sha256": "e8b485b9958fe2aa0249ceff03822819a43f5e768d5069a0e9495256c9e0a3c9",
+            "bytes": 815
+        },
+        {
+            "path": "lib/intact_interactions/__main__.py",
+            "sha256": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+            "bytes": 48
+        },
+        {
+            "path": "lib/intact_interactions/cli.py",
+            "sha256": "5dc75ab9b3fe621ce760b2a931300f41b607ff74b58da86a4a6e1a19c32cedf0",
+            "bytes": 1725
+        },
+        {
+            "path": "lib/intact_interactions/client.py",
+            "sha256": "6076d2d803c9904368c27ae0982694521b03754692c7cc0d83c11203399cc790",
+            "bytes": 5138
+        },
+        {
+            "path": "lib/intact_interactions/core.py",
+            "sha256": "ba53ecb49a78b6648fb9c2a5bc6b7cac1672db2a143c44af5854a4086301bd27",
+            "bytes": 11731
+        },
+        {
+            "path": "lib/intact_interactions/details.py",
+            "sha256": "86ab994447cd2679c1090d262d95cb711e2e02ad159a751a30b91530d2eac422",
+            "bytes": 11078
+        },
+        {
+            "path": "lib/interpro_domains/__init__.py",
+            "sha256": "c95ecd4b80a375eaee7b3b62f103abd22e3247f4be6d1727f1b637c16ad61d22",
+            "bytes": 471
+        },
+        {
+            "path": "lib/interpro_domains/__main__.py",
+            "sha256": "7ebcdc7d7c3234e9b5dcb37f90877dad50a5ac0d2a80a66919a865969c0babac",
+            "bytes": 2021
+        },
+        {
+            "path": "lib/interpro_domains/client.py",
+            "sha256": "e7b3f6cd07d0cb532f9670f774493fac70f39af99186e4b752a1707ee968ef1a",
+            "bytes": 12142
+        },
+        {
+            "path": "lib/interpro_domains/summary.py",
+            "sha256": "3caa1150c89ad098cd1ccdb37f6a1852e165cebf83a027651a24a851cd000811",
+            "bytes": 6019
+        },
+        {
+            "path": "lib/interpro_entry_search/__init__.py",
+            "sha256": "62474d2339ad68b0f0b9b989321bc4ac756a0a4c7822f67348dae0b099fa3baf",
+            "bytes": 3178
+        },
+        {
+            "path": "lib/interpro_entry_search/__main__.py",
+            "sha256": "4e42957ac037642758c7ae006a4a69f533778b5fe78527dfdca80b4ce2f08825",
+            "bytes": 2657
+        },
+        {
+            "path": "lib/interpro_entry_search/client.py",
+            "sha256": "ad80326bc42507bcd797d0f4181329580cd39ae428b89ff3b4150829dd21e85d",
+            "bytes": 14519
+        },
+        {
+            "path": "lib/interpro_entry_search/summary.py",
+            "sha256": "73b3c68df94b1eec10eb86338d92cfe03556fb0a14462031208035a9d00d4dc5",
+            "bytes": 6392
+        },
+        {
+            "path": "lib/jaspar_matrices/__init__.py",
+            "sha256": "e213758f3229a1fd7a6947168de2320dc2cf671df4edbe58796a4c0a905e1dcf",
+            "bytes": 793
+        },
+        {
+            "path": "lib/jaspar_matrices/__main__.py",
+            "sha256": "929d17e2971c0eb8449d11e1cefe64741c5553625872593efae68a48fb493514",
+            "bytes": 1555
+        },
+        {
+            "path": "lib/jaspar_matrices/canonical.py",
+            "sha256": "b9ccbc7dca889316934c606ab580ce49c37db9b67ac53c7a54f4fffd5cba43b7",
+            "bytes": 1642
+        },
+        {
+            "path": "lib/jaspar_matrices/client.py",
+            "sha256": "8217d9d91b1800f4774b1cf684bb5859923ae4f743618bda16e7d1228c28003a",
+            "bytes": 4344
+        },
+        {
+            "path": "lib/jaspar_matrices/tool.py",
+            "sha256": "325c9150b4d67291e20792ae9d3f57bcb99f6addd3ba35a9f91b7ca47e2fbb49",
+            "bytes": 4283
+        },
+        {
+            "path": "lib/kegg_fetch/__init__.py",
+            "sha256": "59f17821c7f967e223a191b68a26c3a2cddd2992939a25e8cc4ad8b37fd051cb",
+            "bytes": 716
+        },
+        {
+            "path": "lib/kegg_fetch/__main__.py",
+            "sha256": "964bbab3265dae2e50668d5e2293dcbb37ec1b58006d643f4686c4a377759b1a",
+            "bytes": 1817
+        },
+        {
+            "path": "lib/kegg_fetch/canonical.py",
+            "sha256": "195232e6a27d5b2b0ce738db6e7fc08f8f717a8f881752438441e5775ad7226a",
+            "bytes": 805
+        },
+        {
+            "path": "lib/kegg_fetch/client.py",
+            "sha256": "33dbd930eac0383e5ff751b439a9c46b5e220529a4942ef7111c6ae99af74293",
+            "bytes": 7172
+        },
+        {
+            "path": "lib/kegg_fetch/parse.py",
+            "sha256": "68f2fb2fd3c24f67952a905976d4bd30d8e15aabb0f19d0401522538402760f2",
+            "bytes": 4703
+        },
+        {
+            "path": "lib/kegg_link/__init__.py",
+            "sha256": "45d6c3c2797f27687edb7aa6f8a3df3b11cbe450b549865ffefd69819406cbe7",
+            "bytes": 643
+        },
+        {
+            "path": "lib/kegg_link/client.py",
+            "sha256": "5507a98fdb3bbfcc753e689d53b27d526a59df7a7a10f3f1482b1ccc3373b8e6",
+            "bytes": 4264
+        },
+        {
+            "path": "lib/kegg_link/core.py",
+            "sha256": "343f07dfdcc4da05ff5d8654f402ff11a35a5ebfbdb9eb7a2a9be73acca3c3ff",
+            "bytes": 12507
+        },
+        {
+            "path": "lib/mcp_bio/__init__.py",
+            "sha256": "71bbb6c294cf3841c5722d4b5278d25c8e742f26d268e42fb83ce4e00a032ee2",
+            "bytes": 109
+        },
+        {
+            "path": "lib/mcp_bio/deferred.json",
+            "sha256": "a8baed7cdae28fbb3f8a72897baf2fd7471b1615697f3d2938723ac59bb52520",
+            "bytes": 2535
+        },
+        {
+            "path": "lib/mcp_bio/domains.json",
+            "sha256": "7e79b243a576710c3f04927152441845b2880d80a19169889148b9ab81b28d11",
+            "bytes": 7261
+        },
+        {
+            "path": "lib/mcp_bio/server.py",
+            "sha256": "32e27ff03f0bd616df1beb44d15a3df493c7dff22829f049bc08e524c0b6fd00",
+            "bytes": 10268
+        },
+        {
+            "path": "lib/mcp_biomart/__init__.py",
+            "sha256": "2ab4f2023efbdb769fdcf4316e375ab0318d99c008fac7643313fdf7466374e6",
+            "bytes": 109
+        },
+        {
+            "path": "lib/mcp_biomart/marshal.py",
+            "sha256": "a28f1177e4964d5f0eac64a375d516f37097ca3046adbc3d1af230bd5de444ae",
+            "bytes": 8532
+        },
+        {
+            "path": "lib/mcp_biomart/schemas.json",
+            "sha256": "eab401e7cd6c11dbdef2bfc8ed8a635fbd1e103f8f3f07b060d9b779a92a0453",
+            "bytes": 11806
+        },
+        {
+            "path": "lib/mcp_biomart/server.py",
+            "sha256": "b9c502e1f4f6a005079f179ec85df17b86286ec34ae32c439dc436bdf49dda6b",
+            "bytes": 6214
+        },
+        {
+            "path": "lib/mcp_biorxiv/__init__.py",
+            "sha256": "35b4292a98a92da7d9c137393c242272d23166ad554b83eff2aec3d011d746fb",
+            "bytes": 109
+        },
+        {
+            "path": "lib/mcp_biorxiv/marshal.py",
+            "sha256": "af7059801e5dcd483f34a956a4d0c9232d179f18498d3e902f718f8b2f4455d6",
+            "bytes": 7025
+        },
+        {
+            "path": "lib/mcp_biorxiv/schemas.json",
+            "sha256": "2df154e0eb7a3b1ddfc7d93c7fb48245bcc339f6a51ba5918e2555ffda16900e",
+            "bytes": 25486
+        },
+        {
+            "path": "lib/mcp_biorxiv/server.py",
+            "sha256": "5836986e20124b432f7021ca0c2be41886abbc9d3cb9d5cec9e284cd98435a8a",
+            "bytes": 10961
+        },
+        {
+            "path": "lib/mcp_cancer_models/__init__.py",
+            "sha256": "b23198609dfede6cc8d6f96a56d10021b194838cc348c6db657b116d6515f2f1",
+            "bytes": 107
+        },
+        {
+            "path": "lib/mcp_cancer_models/migration.json",
+            "sha256": "0295fa8f561feb1e4a0f098d82481fbdd164162f451e5e43f79c04ffb2863a19",
+            "bytes": 417
+        },
+        {
+            "path": "lib/mcp_cancer_models/server.py",
+            "sha256": "b20a9e36c022f47fcbf3efda74a121565790a637492dbe831cee01a9d43c781e",
+            "bytes": 17106
+        },
+        {
+            "path": "lib/mcp_cellguide/__init__.py",
+            "sha256": "fabdd228ce1c14e20096876069b7b7d3ba832e766c5f1a4cec808b54157af187",
+            "bytes": 88
+        },
+        {
+            "path": "lib/mcp_cellguide/client.py",
+            "sha256": "ebfdd53b053dc125e6ece400dac7989feaa842f5d6dcbc3af3d2579dd5706a64",
+            "bytes": 15015
+        },
+        {
+            "path": "lib/mcp_cellguide/resolver.py",
+            "sha256": "8538d329e1212b252196f686da503316844186e9949b45c0464e69085d29a564",
+            "bytes": 3088
+        },
+        {
+            "path": "lib/mcp_cellguide/server.py",
+            "sha256": "e47928cded118fdb2e6e79a5061624a5a878c45669c5707729cae484634590f7",
+            "bytes": 8403
+        },
+        {
+            "path": "lib/mcp_chembl/__init__.py",
+            "sha256": "de2cb934cd1e8b8b1bffbca9cd6beafd3f9195b3e2bc3f0d90237d61d4dcc320",
+            "bytes": 92
+        },
+        {
+            "path": "lib/mcp_chembl/marshal.py",
+            "sha256": "b5c6bb1e8176ea90a107b4f62b4c93479c62278cc9bb4d89a0f900fb6ec0c3d7",
+            "bytes": 21415
+        },
+        {
+            "path": "lib/mcp_chembl/schemas.json",
+            "sha256": "71e471cd9a4075378d31a44d973d3a6591aadd98fe4e4697ab01b6a9ec0db6f2",
+            "bytes": 50970
+        },
+        {
+            "path": "lib/mcp_chembl/server.py",
+            "sha256": "78d875b4c39807a19b5a0765704cce612fadfa8a20a32852273159e2024ee01d",
+            "bytes": 17886
+        },
+        {
+            "path": "lib/mcp_chemistry/__init__.py",
+            "sha256": "a63f43890f3e13b6a92930a5607592506cf48525749e806f3c86fa1751f2cf4f",
+            "bytes": 110
+        },
+        {
+            "path": "lib/mcp_chemistry/server.py",
+            "sha256": "d0e0f956748795f5166bad13257a15641aaac97b2f011925c334d0c24064beff",
+            "bytes": 23673
+        },
+        {
+            "path": "lib/mcp_clinical_genomics/__init__.py",
+            "sha256": "8a412e9e0318c6419a3f1877ae90a40e5fd97ad55d850e8087f2dcf2b8c9c76e",
+            "bytes": 105
+        },
+        {
+            "path": "lib/mcp_clinical_genomics/migration.json",
+            "sha256": "f7e3f9b184ea476299fc8e59b4283ed4e064592edb1a2b1bdc0608d53a8254d9",
+            "bytes": 2332
+        },
+        {
+            "path": "lib/mcp_clinical_genomics/server.py",
+            "sha256": "a610e323b9b2a9827b49d7c995bd2b24e00ed28eeedf486ea24cdf71e2809abf",
+            "bytes": 12947
+        },
+        {
+            "path": "lib/mcp_clinical_trials/__init__.py",
+            "sha256": "0f96a2a5e42ab6f2e60b02d02813e15f306047495cc3d4f48440d377075a13b1",
+            "bytes": 100
+        },
+        {
+            "path": "lib/mcp_clinical_trials/marshal.py",
+            "sha256": "807dda5b631cbbdba8798c9edfc1eb674fc96dca50ce1468fd52123982d6b69f",
+            "bytes": 10938
+        },
+        {
+            "path": "lib/mcp_clinical_trials/migration.json",
+            "sha256": "62fd60d13b8e875a3484550ef59a598f6ca4f4d1c0569f5b491d54177a351fbe",
+            "bytes": 423
+        },
+        {
+            "path": "lib/mcp_clinical_trials/schemas.json",
+            "sha256": "fc061554c57119ceaeb4d04b48ac76462985a7f73e9b19ffceadfdbc0f7ddb2b",
+            "bytes": 34536
+        },
+        {
+            "path": "lib/mcp_clinical_trials/server.py",
+            "sha256": "0667f3aa8a068afcf456cf8fa1958a21b953bfa25504b05a857708edb701e037",
+            "bytes": 13471
+        },
+        {
+            "path": "lib/mcp_drug_regulatory/__init__.py",
+            "sha256": "84002e34d5b8ccb895466471255f9e58e380a383e220e936e015160ee1877056",
+            "bytes": 268
+        },
+        {
+            "path": "lib/mcp_drug_regulatory/migration.json",
+            "sha256": "e046b1bc7101b63f7e6fb5c68f4d38617b080f202517f8fba4235decc214be04",
+            "bytes": 751
+        },
+        {
+            "path": "lib/mcp_drug_regulatory/server.py",
+            "sha256": "54fa141e4b192f435ce6cd7139f731da7f44594f90500101b314300bbcb3d864",
+            "bytes": 13533
+        },
+        {
+            "path": "lib/mcp_expression/__init__.py",
+            "sha256": "fbd689d7c9b123ed56c9b0a2337bb2462e6f135961276c9a1677753a3b40c3e7",
+            "bytes": 180
+        },
+        {
+            "path": "lib/mcp_expression/migration.json",
+            "sha256": "323584b4def1a105609b7703e13ca91b19c30b7262d39f770919963d8d4293ea",
+            "bytes": 1213
+        },
+        {
+            "path": "lib/mcp_expression/server.py",
+            "sha256": "017b98f942d885c8f8388169e6055e49f22675d404fba32b71b3f214c4081aa5",
+            "bytes": 16247
+        },
+        {
+            "path": "lib/mcp_genes_ontologies/__init__.py",
+            "sha256": "fa44e816c82fd835878bfac65ae762ad1c7d26c1839e711de0ec2ef0a17eb808",
+            "bytes": 324
+        },
+        {
+            "path": "lib/mcp_genes_ontologies/migration.json",
+            "sha256": "653b55b440f22415ebd33c8ca05375de24d0e22830ad192374440cda17937bbc",
+            "bytes": 1165
+        },
+        {
+            "path": "lib/mcp_genes_ontologies/server.py",
+            "sha256": "5ef05a7271cbc7293f93dcf7268685505bbea4bbb947027ae6b799abf7b20e9f",
+            "bytes": 21840
+        },
+        {
+            "path": "lib/mcp_genomes/__init__.py",
+            "sha256": "cd1166022addff52375397c2591f23406c0f03cc41f8168dc84f5c29aeeb6685",
+            "bytes": 100
+        },
+        {
+            "path": "lib/mcp_genomes/server.py",
+            "sha256": "ebb0f2bb6f56e836e16e176036d33bb629ec9bf902d48cec0d818b2774733858",
+            "bytes": 35409
+        },
+        {
+            "path": "lib/mcp_human_genetics/__init__.py",
+            "sha256": "1d516af905756b14229020720547f6304c961b0af2239b53c357c162df7a0178",
+            "bytes": 69
+        },
+        {
+            "path": "lib/mcp_human_genetics/server.py",
+            "sha256": "fbe12ae6ffc2932e0da31c66ae7e293822036bec67c5a776635d4141a939adf0",
+            "bytes": 24071
+        },
+        {
+            "path": "lib/mcp_literature/__init__.py",
+            "sha256": "e39a490795699c9f52d4384a5fe28835f1f9124f04236b33cdfab61570010ae4",
+            "bytes": 93
+        },
+        {
+            "path": "lib/mcp_literature/server.py",
+            "sha256": "90a15d1b02f01bc7b7d774d0794b7a104ca8849c9358cb23a711bbf09d95fb13",
+            "bytes": 17077
+        },
+        {
+            "path": "lib/mcp_omics_archives/__init__.py",
+            "sha256": "0316257f3c5f2fc8f87a2d3c59fd342d97b1ab91b5b41257ae8eebc42fc33e2e",
+            "bytes": 100
+        },
+        {
+            "path": "lib/mcp_omics_archives/marshal.py",
+            "sha256": "e89765f1e7c317d45e19c873ba223f11e9f859867c37ec402297d6de0cab0586",
+            "bytes": 2133
+        },
+        {
+            "path": "lib/mcp_omics_archives/migration.json",
+            "sha256": "cf7a1ae6bec8edfdcc867802f95b024ee92b37b2031ce5180c61eab7936f92b2",
+            "bytes": 2283
+        },
+        {
+            "path": "lib/mcp_omics_archives/server.py",
+            "sha256": "e7bea558d80bc35e2cbb1950724b488a027bcf52a647775f485b313339d7d50a",
+            "bytes": 23255
+        },
+        {
+            "path": "lib/mcp_protein_annotation/__init__.py",
+            "sha256": "7c29d08fd643c2e2f2349461863f6cec794f8dac8163de5b6a59ab5c67cf6548",
+            "bytes": 297
+        },
+        {
+            "path": "lib/mcp_protein_annotation/migration.json",
+            "sha256": "3f513a43724e6a914c0faeb06b89b53f18473a4a9c1062997a711a8885c6aaef",
+            "bytes": 1324
+        },
+        {
+            "path": "lib/mcp_protein_annotation/server.py",
+            "sha256": "6ca1c56f3286ea8af0c74e06117bd88836591ae8b970408a7ce8e35601c33a69",
+            "bytes": 13891
+        },
+        {
+            "path": "lib/mcp_pubmed/__init__.py",
+            "sha256": "40f1429ad50c16c6e4b596f669c45efb4ba25250e39797aca09b54207275f3ea",
+            "bytes": 107
+        },
+        {
+            "path": "lib/mcp_pubmed/marshal.py",
+            "sha256": "b716ec3774a6940193851f1b40c409e1f032decfccc4816ece62ed0d80b6c816",
+            "bytes": 16424
+        },
+        {
+            "path": "lib/mcp_pubmed/schemas.json",
+            "sha256": "d1f6bf0f508e3eb3739aca99d4bc584ccef3a2e122dfc189a1846726deacd1ee",
+            "bytes": 25508
+        },
+        {
+            "path": "lib/mcp_pubmed/server.py",
+            "sha256": "b3a599cc42f2c5b72ef5c3d0094d5393609c468af40ac46ce49d0d5324eef0b1",
+            "bytes": 7221
+        },
+        {
+            "path": "lib/mcp_regulation/__init__.py",
+            "sha256": "0f36ee1b1d4dfdd61895326b2e680d18b04b397934f8ad508a900cd17309d1c1",
+            "bytes": 169
+        },
+        {
+            "path": "lib/mcp_regulation/migration.json",
+            "sha256": "5ddcd16eebc74009035ea4bcccd517cd5cff68f883b8fa8be78c8f659a7fc75d",
+            "bytes": 1209
+        },
+        {
+            "path": "lib/mcp_regulation/server.py",
+            "sha256": "dda25d003d070a80ec8b74b4d845712d5ec3dc9fdd98b2e8031fa745262e5dd9",
+            "bytes": 18977
+        },
+        {
+            "path": "lib/mcp_research_resources/__init__.py",
+            "sha256": "1ce95e3854f322a15b0e9f26316e57c4f0548d6cf7825ffc75bd22650e628d43",
+            "bytes": 233
+        },
+        {
+            "path": "lib/mcp_research_resources/migration.json",
+            "sha256": "d3eabee164b0c3f210ae44a2947989103028ff12f7ba50826e16c5a6e8bb9edb",
+            "bytes": 253
+        },
+        {
+            "path": "lib/mcp_research_resources/server.py",
+            "sha256": "e2549ee5fd0cd78e0dae8fdb4ec1b6d9b9a3fa50b9ff93b4dd949fc8d27d3f56",
+            "bytes": 7893
+        },
+        {
+            "path": "lib/mcp_rna/__init__.py",
+            "sha256": "f9d3334b3e3d04360a23eaba25607aab1598b599fc7bb53f3a28483f8e5a6ff9",
+            "bytes": 101
+        },
+        {
+            "path": "lib/mcp_rna/migration.json",
+            "sha256": "76c148cff27e649d6e8d10962dd9a3bcd948174e6cb86c24df10b4b3523dc17e",
+            "bytes": 656
+        },
+        {
+            "path": "lib/mcp_rna/server.py",
+            "sha256": "963fa92f1fc14ff1539f53db5cd5427d3f94fbb696bb1838e75322625895956f",
+            "bytes": 7521
+        },
+        {
+            "path": "lib/mcp_servers_common/__init__.py",
+            "sha256": "63c31ec7b59e7daf2fa5e7226d4d67eff158c749a7b3fb332d1db01079de4576",
+            "bytes": 195
+        },
+        {
+            "path": "lib/mcp_servers_common/criteria.py",
+            "sha256": "a4b833913cf47d2671a63ff7d562a971e49e0c04b16cb7338a5e453e34e67ae9",
+            "bytes": 939
+        },
+        {
+            "path": "lib/mcp_servers_common/errors.py",
+            "sha256": "e213f611d3f85f0bcc8d4c0835344695e0b94e23c9b2eaa0de1330e5b6c99177",
+            "bytes": 3577
+        },
+        {
+            "path": "lib/mcp_servers_common/gate.py",
+            "sha256": "2cd5b3145967eea46ed5c14873ae0fc0e20b315364d1596f7de949dfe1e94686",
+            "bytes": 4506
+        },
+        {
+            "path": "lib/mcp_servers_common/ratelimit.py",
+            "sha256": "3bb4bcfabd2c1cdb5033a0c4cb63bb2ba39221022e97ba7f2049aeca31d72d0b",
+            "bytes": 4860
+        },
+        {
+            "path": "lib/mcp_servers_common/tier1.py",
+            "sha256": "3c3fe88a520a380b60a37d3ed50bf81a34bd2808a4d8a2a4e80f0924322bc2e8",
+            "bytes": 9613
+        },
+        {
+            "path": "lib/mcp_servers_common/tls_policy.py",
+            "sha256": "bdf1a47e5b632ddfbdcf2fc1fb5c428d25b8ce7bd2ea6f4d47a9ab86b1a08d67",
+            "bytes": 3177
+        },
+        {
+            "path": "lib/mcp_servers_common/ua.py",
+            "sha256": "1f4ea01e53db2fdd6dc3f8f3b391042570618503c4f3d6eda21328bacbd3ecad",
+            "bytes": 3500
+        },
+        {
+            "path": "lib/mcp_synon_research/__init__.py",
+            "sha256": "9cdce79b09f173a9bc6befaf2ab60c94800149e07192e00ae09b21675dbc358d",
+            "bytes": 34
+        },
+        {
+            "path": "lib/mcp_synon_research/bridge.py",
+            "sha256": "ee10d6426c0be8011fbf5297209a7bcdb4dcc01c2cc439ee78f4201e8ab6ab8b",
+            "bytes": 24112
+        },
+        {
+            "path": "lib/mcp_synon_research/server.py",
+            "sha256": "79a1e33b4347751beef4f4b86381f0cd6bfad5e71acc54b1bf0fd9b3f97f532c",
+            "bytes": 2125
+        },
+        {
+            "path": "lib/mcp_structures_interactions/__init__.py",
+            "sha256": "bdef24e41aefc5eac51c6f39eb0dc2fd8a05b4e3a6b4b1251a0806e578283e36",
+            "bytes": 115
+        },
+        {
+            "path": "lib/mcp_structures_interactions/migration.json",
+            "sha256": "aeca83b19a95a1bc7ce810b9f19710de833d665cf9d220ed498654e7a54d2a07",
+            "bytes": 1801
+        },
+        {
+            "path": "lib/mcp_structures_interactions/server.py",
+            "sha256": "20a95803c5ff7ee38c6667b09c567e098bee4355e9d8bc6c032b99e23d3c0308",
+            "bytes": 29728
+        },
+        {
+            "path": "lib/mcp_variants/__init__.py",
+            "sha256": "caf284ab4c2cd40f32394b85264b1d26e51ae51372fee74080bdda0f559e470b",
+            "bytes": 88
+        },
+        {
+            "path": "lib/mcp_variants/migration.json",
+            "sha256": "3e6c2e4b5ef8eb9550099e207456c5b4375c71007c312e6b2ec215d9d4213017",
+            "bytes": 1324
+        },
+        {
+            "path": "lib/mcp_variants/server.py",
+            "sha256": "657e263fc54b27604aae31019717634824a50019392028bbfb4dfce3532ae527",
+            "bytes": 27058
+        },
+        {
+            "path": "lib/mcp_zinc/__init__.py",
+            "sha256": "b8eb7d8c7da1bf35471ea065af158dec80626908a6a39076693a6a432fe0789e",
+            "bytes": 362
+        },
+        {
+            "path": "lib/mcp_zinc/client.py",
+            "sha256": "51a158ecbd9ad36e9bb74a30762ce03c34868c3fc35b4acbcb746f2795b55fdf",
+            "bytes": 18411
+        },
+        {
+            "path": "lib/mcp_zinc/server.py",
+            "sha256": "23a09c222314213e4074263a98ff04062b3de338ed014165b6449b3c8e585c62",
+            "bytes": 19310
+        },
+        {
+            "path": "lib/metabolights_meta/__init__.py",
+            "sha256": "147a23442dc376c8567da6b0de2ffb60f724fd83c0da9fe211b3234fb42bd734",
+            "bytes": 1360
+        },
+        {
+            "path": "lib/metabolights_meta/client.py",
+            "sha256": "ac7d35255dca0e6e10fbf05cd492d6cbddb1a3a5eecf2e2dedb1fe6872da701c",
+            "bytes": 6239
+        },
+        {
+            "path": "lib/metabolights_meta/files.py",
+            "sha256": "1d785d249e48d3fb9dc8d9ffd9145d9fac4e1fca93440f4fee5edf332f51d92b",
+            "bytes": 5631
+        },
+        {
+            "path": "lib/metabolights_meta/meta.py",
+            "sha256": "21779be518ca1e06704d428ee12648cb3e5b654d3e19e7ed485ad33f75a60f65",
+            "bytes": 7897
+        },
+        {
+            "path": "lib/mgnify_studies/__init__.py",
+            "sha256": "ce05ac593b0d313bf46e7609096bb84722daa3da70273611836f4c0c8bd483a5",
+            "bytes": 1028
+        },
+        {
+            "path": "lib/mgnify_studies/client.py",
+            "sha256": "67e4e3cab325500f29ecd79796182d505c94f46d80051dd66b8953ef4ef27792",
+            "bytes": 5780
+        },
+        {
+            "path": "lib/mgnify_studies/records.py",
+            "sha256": "31889af21ce4a2b896d23cfb3f833b99fed2e521ff8e85732935f25cc1d3ee20",
+            "bytes": 4306
+        },
+        {
+            "path": "lib/mgnify_studies/tool.py",
+            "sha256": "a5ded8e7fbca1fe7059f51736397ffa7f6d24d7c36fbeefa7c6f80de224057aa",
+            "bytes": 4483
+        },
+        {
+            "path": "lib/mygene_query/__init__.py",
+            "sha256": "71ec09edfde4e1d2140cb11c8947661f79b5a9582d32ea05f63d3bc642ad8b45",
+            "bytes": 296
+        },
+        {
+            "path": "lib/mygene_query/canonical.py",
+            "sha256": "aa6f7a3319e98cb399eef1bcc02bb73b3efbf1103acd004a03f5e3ade730128b",
+            "bytes": 1856
+        },
+        {
+            "path": "lib/mygene_query/client.py",
+            "sha256": "fbdc9c345cd4cec1e421f07a37e51b440f7e2cd1c63df6bacddf14aecde19648",
+            "bytes": 6793
+        },
+        {
+            "path": "lib/ncbi_elink/__init__.py",
+            "sha256": "0286d99a441542f39daba8a2c0382f5244ece22b718b84e213b539753141b995",
+            "bytes": 450
+        },
+        {
+            "path": "lib/ncbi_elink/__main__.py",
+            "sha256": "c943e7e31d70e73464bdb818666672118f6323c7f114cad27c82ba57eb119682",
+            "bytes": 1193
+        },
+        {
+            "path": "lib/ncbi_elink/client.py",
+            "sha256": "f3fed21562e8b51d7bfc40b59670719d59010f9f6132b2b1e278687a96647572",
+            "bytes": 4309
+        },
+        {
+            "path": "lib/ncbi_elink/elink.py",
+            "sha256": "a2c33a06bbb7ba5242a10123369962ecdf23590d1bedb910daad3ae6c312e42f",
+            "bytes": 6800
+        },
+        {
+            "path": "lib/ols_ontologies/__init__.py",
+            "sha256": "02e2bac77c1917be0bd89542d6fd7ee6122a665317115642e6049f76e978cf85",
+            "bytes": 632
+        },
+        {
+            "path": "lib/ols_ontologies/api.py",
+            "sha256": "09351a2f1cbf3306356c71ddc3eec1c843447a7b3d7d14898de6691b2a49b8a7",
+            "bytes": 4579
+        },
+        {
+            "path": "lib/ols_ontologies/client.py",
+            "sha256": "8052394fac1603149e95f3ec4a2dc52b1b57327b4628c95c94db356b44b19d30",
+            "bytes": 3554
+        },
+        {
+            "path": "lib/ols_ontologies/records.py",
+            "sha256": "62b5376d380b6e00b85f13d25c1f39cd2cb91c044a18c068dd17ba0d6847ebf3",
+            "bytes": 2863
+        },
+        {
+            "path": "lib/ols_terms/__init__.py",
+            "sha256": "ef55280d7cf9400c5f45fce3ab8c0d8da96024999b095fd095abab24612196e0",
+            "bytes": 786
+        },
+        {
+            "path": "lib/ols_terms/__main__.py",
+            "sha256": "575e2a59e960a310e9fa8c6eee49bfe0d715ebe0cd8e106ec56e5f3a5de77b6f",
+            "bytes": 2032
+        },
+        {
+            "path": "lib/ols_terms/api.py",
+            "sha256": "0af07795e216dbca83ffce11445456e5fa6f757283e83db7aade7b90e97d1827",
+            "bytes": 6354
+        },
+        {
+            "path": "lib/ols_terms/client.py",
+            "sha256": "44b5ba28f74df9a2bb7b74062a3abaeb413ab0f5102be398e29a66ee9bcd7b4d",
+            "bytes": 3996
+        },
+        {
+            "path": "lib/ols_terms/records.py",
+            "sha256": "6420b1c1841c834ff8d150617d9b935adf1122283c63b858636fc9149a3d11b6",
+            "bytes": 2375
+        },
+        {
+            "path": "lib/openalex_works/__init__.py",
+            "sha256": "4d65ef104b886437aa3c3d8cd551fcbe6fe58c090c7513c6047f9f1b090995ea",
+            "bytes": 818
+        },
+        {
+            "path": "lib/openalex_works/client.py",
+            "sha256": "aef1c2d9cc632c6db771c9a4d1af2a97db300cf08589bcb1bf8ed5c17dd9afef",
+            "bytes": 4301
+        },
+        {
+            "path": "lib/openalex_works/records.py",
+            "sha256": "6375c4e6ac024329f561f71e209bef0132b33d0a51e78c9f89064dca0e18bbfd",
+            "bytes": 12184
+        },
+        {
+            "path": "lib/openalex_works/tool.py",
+            "sha256": "5433e9788be85109f3f8716c238e7230ac7c82da0bfa27ba2a7d7f6a547c7809",
+            "bytes": 13411
+        },
+        {
+            "path": "lib/openfda_drugsfda/__init__.py",
+            "sha256": "498dcb4ee6693345e74008c4379a2b3e3c674c74cb906b0952f4dfe8eeba4e96",
+            "bytes": 657
+        },
+        {
+            "path": "lib/openfda_drugsfda/records.py",
+            "sha256": "a36efb0f4f47bfd51bc52cf402728e40a2647d52272034b74c1336a69a52c9e9",
+            "bytes": 5270
+        },
+        {
+            "path": "lib/openfda_drugsfda/retrieve.py",
+            "sha256": "ad4139fa4127b1bfbe7f9acdecd8ba713a4caecd9c58d3c361f73e5edd4b8912",
+            "bytes": 11460
+        },
+        {
+            "path": "lib/openfda_drugsfda/spec.py",
+            "sha256": "6b4c58b3bfd28067d1bc4dac5726b4879f84789621063fd18634ecde9c18d445",
+            "bytes": 5914
+        },
+        {
+            "path": "lib/openfda_labels/__init__.py",
+            "sha256": "db937edb2b683dd241187d91b5aea5ed6a124362474a2be8f011614a047dec97",
+            "bytes": 754
+        },
+        {
+            "path": "lib/openfda_labels/__main__.py",
+            "sha256": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+            "bytes": 48
+        },
+        {
+            "path": "lib/openfda_labels/cli.py",
+            "sha256": "77a62e082214acf6dbfd092c18b130e39cb8151c6da67d3d9830f90850cded66",
+            "bytes": 2537
+        },
+        {
+            "path": "lib/openfda_labels/client.py",
+            "sha256": "926aede650fb85eb407f45f44aa1934c527cd043161347b29fc1a673dcdb8535",
+            "bytes": 6597
+        },
+        {
+            "path": "lib/openfda_labels/extract.py",
+            "sha256": "00ff9441678716f68ac8fe884793b28e7eeaac47a76abb009bfe20a4a71d648d",
+            "bytes": 2978
+        },
+        {
+            "path": "lib/openfda_labels/runner.py",
+            "sha256": "5adc63ee72bb4a9da7b3b6eb858cfe280d294528b979cad2772cffd721f2a294",
+            "bytes": 2620
+        },
+        {
+            "path": "lib/openfda_labels/spec.py",
+            "sha256": "f3cd55449978db11c74172ca4b1a3dce158c6bc48a5bcb42d7939368b3d05249",
+            "bytes": 3253
+        },
+        {
+            "path": "lib/panglaodb_markers/__init__.py",
+            "sha256": "c22a1434cb2d22261f5b80bb9a28c510b238032bdbe8df71fcfa7b5853dfa631",
+            "bytes": 671
+        },
+        {
+            "path": "lib/panglaodb_markers/__main__.py",
+            "sha256": "5d22ab9f7ca5aa0823a83b78408da6ab2079db9921f9442a7a2d6feb87bc7bf8",
+            "bytes": 1760
+        },
+        {
+            "path": "lib/panglaodb_markers/client.py",
+            "sha256": "260f7abd38ac7b2db837d46d8f095b4bd3fa53e4dcecbfb5f5e16dca46bebd5d",
+            "bytes": 3486
+        },
+        {
+            "path": "lib/panglaodb_markers/core.py",
+            "sha256": "346e02a443f477e63376b448a48af9ac6d35d9a8cd69af0ced39b23eecd2303c",
+            "bytes": 7500
+        },
+        {
+            "path": "lib/pdb_structures/__init__.py",
+            "sha256": "df96610c48d1f570a7f9e0130f27cadaf86dd76ced3b684f5c9de70193308783",
+            "bytes": 942
+        },
+        {
+            "path": "lib/pdb_structures/client.py",
+            "sha256": "fcefc7d9d5338454474714201fcb66d62abebc04112b9ac85c79933d958b1408",
+            "bytes": 5309
+        },
+        {
+            "path": "lib/pdb_structures/records.py",
+            "sha256": "76c49b6416700d6e9f6ff2b840652e1d6a5166851a4362d562335bea884262b9",
+            "bytes": 10658
+        },
+        {
+            "path": "lib/pdb_structures/search.py",
+            "sha256": "6f0d26d24c1f59917ad3b4f7c2c6e268e64f781971e5f2ed9c627cb1fe506d87",
+            "bytes": 7406
+        },
+        {
+            "path": "lib/pdb_structures/selection.py",
+            "sha256": "5b6a56f78a7b3676a141075dbd12f86ca07bbe3b5331fa59ec47926609c2c62e",
+            "bytes": 4969
+        },
+        {
+            "path": "lib/pheweb_portals/__init__.py",
+            "sha256": "59506999e931facf2859c74955b482ad609a34bf7c4181838bfb80efd5ba3e10",
+            "bytes": 467
+        },
+        {
+            "path": "lib/pheweb_portals/client.py",
+            "sha256": "fd76d365fc96f3662e5d9ece5ff1642d1847e9f80330b2a365705330860d69cd",
+            "bytes": 12649
+        },
+        {
+            "path": "lib/pride_projects/__init__.py",
+            "sha256": "eec14f8b2ee37d1b5fd6b648c6fb93be8dc8a8c2471481dc56f8c3da467b0746",
+            "bytes": 1161
+        },
+        {
+            "path": "lib/pride_projects/client.py",
+            "sha256": "27fc586717d6096dd33e3ea256ecc93203ba1f8d061a44fe8f33cb83857af4af",
+            "bytes": 3663
+        },
+        {
+            "path": "lib/pride_projects/proteins.py",
+            "sha256": "b283d6f6e2d02ae95bc0b39e30cf2682f2a2088830e8eb6ba4c6ffd84a5f9b71",
+            "bytes": 4366
+        },
+        {
+            "path": "lib/pride_projects/records.py",
+            "sha256": "152f6a3b8b5126a79a5be394ccd7adf6a18037e55c11df4c6aafa47f4bab6016",
+            "bytes": 7320
+        },
+        {
+            "path": "lib/pride_projects/search.py",
+            "sha256": "dda35a590929ca8809a025a1e1f662c373008f347d7a36f704fe1af37ab80e7a",
+            "bytes": 6234
+        },
+        {
+            "path": "lib/protein_atlas/__init__.py",
+            "sha256": "792e58889a19918bc6c28674aa2a6360d41b162eee87e7a78f238638ecb21432",
+            "bytes": 735
+        },
+        {
+            "path": "lib/protein_atlas/api.py",
+            "sha256": "432f5484c83184c6a7b677fafea54d3cc3c64050d65984e700faf26451fdc1ba",
+            "bytes": 3108
+        },
+        {
+            "path": "lib/protein_atlas/client.py",
+            "sha256": "f0bf23639f62f7c504bb02fb05483af5f18f39bd6d738524be2766efccc8cb69",
+            "bytes": 5207
+        },
+        {
+            "path": "lib/protein_atlas/records.py",
+            "sha256": "68f6620ac0ffb9326d2e4e14835082dc2e87f77528203db02f3fccfbde9c38fe",
+            "bytes": 4668
+        },
+        {
+            "path": "lib/pubchem_compounds/__init__.py",
+            "sha256": "ee4334e46846353e9f9214cdf9b366b568171f10c229aff58efda06a081e3f46",
+            "bytes": 463
+        },
+        {
+            "path": "lib/pubchem_compounds/client.py",
+            "sha256": "f11eb39f557194d202ac39e7da9921739acee758b4d0a45cdeba7007ff89c2af",
+            "bytes": 5912
+        },
+        {
+            "path": "lib/pubchem_compounds/tool.py",
+            "sha256": "2ca6b63d3ed51c4fb80350813d94850f6c82619127ff0f674a4e90cd2bc36225",
+            "bytes": 8099
+        },
+        {
+            "path": "lib/pubmed_fetch/__init__.py",
+            "sha256": "a2b0956a433a7cca586001e964a1a9761a7db65de51c8b5bc0f4639d7b0b0172",
+            "bytes": 671
+        },
+        {
+            "path": "lib/pubmed_fetch/canonical.py",
+            "sha256": "33b96e0384384ec75f22848a4bf355ef78f1513bcd52f6d98b75fa73cf29fbf4",
+            "bytes": 2450
+        },
+        {
+            "path": "lib/pubmed_fetch/fetch.py",
+            "sha256": "ee08639006a0342466238d759fe8113b0e91f88c03494477e3197640540bc1d2",
+            "bytes": 10177
+        },
+        {
+            "path": "lib/pubmed_fetch/parse.py",
+            "sha256": "74e5bbfda998b2acb3e5487f87500b5ceb4750e96dbd24a0613523c0d55327e4",
+            "bytes": 3830
+        },
+        {
+            "path": "lib/pubmed_search/__init__.py",
+            "sha256": "475fd2303cea3356d16b5e88e82430e7d56ce8a1ae23ced46b73af66f84f1212",
+            "bytes": 290
+        },
+        {
+            "path": "lib/pubmed_search/client.py",
+            "sha256": "f6b2ac57b4d2e3f46a2aec17c0d8dd6fb3ac91387ca1b5d001dec524640853c0",
+            "bytes": 21722
+        },
+        {
+            "path": "lib/quickgo_annotations/__init__.py",
+            "sha256": "a9d7ff0cabc43f453e54bd98af13c5b50a5405b617c9e980ffb6c507b6fe91e1",
+            "bytes": 819
+        },
+        {
+            "path": "lib/quickgo_annotations/annotations.py",
+            "sha256": "26d81b4532453f5b7bd55e3359207b3cb5dc71b96ee1d87f6d5deeb1efae5c11",
+            "bytes": 7623
+        },
+        {
+            "path": "lib/quickgo_annotations/client.py",
+            "sha256": "1d7cb49c9d1286228c641ed752023b503624a9173cf010afdbddd2400ae3e857",
+            "bytes": 4053
+        },
+        {
+            "path": "lib/quickgo_annotations/queries.py",
+            "sha256": "d100a74359a5878f0b9e5f1c1b1a1a6b2612482ded2dc62d6d0070ae4fc3540f",
+            "bytes": 3391
+        },
+        {
+            "path": "lib/quickgo_annotations/terms.py",
+            "sha256": "aae0803888c6d4e3d417e8251b514cfbd0ce2a796aa79b07e2d9c0a6134970c8",
+            "bytes": 1232
+        },
+        {
+            "path": "lib/reactome_map/__init__.py",
+            "sha256": "4329271925a6ec81e88a7510559cb97d1ba7df6d6a24572e12af607a00cc75e7",
+            "bytes": 823
+        },
+        {
+            "path": "lib/reactome_map/__main__.py",
+            "sha256": "b11940838138da86dec46eab469ed358f5dc3c43bf60aeea42e329ee7fb5ea9f",
+            "bytes": 2005
+        },
+        {
+            "path": "lib/reactome_map/client.py",
+            "sha256": "7f686f415c479dbb2aa67b9817fc44e4b318657c9a332221e35e850fca99d162",
+            "bytes": 9148
+        },
+        {
+            "path": "lib/reactome_map/mapper.py",
+            "sha256": "7817772f5d3b6cebb673625dcb77ec29f92f6879aeee0defe6f97ad2d1f4c139",
+            "bytes": 11004
+        },
+        {
+            "path": "lib/rfam_families/__init__.py",
+            "sha256": "ef2bdf803dd02939a4a740e4b92174a651968df8dd4e0a286bec7e4229721273",
+            "bytes": 1803
+        },
+        {
+            "path": "lib/rfam_families/client.py",
+            "sha256": "fc7093c2c9674230411633fc82146a74dbab40fab890dedd5df4c00de5d17695",
+            "bytes": 5902
+        },
+        {
+            "path": "lib/rfam_families/records.py",
+            "sha256": "e4ac4bc8527d1ef6ff41845de913b018374c049b370939092ce58015baa6863d",
+            "bytes": 6147
+        },
+        {
+            "path": "lib/rfam_families/tool.py",
+            "sha256": "00c8e2a9f6962907e1aa276dd919894c55045f3fb78d91d6f40c470947f31d7e",
+            "bytes": 6113
+        },
+        {
+            "path": "lib/rhea_reactions/__init__.py",
+            "sha256": "a94e6fad617d15957f0d3a001d4a0802aee48ac0004cf3d541691e8e836831ed",
+            "bytes": 665
+        },
+        {
+            "path": "lib/rhea_reactions/client.py",
+            "sha256": "9d92647b6801408c9bcd40e0932912e38e5c41a628f663fe9e4bc8e8397de805",
+            "bytes": 4094
+        },
+        {
+            "path": "lib/rhea_reactions/tool.py",
+            "sha256": "9a0f3e8e06b624a2ad3b4629d491cde051c00d4d6b373f113ee6c26ebbc6d3cd",
+            "bytes": 7755
+        },
+        {
+            "path": "lib/string_network/__init__.py",
+            "sha256": "721acb425a0f3f2202a419205266d3dc3338483392951c2c0a5584db77626dd4",
+            "bytes": 1280
+        },
+        {
+            "path": "lib/string_network/__main__.py",
+            "sha256": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+            "bytes": 79
+        },
+        {
+            "path": "lib/string_network/cli.py",
+            "sha256": "fdd5a0c7ac941df5d321e405301cb8702370f9ba4cfb0987d590542d94215774",
+            "bytes": 2142
+        },
+        {
+            "path": "lib/string_network/client.py",
+            "sha256": "dd99cedeb7a982d2a0b7df3f8a42b89120152fa8ac495b99b52bab6f8088a914",
+            "bytes": 5493
+        },
+        {
+            "path": "lib/string_network/core.py",
+            "sha256": "8194b4073db248f1c7e12e57953879690850e2be28e870ebaee6ba5a0f339634",
+            "bytes": 12092
+        },
+        {
+            "path": "lib/string_network/homology.py",
+            "sha256": "4e09902e23660004b09cac8817e010fe7a11939a7c4ad10ea708ec5c8f071c7e",
+            "bytes": 5586
+        },
+        {
+            "path": "lib/ucsc_tracks/__init__.py",
+            "sha256": "f64fae2ad2bb8f41fe59444689dea9297df70177ef130728ff92728f5e3187ff",
+            "bytes": 244
+        },
+        {
+            "path": "lib/ucsc_tracks/client.py",
+            "sha256": "db6421b97620ce807fe89249a15f5788568c70a106893a1287eb3696ca238252",
+            "bytes": 6061
+        },
+        {
+            "path": "lib/unibind_tfbs/__init__.py",
+            "sha256": "c27586c68d89b8a48d35a01be8ccad1fe4450da45f14e7bf79305dcd8035ec03",
+            "bytes": 1026
+        },
+        {
+            "path": "lib/unibind_tfbs/client.py",
+            "sha256": "973aab99a8e14de289c19c4f8f568729a67d638e7b5f63d3504afcc433bd2e4b",
+            "bytes": 4143
+        },
+        {
+            "path": "lib/unibind_tfbs/tool.py",
+            "sha256": "2602dafa96ed75e0a1a09f9bae252fac9fad834131a919fbfcda7e8258b86bfa",
+            "bytes": 8932
+        },
+        {
+            "path": "lib/uniprot_fetch/__init__.py",
+            "sha256": "d06cbb2c6da615419cbf0bd8498c0574f6c563d9a1d169e16b6097d14aa34d85",
+            "bytes": 890
+        },
+        {
+            "path": "lib/uniprot_fetch/__main__.py",
+            "sha256": "c637e3bc1a5e28d16b932ddc217c27107c34bf35ef7232a8b5e440439c3ea66b",
+            "bytes": 1669
+        },
+        {
+            "path": "lib/uniprot_fetch/canonicalize.py",
+            "sha256": "0dcb1aec5e41436d45350ad551898b56713d186f638d2878c63859a300f43c71",
+            "bytes": 1876
+        },
+        {
+            "path": "lib/uniprot_fetch/client.py",
+            "sha256": "ed5e893bcd51647187378960b8c186df3ee89aa1cc8eec02160e996bae88d230",
+            "bytes": 6828
+        },
+        {
+            "path": "lib/uniprot_fetch/http.py",
+            "sha256": "a2401b6b0c22059f1346007e15ed829cbaf3bd586542ac010686e6b812e1577e",
+            "bytes": 7102
+        },
+        {
+            "path": "lib/uniprot_fetch/split.py",
+            "sha256": "215979768be514b72d763efa7d922abe442f43abdfafeec298cc82bd701da408",
+            "bytes": 2099
+        },
+        {
+            "path": "package.json",
+            "sha256": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae",
+            "bytes": 18
+        },
+        {
+            "path": "run_server.py",
+            "sha256": "fb9f6bd148237f4579c0d4db24a48c59d92960c19a6150808665ba9a9021ed75",
+            "bytes": 2107
+        }
+    ]
+}

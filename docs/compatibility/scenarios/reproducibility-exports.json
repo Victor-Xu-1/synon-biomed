@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "reproducibility-exports",
+  "contracts": [
+    {"kind": "service", "name": "downloadSessionBundle"},
+    {"kind": "service", "name": "downloadScriptBundle"},
+    {"kind": "service", "name": "fetchSessionExport"},
+    {"kind": "service", "name": "exportSession"},
+    {"kind": "query", "name": "executionLog"}
+  ],
+  "steps": [
+    {
+      "name": "missing-session-export",
+      "method": "GET",
+      "path": "/api/frames/missing-frame/export",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-session-bundle",
+      "method": "GET",
+      "path": "/api/frames/missing-frame/bundle?scope=full",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-script-bundle",
+      "method": "GET",
+      "path": "/api/artifacts/missing-version/script-bundle",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-execution-log",
+      "method": "GET",
+      "path": "/api/frames/missing-frame/execution-log",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "exact",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

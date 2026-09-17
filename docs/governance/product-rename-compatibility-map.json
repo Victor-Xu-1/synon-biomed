@@ -1,0 +1,20 @@
+{
+  "schema": "synon.governance.product-rename-compatibility.v1",
+  "authority_path": "product-identity.json",
+  "status": "identity-projections-aligned-external-release-authorization-required",
+  "phases": [
+    {"id": "IDENTITY-0", "scope": "governance authority and fail-closed inventory gate", "predecessor": "none", "rollback": "revert the focused governance commit; no runtime or data change", "status": "implemented-by-repository-steward"},
+    {"id": "IDENTITY-1", "scope": "user-visible README, frontend descriptions, UI, CLI and API metadata consume the root-derived product display", "predecessor": "IDENTITY-0 plus exact Core and UX file leases", "rollback": "revert projection commits before release; no alias removal", "status": "implemented-and-candidate-gated"},
+    {"id": "IDENTITY-2", "scope": "build, package and manifest versions consume or verify the root authority", "predecessor": "IDENTITY-1 and clean-clone/package evidence", "rollback": "restore prior projection commit and artifacts; published tags are never rewritten", "status": "implemented-and-lifecycle-verified"},
+    {"id": "IDENTITY-3", "scope": "optional binary, service, package, install-path and module renames", "predecessor": "complete consumer graph, compatibility aliases, platform install/upgrade and rollback evidence", "rollback": "retain old launchers and paths until the new identity is independently verified; persisted identifiers use forward migration or backup restore", "status": "compatibility-identifiers-classified-and-retained"},
+    {"id": "IDENTITY-4", "scope": "create the release tag derived from the root authority", "predecessor": "User-authorized clean release candidate with all mandatory gates and a signed external receipt bound to exact artifacts", "rollback": "not applicable: tags and published artifacts are immutable; a bad release is superseded", "status": "external-authorization-required"}
+  ],
+  "never_blind_replace": [
+    "go.mod module and import paths",
+    "package manager dependency identities",
+    "SQLite filenames, table values and migration journal entries",
+    "service names, install roots and user state paths",
+    "immutable evidence and historical captures",
+    "schema, API, asset and third-party dependency versions"
+  ]
+}

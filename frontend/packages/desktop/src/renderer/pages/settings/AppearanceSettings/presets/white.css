@@ -1,0 +1,124 @@
+/* Pure-white palette: a true white canvas with quiet neutral separation. */
+:root,
+[data-color-scheme='default'] {
+  --workspace-canvas: #ffffff;
+  --workspace-sidebar: #fbfbfb;
+  --workspace-subtle: #f7f7f7;
+  --workspace-hover: #f2f2f2;
+  --workspace-selected: #eaeaea;
+  --workspace-border: #e5e5e5;
+  --workspace-border-strong: #d6d6d6;
+  --workspace-text: #1e1e1e;
+  --workspace-text-secondary: #646464;
+  --workspace-text-tertiary: #6d6d6d;
+  --workspace-accent: #111111;
+  --workspace-accent-contrast: #ffffff;
+  --workspace-focus: rgb(17 17 17 / 11%);
+  --workspace-shadow-popover: 0 8px 28px rgb(0 0 0 / 10%);
+  --conversation-user-surface: #efeeeb;
+  --conversation-user-border: transparent;
+  --conversation-stream-surface: #ffffff;
+  --conversation-stream-border: transparent;
+  --conversation-stream-accent: #5f5f5f;
+  --conversation-stream-accent-soft: #f2f2f2;
+  --conversation-code-surface: #f7f7f7;
+  --theme-primary-3: 229, 229, 229;
+  --theme-primary-5: 100, 100, 100;
+  --theme-primary-6: 17, 17, 17;
+  --theme-primary-7: 30, 30, 30;
+  --primary-6: 17, 17, 17;
+  --composer-surface: var(--workspace-canvas);
+  --composer-border: transparent;
+  --composer-border-active: transparent;
+  --composer-shadow: 0 8px 28px rgb(0 0 0 / 7%);
+  --composer-shadow-active: 0 0 0 1px rgb(17 17 17 / 7%), 0 12px 34px rgb(0 0 0 / 11%);
+  --workspace-overlay-surface: #ffffff;
+  --workspace-overlay-surface-muted: #fafafa;
+  --workspace-overlay-hover: #f4f4f4;
+  --workspace-overlay-selected: #ededed;
+  --workspace-overlay-border: transparent;
+  --workspace-overlay-divider: #e5e5e5;
+  --workspace-overlay-shadow: 0 18px 48px rgb(0 0 0 / 12%), 0 2px 10px rgb(0 0 0 / 5%);
+  --workspace-dialog-shadow: 0 28px 80px rgb(0 0 0 / 18%), 0 3px 14px rgb(0 0 0 / 7%);
+}
+
+[data-theme='dark'] {
+  --workspace-canvas: #121212;
+  --workspace-sidebar: #0d0d0d;
+  --workspace-subtle: #1a1a1a;
+  --workspace-hover: #232323;
+  --workspace-selected: #2d2d2d;
+  --workspace-border: #303030;
+  --workspace-border-strong: #454545;
+  --workspace-text: #f5f5f5;
+  --workspace-text-secondary: #b8b8b8;
+  --workspace-text-tertiary: #999999;
+  --workspace-accent: #f5f5f5;
+  --workspace-accent-contrast: #121212;
+  --workspace-focus: rgb(255 255 255 / 14%);
+  --workspace-shadow-popover: 0 10px 32px rgb(0 0 0 / 42%);
+  --conversation-user-surface: #202020;
+  --conversation-user-border: transparent;
+  --conversation-stream-surface: #181818;
+  --conversation-stream-border: transparent;
+  --conversation-stream-accent: #f5f5f5;
+  --conversation-stream-accent-soft: #2b2b2b;
+  --conversation-code-surface: #1b1b1b;
+  --theme-primary-3: 69, 69, 69;
+  --theme-primary-5: 218, 218, 218;
+  --theme-primary-6: 245, 245, 245;
+  --theme-primary-7: 255, 255, 255;
+  --primary-6: 245, 245, 245;
+  --composer-surface: var(--workspace-canvas);
+  --composer-border: transparent;
+  --composer-border-active: transparent;
+  --composer-shadow: 0 10px 30px rgb(0 0 0 / 30%);
+  --composer-shadow-active: 0 0 0 1px rgb(255 255 255 / 10%), 0 14px 38px rgb(0 0 0 / 38%);
+  --workspace-overlay-surface: #181818;
+  --workspace-overlay-surface-muted: #202020;
+  --workspace-overlay-hover: #2b2b2b;
+  --workspace-overlay-selected: #353535;
+  --workspace-overlay-border: transparent;
+  --workspace-overlay-divider: #333333;
+  --workspace-overlay-shadow: 0 20px 54px rgb(0 0 0 / 44%), 0 3px 12px rgb(0 0 0 / 28%);
+  --workspace-dialog-shadow: 0 30px 90px rgb(0 0 0 / 58%), 0 4px 16px rgb(0 0 0 / 34%);
+}
+
+.markdown-shadow-body img {
+  display: block;
+  border-radius: 12px;
+}
+
+.markdown-shadow-body blockquote {
+  background: var(--conversation-stream-surface);
+  border-left: 1px solid var(--workspace-border-strong);
+  border-radius: 10px;
+}
+
+.markdown-shadow-body pre {
+  overflow: auto;
+  background: var(--conversation-code-surface);
+  border-color: transparent;
+  border-radius: 10px;
+}
+
+.markdown-shadow-body table {
+  overflow: hidden;
+  background: var(--conversation-stream-surface);
+  border-color: transparent;
+  border-radius: 10px;
+}
+
+.markdown-shadow-body th,
+.markdown-shadow-body td {
+  border-color: var(--workspace-border);
+}
+
+.markdown-shadow-body code {
+  border-radius: 6px;
+}
+
+.markdown-shadow-body hr {
+  border: 0;
+  border-top: 1px solid var(--workspace-border);
+}

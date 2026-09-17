@@ -1,0 +1,318 @@
+/* Standalone chats keep comfortable side insets only when the chat column itself
+   has enough room. Split preview/project layouts can make the column narrow even
+   on wide screens, so this must key off container width instead of viewport. */
+.chat-surface-container {
+  /* Keep one 56rem outer rail. The 40px message insets below
+     leave an 816px prose/tool measure at desktop widths, so narration, tool
+     groups, expanded details and the composer all share one visual axis. */
+  --conversation-content-max-width: 56rem;
+  --conversation-reading-inline-inset: 40px;
+  --conversation-composer-inline-inset: 24px;
+
+  box-sizing: border-box;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+/* Virtuoso owns the transcript scrollbar. Reserve the gutter on both sides so
+   the visible transcript remains centred instead of moving half a scrollbar
+   away from the non-scrolling composer rail. */
+.conversation-transcript-scroll {
+  scrollbar-gutter: stable both-edges;
+}
+
+.chat-surface-fluid {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.message-item {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.message-item > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.message-item [data-testid='message-text-content'] {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.message-scientific-files__card {
+  background: var(--workspace-canvas, var(--bg-base)) !important;
+  border-color: var(--workspace-border, var(--color-border-2)) !important;
+  border-radius: 20px !important;
+  box-shadow: none;
+}
+
+.message-scientific-files__card:hover {
+  background: #fff !important;
+  border-color: var(--workspace-border-strong, var(--color-border-3)) !important;
+}
+
+.message-scientific-files__preview {
+  background: #fff !important;
+  border: 0;
+  border-bottom: 1px solid var(--workspace-border, var(--color-border-2));
+}
+
+.transcript-boundary-indicator {
+  display: flex;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+  font-size: 12px;
+}
+
+.transcript-boundary-indicator__spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  animation: conversation-scroll-spin 800ms linear infinite;
+  border: 2px solid currentcolor;
+  border-top-color: transparent;
+  border-radius: 50%;
+}
+
+.transcript-activity-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 16px;
+  height: 21px;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+}
+
+.message-item > .transcript-activity-inline {
+  margin-right: 8px;
+}
+
+.conversation-scroll-control {
+  position: absolute;
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  height: 32px;
+  align-items: center;
+  color: rgb(82 81 78);
+  background: #fff;
+  border: 0;
+  box-shadow:
+    0 0 0 1px rgb(11 11 11 / 10%),
+    0 2px 4px rgb(11 11 11 / 7%),
+    0 6px 16px rgb(11 11 11 / 8%);
+  font-family: 'Anthropic Sans', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-8px);
+  transition: all 200ms cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.conversation-scroll-control--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.conversation-scroll-control--bottom {
+  bottom: 12px;
+  width: 32px;
+  justify-content: center;
+  padding: 0;
+  border-radius: 9999px;
+  cursor: pointer;
+  transform: translateX(-50%) translateY(8px);
+}
+
+.conversation-scroll-control--bottom.conversation-scroll-control--visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+.conversation-scroll-control--last-user {
+  top: 12px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.conversation-scroll-control--last-user {
+  gap: 6px;
+  padding: 0 12px 0 10px;
+  cursor: pointer;
+  line-height: 20px;
+}
+
+.conversation-scroll-control:hover,
+.conversation-scroll-control:focus-visible {
+  color: var(--workspace-text, var(--color-text-1));
+}
+
+@keyframes conversation-scroll-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-scroll-control {
+    transition: none;
+  }
+
+  .transcript-boundary-indicator__spinner {
+    animation: none;
+  }
+}
+
+@container (min-width: 600px) {
+  .chat-surface-fluid {
+    box-sizing: border-box;
+    width: calc(100% - clamp(72px, 16cqw, 128px));
+    max-width: var(--conversation-content-max-width);
+  }
+
+  .message-item {
+    padding-right: var(--conversation-reading-inline-inset) !important;
+    padding-left: var(--conversation-reading-inline-inset) !important;
+  }
+
+  /* Keep the input surface slightly quieter than the transcript column while
+     leaving the shared conversation rail and its responsive breakpoints as the
+     single width authority. */
+  .conversation-composer {
+    --conversation-composer-inline-size: calc(
+      100% - var(--conversation-composer-inline-inset) - var(--conversation-composer-inline-inset)
+    );
+    --conversation-composer-inline-offset: var(--conversation-composer-inline-inset);
+  }
+
+  .conversation-composer .sendbox-panel {
+    width: var(--conversation-composer-inline-size);
+    max-width: var(--conversation-composer-inline-size);
+    margin-inline: auto;
+    border: 0 !important;
+    border-radius: 16px !important;
+    padding: 8px 12px !important;
+    box-shadow:
+      0 0 0 1px rgb(10 10 10 / 6%),
+      0 4px 24px rgb(10 10 10 / 4%) !important;
+  }
+
+  .conversation-composer .sendbox-highlight-container {
+    margin-bottom: 4px !important;
+  }
+}
+
+@container (min-width: 1040px) {
+  .chat-surface-fluid {
+    width: calc(100% - clamp(160px, 16cqw, 240px));
+  }
+}
+
+/* The workbench can make the conversation column narrow while the browser
+   viewport remains wide. Keep the single desktop composer, but compact that
+   same component from the actual chat-column width instead of switching to a
+   second viewport-driven layout. */
+@container (max-width: 599px) {
+  .conversation-composer .sendbox-panel {
+    padding: 12px !important;
+    border-radius: 18px !important;
+  }
+
+  .conversation-composer .sendbox-actions {
+    min-width: 0;
+    max-width: 100%;
+    gap: 4px;
+  }
+
+  .conversation-composer .sendbox-tools {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Mobile typography tuning: conversation readability */
+@media (max-width: 767px) {
+  /* Message body — keep body type compact so messages don't dominate the screen */
+  .message-item .markdown-shadow {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  .message-item .markdown-shadow p,
+  .message-item .markdown-shadow li,
+  .message-item .markdown-shadow blockquote {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Vertical rhythm between consecutive messages on mobile.
+     Desktop reserves space for the hover-revealed copy/time row beneath each
+     bubble; that row is hidden on mobile, so add the spacing back here so
+     bubbles don't visually merge. */
+  .message-item {
+    margin-top: 16px !important;
+  }
+
+  /* Apply consistent line-height to user message text */
+  .message-item .whitespace-pre-wrap {
+    line-height: 1.4 !important;
+  }
+}
+
+/* The message layer owns prose typography, including the Shadow DOM bridge. */
+.assistant-transcript-text {
+  --text-primary: var(--workspace-text);
+  --chat-line-height: 25px;
+  --chat-paragraph-margin: 12px;
+  --chat-list-item-margin: 4px;
+  --chat-heading-1-font-size: 22px;
+  --chat-heading-1-line-height: 30px;
+  --chat-heading-2-font-size: 18px;
+  --chat-heading-2-line-height: 27px;
+  --chat-heading-3-font-size: 16px;
+  --chat-heading-3-line-height: 25px;
+  --chat-heading-4-font-size: 15px;
+  --chat-heading-4-line-height: 24px;
+  --chat-code-font-size: 13px;
+  --chat-code-line-height: 21px;
+  --chat-quote-font-size: 15px;
+  --chat-quote-line-height: 25px;
+  --chat-table-font-size: 13px;
+  --chat-table-line-height: 22px;
+  color: var(--workspace-text);
+  font-family: var(--conversation-font-sans, system-ui);
+  font-size: var(--chat-font-size, 15px);
+  font-style: normal;
+  line-height: var(--chat-line-height);
+  letter-spacing: normal;
+}
+
+.assistant-transcript-text .markdown-shadow {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.assistant-transcript-text p {
+  margin-block: var(--chat-paragraph-margin);
+}
+
+@media (max-width: 767px) {
+  .assistant-transcript-text {
+    --chat-line-height: 24px;
+    --chat-heading-1-font-size: 20px;
+    --chat-heading-1-line-height: 28px;
+    --chat-heading-2-font-size: 17px;
+    --chat-heading-2-line-height: 26px;
+  }
+}

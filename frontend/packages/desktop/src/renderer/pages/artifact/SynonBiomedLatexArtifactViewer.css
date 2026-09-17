@@ -1,0 +1,120 @@
+.synon-latex-paper {
+  color: var(--color-text-1);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  line-height: 1.72;
+}
+
+.synon-latex-paper h1,
+.synon-latex-paper h2,
+.synon-latex-paper h3,
+.synon-latex-paper h4,
+.synon-latex-paper h5,
+.synon-latex-paper h6 {
+  color: var(--color-text-1);
+  font-family: Inter, system-ui, sans-serif;
+  letter-spacing: 0;
+  margin: 1.6em 0 0.65em;
+}
+
+.synon-latex-paper h1:first-child,
+.synon-latex-paper h2:first-child,
+.synon-latex-paper h3:first-child {
+  margin-top: 0;
+}
+
+.synon-latex-paper h3 {
+  font-size: 22px;
+}
+
+.synon-latex-paper h4 {
+  font-size: 18px;
+}
+
+.synon-latex-paper h5,
+.synon-latex-paper h6 {
+  font-size: 15px;
+}
+
+.synon-latex-paper p {
+  margin: 0.8em 0;
+}
+
+.synon-latex-paper ul,
+.synon-latex-paper ol {
+  margin: 0.8em 0;
+  padding-left: 28px;
+}
+
+.synon-latex-paper blockquote {
+  border-left: 3px solid rgb(var(--primary-5));
+  color: var(--color-text-2);
+  margin: 1em 0;
+  padding: 2px 0 2px 14px;
+}
+
+.synon-latex-paper pre,
+.synon-latex-paper code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.synon-latex-paper pre {
+  background: var(--color-fill-2);
+  overflow: auto;
+  padding: 12px;
+}
+
+.synon-latex-paper table {
+  border-collapse: collapse;
+  display: block;
+  margin: 1em 0;
+  max-width: 100%;
+  overflow-x: auto;
+  width: max-content;
+}
+
+.synon-latex-paper th,
+.synon-latex-paper td {
+  border: 1px solid var(--color-border-2);
+  padding: 6px 10px;
+}
+
+.synon-latex-paper .display-math {
+  margin: 1.25em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 0;
+  text-align: center;
+}
+
+.synon-latex-paper .inline-math {
+  white-space: nowrap;
+}
+
+.synon-latex-paper .latex-render-error {
+  background: rgb(var(--danger-1));
+  color: var(--workspace-text, var(--color-text-1));
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  padding: 2px 4px;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 640px) {
+  .synon-latex-paper {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .synon-latex-paper h3 {
+    font-size: 19px;
+  }
+}
+
+.synon-latex-paper img.latex-unresolved-resource {
+  display: block;
+  min-height: 72px;
+  border: 1px dashed var(--color-border-3);
+  background: var(--color-fill-1);
+  color: var(--color-text-3);
+  object-fit: contain;
+}

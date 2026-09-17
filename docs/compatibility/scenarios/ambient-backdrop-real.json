@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "ambient-backdrop-real",
+  "contracts": [
+    {"kind": "service", "name": "getAmbientBackdrop"},
+    {"kind": "service", "name": "setAmbientBackdrop"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "get-default",
+      "method": "GET",
+      "path": "/api/go/settings/ambient-backdrop",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "enable",
+      "method": "PUT",
+      "path": "/api/go/settings/ambient-backdrop",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"value": true},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-enabled",
+      "method": "GET",
+      "path": "/api/go/settings/ambient-backdrop",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-string",
+      "method": "PUT",
+      "path": "/api/go/settings/ambient-backdrop",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"value": "system"},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

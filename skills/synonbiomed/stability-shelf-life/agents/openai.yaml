@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stability and Shelf Life"
+  short_description: "Plan stability studies, trending, and shelf-life evidence"
+  default_prompt: "Use $stability-shelf-life to build a source-grounded, review-ready plan."

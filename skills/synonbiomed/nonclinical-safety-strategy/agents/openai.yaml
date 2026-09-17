@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nonclinical Safety Strategy"
+  short_description: "Plan phase-appropriate pharmacology and toxicology packages"
+  default_prompt: "Use $nonclinical-safety-strategy to build a source-grounded, review-ready plan."

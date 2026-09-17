@@ -1,0 +1,4 @@
+# Reused v1.1 assets are content-addressed and must retain upstream bytes.
+assets/synonbiomed/** -whitespace
+skills/synonbiomed/** -whitespace
+assets/optional/*.manifest.json -whitespace

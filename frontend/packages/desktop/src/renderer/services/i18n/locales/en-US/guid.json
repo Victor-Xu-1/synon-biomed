@@ -1,0 +1,147 @@
+{
+  "emptyState": {
+    "guidance": "Describe your research goal or upload files to begin a new biomedical research task."
+  },
+  "promptExamplesHint": "Try Synon Biomed workflows",
+  "defaultPrompts": {
+    "capabilities": "Design a STAT6 SBDD PPI analysis workflow",
+    "skills": "Run Boltz2 to generate and evaluate a protein-ligand complex",
+    "tools": "Organize CRBN project result files and draft a report"
+  },
+  "synonBiomedStatus": {
+    "healthy": "healthy",
+    "checking": "checking",
+    "offline": "offline",
+    "unavailable": "unavailable"
+  },
+  "selectAssistantHint": "Select an assistant to start a task",
+  "workspace": {
+    "workInProject": "Work in a project",
+    "optional": "Optional",
+    "clearWorkspace": "Clear",
+    "specifyWorkspace": "Select project folder",
+    "searchPlaceholder": "Search projects…",
+    "noProject": "No Project",
+    "recentLabel": "Recent",
+    "chooseDifferentFolder": "Choose a different folder",
+    "synonBiomedProjects": "Synon Biomed projects",
+    "seedWorkflows": "Seed workflows"
+  },
+  "quickActions": {
+    "projects": "Projects",
+    "skills": "Skill library",
+    "mcp": "MCP tools",
+    "runtime": "Runtime status"
+  },
+  "onboarding": {
+    "brand": "Synon Biomed Workbench",
+    "progressLabel": "Setup progress",
+    "progressValue": "Step {{current}} of {{total}}: {{title}}",
+    "projectDefaultName": "Getting started",
+    "welcome": {
+      "title": "Set up your research workspace",
+      "subtitle": "Configure network access, reusable capabilities, and your first research task."
+    },
+    "network": {
+      "title": "Choose network access",
+      "subtitle": "Control which external research services the agent may use.",
+      "allowAll": "Allow all available groups",
+      "enabledCount": "{{enabled}} of {{total}} optional groups enabled"
+    },
+    "capabilities": {
+      "title": "Choose capabilities",
+      "subtitle": "Configure the connectors, skills, and local software available to your research agent.",
+      "connectors": "Connectors",
+      "skills": "Skills",
+      "runtimes": "Local software",
+      "tabsLabel": "Capability type",
+      "searchLabel": "Search capabilities",
+      "searchPlaceholder": "Search by name or description",
+      "externalNotice": "Enabled connectors may communicate with the named external research services. Review the list before continuing.",
+      "runtimeNotice": "Every listed group is selected initially. Clear anything you do not need before continuing; preparation runs sequentially in the background and never blocks the workspace.",
+      "unavailable": "Not available to the selected first-run assistant",
+      "noConnectors": "No connectors are available.",
+      "noSkills": "No skills are available.",
+      "noRuntimes": "No local software matches your search.",
+      "runtimeSize": "About {{size}} MB additional storage",
+      "runtimeTotal": "About {{selected}} selected",
+      "runtimeReady": "ready",
+      "runtimeQueued": "prepared in the background after setup",
+      "runtimeUnavailable": "Local scientific runtimes are unavailable on this system",
+      "runtimeCommonTitle": "Common structure toolkit",
+      "runtimeCommonDescription": "RDKit, BioPython, Gemmi, and PyYAML for molecules, sequences, and PDB/mmCIF files.",
+      "runtimeInteractionTitle": "2D interaction analysis",
+      "runtimeInteractionDescription": "ProLIF, MDAnalysis, and CairoSVG for protein–ligand interaction diagrams and exports.",
+      "runtimeElectrostaticsTitle": "Biomolecular electrostatics",
+      "runtimeElectrostaticsDescription": "APBS, PDB2PQR, PROPKA, and RDKit for reproducible protein, pocket, and ligand potential maps.",
+      "runtimeVinaTitle": "AutoDock Vina docking",
+      "runtimeVinaDescription": "The complete governed Vina, Meeko, Gemmi, ProDy, and BioPython docking environment.",
+      "runtimeDrugChemistryTitle": "Drug chemistry and process calculations",
+      "runtimeDrugChemistryDescription": "Thermo, Chemicals, ChemPy, and ASE for physical properties, reaction engineering, and process calculations.",
+      "runtimeConversionTitle": "Molecular conversion and rapid quantum tools",
+      "runtimeConversionDescription": "Open Babel, Dimorphite-DL, xTB, and ASE for format conversion, protonation, and rapid quantum calculations.",
+      "runtimeQSARTitle": "Classical QSAR and ADMET",
+      "runtimeQSARDescription": "scikit-learn, XGBoost, LightGBM, SHAP, Optuna, and Mordred descriptors.",
+      "runtimeClinicalTitle": "Clinical statistics and pharmacometrics",
+      "runtimeClinicalDescription": "Lifelines, Pingouin, LMFit, Pint, and OpenPyXL for survival, statistics, and PK/PD data.",
+      "runtimeOmicsTitle": "Single-cell and omics analysis",
+      "runtimeOmicsDescription": "A classical CPU stack with Scanpy, AnnData, Harmony, Leiden, and igraph.",
+      "runtimeGenomicsTitle": "Pharmacogenomics command line",
+      "runtimeGenomicsDescription": "SAMtools, BCFtools, BEDTools, Minimap2, SeqKit, and pysam.",
+      "runtimeSimulationTitle": "Molecular dynamics and simulation",
+      "runtimeSimulationDescription": "MDAnalysis, MDTraj, ParmEd, and OpenMM for CPU trajectories and simulation.",
+      "runtimeImagingTitle": "Medical imaging analysis",
+      "runtimeImagingDescription": "pydicom, NiBabel, SimpleITK, and scikit-image for DICOM, NIfTI, and image processing.",
+      "runtimeInstrumentTitle": "Instrument and analytical data",
+      "runtimeInstrumentDescription": "Allotropy, Pandas, OpenPyXL, and PDFPlumber for instrument standardization and table extraction.",
+      "runtimeUnknown": "Governed local scientific runtime."
+    },
+    "profile": {
+      "title": "Add research context",
+      "subtitle": "Describe your goals and optionally attach reference files.",
+      "summaryLabel": "Research context",
+      "placeholder": "Research area, current objectives, constraints, and preferred outputs",
+      "dropZone": "Attach reference files",
+      "removeFile": "Remove file",
+      "reselectFiles": "Select these files again to upload them: {{files}}",
+      "suggestionFiles": "Personalized suggestions read up to 20 UTF-8 text files. Every selected file is still attached to your final task."
+    },
+    "task": {
+      "title": "Choose your first task",
+      "subtitle": "Start from a common workflow or write a specific request.",
+      "customLabel": "Custom research task",
+      "optionLiterature": {
+        "label": "Review a research topic",
+        "description": "Find, compare, and synthesize relevant evidence."
+      },
+      "optionData": {
+        "label": "Analyze a dataset",
+        "description": "Inspect data quality and produce a reproducible analysis."
+      },
+      "optionProtocol": {
+        "label": "Design an experimental protocol",
+        "description": "Draft a practical protocol with controls and acceptance criteria."
+      },
+      "personalizing": "Preparing three tasks from your research context and attachments…",
+      "fallback": "Personalized suggestions are taking longer than expected. You can start with one of these tasks now.",
+      "customPlaceholder": "Describe the task you want to start"
+    },
+    "actions": {
+      "back": "Back",
+      "continue": "Continue",
+      "start": "Start task",
+      "reviewCapabilities": "Review capabilities"
+    },
+    "error": {
+      "loadTitle": "Unable to load setup",
+      "loadDescription": "Setup data is temporarily unavailable. Retry to continue.",
+      "launchFailed": "The task could not be started. Review your selections and try again.",
+      "authenticationRequired": "Your session has ended. Sign in again to continue this saved setup.",
+      "sessionInvalid": "The secure session could not be verified. Sign in again and retry.",
+      "permissionDenied": "One or more selected capabilities are not available to this research assistant. Review the capability selection.",
+      "configuration": "The selected project or assistant configuration is no longer available. Review the setup and retry.",
+      "network": "Synon Biomed could not reach the local service. Check the connection and retry.",
+      "service": "Synon Biomed could not start the task. Your setup is saved; retry when the service is available."
+    }
+  }
+}

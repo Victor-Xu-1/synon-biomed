@@ -1,0 +1,305 @@
+/* Route-scoped memory layout. Global memory, project memory, and the active
+   library are three consistent horizontal rows with compact vertical rhythm. */
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__layer-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-card,
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__workspace {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--settings-border);
+  border-radius: 12px;
+  background: var(--settings-surface);
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-card {
+  display: grid;
+  min-height: 140px;
+  grid-template-columns: minmax(300px, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-card--active {
+  border-color: color-mix(in srgb, var(--settings-accent) 48%, var(--settings-border));
+  box-shadow: inset 3px 0 0 var(--settings-accent);
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-tab {
+  display: grid;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  justify-content: stretch !important;
+  gap: 3px 15px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-tab__icon {
+  width: 44px;
+  height: 44px;
+  grid-row: 1 / 3;
+  border-radius: 10px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-tab__label {
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 24px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-tab__description {
+  display: -webkit-box;
+  max-width: 520px;
+  overflow: hidden;
+  color: var(--settings-text-secondary);
+  font-size: 14px;
+  line-height: 21px;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__status {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__status-control {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.settings-page-wrapper[data-settings-route='governance']
+  .memory-manager__status-control
+  + .memory-manager__status-control {
+  padding-left: 12px;
+  border-left: 1px solid var(--settings-border);
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__status-label {
+  color: var(--settings-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__status > [data-testid='memory-clear-all'] {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 0 0 12px !important;
+  border: 0 !important;
+  border-left: 1px solid var(--settings-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-size: 13px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-card__notice {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 100%;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  color: var(--settings-text-tertiary);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-layer-card__notice > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__notice {
+  margin: 14px 0 0;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__workspace {
+  height: 240px;
+  min-height: 240px;
+  max-height: 240px;
+  margin-top: 12px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__workspace--project {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__editor {
+  min-height: 0;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__editor-header {
+  align-items: center;
+  padding: 17px 20px 14px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__editor-title {
+  margin-top: 0;
+  font-size: 17px;
+  line-height: 24px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__editor-description {
+  max-width: 520px;
+  margin-top: 4px;
+  color: var(--settings-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__editor-actions {
+  gap: 8px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__category-actions,
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__auto-recall-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__project-selector .arco-select {
+  width: 220px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__project-error {
+  max-width: 260px;
+  color: var(--settings-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__category-count,
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__auto-recall-control {
+  color: var(--settings-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager .arco-btn-size-small,
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager .arco-select-view {
+  min-height: 34px;
+  font-size: 13px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__content {
+  min-height: 0;
+  padding: 14px 20px 18px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__state,
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__empty {
+  min-height: 92px;
+  padding: 12px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .memory-manager__empty {
+  gap: 0;
+  color: var(--settings-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+@media (min-width: 768px) {
+  html body .settings-page-wrapper[data-settings-route='governance'] .settings-governance-page {
+    box-sizing: border-box;
+    display: block !important;
+    width: min(100%, 1080px) !important;
+    margin-inline: auto !important;
+    row-gap: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='governance'] .memory-manager {
+    width: 100% !important;
+    max-width: none !important;
+    margin-top: 24px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .settings-page-wrapper[data-settings-route='governance'] .memory-manager__layer-stack {
+    gap: 10px;
+  }
+
+  .settings-page-wrapper[data-settings-route='governance'] .memory-layer-card {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .settings-page-wrapper[data-settings-route='governance'] .memory-manager__status {
+    justify-content: flex-start;
+  }
+
+  .settings-page-wrapper[data-settings-route='governance'] .memory-manager__status-control {
+    flex: 0 1 auto;
+  }
+
+  .settings-page-wrapper[data-settings-route='governance']
+    .memory-manager__status-control
+    + .memory-manager__status-control {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .settings-page-wrapper[data-settings-route='governance'] .memory-layer-card__notice {
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .settings-page-wrapper[data-settings-route='governance'] .memory-layer-card__notice > span {
+    white-space: normal;
+  }
+
+  .settings-page-wrapper[data-settings-route='governance'] .memory-manager__workspace {
+    height: auto;
+    min-height: 300px;
+    max-height: none;
+    margin-top: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-page-wrapper[data-settings-route='governance'] .memory-layer-card {
+    transition: none;
+  }
+}

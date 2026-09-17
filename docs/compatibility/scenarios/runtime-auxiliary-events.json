@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "runtime-auxiliary-events",
+  "contracts": [
+    {"kind": "event", "name": "mcp_app_tool_call"},
+    {"kind": "event", "name": "mcp_app_pin"},
+    {"kind": "event", "name": "file_changed"},
+    {"kind": "event", "name": "file_deleted"},
+    {"kind": "event", "name": "verification_update"},
+    {"kind": "event", "name": "update_available"},
+    {"kind": "event", "name": "update_retracted"},
+    {"kind": "event", "name": "update_required"},
+    {"kind": "event", "name": "daemon_restarting"},
+    {"kind": "event", "name": "daemon_restart_aborted"}
+  ],
+  "steps": [
+    {
+      "name": "update-status",
+      "method": "GET",
+      "path": "/api/status/update",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 1048576,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime"
+  ],
+  "redactions": []
+}

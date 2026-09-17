@@ -1,0 +1,4 @@
+interface:
+  display_name: "DMPK and ADME Strategy"
+  short_description: "Plan ADME, PK, bioanalysis, and drug interaction evidence"
+  default_prompt: "Use $dmpk-adme-strategy to build a source-grounded, review-ready plan."

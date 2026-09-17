@@ -1,0 +1,126 @@
+/* Route-scoped desktop geometry from the accepted settings visual contract. */
+
+@media (min-width: 768px) {
+  /* General: explicit sheet rhythm keeps QR cards compact without changing
+     the pairing state machine. */
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page {
+    display: block !important;
+    gap: 0 !important;
+    row-gap: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-message-channels-section,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-about-section {
+    width: 1176px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid {
+    height: 196px !important;
+    min-height: 196px !important;
+    margin-top: 39px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-section__icon,
+  html
+    body
+    .settings-page-wrapper[data-settings-route='general']
+    .general-message-channels-section
+    .settings-section__icon,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section .settings-section__icon,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-about-section .settings-section__icon {
+    display: none !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-section__header,
+  html
+    body
+    .settings-page-wrapper[data-settings-route='general']
+    .general-message-channels-section
+    .settings-section__header,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section .settings-section__header,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-about-section .settings-section__header {
+    padding: 28px 28px 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-section__title,
+  html
+    body
+    .settings-page-wrapper[data-settings-route='general']
+    .general-message-channels-section
+    .settings-section__title,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section .settings-section__title,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-about-section .settings-section__title {
+    font-size: 16px !important;
+    line-height: 30px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-section__body,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section .settings-section__body {
+    padding: 14px 28px 20px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section .settings-section__body {
+    padding-inline: 22px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-section__header {
+    padding-top: 34px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-list-row {
+    min-height: 46px !important;
+    height: 46px !important;
+    box-sizing: border-box;
+    padding: 0 !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='general']
+    .general-preferences-grid
+    .settings-list-row
+    > div:first-child {
+    display: none !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='general']
+    .general-preferences-grid
+    .settings-list-row
+    > div:last-child {
+    width: 100%;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='general']
+    .general-message-channels-section
+    .settings-section__body {
+    padding: 14px 28px 18px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='general']
+    .settings-general-page
+    > .general-message-channels-section {
+    margin-top: 30px !important;
+    height: 313px !important;
+    min-height: 313px !important;
+    max-height: 313px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page > .general-contact-section {
+    margin-top: 25px !important;
+    height: 162px !important;
+    min-height: 162px !important;
+    max-height: 162px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page > .general-about-section {
+    margin-top: 30px !important;
+  }
+}

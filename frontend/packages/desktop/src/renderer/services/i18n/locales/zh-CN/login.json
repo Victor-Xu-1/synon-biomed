@@ -1,0 +1,70 @@
+{
+  "pageTitle": "Synon Biomed - 登录",
+  "brand": "Synon Biomed",
+  "subtitle": "欢迎回到 Synon Biomed 工作台",
+  "username": "用户名",
+  "usernamePlaceholder": "请输入用户名",
+  "password": "密码",
+  "passwordPlaceholder": "请输入密码",
+  "rememberMe": "记住我",
+  "submit": "登录",
+  "submitting": "登录中...",
+  "success": "登录成功！正在跳转...",
+  "showPassword": "显示密码",
+  "hidePassword": "隐藏密码",
+  "languageToggle": "切换语言",
+  "footerPrimary": "生物医药 AI 工作台",
+  "footerSecondary": "项目、专家、Skill 与 MCP 一体化",
+  "oauth": {
+    "methodsLabel": "安全登录方式",
+    "alternativeMethods": "使用其他方式登录",
+    "continueWith": "使用{{provider}}继续",
+    "provider": {
+      "google": "Google",
+      "apple": "Apple",
+      "wechat": "微信"
+    },
+    "orPassword": "或使用本地密码",
+    "errors": {
+      "cancelled": "登录已取消，你可以重新选择登录方式。",
+      "emailLinkRequired": "这个邮箱已绑定本地账户。为防止账户接管，当前版本不会自动合并；请先使用本地密码登录。",
+      "verifiedEmailRequired": "该登录方式必须提供已验证的邮箱。",
+      "wechatUnionIDRequired": "该微信账户未返回可用于安全识别的 UnionID，请联系管理员检查开放平台绑定。",
+      "providerUnavailable": "该登录方式暂时不可用，请稍后重试或使用本地密码。",
+      "failed": "外部登录未完成，请重试或使用本地密码。"
+    }
+  },
+  "unavailable": {
+    "eyebrow": "本地服务暂时不可用",
+    "title": "暂时无法连接工作台",
+    "hint": "你的页面和数据不会受影响，连接恢复后可继续使用。",
+    "retry": "重新连接"
+  },
+  "errors": {
+    "empty": "请输入用户名和密码",
+    "invalidCredentials": "用户名或密码错误",
+    "tooManyAttempts": "登录尝试过多，请稍后再试",
+    "networkError": "连接失败，请稍后重试",
+    "serverError": "服务器开小差了，请稍后重试",
+    "csrfError": "浏览器安全令牌无法刷新，请清除本站数据后重试。",
+    "sessionExpired": "登录状态已过期，请重新登录。登录后将返回之前的页面。",
+    "unknown": "登录失败，请稍后再试",
+    "invalidName": "名称应为 2 至 64 个字符",
+    "invalidEmail": "请输入有效的邮箱地址",
+    "invalidPassword": "密码至少需要 8 个字符",
+    "usernameExists": "该名称已被使用",
+    "emailExists": "该邮箱已被使用"
+  },
+  "loginTitle": "登录",
+  "registerTitle": "创建账户",
+  "registerSubtitle": "创建 Synon Biomed 本地工作台账户",
+  "name": "名称",
+  "namePlaceholder": "请输入名称",
+  "email": "邮箱（可选但推荐）",
+  "emailPlaceholder": "name@example.com",
+  "newPasswordPlaceholder": "至少 8 个字符",
+  "createAccount": "创建新账户",
+  "existingAccount": "已有账户？返回登录",
+  "createAndLogin": "创建并登录",
+  "registerSuccess": "账户创建成功！正在进入工作台..."
+}

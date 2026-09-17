@@ -1,0 +1,351 @@
+/* Shared settings shell and navigation. Brand artwork is owned by Layout and
+   deliberately stays outside this visual system. */
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] {
+  /* Settings is a consumer of the active visual theme, not a second theme
+     authority. Route artwork keeps its scientific accent, while every neutral
+     surface and control follows the selected warm, cool, white or night
+     palette through the canonical Codex tokens. */
+  --settings-accent: var(--workspace-accent, #3b3a37);
+  --settings-accent-contrast: var(--workspace-accent-contrast, #ffffff);
+  --settings-accent-strong: var(--workspace-text, #2b2a28);
+  --settings-accent-soft: var(--workspace-selected, #f0efec);
+  --settings-canvas: var(--workspace-canvas, #ffffff);
+  --settings-surface: var(--workspace-overlay-surface, var(--workspace-canvas, #ffffff));
+  --settings-surface-subtle: var(--workspace-overlay-surface-muted, var(--workspace-subtle, #f6fafc));
+  --settings-border: var(--workspace-border, #dfe7ef);
+  --settings-border-strong: var(--workspace-border-strong, var(--color-border-1));
+  --settings-text: var(--workspace-text, #0d1b3e);
+  --settings-text-secondary: var(--workspace-text-secondary, #40547c);
+  --settings-text-tertiary: var(--workspace-text-tertiary, #71809e);
+  /* The locked image-2 sheets use a wide editorial rail.  It grows with the
+     window instead of leaving a second, empty canvas beside the module. */
+  --settings-content-max: 1680px;
+  --settings-module-accent: var(--settings-accent);
+  box-sizing: border-box;
+  padding-top: 0;
+  /* The approved 1536px sheet leaves a 25px right rail after the stable
+     scrollbar. Keep the 46px editorial left rail unchanged. */
+  padding-right: clamp(24px, 1.6vw, 30px);
+  padding-bottom: 0;
+  padding-left: clamp(24px, 3.1vw, 46px);
+  background: var(--settings-canvas);
+  color: var(--settings-text);
+  font-family:
+    Inter,
+    'SF Pro Text',
+    'PingFang SC',
+    'Microsoft YaHei',
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  scrollbar-gutter: stable;
+  -webkit-font-smoothing: antialiased;
+}
+
+html body .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] {
+  background: var(--settings-canvas) !important;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] {
+  --settings-module-accent: #2d82cf;
+}
+
+.settings-page-wrapper[data-settings-route='models'],
+.settings-page-wrapper[data-settings-route='governance'] {
+  --settings-module-accent: #7a62c5;
+}
+
+.settings-page-wrapper[data-settings-route='compute'],
+.settings-page-wrapper[data-settings-route='network'] {
+  --settings-module-accent: #2988c8;
+}
+
+.settings-page-wrapper[data-settings-route='credentials'] {
+  --settings-module-accent: #c98725;
+}
+
+.settings-page-wrapper[data-settings-route='storage'] {
+  --settings-module-accent: #4a995e;
+}
+
+.settings-page-content {
+  container-type: inline-size;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: min(100%, var(--settings-content-max)) !important;
+  margin-inline: 0;
+  padding: 44px 0 64px;
+  color: var(--settings-text);
+}
+
+.settings-page-body {
+  min-width: 0;
+}
+
+/* The navigation event reaches the mounted page before React Router swaps a
+   cold lazy module. Hide that stale surface immediately; keeping its original
+   route snapshot above prevents route-scoped geometry from changing for even
+   a single paint. */
+.settings-page-wrapper--transitioning .settings-page-content {
+  visibility: hidden !important;
+  pointer-events: none;
+}
+
+/* The existing, resizable product sider remains authoritative. These rules
+   only align its settings navigation with the approved visual language. */
+.settings-sider {
+  gap: 2px;
+  padding: 10px 8px 18px;
+  scrollbar-width: thin;
+}
+
+html body .settings-sider__group-header {
+  height: 26px !important;
+  margin-top: 10px !important;
+  padding-inline: 10px !important;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 18px !important;
+  letter-spacing: 0.01em;
+}
+
+html body .settings-sider__item {
+  min-height: 40px;
+  border-radius: 8px !important;
+  color: var(--workspace-text-secondary, var(--color-text-2));
+}
+
+html body .settings-sider__item:hover {
+  background: color-mix(in srgb, var(--settings-accent) 4%, var(--workspace-canvas, var(--bg-1))) !important;
+}
+
+html body .settings-sider__item[aria-current='page'] {
+  background: color-mix(in srgb, var(--settings-accent) 8%, var(--workspace-canvas, var(--bg-1))) !important;
+  color: var(--settings-text);
+  transition: none;
+}
+
+html body .settings-sider__item[aria-current='page']::before {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--settings-accent);
+  content: '';
+}
+
+html body .settings-sider__item-label {
+  font-size: 14px !important;
+  line-height: 24px !important;
+  font-weight: 500 !important;
+}
+
+html body .settings-sider__item[aria-current='page'] .settings-sider__item-label {
+  color: var(--settings-text);
+  font-weight: 600 !important;
+}
+
+.settings-sider__item-icon {
+  width: 18px !important;
+  height: 18px !important;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+}
+
+.settings-sider__item[aria-current='page'] .settings-sider__item-icon {
+  color: var(--settings-accent);
+}
+
+.settings-sider__item-icon img {
+  display: block;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  user-select: none;
+}
+
+/* The supplied desktop sheets reserve a 260px rail and a generous brand
+   lockup area. The source logo is unchanged; only its rendered box is scaled
+   to account for the transparent margins in the protected asset. */
+@media (min-width: 768px) {
+  html body .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] {
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-content {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* These information-dense modules exceed the compact viewport in legitimate
+     states. Give them one real scroll authority instead of clipping transformed
+     content behind the shared desktop overflow lock. */
+  html
+    body
+    .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']:is(
+      [data-settings-route='credentials'],
+      [data-settings-route='storage'],
+      [data-settings-route='general'],
+      [data-settings-route='account'],
+      [data-settings-route='compute'],
+      [data-settings-route='network'],
+      [data-settings-route='plans-usage']
+    ) {
+    overflow-y: auto !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']:is(
+      [data-settings-route='credentials'],
+      [data-settings-route='storage'],
+      [data-settings-route='general'],
+      [data-settings-route='account'],
+      [data-settings-route='compute'],
+      [data-settings-route='network'],
+      [data-settings-route='plans-usage']
+    )
+    .settings-page-content {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+  }
+
+  .settings-layout-sider .synon-sidebar-header {
+    height: 104px !important;
+    min-height: 104px !important;
+    box-sizing: border-box;
+    overflow: visible !important;
+    padding: 6px 14px 2px !important;
+  }
+
+  .settings-layout-sider .synon-biomed-brand {
+    width: 282px !important;
+    height: 94px !important;
+    flex: 0 0 282px !important;
+    margin-left: -25px !important;
+    overflow: visible !important;
+  }
+
+  .settings-layout-sider .synon-biomed-brand img {
+    display: block;
+    width: 282px !important;
+    height: 94px !important;
+    max-width: none !important;
+    object-fit: contain;
+  }
+}
+
+@media (max-width: 1199px) {
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] {
+    padding-inline: 28px;
+  }
+
+  .settings-page-content {
+    padding-top: 32px;
+  }
+}
+
+@media (max-width: 767px) {
+  .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] {
+    padding-inline: 16px;
+  }
+
+  .settings-page-content {
+    padding: 20px 0 36px;
+  }
+
+  .settings-mobile-nav-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .settings-mobile-top-nav {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 10px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .settings-mobile-top-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .settings-mobile-top-nav__item {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--settings-border);
+    border-radius: 999px;
+    background: var(--settings-surface);
+    color: var(--settings-text-secondary);
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .settings-mobile-top-nav__item--active {
+    border-color: color-mix(in srgb, var(--settings-accent) 28%, var(--settings-border));
+    background: var(--settings-accent-soft);
+    color: var(--settings-accent-strong);
+  }
+
+  .settings-mobile-top-nav__icon,
+  .settings-mobile-account-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+  }
+
+  .settings-mobile-top-nav__icon img {
+    display: block;
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    user-select: none;
+  }
+
+  .settings-mobile-top-nav__label {
+    white-space: nowrap;
+    font-weight: 550;
+  }
+
+  .settings-mobile-account-button {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border: 1px solid var(--settings-border);
+    border-radius: 50%;
+    background: var(--settings-surface);
+    color: var(--settings-text);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-sider,
+  .settings-sider__item,
+  .settings-sider__item-label {
+    transition: none;
+  }
+}

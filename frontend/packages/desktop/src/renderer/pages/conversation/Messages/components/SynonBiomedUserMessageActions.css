@@ -1,0 +1,172 @@
+.synon-biomed-user-message {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.synon-biomed-user-message__row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.synon-biomed-user-message__content {
+  width: fit-content;
+  min-width: 0;
+  max-width: calc(100% - 32px);
+  flex: 0 1 auto;
+}
+
+.synon-biomed-user-message__edit-action {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 1;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    opacity 120ms ease;
+}
+
+.synon-biomed-user-message__edit-action:hover,
+.synon-biomed-user-message__edit-action:focus-visible {
+  color: var(--workspace-text, var(--color-text-1));
+  background: color-mix(in srgb, var(--workspace-text) 7%, transparent);
+  outline: none;
+}
+
+.synon-biomed-user-message__edit-action:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--workspace-text) 20%, transparent);
+}
+
+.synon-biomed-user-message__edit-action:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .synon-biomed-user-message__edit-action {
+    opacity: 0;
+  }
+
+  .synon-biomed-user-message__row:hover .synon-biomed-user-message__edit-action,
+  .synon-biomed-user-message__edit-action:focus-visible {
+    opacity: 1;
+  }
+}
+
+.synon-biomed-user-message__editor {
+  box-sizing: border-box;
+  width: min(720px, 100%);
+  min-width: 0;
+  margin-left: auto;
+  padding: 12px;
+  color: var(--workspace-text, var(--color-text-1));
+  background: var(--workspace-canvas, var(--bg-base));
+  border: 0;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--workspace-text) 10%, transparent),
+    0 8px 24px rgb(0 0 0 / 7%);
+}
+
+.synon-biomed-user-message__textarea {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  max-height: 288px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  resize: none;
+}
+
+.synon-biomed-user-message__textarea:disabled {
+  opacity: 0.58;
+}
+
+.synon-biomed-user-message__editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.synon-biomed-user-message__cancel,
+.synon-biomed-user-message__submit {
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.synon-biomed-user-message__cancel {
+  padding: 0 8px;
+  color: var(--workspace-text-secondary, var(--color-text-2));
+  background: transparent;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.synon-biomed-user-message__cancel:hover,
+.synon-biomed-user-message__cancel:focus-visible {
+  color: var(--workspace-text, var(--color-text-1));
+  background: color-mix(in srgb, var(--workspace-text) 7%, transparent);
+  outline: none;
+}
+
+.synon-biomed-user-message__submit {
+  width: 30px;
+  color: var(--workspace-accent-contrast, #fff);
+  background: var(--workspace-accent, var(--color-primary));
+  border-radius: 9px;
+}
+
+.synon-biomed-user-message__submit:hover,
+.synon-biomed-user-message__submit:focus-visible {
+  filter: brightness(0.94);
+  outline: none;
+}
+
+.synon-biomed-user-message__submit:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--workspace-accent) 24%, transparent);
+}
+
+.synon-biomed-user-message__cancel:disabled,
+.synon-biomed-user-message__submit:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.synon-biomed-user-message__branches {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 2px;
+}

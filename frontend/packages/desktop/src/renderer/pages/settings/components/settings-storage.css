@@ -1,0 +1,189 @@
+/* Route-scoped desktop geometry from the accepted settings visual contract. */
+
+@media (min-width: 768px) {
+  /* Storage: the location, policy/usage pair and cloud row are 164/382/160
+     measured blocks in the approved sheet. */
+  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page {
+    display: block !important;
+    gap: 0 !important;
+    row-gap: 0 !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .settings-storage-page
+    > .settings-section:first-of-type {
+    height: 164px !important;
+    min-height: 164px !important;
+    max-height: 164px !important;
+    margin-top: 37px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__header {
+    height: 162px !important;
+    box-sizing: border-box;
+    align-items: flex-start !important;
+    padding: 36px 30px 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section,
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section {
+    position: relative !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__icon {
+    width: 88px !important;
+    height: 88px !important;
+    flex-basis: 88px !important;
+    border-radius: 14px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__heading {
+    gap: 24px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .storage-location-section
+    .settings-section__heading
+    > div:last-child,
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .storage-secondary-grid
+    .settings-section__heading
+    > div:last-child,
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .storage-cloud-section
+    .settings-section__heading
+    > div:last-child {
+    margin-top: 4px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__title,
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__title {
+    font-size: 16px !important;
+    line-height: 22px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .storage-location-section
+    .settings-section__description,
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .storage-cloud-section
+    .settings-section__description {
+    margin-top: 5px !important;
+    font-size: 16px !important;
+    line-height: 24px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__body {
+    position: absolute !important;
+    top: 108px !important;
+    left: 144px !important;
+    right: 24px !important;
+    z-index: 2;
+    padding: 0 !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .storage-location-section
+    .settings-section__body
+    > div:first-child {
+    padding: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__actions {
+    margin-top: 23px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid {
+    height: 382px !important;
+    min-height: 382px !important;
+    max-height: 382px !important;
+    margin-top: 32px !important;
+    column-gap: 30px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid > .settings-section {
+    height: 382px !important;
+    min-height: 382px !important;
+    max-height: 382px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid .settings-section__icon {
+    display: none !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid .settings-section__header {
+    min-height: 86px !important;
+    padding: 28px 28px 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid .settings-section__title {
+    font-size: 16px !important;
+    line-height: 22px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .storage-secondary-grid
+    .settings-section__description {
+    margin-top: 4px !important;
+    font-size: 16px !important;
+    line-height: 23px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid .settings-section__body {
+    padding: 10px 28px 22px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='storage']
+    .settings-storage-page
+    > .settings-section:last-of-type {
+    height: 160px !important;
+    min-height: 160px !important;
+    max-height: 160px !important;
+    margin-top: 30px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__header {
+    height: 158px !important;
+    box-sizing: border-box;
+    padding: 36px 30px 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__icon {
+    width: 80px !important;
+    height: 80px !important;
+    flex-basis: 80px !important;
+    border-radius: 14px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__heading {
+    gap: 28px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__body {
+    position: absolute !important;
+    top: 91px !important;
+    left: 136px !important;
+    right: 24px !important;
+    z-index: 2;
+    padding: 0 !important;
+  }
+}

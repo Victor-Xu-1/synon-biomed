@@ -1,0 +1,13 @@
+{
+  "component": "HDF5",
+  "version": "2.0.0",
+  "upstreamCommit": "a6ff8aed236ee1e1deff6415e88b16c42b22f17c",
+  "upstreamBuildSource": "https://raw.githubusercontent.com/usnistgov/h5wasm/a0c3e80f476e030dbfe75b8ebf3e381ccd5204c5/CMakeLists.txt",
+  "upstreamBuildSHA256": "c325cdce7263c0bfb002ab352551d1dc46cb2521d524d03b0c384cae0835bca6",
+  "sourceArchive": "https://github.com/usnistgov/libhdf5-wasm/releases/download/v0.6.0_4.0.23/HDF5-2.0.0-Emscripten.tar.gz",
+  "archiveSHA256": "d4dc6719ef164679728d9a50d6a4d97c826f563e22a40c4dec63e485b29781be",
+  "licenseSource": "https://raw.githubusercontent.com/HDFGroup/hdf5/a6ff8aed236ee1e1deff6415e88b16c42b22f17c/LICENSE",
+  "licenseGitBlob": "60abcc29ca67d24cee34ae67e045c041f3692b47",
+  "licenseSHA256": "b384492d25c6e4a49f371b646d9a81bc0a4b97cf0c66c2f3ed1b35f78a148732",
+  "scope": "Supplemental HDF5 2.0.0 source notice matching the version and build-input digest in the h5wasm tag. Does not replace package LICENSE.txt or assert reproducible npm binary identity."
+}

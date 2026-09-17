@@ -1,0 +1,4 @@
+interface:
+  display_name: "Process Development and Scale-Up"
+  short_description: "Develop, scale, transfer, and validate manufacturing processes"
+  default_prompt: "Use $process-development-scale-up to build a source-grounded, review-ready plan."

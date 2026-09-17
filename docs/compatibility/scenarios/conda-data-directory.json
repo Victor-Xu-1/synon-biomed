@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "conda-data-directory",
+  "contracts": [
+    {"kind": "service", "name": "getCondaDiskUsage"},
+    {"kind": "service", "name": "getDataDir"}
+  ],
+  "steps": [
+    {
+      "name": "get-conda-disk-usage",
+      "method": "GET",
+      "path": "/api/preferences/disk-usage/conda",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-data-directory",
+      "method": "GET",
+      "path": "/api/settings/data-dir",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/current",
+    "/steps/1/response/body/default",
+    "/steps/1/response/body/source",
+    "/steps/1/response/body/configPath",
+    "/steps/1/response/body/usageBytes",
+    "/steps/1/response/body/freeBytes"
+  ],
+  "redactions": []
+}

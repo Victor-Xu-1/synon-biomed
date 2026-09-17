@@ -1,0 +1,4 @@
+interface:
+  display_name: "Regulatory Submission Strategy"
+  short_description: "Plan IND, NDA, BLA, CTD, and eCTD submission readiness"
+  default_prompt: "Use $regulatory-submission-strategy to build a source-grounded, review-ready plan."

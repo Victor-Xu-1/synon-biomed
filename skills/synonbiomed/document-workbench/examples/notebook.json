@@ -1,0 +1,9 @@
+{
+  "title": "Workbench notebook",
+  "kernel": {"name": "python3", "displayName": "Python 3", "language": "python"},
+  "cells": [
+    {"type": "markdown", "source": "# Reproducible analysis\n\nThis notebook is safe to preview without execution."},
+    {"type": "code", "source": "values = [2, 4, 8]\nsum(values)", "tags": ["analysis"]}
+  ]
+}
+

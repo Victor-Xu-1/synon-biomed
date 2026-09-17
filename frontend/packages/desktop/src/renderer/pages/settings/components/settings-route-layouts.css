@@ -1,0 +1,344 @@
+.settings-page-wrapper[data-settings-route='models'] .settings-list-row {
+  box-sizing: border-box;
+  height: 121px;
+  min-height: 121px;
+  padding: 16px 20px !important;
+  margin-bottom: 12px;
+  border: 1px solid var(--settings-border) !important;
+}
+
+.settings-page-wrapper[data-settings-route='models'] [data-testid='synon-biomed-model-profiles'] {
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+.settings-page-wrapper[data-settings-route='models'] .settings-list-row + .settings-list-row {
+  border-top: 1px solid var(--settings-border) !important;
+}
+
+.settings-page-wrapper[data-settings-route='models'] .settings-list-row:last-child {
+  margin-bottom: 0;
+}
+
+.settings-page-wrapper[data-settings-route='models'] .settings-models-profile__icon {
+  display: block;
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  object-fit: contain;
+  user-select: none;
+}
+
+.settings-page-wrapper[data-settings-route='credentials'] .settings-section__body,
+.settings-page-wrapper[data-settings-route='storage'] .settings-section__body {
+  padding-top: 16px;
+}
+
+.settings-page-wrapper[data-settings-route='credentials'] [data-testid^='credential-provider-'],
+.settings-page-wrapper[data-settings-route='storage'] .settings-section__body > .flex.flex-wrap {
+  min-height: 72px !important;
+  padding: 12px 0 !important;
+  border-color: var(--settings-border) !important;
+}
+
+.settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > section,
+.settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > details {
+  margin-top: 0 !important;
+  padding: 24px !important;
+  border: 1px solid var(--settings-border) !important;
+  border-radius: var(--settings-card-radius) !important;
+  background: var(--settings-surface) !important;
+  box-shadow: none !important;
+}
+
+.settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > section + section,
+.settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > section + details,
+.settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > details + details {
+  margin-top: var(--settings-section-gap) !important;
+}
+
+.settings-page-wrapper[data-settings-route='network'] .network-section__heading {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--settings-border);
+}
+
+.settings-page-wrapper[data-settings-route='network'] .network-section--allowed {
+  position: relative;
+  isolation: isolate;
+}
+
+.settings-page-wrapper[data-settings-route='network'] .network-section--allowed > :not(.network-section__artwork) {
+  position: relative;
+  z-index: 1;
+}
+
+.settings-page-wrapper[data-settings-route='network'] .network-section__artwork {
+  position: absolute;
+  right: 18px;
+  top: 58px;
+  z-index: 0;
+  width: min(280px, 38%);
+  height: 190px;
+  object-fit: contain;
+  opacity: 0.2;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  user-select: none;
+}
+
+.settings-page-wrapper[data-settings-route='network']
+  [data-testid='builtin-network-groups']
+  > [data-testid^='network-group-'],
+.settings-page-wrapper[data-settings-route='network']
+  [data-testid='allowed-domain-list']
+  > [data-testid^='allowed-domain-'] {
+  min-height: 68px;
+  border-color: var(--settings-border) !important;
+}
+
+/* Page compositions.  The route components only compose these named layout
+   primitives; all spacing stays in this shared visual grammar. */
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-plans-page,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-experts-page,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-network-page {
+  gap: var(--settings-section-gap) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .general-preferences-grid,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .storage-secondary-grid,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .compute-overview-grid {
+  display: grid;
+  min-width: 0;
+  gap: var(--settings-section-gap);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .general-preferences-grid,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .storage-secondary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .compute-overview-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .general-preferences-grid
+  > .settings-section,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .storage-secondary-grid
+  > .settings-section,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .compute-overview-grid
+  > .settings-section {
+  min-width: 0;
+  height: 100%;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .compute-overview-grid
+  > .settings-section {
+  min-height: 238px;
+}
+
+.settings-page-wrapper[data-settings-route='compute']
+  .compute-overview-grid
+  > .compute-section
+  .settings-section__header {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-page-wrapper[data-settings-route='compute']
+  .compute-overview-grid
+  > .compute-section
+  .settings-section__actions {
+  align-self: flex-start;
+}
+
+.settings-page-wrapper[data-settings-route='compute']
+  .compute-overview-grid
+  > .compute-section
+  .settings-section__title {
+  font-size: 18px !important;
+  line-height: 25px !important;
+}
+
+.settings-page-wrapper[data-settings-route='compute']
+  .compute-overview-grid
+  > .compute-section
+  .settings-section__description {
+  font-size: 13px !important;
+  line-height: 20px !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-section--balance,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-section--rates,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-section--billing {
+  min-width: 0;
+}
+
+/* Plans reference sheet: section headings are intentionally quiet and the
+   data surface carries the visual weight. Keep descriptions in the DOM for
+   assistive technologies, but remove their layout footprint. */
+.settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page {
+  gap: 24px !important;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page > .plans-usage-section:first-of-type {
+  margin-top: -4px;
+}
+
+.settings-page-wrapper[data-settings-route='governance'] .settings-governance-page {
+  gap: 0 !important;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section {
+  box-sizing: border-box;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section .settings-section__header {
+  min-height: 48px;
+  padding: 20px 24px 0;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section .settings-section__icon,
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section .settings-section__description {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  margin: -1px;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section--balance {
+  height: auto;
+  min-height: 276px;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section--rates {
+  height: auto;
+  min-height: 277px;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section--billing {
+  height: auto;
+  min-height: 150px;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section .settings-section__body {
+  padding: 12px 22px 16px;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section--rates .settings-section__body {
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+
+.settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section--billing .settings-section__body {
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .plans-usage-section
+  .settings-section__body {
+  padding-top: 14px;
+  padding-bottom: 20px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-balance-content {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  align-items: center;
+  gap: 18px 24px;
+  padding-top: 8px;
+  padding-bottom: 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-plan-identity {
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  min-height: 96px;
+  padding-right: 24px;
+  border-right: 1px solid var(--settings-border);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-stat-grid {
+  grid-column: 2;
+  gap: 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-stat-grid > div {
+  min-height: 86px;
+  padding: 14px 18px;
+  border: 0;
+  border-left: 1px solid var(--settings-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .plans-usage-stat-grid
+  > div:first-child {
+  border-left: 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-progress {
+  grid-column: 1 / -1;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 0 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-rates-grid {
+  padding-top: 4px;
+  padding-bottom: 8px;
+  gap: 14px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-rates-grid > article {
+  min-height: 132px;
+  border: 1px solid var(--settings-border);
+  border-radius: 12px;
+  background: var(--settings-surface);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-formula {
+  margin-inline: 0;
+  margin-bottom: 0;
+  border: 1px solid var(--settings-border);
+  border-radius: 10px;
+  background: var(--settings-surface);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .plans-usage-section--billing
+  .settings-section__body
+  > div {
+  padding-top: 4px;
+  padding-bottom: 0;
+  gap: 16px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-section--billing article {
+  min-height: 150px;
+  border: 1px solid var(--settings-border);
+  border-radius: 12px;
+  background: var(--settings-surface);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-model-profile {
+  min-width: 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-network-page > section,
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-network-page > details {
+  width: 100%;
+}

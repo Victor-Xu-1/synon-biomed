@@ -1,0 +1,17 @@
+{
+  "name": "h5wasm",
+  "version": "0.10.1",
+  "sourceArchive": "https://registry.npmjs.org/h5wasm/-/h5wasm-0.10.1.tgz",
+  "integrity": "sha512-VxKLoNcPmn/4j6wWuf81gRGzcNjW1aHKtNgRp6ZBeYd6RoWmN3tk5HB6E3nPYsc3YhGT+o07xz1tK6wdMuPMiw==",
+  "archiveSHA256": "9c95223c70ee81b9955839624b4da6cd0dda1a059a8de6a7dd0655ba219297d9",
+  "declaredLicense": "SEE LICENSE IN LICENSE.txt",
+  "distributionLicense": "NIST notice and bundled HDF5 terms (see full text)",
+  "licenseFiles": [
+    {
+      "path": "LICENSE.txt",
+      "sourceSHA256": "f3ba6b8afe2a0d6f482f29a46672f88668ae02b16dfc4a2e878fd50a4f34fa6a",
+      "sourceBytes": 7577,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    }
+  ]
+}

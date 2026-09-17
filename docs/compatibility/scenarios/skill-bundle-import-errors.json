@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "skill-bundle-import-errors",
+  "contracts": [
+    {"kind": "service", "name": "importBundle"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "reject-json-instead-of-bundle",
+      "method": "POST",
+      "path": "/api/skills/import",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {},
+      "expectedStatus": [406]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

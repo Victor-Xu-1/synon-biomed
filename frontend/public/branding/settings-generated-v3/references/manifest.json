@@ -1,0 +1,21 @@
+{
+  "version": "settings-design-v3",
+  "source": "user-supplied image-2 design sheets from the previous goal",
+  "viewport": { "width": 1536, "height": 1024 },
+  "treatment": "Scientific connectors visual system: white canvas, fixed branded sidebar, navy typography, thin borders, generous spacing, three-column or full-width module compositions.",
+  "interactivePalette": "Codex neutral: #3b3a37 primary controls, #2b2a28 active text, #f0efec selected surfaces; image-2 category artwork remains color-coded.",
+  "logoPolicy": "The existing Synon Biomed trademark/logo is protected and must not be replaced or regenerated.",
+  "routes": {
+    "account": { "file": "account.png", "sha256": "ac218c0ff98883ed6b314bc6f157f5ffbe21c6949370a2276dae489bc3d10ffe" },
+    "tools": { "file": "tools.png", "sha256": "fcb789ce6123895df659b491a9537ddf7ccb1271fbc8389bbcb2775cf951c5ac" },
+    "skills": { "file": "skills.png", "sha256": "ab91636078146b6cb2a079296b99b5dad8c89a2b1918b02604c6ba9c1c6946ff" },
+    "plans-usage": { "file": "plans-usage.png", "sha256": "a3becf192003969688db6dba0865dec521d855bc3d35d541d1a4a6fb7fd96526" },
+    "experts": { "file": "experts.png", "sha256": "502f4ab876cba384069947497379fef0c9ac160e3f23d613563de40b9821403a" },
+    "models": { "file": "models.png", "sha256": "a1e006af215aa908613e9ae03279ef15dfe98d0a42846c7f268b400b0ec98681" },
+    "governance": { "file": "governance.png", "sha256": "6749a2633357a24fb3f6c071345db4f5ad908b93c62eaf6c25ff96eabba984c3" },
+    "compute": { "file": "compute.png", "sha256": "36bff1c0ab98f65316dcfb9a75ba000d942c9bbace2f7bdc4596bf39aeddcb13" },
+    "network": { "file": "network.png", "sha256": "a7a0a4cd35920c1a7131823aa3ab752119bd34505bea9df8bb41b6c355b28ab9" },
+    "general": { "file": "general.png", "sha256": "d047da7c20807040410c1c654f51ae77e16eb040e411307cef465e41a27a6035" },
+    "storage": { "file": "storage.png", "sha256": "ef0da7b4003cf080f467513a7638850f8346e1381a421ae7e79b866d4bf6c412" }
+  }
+}

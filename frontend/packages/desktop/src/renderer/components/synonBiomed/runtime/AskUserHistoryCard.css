@@ -1,0 +1,118 @@
+.synon-biomed-ask-user-history {
+  --ask-user-history-surface: rgb(18 18 18 / 3%);
+  --ask-user-history-surface-hover: rgb(18 18 18 / 4.5%);
+  --ask-user-history-status: rgb(18 18 18 / 42%);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ask-user-history-surface);
+  color: var(--color-text-1);
+  box-shadow: none;
+  font-family: 'Anthropic Sans', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.synon-biomed-ask-user-history:hover {
+  background: var(--ask-user-history-surface-hover);
+}
+
+body[arco-theme='dark'] .synon-biomed-ask-user-history {
+  --ask-user-history-surface: rgb(255 255 255 / 4%);
+  --ask-user-history-surface-hover: rgb(255 255 255 / 6%);
+  --ask-user-history-status: rgb(255 255 255 / 42%);
+}
+
+.synon-biomed-ask-user-history__layout {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.synon-biomed-ask-user-history__content {
+  min-width: 0;
+  flex: 1;
+}
+
+.synon-biomed-ask-user-history__eyebrow {
+  margin-bottom: 2px;
+  color: var(--color-text-3);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.synon-biomed-ask-user-history__question {
+  margin: 0;
+  color: var(--color-text-1);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 21px;
+}
+
+.synon-biomed-ask-user-history__answer {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  color: var(--color-text-2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.synon-biomed-ask-user-history__status-dot {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 5px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ask-user-history-status);
+}
+
+.synon-biomed-ask-user-history__edit.arco-btn {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-3);
+  box-shadow: none;
+  opacity: 0;
+  transition:
+    color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.synon-biomed-ask-user-history:hover .synon-biomed-ask-user-history__edit.arco-btn,
+.synon-biomed-ask-user-history__edit.arco-btn:focus-visible {
+  opacity: 1;
+}
+
+.synon-biomed-ask-user-history__edit.arco-btn:hover {
+  border: 0;
+  background: rgb(18 18 18 / 6%);
+  color: var(--color-text-1);
+  box-shadow: none;
+}
+
+.synon-biomed-ask-user-history__edit.arco-btn:focus-visible {
+  outline: 2px solid var(--color-primary-6);
+  outline-offset: 1px;
+}
+
+body[arco-theme='dark'] .synon-biomed-ask-user-history__edit.arco-btn:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+@media (hover: none) {
+  .synon-biomed-ask-user-history__edit.arco-btn {
+    opacity: 1;
+  }
+}

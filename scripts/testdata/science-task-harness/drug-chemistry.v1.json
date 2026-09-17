@@ -1,0 +1,120 @@
+{
+  "schema": "synon.science-task-suite.v1",
+  "suiteId": "drug-chemistry-real-v1",
+  "browserAuthority": "codex_builtin",
+  "scientificDeliverablePolicy": {
+    "defaultForbiddenExtensions": [".json", ".jsonl"],
+    "engineeringEvidenceExtensions": [".json", ".jsonl"],
+    "explicitUserExportTool": "session_export"
+  },
+  "tasks": [
+    {
+      "id": "chem-01-cheminfo-grid",
+      "title": "Thirty-molecule RDKit render and invalid-input isolation",
+      "initialPrompt": "【固定真实任务 1/5｜30 个分子的 RDKit 可复现表征与无效输入隔离】\n\n请使用真实可用的本地科学工具链完成任务，不得用模型臆测的结构、性质或成功状态代替计算结果。优先使用 RDKit；若 RDKit 或产物持久化不可用，应明确失败并保留诊断，不得静默降级。\n\n目标：建立一个可复现的 30 个有效小分子基准集，并验证无效 SMILES 不会破坏整批任务。\n\n硬性要求：\n1. 生成恰好 30 个唯一、可由 RDKit 成功解析和规范化的药物样小分子。集合必须包含 thalidomide、lenalidomide、pomalidomide、aspirin、ibuprofen、caffeine，并补充具有多样环系和杂原子的真实已知分子；名称、输入 SMILES、canonical SMILES 必须逐项绑定。\n2. 另设恰好 3 个故意无效的 SMILES 作为负对照。它们必须被单独记录为解析失败，且不能导致 30 个有效分子的计算、绘图和保存失败。\n3. 对 30 个有效分子使用 RDKit 计算 MW、cLogP、HBD、HBA、TPSA、可旋转键数、环数、重原子数，并记录 RDKit 版本、规范化规则和计算时间。\n4. 生成 6×5 的二维结构网格；每个格子显示名称和序号，图中必须恰好出现 30 个有效分子，不得把无效负对照画进去。\n5. 持久化并重新读取校验下列产物：molecule_inventory.md、molecule_inventory.csv、valid_molecules.smi、invalid_inputs.csv、molecule_grid.png、molecule_grid.svg、methodology.md、sha256_manifest.md。CSV/SMI 行数、网格分子数必须相互一致；为每个产物记录 SHA-256。\n6. 最终回答必须引用这些实际保存的产物，列出 30/30 有效、3/3 无效隔离、网格 30 个结构以及摘要统计；只有权威持久化和重新读取校验全部通过时才可以报告 completed。\n\n这是固定验收输入。不要缩短任务、不要伪造文件、不要使用 mock 数据冒充 RDKit 结果。",
+      "initialPromptSha256": "fa1ce4debbef3a5f743fce36a5409d08b680c44dda12b9fcd35dbc3cc7cbbe13",
+      "acceptance": {
+        "terminalFrameStatuses": ["completed"],
+        "minimumToolCalls": 1,
+        "requiredArtifacts": [
+          {"nameRegex": "(?i)molecule.*\\.(csv|smi|md)$", "minCount": 1},
+          {"nameRegex": "(?i)(grid|molecule).*\\.(png|svg)$", "minCount": 2}
+        ],
+        "requiredBrowserChecks": [
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "molecule_preview_visible",
+          "refresh_recovery"
+        ]
+      }
+    },
+    {
+      "id": "chem-02-binding-mode-4ci1",
+      "title": "4CI1 ligand binding-mode and contact analysis",
+      "initialPrompt": "【固定真实任务 2/5｜PDB 4CI1 配体结合模式与接触证据】\n\n请使用真实可用的本地科学工具链和权威结构数据完成任务。不得根据记忆臆测配体、残基、距离或成功状态；若 4CI1 无法获取、解析或持久化，必须明确失败并保留诊断，不得静默换用其他结构。\n\n目标：从 PDB 4CI1 的真实结构文件建立可复现的配体结合模式和原子接触证据。\n\n硬性要求：\n1. 从权威 RCSB PDB 来源获取 4CI1，记录获取 URL、时间、文件 SHA-256、实验方法、分辨率、链和非聚合物配体清单。\n2. 解析真实坐标，明确选定的蛋白链、配体三字母代码、配体链与残基号；不得把水、离子或结晶添加剂误当作目标配体。若存在多个候选配体，必须给出基于结构记录的选择理由。\n3. 以配体重原子为中心计算蛋白重原子 4.0 Å 内的全部接触。输出每条接触的蛋白链、残基名、残基号、蛋白原子、配体原子、距离；按 3.5 Å 和 4.0 Å 分层汇总，距离必须由坐标重算。\n4. 生成可核验的结合位点结构产物，至少包含原始或裁剪后的 4CI1 结构文件以及一张标注配体和接触残基的 PNG 或 SVG；不得用示意图冒充坐标结构。\n5. 持久化并重新读取校验：4ci1_source.cif 或 4ci1_source.pdb、4ci1_contacts.csv、4ci1_binding_summary.md、4ci1_binding_site.png 或 4ci1_binding_site.svg、4ci1_methodology.md、4ci1_sha256_manifest.md。记录每个文件 SHA-256，并校验接触表行数与汇总一致。\n6. 最终回答必须引用这些实际产物，报告配体身份、接触残基、最短距离、3.5/4.0 Å 接触数、结构来源与限制。只有权威结构、坐标计算、产物重读和 SHA 校验全部通过时才可以报告 completed。\n\n这是固定验收输入。不要缩短任务、不要伪造坐标或接触、不要用 mock 数据冒充 4CI1。",
+      "initialPromptSha256": "85a1bbeedf7efa5f1beff6f932b538c7921fbf53084f94514b950956910d1182",
+      "acceptance": {
+        "terminalFrameStatuses": ["completed"],
+        "minimumToolCalls": 1,
+        "requiredArtifacts": [
+          {"nameRegex": "(?i)(4ci1|binding|contact).*(\\.csv|\\.md)$", "minCount": 1},
+          {"nameRegex": "(?i)(4ci1|binding|structure).*(\\.pdb|\\.cif|\\.sdf|\\.png|\\.svg)$", "minCount": 1}
+        ],
+        "requiredBrowserChecks": [
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "protein_or_ligand_preview_visible",
+          "refresh_recovery"
+        ]
+      }
+    },
+    {
+      "id": "chem-03-thalidomide-sourcing",
+      "title": "Thalidomide identity and multi-source compound sourcing",
+      "initialPrompt": "【固定真实任务 3/5｜Thalidomide 身份与多源化合物证据核对】\n\n请通过真实可用的公共科学数据源和本地化学工具链完成任务，不得根据模型记忆填充标识符或来源。任何无法访问的来源必须记为失败，不得伪造响应。\n\n目标：建立 thalidomide 的可追溯化合物身份记录，并验证不同权威来源的结构与理化属性是否一致。\n\n硬性要求：\n1. 至少成功查询 3 个相互独立的权威公共来源，优先使用 PubChem、ChEMBL、ChEBI、DrugCentral/FDA 或同等级来源；每个来源记录检索时间、查询条件、稳定 accession、原始 URL、返回字段和响应摘要 SHA-256。\n2. 提取并逐源对比名称/同义词、分子式、分子量、canonical SMILES、isomeric SMILES、InChI、InChIKey、立体化学说明。不得把 racemate、单一对映体或盐型静默合并。\n3. 使用 RDKit 独立解析每个来源的结构，生成 canonical isomeric SMILES、InChIKey 和分子式；按标准化后结构相等性分类一致、立体差异、盐/溶剂差异或冲突。\n4. 对冲突或缺失值保留逐源证据，不得以多数投票覆盖。输出一个明确的主身份选择及选择规则。\n5. 持久化并重新读取校验：thalidomide_identity.md、thalidomide_source_provenance.md、thalidomide_crosscheck.csv、thalidomide_structure.sdf、thalidomide_structure.png、thalidomide_methodology.md、thalidomide_sha256_manifest.md。记录每个产物 SHA-256。\n6. 最终回答必须引用实际产物，列出成功/失败来源、accession、结构一致性结论、发现的差异与限制。只有至少 3 个真实来源、RDKit 复核、产物重读和 SHA 校验全部通过时才可以报告 completed。\n\n这是固定验收输入。不要缩短任务、不要伪造外部来源、不要用 mock 响应冒充真实检索。",
+      "initialPromptSha256": "85011d7489f96e000eb83efcdeff54119223027f6e8b74c5fe5a49d7e5276766",
+      "acceptance": {
+        "terminalFrameStatuses": ["completed"],
+        "minimumToolCalls": 2,
+        "requiredArtifacts": [
+          {"nameRegex": "(?i)(thalidomide|compound).*(source|provenance|identity).*(\\.csv|\\.md)$", "minCount": 1}
+        ],
+        "requiredBrowserChecks": [
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "source_evidence_visible",
+          "refresh_recovery"
+        ]
+      }
+    },
+    {
+      "id": "chem-04-crbn-candidate-design",
+      "title": "CRBN candidate design with structure and provenance",
+      "initialPrompt": "【固定真实任务 4/5｜CRBN 可追溯候选设计与 SDF 验收】\n\n请使用真实 RDKit 和已取得的权威 CRBN/IMiD 结构证据完成候选设计。不得声称未实际运行的 docking、结合自由能、ADMET 或实验活性；这些指标不可用时必须明确标为未验证。\n\n目标：以 thalidomide、lenalidomide、pomalidomide 及 4CI1 真实配体/结合位点证据为起点，生成可复现、结构有效、来源可追溯的 12 个候选分子。\n\n硬性要求：\n1. 明确记录每个参考结构的来源 accession、输入结构、RDKit canonical SMILES 和 SHA-256；不得凭名称猜结构。\n2. 生成恰好 12 个唯一候选。每个候选必须由 RDKit 成功解析、规范化、去重、生成 2D 坐标和至少一个 3D 构象；记录生成规则、parent、变换说明和随机种子。\n3. 计算 MW、cLogP、HBD、HBA、TPSA、可旋转键、环数、QED、Lipinski 违规数，以及相对三个 IMiD 参考的 ECFP4 Tanimoto。若执行 MMFF/UFF，只能报告实际收敛能量并标明其不是结合能。\n4. 排名必须使用预先声明、可重算的多指标规则；不得编造 docking 分数或实验 potency。保留所有被拒候选及拒绝原因，证明最终恰好 12 个。\n5. 持久化并重新读取校验：candidate_designs.sdf（恰好 12 个有效 record）、candidate_ranking.csv、candidate_rejections.csv、candidate_grid.png、candidate_provenance_manifest.md、candidate_methodology.md、candidate_sha256_manifest.md。SDF 与 CSV 行数必须一致。\n6. 最终回答必须引用实际产物，报告 12/12 结构有效、排名规则、前三名、参考相似性、限制和未运行项目。只有结构、3D 构象、排名重算、产物重读及 SHA 校验全部通过时才可以报告 completed。\n\n这是固定验收输入。不要缩短任务、不要伪造评分、不要用 mock 结构或预制结果冒充计算。",
+      "initialPromptSha256": "d79a4c6e5a5defb798260633144cfd5a1019b009bb21d83246bc1529af1a8278",
+      "acceptance": {
+        "terminalFrameStatuses": ["completed"],
+        "minimumToolCalls": 3,
+        "requiredArtifacts": [
+          {"nameRegex": "(?i)candidate.*\\.sdf$", "minCount": 1},
+          {"nameRegex": "(?i)(rank|score|candidate).*\\.csv$", "minCount": 1},
+          {"nameRegex": "(?i)(provenance|manifest).*\\.md$", "minCount": 1}
+        ],
+        "requiredBrowserChecks": [
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "sdf_structure_preview",
+          "refresh_recovery"
+        ]
+      }
+    },
+    {
+      "id": "chem-05-nlrp3-nek7-evidence-design",
+      "title": "NLRP3-NEK7 multi-source evidence map and candidate design",
+      "initialPrompt": "【固定真实任务 5/5｜NLRP3–NEK7 多源证据图谱与候选设计闭环】\n\n请执行一项可恢复的高复杂度研发任务：用真实公共数据源、真实本地化学计算和权威持久化，建立 NLRP3–NEK7 相互作用的证据图谱，并给出可追溯的小分子候选设计。不得用模型记忆、假引用、模拟检索或未运行的 docking/实验结果填补缺口。\n\n硬性要求：\n1. 至少成功使用 5 个独立真实来源，覆盖文献、蛋白/通路、结构和化学活性四类证据；每个来源记录查询、accession/PMID/DOI、URL、检索时间、原始结果摘要 SHA-256、接受或拒绝理由。失败来源必须进入 failure ledger。\n2. 构建逐条可追溯的 evidence_graph.md：节点至少包括 NLRP3、NEK7、结构/位点、化合物、文献和试验；边必须绑定具体来源和证据强度规则，禁止无来源推断。\n3. 对关键结构证据重新计算可核验的残基/距离或明确说明结构缺口；不得把示意图当作原子坐标。\n4. 基于已验证参考结构生成恰好 10 个唯一 RDKit 有效候选，记录 parent、变换、canonical SMILES、2D/3D、性质、相似性、可重算排名；不得报告未实际计算的亲和力。\n5. 持久化并重新读取校验：evidence_graph.md、provenance_manifest.md、sources_evaluated.csv、failure_ledger.md、candidate_designs.sdf（恰好 10 个 record）、candidate_ranking.csv、final_report.md、至少一张证据图 PNG/SVG、sha256_manifest.md。所有数量、引用和 SHA 必须一致。\n6. 支持中断恢复：持续写入结构化 progress/checkpoint，避免重复外部查询和重复产物；最终执行独立审查，审查失败必须修复或诚实失败。progress/checkpoint 属于内部工程状态，不作为默认用户交付物。\n7. 最终回答必须引用实际产物，区分已证实事实、计算推断、设计假设和未验证项。只有真实来源、证据图、10 个候选、独立审查、重读与 SHA 校验全部通过时才可以报告 completed。\n\n这是固定验收输入。不要缩短任务、不要伪造来源、不要用 mock 数据或静态演示冒充真实研发闭环。",
+      "initialPromptSha256": "9526531e204d05d2d57ad3c093052ef53dc48513c71e2213108c35803b7a8baf",
+      "acceptance": {
+        "terminalFrameStatuses": ["completed"],
+        "minimumToolCalls": 5,
+        "requiredArtifacts": [
+          {"nameRegex": "(?i)evidence.*\\.md$", "minCount": 1},
+          {"nameRegex": "(?i)(provenance|manifest).*\\.md$", "minCount": 1},
+          {"nameRegex": "(?i)(final.*report|report.*final).*\\.md$", "minCount": 1},
+          {"nameRegex": "(?i)candidate.*\\.sdf$", "minCount": 1}
+        ],
+        "requiredBrowserChecks": [
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "sdf_structure_preview",
+          "execution_log_visible",
+          "refresh_recovery"
+        ]
+      }
+    }
+  ]
+}

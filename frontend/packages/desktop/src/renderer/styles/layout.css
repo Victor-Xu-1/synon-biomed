@@ -1,0 +1,568 @@
+/* Layout-level styles: sidebar, sider animations, message positioning */
+
+/* Sticky section labels in the sider (team / cron / projects / timeline). */
+.sider-section-label {
+  background-color: var(--bg-2);
+}
+
+/* Sidebar row action buttons (more / plus) — use opaque tokens so text
+   underneath never bleeds through (Arco's fill tokens are semi-transparent
+   in dark mode). Light tier stays lighter than the row hover fill-3;
+   hover lightens one more step. */
+.sider-action-btn {
+  background-color: var(--bg-2);
+}
+.sider-action-btn:hover {
+  background-color: var(--bg-1);
+}
+[data-theme='dark'] .sider-action-btn {
+  background-color: var(--bg-5);
+}
+[data-theme='dark'] .sider-action-btn:hover {
+  background-color: var(--bg-6);
+}
+
+/* Section title text — light mode uses text-t-tertiary (#86909c).
+   In dark mode, the tertiary token (#5a5a5a) is too dim on #0e0e0e,
+   while --text-secondary (#ced3da) is too bright; pick a mid-gray
+   shared by sidebar section titles and settings group headers. */
+[data-theme='dark'] .sider-section-title,
+[data-theme='dark'] .settings-sider__group-header {
+  color: #9098a1;
+}
+
+/* Layout sider base styles */
+.layout-sider {
+  overflow-x: hidden;
+  box-shadow: none !important;
+  border-right: 1px solid var(--border-base);
+}
+
+/* Claude-inspired conversation sidebar: quiet neutral surfaces, compact
+   hierarchy, and one consistent row rhythm without changing any behavior. */
+.synon-sidebar-shell {
+  --synon-sidebar-bg: #f8f8f6;
+  --synon-sidebar-hover: rgba(38, 37, 34, 0.038);
+  --synon-sidebar-selected: rgba(38, 37, 34, 0.068);
+  --synon-sidebar-border: #e8e7e3;
+  --synon-sidebar-text: #262522;
+  --synon-sidebar-muted: #85827b;
+  background: var(--synon-sidebar-bg) !important;
+  border-right-color: var(--synon-sidebar-border) !important;
+  font-family:
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+[data-theme='dark'] .synon-sidebar-shell {
+  --synon-sidebar-bg: #191918;
+  --synon-sidebar-hover: #242422;
+  --synon-sidebar-selected: #2c2c29;
+  --synon-sidebar-border: rgba(255, 255, 255, 0.08);
+  --synon-sidebar-text: #f0f0ed;
+  --synon-sidebar-muted: #a2a29c;
+}
+
+.synon-sidebar-shell .sider-section-label,
+.synon-sidebar-shell .sider-action-btn {
+  background: var(--synon-sidebar-bg) !important;
+}
+
+.synon-sidebar-header {
+  min-height: 62px;
+  padding: 6px 14px 2px !important;
+}
+
+.synon-sidebar-header .synon-biomed-brand {
+  width: min(168px, 100%);
+  opacity: 0.94;
+}
+
+.synon-sidebar-header .synon-biomed-brand__lockup {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.synon-sidebar-content {
+  padding: 0 8px 8px !important;
+  overflow-x: hidden !important;
+  scrollbar-gutter: stable;
+}
+
+.synon-sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.synon-sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.synon-sidebar-content::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.synon-sidebar-content:hover::-webkit-scrollbar-thumb {
+  background: rgba(93, 93, 87, 0.16);
+}
+
+.synon-sidebar-navigation {
+  padding-bottom: 12px;
+}
+
+.synon-sidebar-new-chat-wrap {
+  padding: 2px 0 8px !important;
+}
+
+.synon-sidebar-new-chat {
+  height: 40px !important;
+  padding: 0 7px !important;
+  gap: 8px !important;
+  border-radius: 8px !important;
+  color: var(--synon-sidebar-text) !important;
+}
+
+.synon-sidebar-new-chat:hover {
+  background: var(--synon-sidebar-hover) !important;
+}
+
+.synon-sidebar-new-chat > span:first-child {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: 28px !important;
+  height: 28px !important;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: var(--synon-sidebar-hover) !important;
+  color: var(--synon-sidebar-text);
+}
+
+.synon-sidebar-new-chat .i-icon {
+  display: inline-flex !important;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  line-height: 0 !important;
+}
+
+.synon-sidebar-new-chat .i-icon svg {
+  display: block;
+}
+
+.synon-sidebar-new-chat > span:last-child {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  line-height: 24px;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.012em;
+}
+
+.synon-sidebar-section-header {
+  height: 31px !important;
+  margin-top: 7px !important;
+  padding: 0 6px !important;
+  background: var(--synon-sidebar-bg) !important;
+}
+
+.synon-sidebar-section-toggle {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 6px !important;
+}
+
+.synon-sidebar-section-title-button {
+  height: 30px !important;
+  padding-left: 2px !important;
+}
+
+.synon-sidebar-section-title-button .sider-section-title {
+  color: var(--synon-sidebar-muted) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0;
+}
+
+.synon-sidebar-section-header [data-testid='project-create-action'] {
+  width: 24px !important;
+  height: 24px !important;
+  color: var(--synon-sidebar-muted) !important;
+  border-radius: 6px !important;
+}
+
+.synon-sidebar-section-header [data-testid='project-create-action']:hover {
+  color: var(--synon-sidebar-text) !important;
+  background: var(--synon-sidebar-hover) !important;
+}
+
+.synon-sidebar-project-row {
+  margin: 1px 0;
+}
+
+.synon-sidebar-shell .synon-sidebar-project-button {
+  min-height: 50px;
+  padding: 6px 28px 6px 20px !important;
+  border-radius: 8px !important;
+  color: var(--synon-sidebar-text) !important;
+}
+
+.synon-sidebar-shell .synon-sidebar-project-button:hover {
+  background: var(--synon-sidebar-hover) !important;
+}
+
+.synon-sidebar-shell .synon-sidebar-project-button.bg-fill-3 {
+  background: var(--synon-sidebar-selected) !important;
+}
+
+.synon-sidebar-project-name {
+  font-size: 14px !important;
+  line-height: 18px;
+  font-weight: 500 !important;
+  letter-spacing: -0.012em;
+}
+
+.synon-sidebar-project-meta {
+  margin-top: 1px !important;
+  color: var(--synon-sidebar-muted) !important;
+  font-size: 11.5px !important;
+  line-height: 16px;
+}
+
+.synon-sidebar-project-drag {
+  width: 12px !important;
+  height: 18px !important;
+  left: 0 !important;
+  padding: 0 !important;
+  opacity: 0;
+  color: var(--synon-sidebar-muted) !important;
+  transition:
+    opacity 120ms ease,
+    background-color 120ms ease;
+}
+
+.synon-sidebar-project-row:hover .synon-sidebar-project-drag,
+.synon-sidebar-project-drag:focus-visible {
+  opacity: 0.62;
+}
+
+.synon-sidebar-timeline {
+  height: 24px !important;
+  padding: 0 6px !important;
+  margin-top: 8px;
+}
+
+.synon-sidebar-timeline > span {
+  color: var(--synon-sidebar-muted) !important;
+  font-size: 11.75px !important;
+  font-weight: 500 !important;
+}
+
+.synon-sidebar-shell .synon-sidebar-conversation-row {
+  height: 32px !important;
+  margin-top: 1px !important;
+  padding-right: 10px !important;
+  border-radius: 7px !important;
+  color: var(--synon-sidebar-text) !important;
+}
+
+.synon-sidebar-shell .synon-sidebar-conversation-row:hover {
+  background: var(--synon-sidebar-hover) !important;
+}
+
+.synon-sidebar-shell .synon-sidebar-conversation-row[class~='!bg-fill-3'] {
+  background: var(--synon-sidebar-selected) !important;
+}
+
+.synon-sidebar-conversation-indicator {
+  width: 8px !important;
+}
+
+.synon-sidebar-conversation-indicator > span:not([role='status']) {
+  width: 4.5px !important;
+  height: 4.5px !important;
+  border-color: rgba(85, 85, 80, 0.42) !important;
+}
+
+.synon-sidebar-conversation-name {
+  color: var(--synon-sidebar-text) !important;
+  font-size: 13.25px !important;
+  line-height: 22px !important;
+  font-weight: 450 !important;
+  letter-spacing: -0.01em;
+}
+
+.synon-sidebar-shell .sider-footer {
+  background: var(--synon-sidebar-bg) !important;
+  padding: 7px 2px 8px !important;
+}
+
+.synon-sidebar-shell .sider-footer > button {
+  height: 48px !important;
+  padding-inline: 8px !important;
+  border-radius: 8px !important;
+}
+
+.synon-sidebar-shell .sider-footer > button:hover {
+  background: var(--synon-sidebar-hover) !important;
+}
+
+@media (max-width: 767px) {
+  .synon-sidebar-header {
+    min-height: 58px !important;
+  }
+
+  .synon-sidebar-content {
+    padding-inline: 8px !important;
+  }
+}
+
+/* Arco Layout inner container needs flex layout so Header + Content + Footer
+   stack vertically and Content fills the remaining space (avoids a fixed
+   calc() that breaks when header height changes). */
+.layout-sider > .arco-layout-sider-children {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+}
+
+.layout-sider-header {
+  flex-shrink: 0 !important;
+}
+
+.synon-biomed-brand {
+  width: 186px;
+  max-width: 100%;
+  aspect-ratio: 3 / 1;
+}
+
+.layout-sider-header--mobile .synon-biomed-brand {
+  max-width: calc(100% - 44px);
+}
+
+.synon-biomed-brand__lockup {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.layout-sider-content {
+  flex: 1 !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.layout-sider.collapsed .arco-layout-sider-children,
+.layout-sider.arco-layout-sider-collapsed .arco-layout-sider-children {
+  overflow-x: hidden;
+}
+
+/* Disable transition during drag for smooth dragging */
+.layout-sider--dragging {
+  transition: none !important;
+}
+
+/* Sidebar item transitions (shared by chat-history and settings-sider) */
+.chat-history__item,
+.settings-sider__item {
+  transition:
+    padding 0.2s ease,
+    margin 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.chat-history__item-name,
+.chat-history__item-editor,
+.settings-sider__item-label {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+  transform-origin: left center;
+}
+
+.chat-history__item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.settings-sider__item-label {
+  display: block;
+}
+
+.chat-history__placeholder,
+.chat-history__section {
+  transition:
+    opacity 0.3s ease,
+    max-height 0.3s ease,
+    margin 0.3s ease,
+    padding 0.3s ease;
+}
+
+.chat-history__placeholder {
+  max-height: 140px;
+}
+
+.chat-history__section {
+  max-height: 60px; /* Increase height for zoom scaling to prevent text clipping */
+}
+
+.chat-history--collapsed .chat-history__placeholder,
+.chat-history--collapsed .chat-history__section {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.chat-history--collapsed .chat-history__item-name,
+.chat-history--collapsed .chat-history__item-editor {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+.settings-sider--collapsed .settings-sider__item-label {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-history,
+  .chat-history__item,
+  .chat-history__item-name,
+  .chat-history__item-editor,
+  .settings-sider,
+  .settings-sider__item,
+  .settings-sider__item-label,
+  .chat-history__placeholder,
+  .chat-history__section {
+    transition: none;
+  }
+}
+
+/* Message component positioning - center in conversation area (exclude left sider) */
+/* Use padding-left offset while keeping inner message centered */
+.arco-message-wrapper {
+  left: 0 !important;
+  width: 100% !important;
+  padding-left: 266px;
+  box-sizing: border-box;
+  z-index: 10001 !important;
+}
+
+/* Default background for select and input components */
+.arco-select-view,
+.arco-select-addbefore,
+.arco-input,
+.arco-input-inner-wrapper,
+.arco-input-group-addafter,
+.arco-input-group-addbefore {
+  background-color: var(--fill-0) !important;
+}
+
+/* Grouped inputs should share one surface across the field and its add-ons. */
+.arco-input-inner-wrapper > .arco-input,
+.arco-input-group-addafter .arco-input,
+.arco-input-group-addbefore .arco-input,
+.arco-input-inner-wrapper .arco-input-group-prefix,
+.arco-input-inner-wrapper .arco-input-group-suffix,
+.arco-select-suffix,
+.arco-input-group-addafter .arco-select .arco-select-view,
+.arco-input-group-addbefore .arco-select .arco-select-view {
+  background-color: transparent !important;
+}
+
+/* Mobile sidebar positioning */
+/* Use dvh for better mobile browser support (iOS Chrome/Safari) */
+@media (max-width: 767px) {
+  .sider-tooltip-popup {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  .layout-sider {
+    /* Fixed positioning from top */
+    top: 0 !important;
+    /* dvh automatically accounts for browser chrome on mobile */
+    height: 100vh !important;
+    height: 100dvh !important;
+    /* Use flex layout to manage internal space */
+    display: flex !important;
+    flex-direction: column !important;
+    /* Use padding for safe areas instead of height adjustment */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box !important;
+  }
+
+  .layout-sider-header--mobile {
+    min-height: 56px !important;
+    padding-top: 10px !important;
+    padding-bottom: 8px !important;
+    gap: 8px !important;
+  }
+
+  /* Mobile-only: clip overflow instead of allowing scroll */
+  .layout-sider-content {
+    overflow: hidden !important;
+  }
+
+  /* Footer stays at bottom with extra padding as fallback */
+  .sider-footer {
+    flex-shrink: 0 !important;
+    /* Extra padding as fallback for iOS Chrome */
+    padding-bottom: 20px;
+  }
+
+  /* Match the mobile sider top buttons to the conversation row height (34px)
+     so the new-chat / search / footer rows form one consistent vertical rhythm. */
+  .sider-action-btn-mobile {
+    height: 34px !important;
+    gap: 8px !important;
+    padding-inline: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .sider-action-icon-btn-mobile {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+
+  .sider-footer-btn-mobile {
+    min-height: 34px !important;
+    padding: 6px 10px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Mobile: remove left padding for message wrapper */
+  .arco-message-wrapper {
+    padding-left: 0;
+  }
+
+  /* Sidebar conversation title + secondary timeline text */
+  .chat-history__item-name {
+    font-size: 15px !important;
+    line-height: 24px !important;
+  }
+
+  .chat-history__section {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "id": "compute-file-contracts",
+  "contracts": [
+    {"kind": "http-route", "name": "GET /api/compute/providers/:name/files"},
+    {"kind": "http-route", "name": "POST /api/compute/providers/:name/import"},
+    {"kind": "http-route", "name": "GET /api/compute/providers/:name/download"},
+    {"kind": "http-route", "name": "GET /api/compute/local/files"},
+    {"kind": "http-route", "name": "GET /api/compute/local/download"},
+	{"kind": "http-route", "name": "POST /api/compute/local/import"},
+	{"kind": "event", "name": "compute_job_update"},
+	{"kind": "event", "name": "compute_job_log_chunk"},
+	{"kind": "event", "name": "managed_endpoint_transcript"},
+	{"kind": "event", "name": "managed_endpoint_update"},
+	{"kind": "event", "name": "managed_endpoint_removed"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "remote-files-missing-provider",
+      "method": "GET",
+      "path": "/api/compute/providers/oracle-missing/files?path=/tmp",
+	  "expectedStatus": [400, 404]
+    },
+    {
+      "name": "remote-download-missing-provider",
+      "method": "GET",
+      "path": "/api/compute/providers/oracle-missing/download?path=/tmp/oracle.txt",
+	  "expectedStatus": [400, 404]
+    },
+    {
+      "name": "remote-import-missing-provider",
+      "method": "POST",
+      "path": "/api/compute/providers/oracle-missing/import",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"path": "/tmp/oracle.txt", "projectId": "oracle-missing"},
+	  "expectedStatus": [400, 404]
+    },
+    {
+      "name": "local-files",
+      "method": "GET",
+      "path": "/api/compute/local/files?path=/etc",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "local-download",
+      "method": "GET",
+      "path": "/api/compute/local/download?path=/etc/hostname",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Compute File Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"project": "/project_id"}
+    },
+    {
+      "name": "submit-root-frame",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/request",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "input_data": {"request": "Create an isolated root for compute file coverage."},
+        "target_agent": "OPERON",
+        "intent_id": "00000000-0000-4000-8000-000000000303"
+      },
+      "expectedStatus": [200],
+      "capture": {"root": "/root_frame_id"}
+    },
+    {
+      "name": "local-import",
+      "method": "POST",
+      "path": "/api/compute/local/import",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "Idempotency-Key": "compute-file-oracle-303"
+      },
+      "body": {"path": "/etc/hostname", "projectId": "${capture:project}"},
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 8388608,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+	"/steps/4/response/body/roots/home",
+    "/steps/4/response/body/entries",
+    "/steps/6/response/body/project_id",
+    "/steps/6/response/body/created_at",
+    "/steps/6/response/body/updated_at",
+    "/steps/7/request/path",
+    "/steps/7/response/body/frame_id",
+    "/steps/7/response/body/root_frame_id",
+    "/steps/8/request/body/projectId",
+    "/steps/8/response/body/id",
+    "/steps/8/response/body/version_id",
+    "/steps/8/response/body/project_id",
+    "/steps/8/response/body/root_frame_id",
+    "/steps/8/response/body/frame_id",
+    "/steps/8/response/body/creating_frame_id",
+	"/steps/8/response/body/file_path",
+    "/steps/8/response/body/created_at"
+  ],
+  "redactions": []
+}

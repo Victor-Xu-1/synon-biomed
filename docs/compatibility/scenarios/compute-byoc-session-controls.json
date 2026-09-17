@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "id": "compute-byoc-session-controls",
+  "contracts": [
+    {"kind": "http-route", "name": "GET /api/compute/byoc/:provider"},
+    {"kind": "http-route", "name": "PUT /api/compute/byoc/:provider/enabled"},
+    {"kind": "http-route", "name": "GET /api/compute/session/:rootFrameId/enabled"},
+    {"kind": "http-route", "name": "PUT /api/compute/session/:rootFrameId/enabled/:name"},
+    {"kind": "http-route", "name": "POST /api/compute/session/migrate"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "byoc-default",
+      "method": "GET",
+      "path": "/api/compute/byoc/modal",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "byoc-disable",
+      "method": "PUT",
+      "path": "/api/compute/byoc/modal/enabled",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"enabled": false},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-provider",
+      "method": "POST",
+      "path": "/api/compute/inference-providers",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "oracle-session", "endpoint": 38990, "skillName": "using-model-endpoint"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "draft-enabled-default",
+      "method": "GET",
+      "path": "/api/compute/session/draft-oracle-301/enabled",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "draft-enable-provider",
+      "method": "PUT",
+      "path": "/api/compute/session/draft-oracle-301/enabled/infer:oracle-session",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"checked": true},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "draft-enabled-after-update",
+      "method": "GET",
+      "path": "/api/compute/session/draft-oracle-301/enabled",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Compute Session Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"project": "/project_id"}
+    },
+    {
+      "name": "submit-root-frame",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/request",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "input_data": {"request": "Create an isolated root for session compute coverage."},
+        "target_agent": "OPERON",
+        "intent_id": "00000000-0000-4000-8000-000000000302"
+      },
+      "expectedStatus": [200],
+      "capture": {"root": "/root_frame_id"}
+    },
+    {
+      "name": "migrate-draft-selection",
+      "method": "POST",
+      "path": "/api/compute/session/migrate",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"fromKey": "draft-oracle-301", "toKey": "${capture:root}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "root-enabled-after-migration",
+      "method": "GET",
+      "path": "/api/compute/session/${capture:root}/enabled",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 1048576,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/7/response/body/project_id",
+    "/steps/7/response/body/created_at",
+    "/steps/7/response/body/updated_at",
+    "/steps/8/request/path",
+    "/steps/8/response/body/frame_id",
+    "/steps/8/response/body/root_frame_id",
+    "/steps/9/request/body/toKey",
+    "/steps/10/request/path"
+  ],
+  "redactions": []
+}

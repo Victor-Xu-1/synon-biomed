@@ -1,0 +1,237 @@
+{
+  "artifacts": {
+    "committedVersionCount": 6,
+    "currentCommittedCount": 6,
+    "duplicateCurrentNames": [],
+    "items": [
+      {
+        "artifactId": "2530f96d-1240-5b6d-abfe-faaf48367ba0",
+        "current": true,
+        "digest": "pass",
+        "name": "KRAS_G12C_Inhibitor_Review_Final.md",
+        "sizeBytes": 24698,
+        "versionId": "940859c4-0a4b-4515-910d-228efafdb75f"
+      },
+      {
+        "artifactId": "1e65bccf-d5cf-5734-aa5d-35be710b4357",
+        "current": true,
+        "digest": "pass",
+        "name": "kras_g12c_adagrasib.png",
+        "sizeBytes": 27773,
+        "versionId": "4c256732-b28e-41cb-b725-138d6e1a77e5"
+      },
+      {
+        "artifactId": "f92d9fca-a2f1-596c-8efd-224803aaf74c",
+        "current": true,
+        "digest": "pass",
+        "name": "kras_g12c_divarasib.png",
+        "sizeBytes": 26435,
+        "versionId": "dddf7c46-f886-4e58-bfc1-eba18e7eb8f2"
+      },
+      {
+        "artifactId": "35de5d49-e332-500d-b5ab-d20d962460b3",
+        "current": true,
+        "digest": "pass",
+        "name": "kras_g12c_inhibitors_2d.png",
+        "sizeBytes": 71617,
+        "versionId": "7ed7573c-924c-479d-ada7-90065f14c959"
+      },
+      {
+        "artifactId": "38f747af-13dc-5c73-be1b-8762849747eb",
+        "current": true,
+        "digest": "pass",
+        "name": "kras_g12c_olomorasib.png",
+        "sizeBytes": 24734,
+        "versionId": "b8cf1ad2-2abc-404c-a0df-1d10a3e87d5b"
+      },
+      {
+        "artifactId": "6ab01f04-4a76-5583-9180-557d3d1c28e4",
+        "current": true,
+        "digest": "pass",
+        "name": "kras_g12c_sotorasib.png",
+        "sizeBytes": 33279,
+        "versionId": "0efada05-8486-4238-85e7-7c68870e9b39"
+      }
+    ]
+  },
+  "browser": {
+    "capturedAt": "2026-08-07T09:07:54.812Z",
+    "checks": [
+      {
+        "evidence": "The artifact library visibly listed the Markdown report and five KRAS G12C PNG structure artifacts, with no JSON/JSONL deliverable.",
+        "id": "artifact_library_visible",
+        "status": "pass"
+      },
+      {
+        "evidence": "The transcript records completed real ChEMBL compound and activity retrieval used in the decision package.",
+        "id": "chembl_real_query",
+        "status": "pass"
+      },
+      {
+        "evidence": "The transcript records a completed real ClinicalTrials search with the compatibility-normalized legacy page-size argument.",
+        "id": "clinical_trials_real_tool",
+        "status": "pass"
+      },
+      {
+        "evidence": "Codex built-in browser showed the KRAS G12C task stream, its final summary, and the recorded failed-tool recovery step.",
+        "id": "conversation_stream_visible",
+        "status": "pass"
+      },
+      {
+        "evidence": "The transcript records completed real PDB structure and PubMed literature retrieval with source provenance.",
+        "id": "pdb_pubmed_real_query",
+        "status": "pass"
+      },
+      {
+        "evidence": "The transcript records completed managed-runtime RDKit property and structure rendering calls, and the PNG artifacts are visible in the browser.",
+        "id": "rdkit_real_calc",
+        "status": "pass"
+      },
+      {
+        "evidence": "After an intentional 8765 page reload and a bounded recovery wait, the same conversation URL restored the task title, completed state, report, structure artifact, and recorded failure evidence.",
+        "id": "refresh_recovery",
+        "status": "pass"
+      },
+      {
+        "evidence": "The report preview opened in the browser and rendered KRAS_G12C_Inhibitor_Review_Final.md as MARKDOWN (24 KB).",
+        "id": "report_preview_visible",
+        "status": "pass"
+      },
+      {
+        "evidence": "The visible final Markdown report is described as containing the Go/No-Go recommendation, evidence levels, resistance analysis, ADMET risks, and a four-week validation plan.",
+        "id": "report_scientific_quality",
+        "status": "pass"
+      },
+      {
+        "evidence": "The browser opened the kras_g12c_inhibitors_2d.png preview and exposed the image preview control.",
+        "id": "structure_preview_visible",
+        "status": "pass"
+      },
+      {
+        "evidence": "The browser showed the completed task state and the transcript's 11-step, 3-failure diagnostic summary; the read-only audit matched the completed runner frame.",
+        "id": "terminal_status_consistent",
+        "status": "pass"
+      }
+    ],
+    "screenshotSha256": "f7dfe3dab2cbab025e2bb068798c2e8ca5df2c47ca657d7a4d126f5fc23ea979",
+    "status": "pass",
+    "url": "http://localhost:8765/#/conversation/9b6531ff-a652-4c3f-b26f-28657b14ed3f"
+  },
+  "capturedAt": "2026-08-07T10:50:08.022250Z",
+  "conversationId": "9b6531ff-a652-4c3f-b26f-28657b14ed3f",
+  "evidenceDigest": "7132b4690c918d4d7ba854958622fd50277d55422be71da2d96b53201c79cc3b",
+  "failures": [],
+  "frame": {
+    "createdAt": "2026-08-07 08:22:23.697864659 +0000 UTC",
+    "status": "completed",
+    "updatedAt": "2026-08-07 08:42:56.495817098 +0000 UTC"
+  },
+  "qualityReview": {
+    "criteria": [
+      {
+        "criterion": "ClinicalTrials search must use the real tool path, return real records, and accept normalized legacy arguments",
+        "evidenceSources": [
+          "transcript"
+        ],
+        "id": "clinical_trials_real_tool"
+      },
+      {
+        "criterion": "ChEMBL MCP queries must return real compound and activity data",
+        "evidenceSources": [
+          "transcript"
+        ],
+        "id": "chembl_real_query"
+      },
+      {
+        "criterion": "PDB and PubMed searches must return real structural and literature evidence with source provenance",
+        "evidenceSources": [
+          "transcript"
+        ],
+        "id": "pdb_pubmed_real_query"
+      },
+      {
+        "criterion": "RDKit properties must be computed from real SMILES input",
+        "evidenceSources": [
+          "transcript",
+          "artifacts"
+        ],
+        "id": "rdkit_real_calc"
+      },
+      {
+        "criterion": "Report must distinguish evidence levels and include resistance, ADMET, and a four-week validation plan",
+        "evidenceSources": [
+          "artifacts"
+        ],
+        "id": "report_scientific_quality"
+      }
+    ],
+    "status": "pass"
+  },
+  "runner": {
+    "attemptCount": 1,
+    "attempts": [
+      {
+        "attempt": 1,
+        "claimedAt": "2026-08-07 08:22:30.910306744 +0000 UTC",
+        "expiresAt": "2026-08-07 08:47:47.324848176 +0000 UTC",
+        "finishedAt": "2026-08-07 08:42:56.495817098 +0000 UTC",
+        "finishedEventId": 213,
+        "phase": "terminal",
+        "staleRunning": false,
+        "status": "completed"
+      }
+    ],
+    "latest": {
+      "attempt": 1,
+      "claimedAt": "2026-08-07 08:22:30.910306744 +0000 UTC",
+      "expiresAt": "2026-08-07 08:47:47.324848176 +0000 UTC",
+      "finishedAt": "2026-08-07 08:42:56.495817098 +0000 UTC",
+      "finishedEventId": 213,
+      "phase": "terminal",
+      "staleRunning": false,
+      "status": "completed"
+    },
+    "staleRunningAttempts": []
+  },
+  "schema": "synon.science-task-audit.v1",
+  "status": "pass",
+  "taskId": "kras-g12c-design",
+  "tools": {
+    "byName": {
+      "TodoWrite": 3,
+      "edit_file": 5,
+      "mcp__chembl__compound_search": 5,
+      "mcp__chembl__get_admet": 3,
+      "mcp__chembl__get_bioactivity": 3,
+      "mcp__clinical-trials__search_trials": 1,
+      "mcp__pubmed__get_article_metadata": 2,
+      "mcp__pubmed__search_articles": 6,
+      "mcp__structures-interactions__pdb_get_ligands": 2,
+      "mcp__structures-interactions__pdb_get_structures": 1,
+      "mcp__structures-interactions__pdb_search_structures": 3,
+      "python": 3,
+      "read_file": 4,
+      "save_artifacts": 4
+    },
+    "byState": {
+      "completed": 41,
+      "failed": 4
+    },
+    "count": 45,
+    "openCount": 0
+  },
+  "transcript": {
+    "consumedInputRevision": 1,
+    "eventCounts": {
+      "assistant_message": 1,
+      "content_delta": 92,
+      "runner_checkpoint": 118,
+      "runner_finished": 1,
+      "user_message": 1
+    },
+    "initialPromptSha256": "858210d0544d12a0a8fb95118ccf206a2cf9734711c3e81f7012781bc122a6cd",
+    "inputRevision": 1,
+    "streamCount": 1,
+    "streamUid": "frame:9b6531ff-a652-4c3f-b26f-28657b14ed3f"
+  }
+}

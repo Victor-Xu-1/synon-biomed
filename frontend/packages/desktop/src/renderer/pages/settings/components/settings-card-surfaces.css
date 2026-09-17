@@ -1,0 +1,188 @@
+/*
+ * Apple-inspired settings card surface
+ * ------------------------------------
+ * Route modules own geometry and content. This module is the single authority
+ * for theme-aware card surfaces, quiet depth and pointer interaction across settings.
+ */
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card {
+  --settings-card-interaction-accent: var(--settings-module-accent, #39a4da);
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+  --settings-card-interaction-accent: var(--mcp-accent, var(--settings-module-accent, #39a4da));
+}
+
+.settings-page-wrapper[data-settings-route='experts'] .expert-card {
+  --settings-card-interaction-accent: #2d82cf;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  :is(
+    .settings-summary-strip,
+    .settings-model-profile,
+    .settings-section,
+    .compute-empty-row,
+    .memory-manager__layer-tabs,
+    .memory-manager__status,
+    .memory-manager__workspace
+  ) {
+  border-color: var(--settings-border) !important;
+  border-radius: 16px !important;
+  background: var(--settings-surface) !important;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.035),
+    0 8px 24px rgba(15, 23, 42, 0.045) !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .compute-empty-row {
+  background: var(--settings-surface) !important;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card,
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
+.settings-page-wrapper[data-settings-route='experts'] .expert-card {
+  border-color: color-mix(in srgb, var(--settings-border) 82%, var(--settings-surface)) !important;
+  border-radius: 16px !important;
+  background: var(--settings-surface) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 1px 2px rgba(15, 23, 42, 0.035),
+    0 8px 22px rgba(15, 23, 42, 0.04) !important;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    border-color 220ms ease,
+    background 220ms ease,
+    box-shadow 240ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    filter 220ms ease;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card::before,
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card::before,
+.settings-page-wrapper[data-settings-route='experts'] .expert-card::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: none;
+  content: '';
+  opacity: 0.72;
+  pointer-events: none;
+  transition:
+    opacity 220ms ease,
+    transform 240ms cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.settings-page-wrapper[data-settings-route='skills'] :is(.settings-skill-card__icon, .settings-skill-card__artwork),
+.settings-page-wrapper[data-settings-route='tools'] :is(.synon-mcp-card__icon, .mcp-connector-visual--artwork),
+.settings-page-wrapper[data-settings-route='experts'] :is(.expert-card__icon, .expert-card__artwork) {
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    opacity 220ms ease,
+    filter 220ms ease,
+    box-shadow 240ms ease;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card > .border-t,
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__usage,
+.settings-page-wrapper[data-settings-route='experts'] .expert-card__footer {
+  transition: border-color 220ms ease;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card [role='switch'],
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control,
+.settings-page-wrapper[data-settings-route='experts'] .expert-card [role='switch'] {
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 220ms ease;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:focus-visible,
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:focus-within,
+.settings-page-wrapper[data-settings-route='experts'] .expert-card:focus-within {
+  outline: none;
+  border-color: color-mix(in srgb, var(--settings-card-interaction-accent) 52%, var(--settings-border)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 0 0 3px color-mix(in srgb, var(--settings-card-interaction-accent) 13%, transparent),
+    0 12px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover {
+    border-color: color-mix(in srgb, var(--settings-card-interaction-accent) 34%, var(--settings-border)) !important;
+    background: var(--settings-surface) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.98),
+      0 2px 6px rgba(32, 78, 121, 0.06),
+      0 16px 38px rgba(15, 41, 67, 0.11),
+      0 0 0 1px color-mix(in srgb, var(--settings-card-interaction-accent) 7%, transparent) !important;
+    transform: translate3d(0, -4px, 0) scale(1.006);
+    filter: saturate(1.025);
+  }
+
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover::before,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover::before,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover::before {
+    opacity: 1;
+    transform: translate3d(0, -1px, 0);
+  }
+
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover .settings-skill-card__icon,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover .synon-mcp-card__icon,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover .expert-card__icon {
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--settings-card-interaction-accent) 18%, transparent);
+    transform: translate3d(0, -1px, 0) scale(1.045);
+    filter: saturate(1.06) contrast(1.015);
+  }
+
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover .settings-skill-card__artwork,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover .mcp-connector-visual--artwork,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover .expert-card__artwork {
+    opacity: 0.68;
+    transform: translate3d(-4px, -3px, 0) scale(1.04);
+    filter: saturate(1.04);
+  }
+
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover > .border-t,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover .synon-mcp-card__usage,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover .expert-card__footer {
+    border-color: color-mix(in srgb, var(--settings-card-interaction-accent) 18%, var(--settings-border)) !important;
+  }
+
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover [role='switch'],
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover .synon-mcp-card__status-control,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover [role='switch'] {
+    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.07);
+    transform: translate3d(0, -1px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card,
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card::before,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card::before,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card::before,
+  .settings-page-wrapper[data-settings-route='skills'] :is(.settings-skill-card__icon, .settings-skill-card__artwork),
+  .settings-page-wrapper[data-settings-route='tools'] :is(.synon-mcp-card__icon, .mcp-connector-visual--artwork),
+  .settings-page-wrapper[data-settings-route='experts'] :is(.expert-card__icon, .expert-card__artwork),
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card [role='switch'],
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card [role='switch'] {
+    transition: none !important;
+  }
+
+  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover,
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover {
+    transform: none !important;
+  }
+}

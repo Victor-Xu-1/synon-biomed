@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analytical Method Lifecycle"
+  short_description: "Develop, validate, transfer, and maintain analytical procedures"
+  default_prompt: "Use $analytical-method-lifecycle to build a source-grounded, review-ready plan."

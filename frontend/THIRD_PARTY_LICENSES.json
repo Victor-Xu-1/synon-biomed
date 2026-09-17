@@ -1,0 +1,7960 @@
+{
+  "schemaVersion": 1,
+  "package": "@synon-go/workbench-web",
+  "lockfileSHA256": "0f12e02e668c0f5327ad90294da21bd488d76e8389839a118413166223a184ca",
+  "summary": {
+    "records": 1131,
+    "workspaceLinkRecords": 1,
+    "directRuntimeBuildDependencies": 62,
+    "directDevelopmentDependencies": 26,
+    "licenseCounts": {
+      "(MIT AND Zlib)": 1,
+      "(MIT OR GPL-3.0-or-later)": 1,
+      "(MPL-2.0 OR Apache-2.0)": 1,
+      "0BSD": 1,
+      "Apache-2.0": 19,
+      "BSD": 1,
+      "BSD-2-Clause": 11,
+      "BSD-3-Clause": 25,
+      "BlueOak-1.0.0": 2,
+      "CC-BY-4.0": 1,
+      "CC0-1.0": 2,
+      "ISC": 53,
+      "MIT": 1008,
+      "MIT-0": 2,
+      "Python-2.0": 1,
+      "SEE LICENSE IN LICENSE.txt": 1,
+      "Unlicense": 1
+    },
+    "unresolvedTransitiveRecords": 0,
+    "unresolvedDirectRecords": 0
+  },
+  "records": [
+    {
+      "name": "@acemir/cssom",
+      "version": "0.9.31",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@adobe/css-tools",
+      "version": "4.5.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@ampproject/remapping",
+      "version": "2.3.0",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@antfu/install-pkg",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@antfu/utils",
+      "version": "8.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@arco-design/color",
+      "version": "0.4.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@arco-design/web-react",
+      "version": "2.66.8",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@asamuzakjp/css-color",
+      "version": "5.1.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@asamuzakjp/dom-selector",
+      "version": "6.8.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@asamuzakjp/generational-cache",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@asamuzakjp/nwsapi",
+      "version": "2.3.9",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/code-frame",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/compat-data",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/core",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "semver",
+      "version": "6.3.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/generator",
+      "version": "7.29.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helper-compilation-targets",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lru-cache",
+      "version": "5.1.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "semver",
+      "version": "6.3.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helper-globals",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helper-module-imports",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helper-module-transforms",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helper-plugin-utils",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helper-string-parser",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helper-validator-identifier",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helper-validator-option",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/helpers",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/parser",
+      "version": "7.29.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/plugin-transform-react-jsx-self",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/plugin-transform-react-jsx-source",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/runtime",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/template",
+      "version": "7.29.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/traverse",
+      "version": "7.29.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@babel/types",
+      "version": "7.29.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@bcoe/v8-coverage",
+      "version": "1.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@braintree/sanitize-url",
+      "version": "7.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@bramus/specificity",
+      "version": "2.4.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@chevrotain/types",
+      "version": "11.1.2",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/autocomplete",
+      "version": "6.20.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/commands",
+      "version": "6.10.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-angular",
+      "version": "0.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-cpp",
+      "version": "6.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-css",
+      "version": "6.3.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-go",
+      "version": "6.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-html",
+      "version": "6.4.11",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-java",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-javascript",
+      "version": "6.2.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-jinja",
+      "version": "6.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-json",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-less",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-liquid",
+      "version": "6.3.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-markdown",
+      "version": "6.5.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-php",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-python",
+      "version": "6.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-rust",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-sass",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-sql",
+      "version": "6.10.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-vue",
+      "version": "0.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-wast",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-xml",
+      "version": "6.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lang-yaml",
+      "version": "6.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/language",
+      "version": "6.12.3",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/language-data",
+      "version": "6.5.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/legacy-modes",
+      "version": "6.5.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/lint",
+      "version": "6.9.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/search",
+      "version": "6.7.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/state",
+      "version": "6.7.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/theme-one-dark",
+      "version": "6.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@codemirror/view",
+      "version": "6.43.6",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@csstools/color-helpers",
+      "version": "6.1.0",
+      "license": "MIT-0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@csstools/css-calc",
+      "version": "3.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@csstools/css-color-parser",
+      "version": "4.1.9",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@csstools/css-parser-algorithms",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@csstools/css-syntax-patches-for-csstree",
+      "version": "1.1.6",
+      "license": "MIT-0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@csstools/css-tokenizer",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@dnd-kit/accessibility",
+      "version": "3.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@dnd-kit/core",
+      "version": "6.3.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@dnd-kit/sortable",
+      "version": "10.0.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@dnd-kit/utilities",
+      "version": "3.2.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/aix-ppc64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/android-arm",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/android-arm64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/android-x64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/darwin-arm64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/darwin-x64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/freebsd-arm64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/freebsd-x64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-arm",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-arm64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-ia32",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-loong64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-mips64el",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-ppc64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-riscv64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-s390x",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/linux-x64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/netbsd-arm64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/netbsd-x64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/openbsd-arm64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/openbsd-x64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/openharmony-arm64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/sunos-x64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/win32-arm64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/win32-ia32",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@esbuild/win32-x64",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@exodus/bytes",
+      "version": "1.15.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@floating-ui/core",
+      "version": "1.8.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@floating-ui/dom",
+      "version": "1.8.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@floating-ui/react",
+      "version": "0.27.16",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@floating-ui/react-dom",
+      "version": "2.1.9",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@floating-ui/utils",
+      "version": "0.2.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@icon-park/react",
+      "version": "1.4.2",
+      "license": "Apache-2.0",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@iconify-json/vscode-icons",
+      "version": "1.2.53",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@iconify/react",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@iconify/types",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@iconify/utils",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@jridgewell/gen-mapping",
+      "version": "0.3.13",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@jridgewell/remapping",
+      "version": "2.3.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@jridgewell/resolve-uri",
+      "version": "3.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@jridgewell/sourcemap-codec",
+      "version": "1.5.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@jridgewell/trace-mapping",
+      "version": "0.3.31",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lattice-automation/react-resize-detector",
+      "version": "12.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/common",
+      "version": "1.5.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/cpp",
+      "version": "1.1.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/css",
+      "version": "1.3.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/go",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/highlight",
+      "version": "1.2.3",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/html",
+      "version": "1.3.13",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/java",
+      "version": "1.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/javascript",
+      "version": "1.5.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/json",
+      "version": "1.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/lr",
+      "version": "1.4.10",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/markdown",
+      "version": "1.7.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/php",
+      "version": "1.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/python",
+      "version": "1.1.19",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/rust",
+      "version": "1.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/sass",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/xml",
+      "version": "1.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lezer/yaml",
+      "version": "1.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lit-labs/ssr-dom-shim",
+      "version": "1.6.0",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@lit/reactive-element",
+      "version": "2.1.2",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@marijn/find-cluster-break",
+      "version": "1.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@mermaid-js/parser",
+      "version": "1.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@mixmark-io/domino",
+      "version": "2.2.0",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@monaco-editor/loader",
+      "version": "1.7.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@monaco-editor/react",
+      "version": "4.7.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-android-arm64",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-darwin-arm64",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-darwin-x64",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-linux-arm-gnueabihf",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-linux-arm64-gnu",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-linux-arm64-musl",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-linux-riscv64-gnu",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-linux-x64-gnu",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-linux-x64-musl",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-win32-arm64-msvc",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@napi-rs/canvas-win32-x64-msvc",
+      "version": "0.1.100",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@nightingale-elements/nightingale-msa",
+      "version": "5.6.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "upstream repository license",
+      "sourceUrl": "https://github.com/ebi-webcomponents/nightingale/blob/main/LICENSE"
+    },
+    {
+      "name": "@nightingale-elements/nightingale-new-core",
+      "version": "5.6.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@nodable/entities",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@office-ai/platform",
+      "version": "0.3.16",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-android-arm-eabi",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-android-arm64",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-darwin-arm64",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-darwin-x64",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-freebsd-x64",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-arm-gnueabihf",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-arm-musleabihf",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-arm64-gnu",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-arm64-musl",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-ppc64-gnu",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-riscv64-gnu",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-riscv64-musl",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-s390x-gnu",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-x64-gnu",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-linux-x64-musl",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-openharmony-arm64",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-win32-arm64-msvc",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-win32-ia32-msvc",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxfmt/binding-win32-x64-msvc",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-android-arm-eabi",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-android-arm64",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-darwin-arm64",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-darwin-x64",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-freebsd-x64",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-arm-gnueabihf",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-arm-musleabihf",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-arm64-gnu",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-arm64-musl",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-ppc64-gnu",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-riscv64-gnu",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-riscv64-musl",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-s390x-gnu",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-x64-gnu",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-linux-x64-musl",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-openharmony-arm64",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-win32-arm64-msvc",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-win32-ia32-msvc",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@oxlint/binding-win32-x64-msvc",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@playwright/test",
+      "version": "1.58.2",
+      "license": "Apache-2.0",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@polka/url",
+      "version": "1.0.0-next.29",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@profoundlogic/hogan",
+      "version": "3.0.4",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@quansync/fs",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rdkit/rdkit",
+      "version": "2025.3.4-1.0.0",
+      "license": "BSD-3-Clause",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rolldown/pluginutils",
+      "version": "1.0.0-beta.27",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-android-arm-eabi",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-android-arm64",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-darwin-arm64",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-darwin-x64",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-freebsd-arm64",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-freebsd-x64",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-arm-gnueabihf",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-arm-musleabihf",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-arm64-gnu",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-arm64-musl",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-loong64-gnu",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-loong64-musl",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-ppc64-gnu",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-ppc64-musl",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-riscv64-gnu",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-riscv64-musl",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-s390x-gnu",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-x64-gnu",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-linux-x64-musl",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-openbsd-x64",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-openharmony-arm64",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-win32-arm64-msvc",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-win32-ia32-msvc",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-win32-x64-gnu",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@rollup/rollup-win32-x64-msvc",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@scarf/scarf",
+      "version": "1.4.0",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@shikijs/core",
+      "version": "3.23.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-to-html",
+      "version": "9.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "property-information",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@shikijs/engine-javascript",
+      "version": "3.23.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@shikijs/engine-oniguruma",
+      "version": "3.23.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@shikijs/langs",
+      "version": "3.23.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@shikijs/themes",
+      "version": "3.23.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@shikijs/types",
+      "version": "3.23.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@shikijs/vscode-textmate",
+      "version": "10.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@standard-schema/spec",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@testing-library/dom",
+      "version": "10.4.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@testing-library/jest-dom",
+      "version": "6.9.1",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dom-accessibility-api",
+      "version": "0.6.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@testing-library/react",
+      "version": "16.3.2",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@testing-library/user-event",
+      "version": "14.6.1",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/argparse",
+      "version": "2.0.17",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/aria-query",
+      "version": "5.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/babel__core",
+      "version": "7.20.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/babel__generator",
+      "version": "7.27.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/babel__template",
+      "version": "7.4.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/babel__traverse",
+      "version": "7.28.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/benchmark",
+      "version": "2.1.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/body-parser",
+      "version": "1.19.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/chai",
+      "version": "5.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/compression",
+      "version": "1.8.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/connect",
+      "version": "3.4.38",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3",
+      "version": "7.4.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-array",
+      "version": "3.2.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-axis",
+      "version": "3.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-brush",
+      "version": "3.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-chord",
+      "version": "3.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-color",
+      "version": "3.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-contour",
+      "version": "3.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-delaunay",
+      "version": "6.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-dispatch",
+      "version": "3.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-drag",
+      "version": "3.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-dsv",
+      "version": "3.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-ease",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-fetch",
+      "version": "3.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-force",
+      "version": "3.0.10",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-format",
+      "version": "3.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-geo",
+      "version": "3.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-hierarchy",
+      "version": "3.1.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-interpolate",
+      "version": "3.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-path",
+      "version": "3.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-polygon",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-quadtree",
+      "version": "3.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-random",
+      "version": "3.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-scale",
+      "version": "4.0.9",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-scale-chromatic",
+      "version": "3.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-selection",
+      "version": "3.0.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-shape",
+      "version": "3.1.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-time",
+      "version": "3.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-time-format",
+      "version": "4.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-timer",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-transition",
+      "version": "3.0.9",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/d3-zoom",
+      "version": "3.0.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/debug",
+      "version": "4.1.13",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/deep-eql",
+      "version": "4.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/estree",
+      "version": "1.0.9",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/estree-jsx",
+      "version": "1.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/express",
+      "version": "5.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/express-serve-static-core",
+      "version": "5.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/geojson",
+      "version": "7946.0.16",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "2.3.10",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/http-errors",
+      "version": "2.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/katex",
+      "version": "0.16.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/mdast",
+      "version": "4.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/ms",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/node",
+      "version": "24.3.1",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/parse5",
+      "version": "6.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/prismjs",
+      "version": "1.26.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/qs",
+      "version": "6.15.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/range-parser",
+      "version": "1.2.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/react",
+      "version": "19.2.14",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/react-dom",
+      "version": "19.2.3",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/react-syntax-highlighter",
+      "version": "15.5.13",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/send",
+      "version": "1.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/serve-static",
+      "version": "2.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/swagger-ui-dist",
+      "version": "3.30.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/trusted-types",
+      "version": "2.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/turndown",
+      "version": "5.0.5",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "2.0.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@uiw/codemirror-extensions-basic-setup",
+      "version": "4.25.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@uiw/react-codemirror",
+      "version": "4.25.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@ungap/structured-clone",
+      "version": "1.3.3",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-builder",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-ctan",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "color",
+      "version": "4.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "color-convert",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "color-name",
+      "version": "1.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-lint",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-prettier",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "prettier",
+      "version": "3.9.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-to-hast",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-from-parse5",
+      "version": "7.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-raw",
+      "version": "7.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-to-parse5",
+      "version": "7.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "html-void-elements",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "parse5",
+      "version": "6.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "rehype-raw",
+      "version": "6.1.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-is",
+      "version": "5.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-visit",
+      "version": "4.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-visit-parents",
+      "version": "5.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-location",
+      "version": "4.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-types",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-align",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-argspec",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-arguments",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-catcode",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-comments",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-environments",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-glue",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-html-like",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-ligatures",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-match",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-packages",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-parse",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-pegjs",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-pgfkeys",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-print-raw",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-render-info",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-replace",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-scan",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-split",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-to-string",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-trim",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unified-latex/unified-latex-util-visit",
+      "version": "1.8.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/astro",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/cli",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/config",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/core",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/extractor-arbitrary-variants",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/inspector",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/postcss",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-attributify",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-icons",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@iconify/utils",
+      "version": "2.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-mini",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-tagify",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-typography",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-uno",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-web-fonts",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-wind",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-wind3",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/preset-wind4",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/reset",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/rule-utils",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/transformer-attributify-jsx",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/transformer-compile-class",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/transformer-directives",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/transformer-variant-group",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@unocss/vite",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@upsetjs/venn.js",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitejs/plugin-react",
+      "version": "4.7.0",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitest/coverage-v8",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitest/expect",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitest/mocker",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitest/pretty-format",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitest/runner",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitest/snapshot",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitest/spy",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vitest/utils",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/compiler-core",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "entities",
+      "version": "7.0.1",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "estree-walker",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/compiler-dom",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/compiler-sfc",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "estree-walker",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/compiler-ssr",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/reactivity",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/runtime-core",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/runtime-dom",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/server-renderer",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@vue/shared",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@xmldom/xmldom",
+      "version": "0.8.15",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "abbrev",
+      "version": "1.1.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "accepts",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-db",
+      "version": "1.54.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-types",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "negotiator",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "acorn",
+      "version": "8.17.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "agent-base",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ansi-regex",
+      "version": "5.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ansi-styles",
+      "version": "5.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "anymatch",
+      "version": "3.1.3",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "anynum",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "argparse",
+      "version": "1.0.10",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "aria-query",
+      "version": "5.3.0",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "assertion-error",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ast-v8-to-istanbul",
+      "version": "1.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "js-tokens",
+      "version": "10.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "asynckit",
+      "version": "0.4.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "axios",
+      "version": "1.18.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "b-tween",
+      "version": "0.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "b-validate",
+      "version": "1.5.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "bail",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "base64-js",
+      "version": "1.5.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "baseline-browser-mapping",
+      "version": "2.11.14",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "bidi-js",
+      "version": "1.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "binary-extensions",
+      "version": "2.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "bluebird",
+      "version": "3.4.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "body-parser",
+      "version": "2.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "content-type",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "iconv-lite",
+      "version": "0.7.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "braces",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "browserslist",
+      "version": "4.28.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "buffer",
+      "version": "6.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "bytes",
+      "version": "3.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cac",
+      "version": "6.7.14",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "call-bind-apply-helpers",
+      "version": "1.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "call-bound",
+      "version": "1.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "caniuse-lite",
+      "version": "1.0.30001809",
+      "license": "CC-BY-4.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ccount",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "chai",
+      "version": "6.2.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "character-entities",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "character-entities-html4",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "character-entities-legacy",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "character-reference-invalid",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "chokidar",
+      "version": "3.6.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "classnames",
+      "version": "2.5.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "clsx",
+      "version": "2.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "codemirror",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "color",
+      "version": "3.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "color-convert",
+      "version": "1.9.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "color-name",
+      "version": "1.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "color-string",
+      "version": "1.9.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "colorette",
+      "version": "2.0.20",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "combined-stream",
+      "version": "1.0.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "comma-separated-tokens",
+      "version": "2.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "commander",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "compressible",
+      "version": "2.0.18",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "compression",
+      "version": "1.8.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "debug",
+      "version": "2.6.9",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ms",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "safe-buffer",
+      "version": "5.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "compute-scroll-into-view",
+      "version": "1.0.20",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "confbox",
+      "version": "0.2.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "consola",
+      "version": "3.4.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "content-disposition",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "content-type",
+      "version": "1.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "convert-source-map",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cookie",
+      "version": "0.7.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cookie-es",
+      "version": "3.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cookie-signature",
+      "version": "1.2.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "core-util-is",
+      "version": "1.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cors",
+      "version": "2.8.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cose-base",
+      "version": "1.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "crelt",
+      "version": "1.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "css-tree",
+      "version": "3.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "css.escape",
+      "version": "1.5.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cssesc",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cssstyle",
+      "version": "6.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "csstype",
+      "version": "3.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cytoscape",
+      "version": "3.34.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cytoscape-cose-bilkent",
+      "version": "4.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cytoscape-fcose",
+      "version": "2.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "cose-base",
+      "version": "2.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "layout-base",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3",
+      "version": "7.9.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-array",
+      "version": "3.2.4",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-axis",
+      "version": "3.0.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-brush",
+      "version": "3.0.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-chord",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-color",
+      "version": "3.1.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-contour",
+      "version": "4.0.2",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-delaunay",
+      "version": "6.0.4",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-dispatch",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-drag",
+      "version": "3.0.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-dsv",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-ease",
+      "version": "3.0.1",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-fetch",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-force",
+      "version": "3.0.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-format",
+      "version": "3.1.2",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-geo",
+      "version": "3.1.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-hierarchy",
+      "version": "3.1.2",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-interpolate",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-path",
+      "version": "3.1.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-polygon",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-quadtree",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-random",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-sankey",
+      "version": "0.12.3",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-array",
+      "version": "2.12.1",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-path",
+      "version": "1.0.9",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-shape",
+      "version": "1.3.7",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "internmap",
+      "version": "1.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-scale",
+      "version": "4.0.2",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-scale-chromatic",
+      "version": "3.1.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-selection",
+      "version": "3.0.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-shape",
+      "version": "3.2.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-time",
+      "version": "3.1.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-time-format",
+      "version": "4.1.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-timer",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-transition",
+      "version": "3.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "d3-zoom",
+      "version": "3.0.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dagre-d3-es",
+      "version": "7.0.14",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "data-urls",
+      "version": "7.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dayjs",
+      "version": "1.11.18",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "debug",
+      "version": "4.4.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "decimal.js",
+      "version": "10.6.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "decode-named-character-reference",
+      "version": "1.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "defu",
+      "version": "6.1.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "delaunator",
+      "version": "5.1.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "delayed-stream",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "depd",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dequal",
+      "version": "2.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "destr",
+      "version": "2.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "detect-node-es",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "devlop",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "diff",
+      "version": "8.0.3",
+      "license": "BSD-3-Clause",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "diff2html",
+      "version": "3.4.56",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dingbat-to-unicode",
+      "version": "1.0.1",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "docx",
+      "version": "9.5.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dom-accessibility-api",
+      "version": "0.5.16",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dom-helpers",
+      "version": "5.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dompurify",
+      "version": "3.4.14",
+      "license": "(MPL-2.0 OR Apache-2.0)",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "duck",
+      "version": "0.1.12",
+      "license": "BSD",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dunder-proto",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "duplexer",
+      "version": "0.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ee-first",
+      "version": "1.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "electron-to-chromium",
+      "version": "1.5.407",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "emitter-component",
+      "version": "1.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "transitive package metadata omission; upstream package license"
+    },
+    {
+      "name": "encodeurl",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "entities",
+      "version": "8.0.0",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "es-define-property",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "es-errors",
+      "version": "1.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "es-module-lexer",
+      "version": "2.3.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "es-object-atoms",
+      "version": "1.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "es-set-tostringtag",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "es-toolkit",
+      "version": "1.49.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "esbuild",
+      "version": "0.25.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "escalade",
+      "version": "3.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "escape-html",
+      "version": "1.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "escape-string-regexp",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "estree-util-is-identifier-name",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "estree-walker",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "etag",
+      "version": "1.8.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "eventemitter3",
+      "version": "5.0.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "expect-type",
+      "version": "1.4.0",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "express",
+      "version": "5.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-db",
+      "version": "1.54.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-types",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "exsolve",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "extend",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fast-xml-builder",
+      "version": "1.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fast-xml-parser",
+      "version": "5.10.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fastdom",
+      "version": "1.0.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fault",
+      "version": "1.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fill-range",
+      "version": "7.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "finalhandler",
+      "version": "2.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "focus-lock",
+      "version": "1.3.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "follow-redirects",
+      "version": "1.16.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "form-data",
+      "version": "4.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "format",
+      "version": "0.2.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "transitive package metadata omission; upstream package license"
+    },
+    {
+      "name": "forwarded",
+      "version": "0.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fp-ts",
+      "version": "2.16.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fresh",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fsevents",
+      "version": "2.3.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "function-bind",
+      "version": "1.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "gensync",
+      "version": "1.0.0-beta.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "get-east-asian-width",
+      "version": "1.6.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "get-intrinsic",
+      "version": "1.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "get-proto",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "glob-parent",
+      "version": "5.1.2",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "globals",
+      "version": "15.15.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "gopd",
+      "version": "1.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "gzip-size",
+      "version": "6.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "h264-mp4-encoder",
+      "version": "1.0.12",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "h5wasm",
+      "version": "0.10.1",
+      "license": "SEE LICENSE IN LICENSE.txt",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hachure-fill",
+      "version": "0.5.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "has-flag",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "has-symbols",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "has-tostringtag",
+      "version": "1.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hash.js",
+      "version": "1.1.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hasown",
+      "version": "2.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-from-dom",
+      "version": "5.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-parse-selector",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hastscript",
+      "version": "9.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "property-information",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-from-html",
+      "version": "2.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-from-html-isomorphic",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "entities",
+      "version": "6.0.1",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "parse5",
+      "version": "7.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-from-parse5",
+      "version": "8.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-parse-selector",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hastscript",
+      "version": "9.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "property-information",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-is-element",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-parse-selector",
+      "version": "3.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-raw",
+      "version": "9.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "entities",
+      "version": "6.0.1",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "parse5",
+      "version": "7.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-position",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-to-html",
+      "version": "8.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-from-parse5",
+      "version": "7.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-raw",
+      "version": "7.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-to-parse5",
+      "version": "7.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-whitespace",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "html-void-elements",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "parse5",
+      "version": "6.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-is",
+      "version": "5.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-visit",
+      "version": "4.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-visit-parents",
+      "version": "5.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-location",
+      "version": "4.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-to-jsx-runtime",
+      "version": "2.3.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "property-information",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-position",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-to-parse5",
+      "version": "8.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "property-information",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-to-text",
+      "version": "4.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-whitespace",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hastscript",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "highlight.js",
+      "version": "11.11.1",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "highlightjs-vue",
+      "version": "1.0.0",
+      "license": "CC0-1.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "html-encoding-sniffer",
+      "version": "6.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "html-escaper",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "html-parse-stringify",
+      "version": "3.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "html-url-attributes",
+      "version": "3.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "html-void-elements",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "http-errors",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "http-proxy-agent",
+      "version": "7.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "agent-base",
+      "version": "7.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "https-proxy-agent",
+      "version": "5.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "i18next",
+      "version": "23.16.8",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "iconv-lite",
+      "version": "0.6.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ieee754",
+      "version": "1.2.1",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "igv",
+      "version": "3.8.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "immediate",
+      "version": "3.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "immutable",
+      "version": "5.1.9",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "import-meta-resolve",
+      "version": "4.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "indent-string",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "inherits",
+      "version": "2.0.4",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "inline-style-parser",
+      "version": "0.2.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "internmap",
+      "version": "2.0.3",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "io-ts",
+      "version": "2.2.22",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ipaddr.js",
+      "version": "1.9.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-alphabetical",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-alphanumerical",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-arrayish",
+      "version": "0.3.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-binary-path",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-buffer",
+      "version": "2.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-decimal",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-extglob",
+      "version": "2.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-glob",
+      "version": "4.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-hexadecimal",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-number",
+      "version": "7.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-plain-obj",
+      "version": "4.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-potential-custom-element-name",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-promise",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "is-unsafe",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "isarray",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "istanbul-lib-coverage",
+      "version": "3.2.2",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "istanbul-lib-report",
+      "version": "3.0.1",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "istanbul-reports",
+      "version": "3.2.0",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "jiti",
+      "version": "2.7.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "js-tokens",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "jsdom",
+      "version": "28.1.0",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "agent-base",
+      "version": "7.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "https-proxy-agent",
+      "version": "7.0.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "jsesc",
+      "version": "3.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "json5",
+      "version": "2.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "jszip",
+      "version": "3.10.1",
+      "license": "(MIT OR GPL-3.0-or-later)",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "pako",
+      "version": "1.0.11",
+      "license": "(MIT AND Zlib)",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "katex",
+      "version": "0.16.22",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "commander",
+      "version": "8.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "khroma",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "transitive package metadata omission; upstream package license"
+    },
+    {
+      "name": "kolorist",
+      "version": "1.8.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "layout-base",
+      "version": "1.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lie",
+      "version": "3.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lit",
+      "version": "3.1.3",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lit-element",
+      "version": "4.2.2",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lit-html",
+      "version": "3.3.3",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "local-pkg",
+      "version": "1.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "quansync",
+      "version": "0.2.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lodash",
+      "version": "4.18.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lodash-es",
+      "version": "4.18.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "longest-streak",
+      "version": "3.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "loose-envify",
+      "version": "1.4.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lop",
+      "version": "0.4.2",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lowlight",
+      "version": "1.20.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "highlight.js",
+      "version": "10.7.3",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lru-cache",
+      "version": "11.5.2",
+      "license": "BlueOak-1.0.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lucide-react",
+      "version": "0.542.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "lz-string",
+      "version": "1.5.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "magic-string",
+      "version": "0.30.21",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "magicast",
+      "version": "0.5.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "make-cancellable-promise",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "make-dir",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "make-event-props",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mammoth",
+      "version": "1.11.0",
+      "license": "BSD-2-Clause",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "markdown-table",
+      "version": "3.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "marked",
+      "version": "16.4.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "math-intrinsics",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-find-and-replace",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-from-markdown",
+      "version": "2.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-gfm",
+      "version": "3.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-gfm-autolink-literal",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-gfm-footnote",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-gfm-strikethrough",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-gfm-table",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-gfm-task-list-item",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-math",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-mdx-expression",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-mdx-jsx",
+      "version": "3.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-mdxjs-esm",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-newline-to-break",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-phrasing",
+      "version": "4.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-to-hast",
+      "version": "13.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-position",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-to-markdown",
+      "version": "2.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdast-util-to-string",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mdn-data",
+      "version": "2.27.1",
+      "license": "CC0-1.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "media-typer",
+      "version": "1.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "merge-descriptors",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "merge-refs",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mermaid",
+      "version": "11.17.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "commander",
+      "version": "8.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "dayjs",
+      "version": "1.11.21",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "katex",
+      "version": "0.16.47",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark",
+      "version": "4.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-core-commonmark",
+      "version": "2.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-cjk-friendly",
+      "version": "1.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-cjk-friendly-gfm-strikethrough",
+      "version": "1.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-cjk-friendly-util",
+      "version": "2.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-gfm",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-gfm-autolink-literal",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-gfm-footnote",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-gfm-strikethrough",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-gfm-table",
+      "version": "2.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-gfm-tagfilter",
+      "version": "2.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-gfm-task-list-item",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-extension-math",
+      "version": "3.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-factory-destination",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-factory-label",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-factory-space",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-factory-title",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-factory-whitespace",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-character",
+      "version": "2.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-chunked",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-classify-character",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-combine-extensions",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-decode-numeric-character-reference",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-decode-string",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-encode",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-html-tag-name",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-normalize-identifier",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-resolve-all",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-sanitize-uri",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-subtokenize",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-symbol",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "micromark-util-types",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-db",
+      "version": "1.52.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-types",
+      "version": "2.1.35",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "min-indent",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "minimalistic-assert",
+      "version": "1.0.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mlly",
+      "version": "1.8.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "confbox",
+      "version": "0.1.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "pkg-types",
+      "version": "1.3.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "molstar",
+      "version": "5.11.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/node",
+      "version": "22.20.1",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "argparse",
+      "version": "2.0.1",
+      "license": "Python-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "undici-types",
+      "version": "6.21.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "monaco-editor",
+      "version": "0.55.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "marked",
+      "version": "14.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mrmime",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ms",
+      "version": "2.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mutative",
+      "version": "1.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "nanoid",
+      "version": "5.1.16",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "negotiator",
+      "version": "0.6.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "node-fetch",
+      "version": "2.7.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "node-fetch-native",
+      "version": "1.6.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tr46",
+      "version": "0.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "webidl-conversions",
+      "version": "3.0.1",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "whatwg-url",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "node-releases",
+      "version": "2.0.53",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "nopt",
+      "version": "1.0.10",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "normalize-path",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "number-precision",
+      "version": "1.6.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "object-assign",
+      "version": "4.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "object-inspect",
+      "version": "1.13.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "obug",
+      "version": "2.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ofetch",
+      "version": "1.5.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "on-finished",
+      "version": "2.4.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "on-headers",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "once",
+      "version": "1.4.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "oniguruma-parser",
+      "version": "0.12.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "oniguruma-to-es",
+      "version": "4.3.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "option",
+      "version": "0.2.4",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "oxfmt",
+      "version": "0.41.0",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "oxlint",
+      "version": "1.56.0",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "p-map",
+      "version": "7.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "package-manager-detector",
+      "version": "1.7.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "parse-entities",
+      "version": "4.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "parse5",
+      "version": "8.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "parseurl",
+      "version": "1.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "path-data-parser",
+      "version": "0.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "path-expression-matcher",
+      "version": "1.6.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "path-is-absolute",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "path-to-regexp",
+      "version": "8.4.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "pathe",
+      "version": "2.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "pdfjs-dist",
+      "version": "5.4.296",
+      "license": "Apache-2.0",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "perfect-debounce",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "picocolors",
+      "version": "1.1.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "picomatch",
+      "version": "2.3.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "pkg-types",
+      "version": "2.3.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "playwright",
+      "version": "1.58.2",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "playwright-core",
+      "version": "1.58.2",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "points-on-curve",
+      "version": "0.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "points-on-path",
+      "version": "0.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "postcss",
+      "version": "8.5.26",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "nanoid",
+      "version": "3.3.18",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "prettier",
+      "version": "2.8.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "pretty-format",
+      "version": "27.5.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-is",
+      "version": "17.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "prismjs",
+      "version": "1.30.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "process-nextick-args",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "prop-types",
+      "version": "15.8.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-is",
+      "version": "16.13.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "property-information",
+      "version": "6.5.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "proxy-addr",
+      "version": "2.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "proxy-from-env",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "punycode",
+      "version": "2.3.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "qs",
+      "version": "6.16.0",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "quansync",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "range-parser",
+      "version": "1.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "raw-body",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "iconv-lite",
+      "version": "0.7.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react",
+      "version": "19.2.7",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-clientside-effect",
+      "version": "1.2.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.7",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-focus-lock",
+      "version": "2.13.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-i18next",
+      "version": "14.1.3",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-is",
+      "version": "18.3.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-markdown",
+      "version": "10.1.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-pdf",
+      "version": "10.4.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-refresh",
+      "version": "0.17.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-router",
+      "version": "8.3.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-syntax-highlighter",
+      "version": "16.1.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "highlight.js",
+      "version": "10.7.3",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-transition-group",
+      "version": "4.4.5",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "react-virtuoso",
+      "version": "4.18.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "readable-stream",
+      "version": "2.3.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "readdirp",
+      "version": "3.6.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "redent",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "refractor",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hast-util-parse-selector",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "hastscript",
+      "version": "9.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "property-information",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "regex",
+      "version": "6.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "regex-recursion",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "regex-utilities",
+      "version": "2.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "rehype-harden",
+      "version": "1.1.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "rehype-katex",
+      "version": "7.0.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "rehype-raw",
+      "version": "7.0.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "rehype-stringify",
+      "version": "9.0.4",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "remark-breaks",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "remark-gfm",
+      "version": "4.0.1",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "remark-math",
+      "version": "6.0.0",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "remark-parse",
+      "version": "11.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "remark-rehype",
+      "version": "11.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "remark-stringify",
+      "version": "11.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "require-from-string",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "resize-observer-polyfill",
+      "version": "1.5.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "robust-predicates",
+      "version": "3.0.3",
+      "license": "Unlicense",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "rollup",
+      "version": "4.62.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "roughjs",
+      "version": "4.6.6",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "router",
+      "version": "2.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "rw",
+      "version": "1.3.3",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "rxjs",
+      "version": "7.8.2",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "safe-buffer",
+      "version": "5.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "safer-buffer",
+      "version": "2.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "sax",
+      "version": "1.6.0",
+      "license": "BlueOak-1.0.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "saxes",
+      "version": "6.0.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "scheduler",
+      "version": "0.27.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "scroll-into-view-if-needed",
+      "version": "2.2.31",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "semver",
+      "version": "7.8.5",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "send",
+      "version": "1.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-db",
+      "version": "1.54.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-types",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "seqparse",
+      "version": "0.2.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "seqviz",
+      "version": "3.10.22",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "serve-static",
+      "version": "2.2.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "setimmediate",
+      "version": "1.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "setprototypeof",
+      "version": "1.2.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "shallowequal",
+      "version": "1.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "shiki",
+      "version": "3.23.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/hast",
+      "version": "3.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "side-channel",
+      "version": "1.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "side-channel-list",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "side-channel-map",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "side-channel-weakmap",
+      "version": "1.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "siginfo",
+      "version": "2.0.0",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "simple-swizzle",
+      "version": "0.2.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "sirv",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "source-map-js",
+      "version": "1.2.1",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "space-separated-tokens",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "sprintf-js",
+      "version": "1.0.3",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "stackback",
+      "version": "0.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "state-local",
+      "version": "1.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "statuses",
+      "version": "2.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "std-env",
+      "version": "4.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "stream",
+      "version": "0.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "streamdown",
+      "version": "1.5.1",
+      "license": "Apache-2.0",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "remark-cjk-friendly",
+      "version": "1.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "remark-cjk-friendly-gfm-strikethrough",
+      "version": "1.2.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "strictdom",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "string_decoder",
+      "version": "1.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "stringify-entities",
+      "version": "4.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "strip-indent",
+      "version": "3.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "strnum",
+      "version": "2.4.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "style-mod",
+      "version": "4.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "style-to-js",
+      "version": "1.1.21",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "style-to-object",
+      "version": "1.0.14",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "stylis",
+      "version": "4.4.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "supports-color",
+      "version": "7.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "swagger-ui-dist",
+      "version": "5.32.13",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "swr",
+      "version": "2.3.6",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "symbol-tree",
+      "version": "3.2.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tabbable",
+      "version": "6.5.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tailwind-merge",
+      "version": "3.6.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "timers",
+      "version": "0.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tiny-invariant",
+      "version": "1.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tinybench",
+      "version": "2.9.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tinyexec",
+      "version": "1.2.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tinyglobby",
+      "version": "0.2.17",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fdir",
+      "version": "6.5.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "picomatch",
+      "version": "4.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tinypool",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tinyrainbow",
+      "version": "3.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tldts",
+      "version": "7.4.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tldts-core",
+      "version": "7.4.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "to-regex-range",
+      "version": "5.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "toidentifier",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "totalist",
+      "version": "3.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tough-cookie",
+      "version": "6.0.2",
+      "license": "BSD-3-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tr46",
+      "version": "6.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "trie-prefix-tree",
+      "version": "1.5.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "trim-lines",
+      "version": "3.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "trough",
+      "version": "2.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ts-dedent",
+      "version": "2.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "tslib",
+      "version": "2.8.1",
+      "license": "0BSD",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "turndown",
+      "version": "7.2.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "turndown-plugin-gfm",
+      "version": "1.0.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "type-is",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "content-type",
+      "version": "2.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-db",
+      "version": "1.54.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "mime-types",
+      "version": "3.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "typescript",
+      "version": "5.8.3",
+      "license": "Apache-2.0",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "ufo",
+      "version": "1.6.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unconfig",
+      "version": "7.5.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unconfig-core",
+      "version": "7.5.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "underscore",
+      "version": "1.13.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "undici",
+      "version": "7.29.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "undici-types",
+      "version": "7.10.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "11.0.5",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified-lint-rule",
+      "version": "2.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unified10",
+      "version": "10.1.2",
+      "license": "MIT",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "5.3.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "3.1.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-find-after",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-is",
+      "version": "6.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-position",
+      "version": "4.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-remove-position",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-stringify-position",
+      "version": "4.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-visit",
+      "version": "5.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unist-util-visit-parents",
+      "version": "6.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unocss",
+      "version": "66.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unocss-preset-extra",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unpipe",
+      "version": "1.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "unplugin-utils",
+      "version": "0.2.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "picomatch",
+      "version": "4.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "update-browserslist-db",
+      "version": "1.3.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "use-callback-ref",
+      "version": "1.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "use-sidecar",
+      "version": "1.1.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "use-sync-external-store",
+      "version": "1.6.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "util-deprecate",
+      "version": "1.0.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "uuid",
+      "version": "11.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vary",
+      "version": "1.1.2",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile",
+      "version": "6.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-location",
+      "version": "5.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vfile-message",
+      "version": "4.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "@types/unist",
+      "version": "3.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vite",
+      "version": "6.4.3",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vite-plugin-static-copy",
+      "version": "3.2.0",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fdir",
+      "version": "6.5.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "fsevents",
+      "version": "2.3.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "picomatch",
+      "version": "4.0.5",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vitest",
+      "version": "4.1.11",
+      "license": "MIT",
+      "directKind": "development",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "picomatch",
+      "version": "4.0.7",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "void-elements",
+      "version": "3.1.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vue",
+      "version": "3.5.39",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "vue-flow-layout",
+      "version": "0.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "w3c-keyname",
+      "version": "2.2.8",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "w3c-xmlserializer",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "warning",
+      "version": "4.0.3",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "web-namespaces",
+      "version": "2.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "webfontloader",
+      "version": "1.6.28",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "webidl-conversions",
+      "version": "8.0.1",
+      "license": "BSD-2-Clause",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "whatwg-mimetype",
+      "version": "5.0.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "whatwg-url",
+      "version": "16.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "why-is-node-running",
+      "version": "2.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "wrappy",
+      "version": "1.0.2",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "xlsx-republish",
+      "version": "0.20.3",
+      "license": "Apache-2.0",
+      "directKind": "runtime-build",
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "xml",
+      "version": "1.0.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "xml-js",
+      "version": "1.6.11",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "xml-name-validator",
+      "version": "5.0.0",
+      "license": "Apache-2.0",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "xml-naming",
+      "version": "0.3.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "xmlbuilder",
+      "version": "10.1.1",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "xmlchars",
+      "version": "2.2.0",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "yallist",
+      "version": "3.1.1",
+      "license": "ISC",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    },
+    {
+      "name": "zwitch",
+      "version": "2.0.4",
+      "license": "MIT",
+      "directKind": null,
+      "basis": "package-lock metadata"
+    }
+  ],
+  "workspaceLinks": [
+    {
+      "name": "@synon-go/workbench-renderer",
+      "version": "0.1.1",
+      "path": "packages/desktop",
+      "basis": "local workspace package; source licensing reviewed separately"
+    }
+  ]
+}

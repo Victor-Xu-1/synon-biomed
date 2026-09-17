@@ -1,0 +1,4 @@
+interface:
+  display_name: "Single-Cell RNA Analysis"
+  short_description: "Analyze single-cell data with a lightweight scverse workflow"
+  default_prompt: "Use $single-cell-rna-analysis to create a source-grounded, review-ready analysis."

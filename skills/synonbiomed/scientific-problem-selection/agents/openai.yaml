@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scientific Problem Selection"
+  short_description: "Choose and de-risk high-value scientific research problems"
+  default_prompt: "Use $scientific-problem-selection to create a source-grounded, review-ready workflow."

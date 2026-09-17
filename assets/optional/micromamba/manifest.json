@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "source": "synonbiomed-v1.1/runtime/assets/micromamba",
+  "version": "2.5.0",
+  "sourceUrl": "https://github.com/mamba-org/mamba/releases/tag/2.5.0",
+  "license": "BSD-3-Clause",
+  "licenseFile": "LICENSE",
+  "entrypoint": "linux-x86_64/micromamba",
+  "runtime": {
+    "minimumVersion": "2",
+    "optional": true,
+    "kind": "native"
+  },
+  "excluded": [
+    "non-Linux and non-x86_64 distributions are supplied by their release package"
+  ],
+  "files": [
+    {
+      "path": "linux-x86_64/micromamba",
+      "sha256": "c04571cfb0750e5432d530a3068b8fcd232ebed3133358e056e59a90b9852b00",
+      "bytes": 17546920
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "17404f97415839e32fc61ab467f4c0c2536e02c71dd0f854eb48fae96a9d3eda",
+      "bytes": 1498
+    }
+  ]
+}

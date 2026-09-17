@@ -1,0 +1,59 @@
+{
+  "schema": "synon.science-verification-summary.v1",
+  "verifiedAt": "2026-08-07T03:08:27.254Z",
+  "bindingModeFix": {
+    "status": "verified",
+    "details": "selectLigand no longer returns hard error; returns nil and Analyze produces noLigandOutput",
+    "tests": "10/10 bindingmode tests passed"
+  },
+  "systemPrompt": {
+    "status": "verified",
+    "details": "Enhanced system prompt with tool usage rules; model correctly uses binding_mode_analysis, ChEMBL MCP, WebSearch",
+    "length": 2196
+  },
+  "krasTask": {
+    "status": "pass",
+    "conversationId": "9147dbc4-93d3-45b8-9c09-0036b6ed7480",
+    "toolCalls": 17,
+    "tools": [
+      "binding_mode_analysis",
+      "WebSearch",
+      "mcp__chembl__compound_search",
+      "mcp__chembl__get_bioactivity",
+      "mcp__chembl__target_search",
+      "python",
+      "edit_file",
+      "save_artifacts"
+    ],
+    "artifacts": [
+      "kras_g12c_report.html",
+      "physicochemical_properties.json"
+    ],
+    "rdkitVerified": true
+  },
+  "egfrTask": {
+    "status": "pass",
+    "conversationId": "adf0b633-931d-4bbe-ac33-94b529f9a899",
+    "tools": [
+      "binding_mode_analysis",
+      "WebSearch",
+      "python",
+      "save_artifacts"
+    ],
+    "artifacts": [
+      "egfr_t790m_inhibitor_analysis_report.md",
+      "osimertinib_properties.json",
+      "binding_mode_analysis_5xgn.json",
+      "web_search_egfr_t790m.json",
+      "binding_interaction_5xgn.svg"
+    ],
+    "rdkitVerified": true
+  },
+  "knownIssues": [
+    {
+      "issue": "save_artifacts evidence validation rejects unverified citations",
+      "status": "working as designed",
+      "details": "Citations (DOI, UniProt, ChEMBL IDs) must be from successful tool calls in current transcript; model retries after fixing"
+    }
+  ]
+}

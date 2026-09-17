@@ -1,0 +1,434 @@
+/**
+ * @license
+ * Copyright 2026 Synon-AI
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { Message } from '@arco-design/web-react';
+import { CheckOne, Copy, Download, Edit, Info, Search } from '@icon-park/react';
+import MonacoEditor from '@monaco-editor/react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+interface HTMLPreviewProps {
+  content: string;
+  file_path?: string;
+  hideToolbar?: boolean;
+}
+
+interface SelectedElement {
+  path: string; // DOM 路径，如 "html > body > div:nth-child(2) > p:nth-child(1)"
+  html: string; // 元素的 outerHTML
+  startLine?: number; // 代码起始行（估算）
+  endLine?: number; // 代码结束行（估算）
+}
+
+/**
+ * HTML 预览组件
+ * - 支持实时预览和代码编辑
+ * - 支持元素选择器（类似 DevTools）
+ * - 支持双向定位：预览 ↔ 代码
+ */
+const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolbar = false }) => {
+  const { t } = useTranslation();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [htmlCode, setHtmlCode] = useState(content);
+  const [inspectorMode, setInspectorMode] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; element: SelectedElement } | null>(null);
+  const [messageApi, messageContextHolder] = Message.useMessage();
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(() => {
+    return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
+  });
+
+  // 监听主题变化
+  useEffect(() => {
+    const updateTheme = () => {
+      const theme = (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
+      setCurrentTheme(theme);
+    };
+
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  /**
+   * 注入元素选择器脚本到 iframe
+   */
+  const injectInspectorScript = useCallback((iframeDoc: Document) => {
+    const script = iframeDoc.createElement('script');
+    script.textContent = `
+      (function() {
+        let hoveredElement = null;
+        let overlay = null;
+
+        // Create the highlight overlay
+        function createOverlay() {
+          overlay = document.createElement('div');
+          overlay.style.position = 'absolute';
+          overlay.style.border = '2px solid #2196F3';
+          overlay.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+          overlay.style.pointerEvents = 'none';
+          overlay.style.zIndex = '999999';
+          overlay.style.boxSizing = 'border-box';
+          document.body.appendChild(overlay);
+        }
+
+        // Update the overlay position
+        function updateOverlay(element) {
+          if (!overlay) createOverlay();
+          const rect = element.getBoundingClientRect();
+          overlay.style.top = rect.top + window.scrollY + 'px';
+          overlay.style.left = rect.left + window.scrollX + 'px';
+          overlay.style.width = rect.width + 'px';
+          overlay.style.height = rect.height + 'px';
+          overlay.style.display = 'block';
+        }
+
+        // Hide the overlay
+        function hideOverlay() {
+          if (overlay) {
+            overlay.style.display = 'none';
+          }
+        }
+
+        // Build the element CSS selector path
+        function getElementPath(element) {
+          const path = [];
+          while (element && element.nodeType === Node.ELEMENT_NODE) {
+            let selector = element.nodeName.toLowerCase();
+            if (element.id) {
+              selector += '#' + element.id;
+              path.unshift(selector);
+              break;
+            } else {
+              let sibling = element;
+              let nth = 1;
+              while (sibling.previousElementSibling) {
+                sibling = sibling.previousElementSibling;
+                if (sibling.nodeName.toLowerCase() === selector) {
+                  nth++;
+                }
+              }
+              if (nth > 1) {
+                selector += ':nth-child(' + nth + ')';
+              }
+            }
+            path.unshift(selector);
+            element = element.parentElement;
+          }
+          return path.join(' > ');
+        }
+
+        // Track pointer movement
+        document.addEventListener('mousemove', function(e) {
+          hoveredElement = e.target;
+          if (hoveredElement && hoveredElement !== document.body && hoveredElement !== document.documentElement) {
+            updateOverlay(hoveredElement);
+          } else {
+            hideOverlay();
+          }
+        });
+
+        // Hide the overlay when the pointer leaves
+        document.addEventListener('mouseleave', function() {
+          hideOverlay();
+        });
+
+        // Select an element on click
+        document.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (hoveredElement && hoveredElement !== document.body && hoveredElement !== document.documentElement) {
+            const elementInfo = {
+              path: getElementPath(hoveredElement),
+              html: hoveredElement.outerHTML,
+            };
+
+            // Send the selection to the parent window
+            window.parent.postMessage({
+              type: 'element-selected',
+              data: elementInfo
+            }, '*');
+          }
+        });
+
+        // Open the element context menu
+        document.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+
+          if (hoveredElement && hoveredElement !== document.body && hoveredElement !== document.documentElement) {
+            const elementInfo = {
+              path: getElementPath(hoveredElement),
+              html: hoveredElement.outerHTML,
+            };
+
+            // Send the context-menu event to the parent window
+            window.parent.postMessage({
+              type: 'element-contextmenu',
+              data: {
+                element: elementInfo,
+                x: e.clientX,
+                y: e.clientY
+              }
+            }, '*');
+          }
+        });
+      })();
+    `;
+    iframeDoc.body.appendChild(script);
+  }, []);
+
+  // Initialize iframe content and refresh it whenever its source inputs change.
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document;
+    if (!iframeDoc) return;
+
+    iframeDoc.open();
+    let finalHtml = htmlCode;
+    if (file_path) {
+      const fileDir = file_path.substring(0, file_path.lastIndexOf('/') + 1);
+      const baseUrl = `file://${fileDir}`;
+      if (!finalHtml.match(/<base\s+href=/i)) {
+        if (finalHtml.match(/<head>/i)) {
+          finalHtml = finalHtml.replace(/<head>/i, `<head><base href="${baseUrl}">`);
+        } else if (finalHtml.match(/<html>/i)) {
+          finalHtml = finalHtml.replace(/<html>/i, `<html><head><base href="${baseUrl}"></head>`);
+        } else {
+          finalHtml = `<head><base href="${baseUrl}"></head>${finalHtml}`;
+        }
+      }
+    }
+
+    iframeDoc.write(finalHtml);
+    iframeDoc.close();
+    if (inspectorMode) injectInspectorScript(iframeDoc);
+  }, [file_path, htmlCode, injectInspectorScript, inspectorMode]);
+
+  /**
+   * 监听 iframe 消息
+   */
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow || typeof event.data !== 'object' || !event.data) return;
+      if (event.data.type === 'element-selected') {
+        const elementInfo: SelectedElement = event.data.data;
+        setSelectedElement(elementInfo);
+        messageApi.info(t('preview.html.elementSelected', { path: elementInfo.path }));
+      } else if (event.data.type === 'element-contextmenu') {
+        const { element, x, y } = event.data.data;
+
+        // 计算上下文菜单位置（相对于父窗口）
+        const iframe = iframeRef.current;
+        if (iframe) {
+          const iframeRect = iframe.getBoundingClientRect();
+          setContextMenu({
+            x: iframeRect.left + x,
+            y: iframeRect.top + y,
+            element: element,
+          });
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [messageApi, t]);
+
+  /**
+   * 关闭右键菜单
+   */
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    if (contextMenu) {
+      window.addEventListener('click', handleClick);
+      return () => window.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu]);
+
+  /**
+   * 复制元素 HTML
+   */
+  const handleCopyHTML = useCallback(
+    async (html: string) => {
+      try {
+        await navigator.clipboard.writeText(html);
+        messageApi.success(t('preview.html.copySuccess'));
+      } catch {
+        messageApi.error(t('preview.html.copyFailed'));
+      } finally {
+        setContextMenu(null);
+      }
+    },
+    [messageApi, t]
+  );
+
+  /**
+   * 下载 HTML
+   */
+  const handleDownload = () => {
+    const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const sourceName = file_path?.split(/[\\/]/).pop();
+    link.download = sourceName
+      ? sourceName.toLowerCase().endsWith('.html')
+        ? sourceName
+        : `${sourceName}.html`
+      : 'document.html';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  /**
+   * 切换编辑模式
+   */
+  const handleToggleEdit = () => {
+    if (editMode) {
+      // 保存编辑
+      setHtmlCode(htmlCode);
+    }
+    setEditMode(!editMode);
+  };
+
+  /**
+   * 切换检查器模式
+   */
+  const handleToggleInspector = () => {
+    setInspectorMode(!inspectorMode);
+    if (!inspectorMode) {
+      messageApi.info(t('preview.html.inspectorEnabled'));
+    }
+  };
+
+  return (
+    <div className='h-full w-full flex flex-col bg-1'>
+      {messageContextHolder}
+
+      {/* 工具栏 */}
+      {!hideToolbar && (
+        <div className='flex items-center justify-between h-40px px-12px bg-2 border-b border-border-base flex-shrink-0'>
+          <div className='flex items-center gap-8px'>
+            {/* 编辑按钮 */}
+            <button
+              onClick={handleToggleEdit}
+              className={`inline-flex items-center gap-4px px-12px py-4px rd-4px text-12px transition-colors ${editMode ? 'bg-primary text-white' : 'bg-3 text-t-primary hover:bg-4'}`}
+            >
+              {editMode ? <CheckOne size={14} /> : <Edit size={14} />}
+              <span>{editMode ? t('common.save') : t('common.edit')}</span>
+            </button>
+
+            {/* 元素选择器按钮 */}
+            <button
+              onClick={handleToggleInspector}
+              className={`inline-flex items-center gap-4px px-12px py-4px rd-4px text-12px transition-colors ${inspectorMode ? 'bg-primary text-white' : 'bg-3 text-t-primary hover:bg-4'}`}
+              title={t('preview.html.inspectorTooltip')}
+            >
+              <Search size={14} />
+              <span>{inspectorMode ? t('preview.html.inspecting') : t('preview.html.inspectorButton')}</span>
+            </button>
+
+            {/* 选中的元素路径 */}
+            {selectedElement && (
+              <div className='text-12px text-t-secondary ml-8px'>
+                {t('preview.html.selectedLabel')} <code className='bg-3 px-4px rd-2px'>{selectedElement.path}</code>
+              </div>
+            )}
+          </div>
+
+          <div className='flex items-center gap-8px'>
+            {/* 下载按钮 */}
+            <button
+              onClick={handleDownload}
+              className='flex items-center gap-4px px-8px py-4px rd-4px cursor-pointer hover:bg-3 transition-colors'
+              title={t('preview.html.downloadHtml')}
+            >
+              <Download size={14} className='text-t-secondary' />
+              <span className='text-12px text-t-secondary'>{t('common.download')}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 内容区域 */}
+      <div className='flex-1 flex overflow-hidden'>
+        {/* 左侧：代码编辑器（编辑模式时显示） */}
+        {editMode && (
+          <div className='flex-1 overflow-hidden border-r border-border-base'>
+            <MonacoEditor
+              height='100%'
+              language='html'
+              theme={currentTheme === 'dark' ? 'vs-dark' : 'vs'}
+              value={htmlCode}
+              onChange={(value) => setHtmlCode(value || '')}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                lineNumbers: 'on',
+                wordWrap: 'on',
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                formatOnPaste: true,
+                formatOnType: true,
+              }}
+            />
+          </div>
+        )}
+
+        {/* 右侧：HTML 预览 */}
+        <div className={`${editMode ? 'flex-1' : 'w-full'} overflow-auto bg-white`}>
+          <iframe
+            ref={iframeRef}
+            className='w-full h-full border-0'
+            sandbox='allow-scripts allow-same-origin'
+            title={t('preview.html.frameTitle')}
+          />
+        </div>
+      </div>
+
+      {/* 右键菜单 */}
+      {contextMenu && (
+        <div
+          className='fixed bg-1 border border-border-base rd-6px shadow-lg py-4px z-9999'
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className='flex items-center gap-6px px-12px py-6px text-13px text-t-primary hover:bg-2 cursor-pointer transition-colors'
+            onClick={() => void handleCopyHTML(contextMenu.element.html)}
+          >
+            <Copy size={14} />
+            <span>{t('preview.html.copyElementHtml')}</span>
+          </div>
+          <div
+            className='flex items-center gap-6px px-12px py-6px text-13px text-t-primary hover:bg-2 cursor-pointer transition-colors'
+            onClick={() => {
+              console.log('[HTMLPreview] Element info:', contextMenu.element);
+              messageApi.info(t('preview.html.printedToConsole'));
+              setContextMenu(null);
+            }}
+          >
+            <Info size={14} />
+            <span>{t('preview.html.viewElementInfo')}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default HTMLPreview;

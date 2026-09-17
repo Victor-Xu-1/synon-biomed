@@ -1,0 +1,4 @@
+interface:
+  display_name: "Instrument Data to Allotrope"
+  short_description: "Standardize instrument exports into traceable ASM data"
+  default_prompt: "Use $instrument-data-to-allotrope to create a source-grounded, review-ready workflow."

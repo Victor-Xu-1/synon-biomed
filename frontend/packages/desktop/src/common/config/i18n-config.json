@@ -1,0 +1,25 @@
+{
+  "referenceLanguage": "en-US",
+  "fallbackLanguage": "zh-CN",
+  "supportedLanguages": ["zh-CN", "en-US"],
+  "modules": [
+    "common",
+    "agentMode",
+    "update",
+    "login",
+    "fileSelection",
+    "preview",
+    "conversation",
+    "settings",
+    "messages",
+    "mcp",
+    "acp",
+    "codex",
+    "tools",
+    "google",
+    "cron",
+    "guid",
+    "agent",
+    "pet"
+  ]
+}

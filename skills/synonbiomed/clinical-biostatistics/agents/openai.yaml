@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clinical Biostatistics"
+  short_description: "Design estimands, analyses, sample sizes, and statistical plans"
+  default_prompt: "Use $clinical-biostatistics to build a source-grounded, review-ready plan."

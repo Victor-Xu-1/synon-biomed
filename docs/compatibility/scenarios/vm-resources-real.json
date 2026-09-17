@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "id": "vm-resources-real",
+  "contracts": [
+    {"kind": "service", "name": "getVMResources"},
+    {"kind": "service", "name": "setVMResources"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "get-configured-resources",
+      "method": "GET",
+      "path": "/api/preferences/vm-resources",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "set-resources",
+      "method": "PUT",
+      "path": "/api/preferences/vm-resources",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"memoryGB": 1, "cpuCount": 1},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-updated-resources",
+      "method": "GET",
+      "path": "/api/preferences/vm-resources",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-zero-memory",
+      "method": "PUT",
+      "path": "/api/preferences/vm-resources",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"memoryGB": 0, "cpuCount": 1},
+      "expectedStatus": [400]
+    },
+    {
+      "name": "reject-zero-cpu",
+      "method": "PUT",
+      "path": "/api/preferences/vm-resources",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"memoryGB": 1, "cpuCount": 0},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/maxMemoryGB",
+    "/steps/1/response/body/hostCpuCount",
+    "/steps/1/response/body/launchedMemoryGB",
+    "/steps/1/response/body/launchedCpuCount",
+    "/steps/2/response/body/maxMemoryGB",
+    "/steps/2/response/body/hostCpuCount",
+    "/steps/2/response/body/launchedMemoryGB",
+    "/steps/2/response/body/launchedCpuCount",
+    "/steps/3/response/body/maxMemoryGB",
+    "/steps/3/response/body/hostCpuCount",
+    "/steps/3/response/body/launchedMemoryGB",
+    "/steps/3/response/body/launchedCpuCount"
+  ],
+  "redactions": []
+}

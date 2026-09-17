@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "disk-usage",
+  "contracts": [
+    {"kind": "service", "name": "getDiskUsage"}
+  ],
+  "steps": [
+    {
+      "name": "get-disk-usage",
+      "method": "GET",
+      "path": "/api/preferences/disk-usage",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-cached-disk-usage",
+      "method": "GET",
+      "path": "/api/preferences/disk-usage",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/0/response/body/artifacts/totalBytes",
+    "/steps/0/response/body/conda/totalBytes",
+    "/steps/0/response/body/workspace/totalBytes",
+    "/steps/0/response/body/toolResults/totalBytes",
+    "/steps/0/response/body/availableBytes",
+    "/steps/1/response/body/artifacts/totalBytes",
+    "/steps/1/response/body/conda/totalBytes",
+    "/steps/1/response/body/workspace/totalBytes",
+    "/steps/1/response/body/toolResults/totalBytes",
+    "/steps/1/response/body/availableBytes"
+  ],
+  "redactions": []
+}

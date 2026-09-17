@@ -1,0 +1,9 @@
+{
+  "selectFile": "Select File",
+  "selectDirectory": "Select Directory",
+  "pleaseSelectFile": "Please select a file",
+  "pleaseSelectDirectory": "Please select a directory",
+  "homeDirectory": "Home directory",
+  "loadFailed": "Unable to load this location.",
+  "invalidResponse": "The file service returned an invalid response."
+}

@@ -1,0 +1,262 @@
+.synon-biomed-plan-review {
+  box-sizing: border-box;
+  padding: 2px 18px 18px;
+  color: var(--color-text-1);
+  font-size: 15px;
+  line-height: 1.625;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.synon-biomed-plan-review__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--color-warning-7);
+  background: var(--color-warning-1);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.synon-biomed-plan-review__notice-icon {
+  flex: none;
+  margin-top: 2px;
+}
+
+.synon-biomed-plan-review__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--color-text-3);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.synon-biomed-plan-review__summary {
+  margin: 10px 0 0;
+  color: var(--color-text-1);
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 29px;
+  letter-spacing: -0.012em;
+}
+
+.synon-biomed-plan-review__rationale {
+  margin: 7px 0 0;
+  color: var(--color-text-2);
+  font-size: 14px;
+  line-height: 23px;
+}
+
+.synon-biomed-plan-review__phases {
+  margin-top: 22px;
+  border: 0;
+  border-top: 1px solid var(--color-border-2);
+}
+
+.synon-biomed-plan-review__phase {
+  padding: 19px 0 20px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border-2);
+}
+
+.synon-biomed-plan-review__phase-title {
+  color: var(--color-text-1);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 22px;
+  letter-spacing: -0.006em;
+}
+
+.synon-biomed-plan-review__delegations {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 12px;
+}
+
+.synon-biomed-plan-review__delegation {
+  box-sizing: border-box;
+  padding: 0 0 0 13px;
+  border: 0;
+  border-left: 1px solid var(--color-border-2);
+  border-radius: 0;
+  background: transparent;
+}
+
+.synon-biomed-plan-review__delegation-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-1);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 21px;
+}
+
+.synon-biomed-plan-review__agent {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: var(--color-text-3);
+  background: var(--color-fill-2);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.synon-biomed-plan-review__steps {
+  margin: 9px 0 0;
+  padding-left: 0;
+  list-style: none;
+  color: var(--color-text-2);
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.synon-biomed-plan-review__step {
+  margin-bottom: 9px;
+  padding-left: 3px;
+}
+
+.synon-biomed-plan-review__step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.synon-biomed-plan-review__step-status {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3px;
+  border-radius: 999px;
+  color: var(--color-text-3);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.synon-biomed-plan-review__step-status--in_progress {
+  color: var(--color-primary-6);
+}
+
+.synon-biomed-plan-review__step-status--completed {
+  color: var(--color-success-6);
+}
+
+.synon-biomed-plan-review__step-status--blocked,
+.synon-biomed-plan-review__step-status--unknown {
+  color: var(--color-warning-6);
+}
+
+.synon-biomed-plan-review__step-status--failed,
+.synon-biomed-plan-review__step-status--cancelled {
+  color: var(--color-danger-6);
+}
+
+.synon-biomed-plan-review__step-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.synon-biomed-plan-review__step:last-child {
+  margin-bottom: 0;
+}
+
+.synon-biomed-plan-review__step-title {
+  color: var(--color-text-1);
+  font-weight: 600;
+}
+
+.synon-biomed-plan-review__step-description {
+  margin-top: 1px;
+  color: var(--color-text-2);
+}
+
+.synon-biomed-plan-review__empty-steps {
+  margin-top: 8px;
+  color: var(--color-text-3);
+  font-size: 13px;
+  line-height: 21px;
+}
+
+.synon-biomed-plan-review--timeline {
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 14px;
+  background: rgb(18 18 18 / 3%);
+  font-size: 13px;
+}
+
+body[arco-theme='dark'] .synon-biomed-plan-review--timeline {
+  background: rgb(255 255 255 / 4%);
+}
+
+.synon-biomed-plan-review__timeline-trigger {
+  display: flex;
+  width: 100%;
+  min-height: 31px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 6px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-text-1);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.synon-biomed-plan-review__timeline-trigger:hover {
+  background: var(--color-fill-2);
+}
+
+.synon-biomed-plan-review__timeline-trigger:focus-visible {
+  outline: 2px solid var(--color-primary-6);
+  outline-offset: 1px;
+}
+
+.synon-biomed-plan-review__timeline-chevron {
+  flex: none;
+  transform: rotate(0deg);
+  transition: transform 180ms ease;
+}
+
+.synon-biomed-plan-review__timeline-chevron--expanded {
+  transform: rotate(90deg);
+}
+
+.synon-biomed-plan-review__timeline-count {
+  margin-left: auto;
+  color: var(--color-text-3);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.synon-biomed-plan-review--timeline .synon-biomed-plan-review__phases {
+  margin-top: 2px;
+  border-top: 0;
+}
+
+.synon-biomed-plan-review--timeline .synon-biomed-plan-review__phase {
+  padding: 8px 10px 10px 30px;
+  border-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .synon-biomed-plan-review__timeline-chevron {
+    transition: none;
+  }
+}

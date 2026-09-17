@@ -1,0 +1,9 @@
+{
+  "selectFile": "选择文件",
+  "selectDirectory": "选择目录",
+  "pleaseSelectFile": "请选择一个文件",
+  "pleaseSelectDirectory": "请选择一个目录",
+  "homeDirectory": "主目录",
+  "loadFailed": "无法加载当前位置。",
+  "invalidResponse": "文件服务返回了无效响应。"
+}

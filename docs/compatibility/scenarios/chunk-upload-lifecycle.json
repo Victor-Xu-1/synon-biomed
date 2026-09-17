@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "id": "chunk-upload-lifecycle",
+  "contracts": [
+    {"kind": "service", "name": "_uploadProjectAttachmentChunked"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Chunk Upload Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "init-upload",
+      "method": "POST",
+      "path": "/api/artifacts/upload/init",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "Content-Type": "application/json",
+        "X-Synon-User-Id": "local"
+      },
+      "body": {
+        "project_id": "${capture:projectId}",
+        "filename": "chunk-oracle.bin",
+        "total_size": 1048576,
+        "content_type": "application/octet-stream",
+        "chunk_size": 1048576
+      },
+      "expectedStatus": [200],
+      "capture": {"uploadId": "/upload_id"}
+    },
+    {
+      "name": "upload-status",
+      "method": "GET",
+      "path": "/api/artifacts/upload/status/${capture:uploadId}",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "cancel-upload",
+      "method": "DELETE",
+      "path": "/api/artifacts/upload/${capture:uploadId}",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "X-Synon-User-Id": "local"
+      },
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "exact",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/upload_id",
+    "/steps/3/request/path",
+    "/steps/3/response/body/upload_id",
+    "/steps/3/response/body/created_at",
+    "/steps/4/request/path",
+    "/steps/4/response/body/message"
+  ],
+  "redactions": []
+}

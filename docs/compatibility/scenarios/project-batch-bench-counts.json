@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "id": "project-batch-bench-counts",
+  "contracts": [
+    {"kind": "service", "name": "listProjectArtifactsBatch"},
+    {"kind": "service", "name": "updateBench"},
+    {"kind": "service", "name": "getProcessingCounts"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-first-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Batch Mutation Oracle A", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectA": "/project_id"}
+    },
+    {
+      "name": "create-second-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Batch Mutation Oracle B", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectB": "/project_id"}
+    },
+    {
+      "name": "submit-processing-bench",
+      "method": "POST",
+      "path": "/api/projects/${capture:projectA}/request",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "input_data": {"request": "Create a processing bench for mutation coverage."},
+        "target_agent": "OPERON",
+        "intent_id": "00000000-0000-4000-8000-000000000201"
+      },
+      "expectedStatus": [200],
+      "capture": {"rootFrame": "/root_frame_id"}
+    },
+    {
+      "name": "list-artifacts-batch",
+      "method": "GET",
+      "path": "/api/projects/batch/artifacts?pids=${capture:projectA},${capture:projectB},missing-project&limit=2",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "update-root-bench",
+      "method": "PATCH",
+      "path": "/api/benches/${capture:rootFrame}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Renamed processing bench", "task_summary": "Track the exact mutation contract."},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "empty-root-bench-update",
+      "method": "PATCH",
+      "path": "/api/benches/${capture:rootFrame}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-null-bench-name",
+      "method": "PATCH",
+      "path": "/api/benches/${capture:rootFrame}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": null},
+      "expectedStatus": [400]
+    },
+    {
+      "name": "missing-bench-update",
+      "method": "PATCH",
+      "path": "/api/benches/missing-bench",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "No leak"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "processing-counts",
+      "method": "GET",
+      "path": "/api/projects/processing-counts",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-invalid-artifact-batch-limit",
+      "method": "GET",
+      "path": "/api/projects/batch/artifacts?pids=${capture:projectA}&limit=0",
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/created_at",
+    "/steps/2/response/body/updated_at",
+    "/steps/3/request/path",
+    "/steps/3/response/body/root_frame_id",
+    "/steps/3/response/body/frame_id",
+    "/steps/4/request/path",
+    "/steps/4/response/body",
+    "/steps/5/request/path",
+    "/steps/5/response/body/id",
+    "/steps/6/request/path",
+    "/steps/6/response/body/id",
+    "/steps/7/request/path",
+    "/steps/7/response/body",
+    "/steps/9/response/body",
+    "/steps/10/request/path"
+  ],
+  "redactions": []
+}

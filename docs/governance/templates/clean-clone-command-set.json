@@ -1,0 +1,95 @@
+{
+  "schema": "synon.governance.clean-clone-command-set.v1",
+  "commands": [
+    {
+      "name": "dependency-authority",
+      "argv": ["python3", "scripts/quality/dependency_authority.py", "--repo", ".", "--spec", "docs/governance/dependency-authority.json"],
+      "cwd": ".",
+      "timeout_seconds": 120
+    },
+    {
+      "name": "go-dependency-download",
+      "argv": ["python3", "scripts/quality/go_module_download.py", "--attempts", "3", "--timeout-seconds", "300"],
+      "cwd": ".",
+      "timeout_seconds": 920
+    },
+    {
+      "name": "python-test-dependencies",
+      "argv": ["python3", "scripts/quality/python_test_dependencies.py", "--attempts", "3", "--timeout-seconds", "600"],
+      "cwd": ".",
+      "timeout_seconds": 1820
+    },
+    {
+      "name": "go-server-compile",
+      "argv": ["go", "test", "-buildvcs=false", "-p", "1", "-timeout=30m", "-run", "^$", "-count=1", "./internal/server"],
+      "cwd": ".",
+      "timeout_seconds": 300
+    },
+    {
+      "name": "go-full",
+      "argv": ["go", "test", "-buildvcs=false", "-p", "1", "-timeout=30m", "-count=1", "./..."],
+      "cwd": ".",
+      "timeout_seconds": 1800
+    },
+    {
+      "name": "release-supply-chain",
+      "argv": ["go", "test", "./internal/releasepkg", "-count=1"],
+      "cwd": ".",
+      "timeout_seconds": 600
+    },
+    {
+      "name": "go-build",
+      "argv": ["go", "build", "-buildvcs=false", "-o", "runtime/.quality-synon-go", "./cmd/synon"],
+      "cwd": ".",
+      "timeout_seconds": 900
+    },
+    {
+      "name": "isolated-startup-smoke",
+      "argv": ["python3", "scripts/quality/startup_smoke_gate.py", "--binary", "runtime/.quality-synon-go"],
+      "cwd": ".",
+      "timeout_seconds": 180
+    },
+    {
+      "name": "frontend-authoritative-install",
+      "argv": ["npm", "ci", "--no-audit", "--no-fund"],
+      "cwd": "frontend",
+      "timeout_seconds": 1200
+    },
+    {
+      "name": "frontend-production-audit",
+      "argv": ["npm", "audit", "--omit=dev", "--audit-level=high"],
+      "cwd": "frontend",
+      "timeout_seconds": 600
+    },
+    {
+      "name": "frontend-typecheck",
+      "argv": ["npm", "run", "typecheck"],
+      "cwd": "frontend",
+      "timeout_seconds": 900
+    },
+    {
+      "name": "frontend-lint",
+      "argv": ["npm", "run", "lint"],
+      "cwd": "frontend",
+      "timeout_seconds": 900
+    },
+    {
+      "name": "frontend-format-check",
+      "argv": ["npm", "run", "format:check"],
+      "cwd": "frontend",
+      "timeout_seconds": 900
+    },
+    {
+      "name": "frontend-unit",
+      "argv": ["npm", "run", "test:unit"],
+      "cwd": "frontend",
+      "timeout_seconds": 1800
+    },
+    {
+      "name": "frontend-production-build",
+      "argv": ["npm", "run", "build"],
+      "cwd": "frontend",
+      "timeout_seconds": 1800
+    }
+  ]
+}

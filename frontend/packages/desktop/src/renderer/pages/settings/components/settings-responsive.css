@@ -1,0 +1,74 @@
+/* Responsive reset for route-scoped desktop geometry. */
+
+@media (max-width: 767px) {
+  /* Fixed desktop measurements must never trap a narrow/mobile page. */
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page,
+  html body .settings-page-wrapper[data-settings-route='governance'] .memory-manager,
+  html body .settings-page-wrapper[data-settings-route='governance'] .memory-manager__layer-tabs,
+  html body .settings-page-wrapper[data-settings-route='governance'] .memory-manager__workspace {
+    width: 100% !important;
+    margin-top: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page,
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page,
+  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page,
+  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page,
+  html body .settings-page-wrapper[data-settings-route='governance'] .settings-governance-page {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page > .settings-summary-strip,
+  html
+    body
+    .settings-page-wrapper[data-settings-route='models']
+    .settings-models-page
+    > [data-testid='synon-biomed-model-profiles'] {
+    margin-top: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-list-row,
+  html body .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid > .settings-section,
+  html body .settings-page-wrapper[data-settings-route='network'] .settings-network-page > section,
+  html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid,
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page > .settings-section,
+  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page > .settings-section,
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid,
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid > .settings-section,
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__main {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    height: auto !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__identity {
+    width: 100% !important;
+    align-self: auto !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__detail,
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__key {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__actions {
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='governance'] .memory-layer-tab {
+    width: 100% !important;
+  }
+}

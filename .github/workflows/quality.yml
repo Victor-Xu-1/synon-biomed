@@ -1,0 +1,343 @@
+name: Synon Biomed Product Quality
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+      timezone: Asia/Shanghai
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p0-quality:
+    name: Linux policy and static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    outputs:
+      runtime-matrix: ${{ steps.runtime-shards.outputs.matrix }}
+      race-matrix: ${{ steps.runtime-shards.outputs.race-matrix }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify immutable GitHub Actions policy
+        run: |
+          go test -buildvcs=false ./scripts/quality/github-actions-gate
+          go run -buildvcs=false ./scripts/quality/github-actions-gate --repo . --policy docs/governance/github-actions-pins.json
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Verify portable tracked paths
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_portable_paths
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/portable_paths.py --repo .
+
+      - name: Verify complete runtime shard planner
+        id: runtime-shards
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_runtime_test_shards
+          matrix=$(PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/runtime_test_shards.py --matrix)
+          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+          race_matrix=$(PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/runtime_test_shards.py --matrix --race)
+          printf 'race-matrix=%s\n' "$race_matrix" >> "$GITHUB_OUTPUT"
+
+      - name: Verify module content
+        run: |
+          go mod verify
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/test_agent_manifest.py
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/agent_manifest.py --repo . --check
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/test_kernel_manifest.py
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/kernel_manifest.py
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/test_kernel_worker_protocol.py
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/test_module_topology_gate.py
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/module_topology_gate.py --repo .
+
+      - name: Verify product identity authority boundary
+        run: |
+          go test -buildvcs=false . ./internal/buildinfo -run 'TestCurrentUsesRootProductIdentityAuthority|TestReleaseInfoUsesSynonBiomedIdentity' -count=1
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_product_identity_gate scripts.quality.test_release_candidate_manifest scripts.quality.test_release_receipt_gate
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/product_identity_gate.py --repo . --mode candidate
+
+      - name: Verify formatting and static analysis
+        run: |
+          test -z "$(gofmt -l $(git ls-files '*.go'))"
+          go vet ./...
+
+      - name: Verify Windows entrypoint compiles
+        run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -buildvcs=false -o "$RUNNER_TEMP/synon-go-windows.exe" ./cmd/synon
+
+  frontend-quality:
+    name: Frontend quality and packaged client
+    needs: p0-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up frontend build runtime
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify migrated frontend
+        run: |
+          cd frontend
+          npm ci --ignore-scripts
+          npm run i18n:types
+          npm run typecheck
+          npm run lint
+          npm run format:check
+          npm run test
+          npm run build
+          npm run test:packaged
+          cd ..
+          git diff --exit-code -- frontend/packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts
+          rm -rf frontend/node_modules frontend/out frontend/coverage frontend/test-results
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/audit/audit_frontend_migration.py --root . --check --require-clean
+
+      - name: Audit frontend test source residue
+        run: bash scripts/audit/audit-source-clean.sh
+
+  runtime-quality:
+    name: Linux runtime tests (${{ matrix.group }} ${{ matrix.index }})
+    needs: p0-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.p0-quality.outputs.runtime-matrix) }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Set up runtime test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          bwrap --unshare-user --disable-userns --unshare-ipc --unshare-uts \
+            --new-session --die-with-parent --unshare-net --unshare-pid \
+            --ro-bind / / --proc /proc --dev /dev /bin/true
+          runtime_python="$(command -v python3)"
+          sudo "$runtime_python" -m pip install --break-system-packages --ignore-installed \
+            --requirement assets/optional/mcp-servers/bio-tools/requirements-test.txt
+          "$runtime_python" -c 'import anyio, httpx, jsonschema, lxml, mcp, pandas, requests, urllib3; from PIL import Image'
+
+      - name: Run runtime tests
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/runtime_test_shards.py \
+            --group '${{ matrix.group }}' --index '${{ matrix.index }}' --log-dir "$RUNNER_TEMP/runtime-test-evidence"
+
+      - name: Audit runtime test source residue
+        if: always()
+        run: bash scripts/audit/audit-source-clean.sh
+
+      - name: Upload runtime test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: runtime-${{ matrix.group }}-${{ matrix.index }}
+          path: ${{ runner.temp }}/runtime-test-evidence/
+          if-no-files-found: warn
+          retention-days: 7
+
+  linux-release:
+    name: Linux source policy and release
+    needs: [p0-quality, frontend-quality, runtime-quality]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    outputs:
+      candidate-manifest-sha256: ${{ steps.release-candidate.outputs.manifest-sha256 }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Set up frontend build runtime
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Audit source policy
+        run: |
+          bash scripts/audit/audit-secrets-test.sh
+          bash scripts/audit/audit-source-clean-test.sh
+          make audit-non-web-boundary-test
+          make source-backend-watch-test
+          make source-frontend-host-test
+          make external-acceptance-test
+          make env-example-test
+          make audit-non-web-boundary
+          make ci-contract-test
+          bash scripts/audit/audit-source-clean.sh
+
+      - name: Verify protocol and evidence-validator regressions
+        run: go test ./internal/compat/contracts ./internal/compat/oracle
+
+      - name: Build from a clean copy
+        run: make clean-copy-build-test
+
+      - name: Verify release supply-chain generation
+        run: make supply-chain-test
+
+      - name: Verify Linux release lifecycle
+        run: |
+          make package-test
+          make install-test
+          make release-lifecycle-test
+
+      - name: Build once release candidate artifacts
+        id: release-candidate
+        run: |
+          candidate_dir="$RUNNER_TEMP/release-candidate"
+          mkdir -p "$candidate_dir"
+          ./scripts/package-release.sh "$candidate_dir"
+          ./scripts/package-windows-release-test.sh "$candidate_dir"
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/release_candidate_manifest.py create \
+            --repo . --artifact-dir "$candidate_dir" \
+            --run-id '${{ github.run_id }}' --run-attempt '${{ github.run_attempt }}'
+          test -f "$candidate_dir/RELEASE_CANDIDATE.json"
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/release_candidate_manifest.py verify \
+            --repo . --artifact-dir "$candidate_dir" \
+            --run-id '${{ github.run_id }}' --run-attempt '${{ github.run_attempt }}'
+          manifest_sha256="$(sha256sum "$candidate_dir/RELEASE_CANDIDATE.json" | cut -d ' ' -f1)"
+          printf 'manifest-sha256=%s\n' "$manifest_sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Audit release source residue
+        run: bash scripts/audit/audit-source-clean.sh
+
+      - name: Upload immutable release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: synon-biomed-release-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/release-candidate/
+          if-no-files-found: error
+          retention-days: 30
+
+  race-runtime:
+    name: Linux race runtime (${{ matrix.group }} ${{ matrix.index }})
+    needs: [p0-quality, runtime-quality]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.p0-quality.outputs.race-matrix) }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Set up runtime test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          bwrap --unshare-user --disable-userns --unshare-ipc --unshare-uts \
+            --new-session --die-with-parent --unshare-net --unshare-pid \
+            --ro-bind / / --proc /proc --dev /dev /bin/true
+          runtime_python="$(command -v python3)"
+          sudo "$runtime_python" -m pip install --break-system-packages --ignore-installed \
+            --requirement assets/optional/mcp-servers/bio-tools/requirements-test.txt
+          "$runtime_python" -c 'import anyio, httpx, jsonschema, lxml, mcp, pandas, requests, urllib3; from PIL import Image'
+
+      - name: Run race runtime tests
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/runtime_test_shards.py --race \
+            --group '${{ matrix.group }}' --index '${{ matrix.index }}' --log-dir "$RUNNER_TEMP/runtime-test-evidence"
+
+      - name: Audit race test source residue
+        if: always()
+        run: bash scripts/audit/audit-source-clean.sh
+
+      - name: Upload race test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: race-${{ matrix.group }}-${{ matrix.index }}
+          path: ${{ runner.temp }}/runtime-test-evidence/
+          if-no-files-found: warn
+          retention-days: 7
+
+  windows-release:
+    name: Windows native release lifecycle
+    needs: [p0-quality, linux-release, race-runtime]
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify Windows release test isolation
+        shell: pwsh
+        run: ./scripts/release-windows-environment-test.ps1
+
+      - name: Download Windows release archive
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: synon-biomed-release-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/release-candidate
+
+      - name: Verify downloaded candidate manifest and artifact digests
+        shell: pwsh
+        run: python scripts/quality/release_candidate_manifest.py verify --repo . --artifact-dir "${{ runner.temp }}/release-candidate" --run-id '${{ github.run_id }}' --run-attempt '${{ github.run_attempt }}' --expected-manifest-sha256 '${{ needs.linux-release.outputs.candidate-manifest-sha256 }}' --source-tree-digest-mode manifest-only
+
+      - name: Verify native install, backup, rollback, upgrade, and uninstall
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem -LiteralPath "${{ runner.temp }}/release-candidate" -Filter '*-windows-amd64.tar.gz' | Select-Object -First 1
+          if ($null -eq $archive) { throw 'Windows release archive missing' }
+          ./scripts/release-windows-test.ps1 -Archive $archive.FullName -RepoRoot $PWD.Path

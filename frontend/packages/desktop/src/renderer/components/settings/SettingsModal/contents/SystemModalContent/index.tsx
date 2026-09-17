@@ -1,0 +1,357 @@
+/**
+ * @license
+ * Copyright 2026 Synon-AI
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { ipcBridge } from '@/common';
+import type { IGpuStatus, IStartOnBootStatus } from '@/common/adapter/ipcBridge';
+import { configService } from '@/common/config/configService';
+import SynonScrollArea from '@/renderer/components/base/SynonScrollArea';
+import LanguageSwitcher from '@/renderer/components/settings/LanguageSwitcher';
+import { getClientBusinessSetting, setClientBusinessSetting } from '@/renderer/services/clientBusinessSettings';
+import { notifyManualRestartRequired } from '@/renderer/utils/appRestart';
+import { isElectronDesktop } from '@/renderer/utils/platform';
+import { Collapse, InputNumber, Message, Modal, Switch } from '@arco-design/web-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSettingsViewMode } from '../../settingsViewContext';
+import BrowserNotificationGrant from './BrowserNotificationGrant';
+import DevSettings from './DevSettings';
+import PreferenceRow from './PreferenceRow';
+
+/**
+ * System settings content component
+ *
+ * Provides system-level configuration options including language, directory config,
+ * and developer tools (dev mode only).
+ */
+const SystemModalContent: React.FC = () => {
+  const { t } = useTranslation();
+  const isDesktop = isElectronDesktop();
+  const [modal, modalContextHolder] = Modal.useModal();
+  const viewMode = useSettingsViewMode();
+  const isPageMode = viewMode === 'page';
+
+  const [startOnBoot, setStartOnBoot] = useState<IStartOnBootStatus>({
+    supported: false,
+    enabled: false,
+    isPackaged: false,
+    platform: 'web',
+  });
+  const [closeToTray, setCloseToTray] = useState(false);
+  const [gpuStatus, setGpuStatus] = useState<IGpuStatus | null>(null);
+  const [notificationEnabled, setNotificationEnabled] = useState(true);
+  const [cronNotificationEnabled, setCronNotificationEnabled] = useState(false);
+  const [promptTimeout, setPromptTimeout] = useState<number>(300);
+  const [saveUploadToWorkspace, setSaveUploadToWorkspace] = useState(false);
+
+  useEffect(() => {
+    if (!isDesktop) {
+      return;
+    }
+
+    ipcBridge.application.getStartOnBootStatus
+      .invoke()
+      .then((result) => {
+        if (result.success && result.data) {
+          setStartOnBoot(result.data);
+        }
+      })
+      .catch(() => {});
+
+    ipcBridge.application.getGpuStatus
+      .invoke()
+      .then((result) => {
+        if (result.success && result.data) {
+          setGpuStatus(result.data);
+        }
+      })
+      .catch(() => {});
+  }, [isDesktop]);
+
+  useEffect(() => {
+    setCloseToTray(configService.get('system.closeToTray') ?? false);
+    if (isDesktop) {
+      ipcBridge.systemSettings.getCloseToTray
+        .invoke()
+        .then((enabled) => {
+          setCloseToTray(enabled);
+          configService.setLocal('system.closeToTray', enabled);
+        })
+        .catch(() => {});
+    }
+    setNotificationEnabled(configService.get('system.notificationEnabled') ?? true);
+    setCronNotificationEnabled(configService.get('system.cronNotificationEnabled') ?? false);
+    setSaveUploadToWorkspace(configService.get('upload.saveToWorkspace') ?? false);
+  }, [isDesktop]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAcpTimeouts = async () => {
+      try {
+        const storedPromptTimeout = await getClientBusinessSetting('acp.promptTimeout');
+        if (cancelled) {
+          return;
+        }
+
+        if (typeof storedPromptTimeout === 'number' && storedPromptTimeout > 0) {
+          setPromptTimeout(storedPromptTimeout);
+        }
+      } catch {
+        // Keep the in-memory defaults when backend settings are unavailable.
+      }
+    };
+
+    void loadAcpTimeouts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleCloseToTrayChange = useCallback(
+    (checked: boolean) => {
+      const previous = closeToTray;
+      setCloseToTray(checked);
+      configService.setLocal('system.closeToTray', checked);
+
+      if (!isDesktop) {
+        configService.set('system.closeToTray', checked).catch(() => {
+          setCloseToTray(previous);
+          configService.setLocal('system.closeToTray', previous);
+        });
+        return;
+      }
+
+      ipcBridge.systemSettings.setCloseToTray.invoke({ enabled: checked }).catch(() => {
+        setCloseToTray(previous);
+        configService.setLocal('system.closeToTray', previous);
+      });
+    },
+    [closeToTray, isDesktop]
+  );
+
+  const handleHardwareAccelerationChange = useCallback(
+    (checked: boolean) => {
+      const previous = gpuStatus;
+      const optimistic: IGpuStatus = {
+        userOverride: checked ? 'force-on' : 'force-off',
+        autoDisabled: false,
+        crashCount: 0,
+        lastCrashAt: gpuStatus?.lastCrashAt ?? null,
+      };
+      setGpuStatus(optimistic);
+
+      const apply = () => {
+        ipcBridge.application.setGpuOverride
+          .invoke({ override: checked ? 'force-on' : 'force-off' })
+          .then((result) => {
+            if (result.success && result.data) {
+              setGpuStatus(result.data);
+              ipcBridge.application.restart
+                .invoke()
+                .then((restartResult) => notifyManualRestartRequired(restartResult, t))
+                .catch(() => {});
+            } else {
+              setGpuStatus(previous);
+              Message.error(t('settings.hardwareAccelerationUpdateFailed'));
+            }
+          })
+          .catch(() => {
+            setGpuStatus(previous);
+            Message.error(t('settings.hardwareAccelerationUpdateFailed'));
+          });
+      };
+
+      modal.confirm({
+        title: t('settings.updateConfirm'),
+        content: t('settings.hardwareAccelerationRestartConfirm'),
+        onOk: apply,
+        onCancel: () => setGpuStatus(previous),
+      });
+    },
+    [gpuStatus, modal, t]
+  );
+
+  const handleStartOnBootChange = useCallback(
+    (checked: boolean) => {
+      const previousStatus = startOnBoot;
+      setStartOnBoot((prev) => ({ ...prev, enabled: checked }));
+
+      ipcBridge.application.setStartOnBoot
+        .invoke({ enabled: checked })
+        .then((result) => {
+          if (result.success && result.data) {
+            setStartOnBoot(result.data);
+            return;
+          }
+
+          setStartOnBoot(previousStatus);
+          Message.error(result.msg || t('settings.startOnBootUpdateFailed'));
+        })
+        .catch(() => {
+          setStartOnBoot(previousStatus);
+          Message.error(t('settings.startOnBootUpdateFailed'));
+        });
+    },
+    [startOnBoot, t]
+  );
+
+  const handleNotificationEnabledChange = useCallback((checked: boolean) => {
+    setNotificationEnabled(checked);
+    configService.set('system.notificationEnabled', checked).catch(() => {
+      setNotificationEnabled(!checked);
+      configService.setLocal('system.notificationEnabled', !checked);
+    });
+  }, []);
+
+  const handleCronNotificationEnabledChange = useCallback((checked: boolean) => {
+    setCronNotificationEnabled(checked);
+    configService.set('system.cronNotificationEnabled', checked).catch(() => {
+      setCronNotificationEnabled(!checked);
+      configService.setLocal('system.cronNotificationEnabled', !checked);
+    });
+  }, []);
+
+  const handlePromptTimeoutChange = useCallback((val: number | undefined) => {
+    setPromptTimeout(val as number);
+  }, []);
+
+  const handlePromptTimeoutBlur = useCallback(() => {
+    const clamped = Math.max(30, Math.min(3600, promptTimeout || 300));
+    setPromptTimeout(clamped);
+    void setClientBusinessSetting('acp.promptTimeout', clamped).catch(() => {});
+  }, [promptTimeout]);
+
+  const handleSaveUploadToWorkspaceChange = useCallback((checked: boolean) => {
+    setSaveUploadToWorkspace(checked);
+    configService.set('upload.saveToWorkspace', checked).catch(() => {
+      setSaveUploadToWorkspace(!checked);
+      configService.setLocal('upload.saveToWorkspace', !checked);
+    });
+  }, []);
+
+  const preferenceItems = [
+    { key: 'language', label: t('settings.language'), component: <LanguageSwitcher /> },
+    {
+      key: 'startOnBoot',
+      label: t('settings.startOnBoot'),
+      description: startOnBoot.supported ? t('settings.startOnBootDesc') : t('settings.startOnBootUnsupported'),
+      component: (
+        <Switch checked={startOnBoot.enabled} onChange={handleStartOnBootChange} disabled={!startOnBoot.supported} />
+      ),
+    },
+    {
+      key: 'closeToTray',
+      label: t('settings.closeToTray'),
+      component: <Switch checked={closeToTray} onChange={handleCloseToTrayChange} />,
+    },
+    ...(isDesktop && gpuStatus
+      ? [
+          {
+            key: 'hardwareAcceleration',
+            label: t('settings.hardwareAcceleration'),
+            description: gpuStatus.autoDisabled
+              ? t('settings.hardwareAccelerationAutoDisabled')
+              : t('settings.hardwareAccelerationDesc'),
+            component: (
+              <Switch
+                checked={gpuStatus.userOverride !== 'force-off' && !gpuStatus.autoDisabled}
+                onChange={handleHardwareAccelerationChange}
+              />
+            ),
+          },
+        ]
+      : []),
+    {
+      key: 'promptTimeout',
+      label: t('settings.promptTimeout'),
+      component: (
+        <InputNumber
+          value={promptTimeout}
+          onChange={handlePromptTimeoutChange}
+          onBlur={handlePromptTimeoutBlur}
+          max={3600}
+          step={30}
+          style={{ width: 120 }}
+          suffix='s'
+        />
+      ),
+    },
+    {
+      key: 'saveUploadToWorkspace',
+      label: t('settings.saveUploadToWorkspace'),
+      component: <Switch checked={saveUploadToWorkspace} onChange={handleSaveUploadToWorkspaceChange} />,
+    },
+  ];
+
+  return (
+    <div className='flex flex-col h-full w-full'>
+      {modalContextHolder}
+
+      <SynonScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
+        <div className='space-y-16px'>
+          <div className='px-[12px] md:px-[32px] py-16px bg-2 rd-16px space-y-12px'>
+            <div className='w-full flex flex-col divide-y divide-[var(--color-border-2)]'>
+              {preferenceItems.map((item) => (
+                <PreferenceRow key={item.key} label={item.label} description={item.description}>
+                  {item.component}
+                </PreferenceRow>
+              ))}
+            </div>
+            {/* Notification settings with collapsible sub-options */}
+            <Collapse
+              bordered={false}
+              activeKey={notificationEnabled ? ['notification'] : []}
+              onChange={(_, keys) => {
+                const shouldExpand = (keys as string[]).includes('notification');
+                if (shouldExpand && !notificationEnabled) {
+                  handleNotificationEnabledChange(true);
+                } else if (!shouldExpand && notificationEnabled) {
+                  handleNotificationEnabledChange(false);
+                }
+              }}
+              className='[&_.arco-collapse-item]:!border-none [&_.arco-collapse-item-header]:!px-0 [&_.arco-collapse-item-header-title]:!flex-1 [&_.arco-collapse-item-content-box]:!px-0 [&_.arco-collapse-item-content-box]:!pb-0'
+            >
+              <Collapse.Item
+                name='notification'
+                showExpandIcon={false}
+                header={
+                  <div className='flex flex-1 items-center justify-between w-full'>
+                    <span className='text-14px text-2 ml-12px'>{t('settings.notification')}</span>
+                    <Switch
+                      checked={notificationEnabled}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={handleNotificationEnabledChange}
+                    />
+                  </div>
+                }
+              >
+                {isDesktop ? (
+                  <div className='pl-12px'>
+                    <PreferenceRow label={t('settings.cronNotificationEnabled')}>
+                      <Switch
+                        checked={cronNotificationEnabled}
+                        disabled={!notificationEnabled}
+                        onChange={handleCronNotificationEnabledChange}
+                      />
+                    </PreferenceRow>
+                  </div>
+                ) : (
+                  <BrowserNotificationGrant />
+                )}
+              </Collapse.Item>
+            </Collapse>
+          </div>
+
+          {/* Developer settings: DevTools + CDP (only visible in dev mode) */}
+          <DevSettings />
+        </div>
+      </SynonScrollArea>
+    </div>
+  );
+};
+
+export default SystemModalContent;

@@ -1,0 +1,18 @@
+{
+  "asset": "synon-biomed-avatar.png",
+  "source": "User-provided image attached to the 2026-08-21 robot-avatar replacement request",
+  "sourceSha256": "6b3debec99c28e4fb36a04775ab363ca54ea736a6d096e2486e7e235e84dd46f",
+  "bytes": 97442,
+  "dimensions": {
+    "width": 413,
+    "height": 438
+  },
+  "alpha": {
+    "transparentPixels": 147425,
+    "partiallyTransparentPixels": 4157,
+    "opaquePixels": 29312,
+    "cornersTransparent": true
+  },
+  "publicationRights": "Project owner supplied the approved avatar asset and must confirm redistribution rights before a public release",
+  "updateProcedure": "Replace only with an approved user-provided image, preserve the transparent-background avatar role, and update this file's SHA-256, byte count and dimensions"
+}

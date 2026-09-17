@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "id": "compute-inference-provider-lifecycle",
+  "contracts": [
+    {"kind": "http-route", "name": "GET /api/compute/providers"},
+    {"kind": "http-route", "name": "POST /api/compute/inference-providers"},
+    {"kind": "http-route", "name": "POST /api/compute/providers/:name/probe"},
+    {"kind": "http-route", "name": "DELETE /api/compute/inference-providers/:name"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "list-empty",
+      "method": "GET",
+      "path": "/api/compute/providers",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "create-inference-provider",
+      "method": "POST",
+      "path": "/api/compute/inference-providers",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "name": "oracle-infer",
+        "endpoint": 38990,
+        "skillName": "using-model-endpoint"
+      },
+      "expectedStatus": [200]
+    },
+    {
+      "name": "probe-immediately",
+      "method": "POST",
+      "path": "/api/compute/providers/infer:oracle-infer/probe",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200, 500]
+    },
+    {
+      "name": "list-created",
+      "method": "GET",
+      "path": "/api/compute/providers",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "delete-inference-provider",
+      "method": "DELETE",
+      "path": "/api/compute/inference-providers/oracle-infer",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200, 204]
+    },
+    {
+      "name": "list-after-delete",
+      "method": "GET",
+      "path": "/api/compute/providers",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

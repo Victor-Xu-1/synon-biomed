@@ -1,0 +1,66 @@
+{
+  "schema": "synon.codex-browser-evidence.v1",
+  "browser": "codex_builtin",
+  "taskId": "nlrp3-nek7-design",
+  "conversationId": "ccb5f719-1bcf-48fb-8740-34f0b778f101",
+  "capturedAt": "2026-08-07T11:16:36.950Z",
+  "url": "http://localhost:8765/#/conversation/ccb5f719-1bcf-48fb-8740-34f0b778f101",
+  "screenshotSha256": "308c3a03b8541ae8d562c732070b42a228cb2186c7c6c624c341744ad7400999",
+  "checks": [
+    {
+      "id": "conversation_stream_visible",
+      "status": "pass",
+      "evidence": "The Codex built-in browser showed the NLRP3-NEK7 task, the recorded Python and evidence failures, the corrected follow-up, and the final summary."
+    },
+    {
+      "id": "terminal_status_consistent",
+      "status": "pass",
+      "evidence": "The browser showed both execution units completed; the read-only transcript audit confirmed runner attempts 1 and 2 reached terminal completed."
+    },
+    {
+      "id": "artifact_library_visible",
+      "status": "pass",
+      "evidence": "The browser artifact list showed the HTML report, two CSV property tables, two PNG plots, candidates.sdf, candidate_status.csv, and candidate_status.md, with no JSON/JSONL deliverable."
+    },
+    {
+      "id": "report_preview_visible",
+      "status": "pass",
+      "evidence": "The browser opened the NLRP3_NEK7_Review_Report.html preview and showed the report preview modal."
+    },
+    {
+      "id": "structure_preview_visible",
+      "status": "pass",
+      "evidence": "The browser opened candidates.sdf and showed the SDF V3000 3D structure preview control."
+    },
+    {
+      "id": "refresh_recovery",
+      "status": "pass",
+      "evidence": "After reloading 8765, the same conversation restored the completion summary, HTML report, candidates.sdf, candidate status files, and the artifact list."
+    },
+    {
+      "id": "real_source_retrieval",
+      "status": "pass",
+      "evidence": "The transcript records real PubMed, PDB, ChEMBL, and ClinicalTrials calls; the final summary retains the source and failure notes."
+    },
+    {
+      "id": "managed_rdkit_calculation",
+      "status": "pass",
+      "evidence": "Managed Python/RDKit produced the known-inhibitor and candidate CSVs, while the invalid Candidate_A parse remained recorded as a failure."
+    },
+    {
+      "id": "candidate_structure_integrity",
+      "status": "pass",
+      "evidence": "The follow-up generated candidates.sdf, independently reread four records, and exposed the resulting SDF in the browser preview."
+    },
+    {
+      "id": "scientific_report_quality",
+      "status": "pass",
+      "evidence": "The visible report summary covers NLRP3-NEK7 evidence, four candidates, failure notes, and a four-week validation plan."
+    },
+    {
+      "id": "failure_recovery",
+      "status": "pass",
+      "evidence": "The initial RDKit KeyError, ChEMBL empty target query, unsupported PMID save, and invalid Candidate_A were recorded; later tool calls and the follow-up completed without stopping the task."
+    }
+  ]
+}

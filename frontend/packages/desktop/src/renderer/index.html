@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-theme-family="warm" data-color-scheme="default">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="application-name" content="Synon Biomed" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Synon Biomed" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#f2f1ee" />
+    <link rel="icon" type="image/png" href="./pwa/icon-192.png?v=9b986028" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./pwa/icon-180.png?v=9b986028" />
+    <script src="/theme-init.js"></script>
+    <script src="/dev-sw-cleanup.js"></script>
+    <title>Synon Biomed</title>
+    <style>
+      html,
+      body,
+      #root {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .app-boot-loading {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        background: #faf9f7;
+        color: #2b2a28;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+      }
+
+      html[data-theme='dark'] .app-boot-loading {
+        background: #1f1e1c;
+        color: #f1efeb;
+      }
+
+      .app-boot-loading__content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .app-boot-loading__mark {
+        width: 18px;
+        height: 18px;
+        border: 2px solid color-mix(in srgb, currentColor 20%, transparent);
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: app-boot-spin 0.8s linear infinite;
+      }
+
+      .app-boot-loading__label {
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 22px;
+        letter-spacing: 0.01em;
+      }
+
+      @keyframes app-boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .app-boot-loading__mark {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="app-boot-loading" role="status" aria-live="polite">
+        <div class="app-boot-loading__content">
+          <span class="app-boot-loading__mark" aria-hidden="true"></span>
+          <span class="app-boot-loading__label">Synon Biomed 正在启动…</span>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

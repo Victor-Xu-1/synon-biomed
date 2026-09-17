@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "frame-session-discovery",
+  "contracts": [
+    {"kind": "service", "name": "listFrames"},
+    {"kind": "service", "name": "getFrame"},
+    {"kind": "service", "name": "getFrameMessagesPage"},
+    {"kind": "service", "name": "locateFrameMessage"},
+    {"kind": "service", "name": "createFrame"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "list-empty",
+      "method": "GET",
+      "path": "/api/frames?project_id=oracle-missing&root_only=true&limit=10",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-missing",
+      "method": "GET",
+      "path": "/api/frames/oracle-missing",
+      "expectedStatus": [404]
+    },
+    {
+      "name": "messages-missing",
+      "method": "GET",
+      "path": "/api/frames/oracle-missing/messages?from=0&limit=10",
+      "expectedStatus": [404]
+    },
+    {
+      "name": "locate-missing",
+      "method": "GET",
+      "path": "/api/frames/oracle-missing/messages/locate?uuid=oracle-message",
+      "expectedStatus": [404]
+    },
+    {
+      "name": "create-with-missing-project",
+      "method": "POST",
+      "path": "/api/frames",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"project_id": "oracle-missing"},
+      "expectedStatus": [400, 404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

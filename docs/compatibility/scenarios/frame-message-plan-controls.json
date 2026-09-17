@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "id": "frame-message-plan-controls",
+  "contracts": [
+    {"kind": "service", "name": "sendFrameMessage"},
+    {"kind": "service", "name": "approvePlan"},
+    {"kind": "service", "name": "discardPlan"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Frame Message Plan Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "create-frame",
+      "method": "POST",
+      "path": "/api/frames",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"project_id": "${capture:projectId}"},
+      "expectedStatus": [201],
+      "capture": {"frameId": "/root_frame_id"}
+    },
+    {
+      "name": "send-direct",
+      "method": "POST",
+      "path": "/api/frames/${capture:frameId}/message",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "input_data": {
+          "request": "Continue with exact message semantics.",
+          "trace": "preserved",
+          "_model": "must-be-dropped"
+        },
+        "model": "oracle-model",
+        "effort": "high",
+        "thinking": false
+      },
+      "expectedStatus": [200]
+    },
+    {
+      "name": "send-while-processing",
+      "method": "POST",
+      "path": "/api/frames/${capture:frameId}/message",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"input_data": {"request": "Queue this continuation."}},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "approve-while-processing",
+      "method": "POST",
+      "path": "/api/frames/${capture:frameId}/approve-plan",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {},
+      "expectedStatus": [400]
+    },
+    {
+      "name": "discard-while-processing",
+      "method": "POST",
+      "path": "/api/frames/${capture:frameId}/discard-plan",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/3/request/path",
+    "/steps/3/response/body/root_frame_id",
+    "/steps/3/response/body/frame_id",
+    "/steps/4/request/path",
+    "/steps/4/response/body/root_frame_id",
+    "/steps/4/response/body/frame_id",
+    "/steps/5/request/path",
+    "/steps/6/request/path"
+  ],
+  "redactions": []
+}

@@ -1,0 +1,16 @@
+{
+  "title": "Compound screening",
+  "allowFormulas": true,
+  "sheets": [
+    {
+      "name": "Results",
+      "headers": ["Compound", "IC50 nM", "Qualified"],
+      "rows": [["A-01", 42.5, true], ["A-02", 91.2, false], ["Summary", "=AVERAGE(B2:B3)", ""]],
+      "freeze": "A2",
+      "autoFilter": true,
+      "widths": {"A": 20, "B": 14, "C": 14},
+      "numberFormats": {"B": "0.00"}
+    }
+  ]
+}
+

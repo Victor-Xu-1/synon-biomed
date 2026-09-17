@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "fork-at-answer",
+  "contracts": [
+    {"kind": "service", "name": "forkAtAskUserAnswer"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Fork At Answer Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "create-frame",
+      "method": "POST",
+      "path": "/api/frames",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"project_id": "${capture:projectId}"},
+      "expectedStatus": [201],
+      "capture": {"frameId": "/root_frame_id"}
+    },
+    {
+      "name": "reject-missing-tool-use",
+      "method": "POST",
+      "path": "/api/frames/${capture:frameId}/fork-at-answer",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "tool_use_id": "ask-missing",
+        "response": {"action": "decide_for_me"},
+        "source_branch_id": null,
+        "verifier_mode": "on",
+        "memory_mode": "off",
+        "ultra_mode": false,
+        "plan_mode": false,
+        "target_agent": "OPERON"
+      },
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/3/request/path"
+  ],
+  "redactions": []
+}

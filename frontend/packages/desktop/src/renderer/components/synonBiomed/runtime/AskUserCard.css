@@ -1,0 +1,81 @@
+/* Decision-card styles live with the component; the app owns theme tokens. */
+.synon-ask-user-card {
+  padding: 16px;
+  color: var(--workspace-text);
+  background: var(--conversation-stream-surface);
+  border-color: transparent;
+  border-radius: 12px;
+  box-shadow: none;
+  font-family: var(--conversation-font-sans);
+  border: 0;
+  font-size: 13px;
+  line-height: 22px;
+  font-style: normal;
+}
+
+.synon-ask-user-card h3 {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.synon-ask-user-card__options,
+.synon-ask-user-card__actions {
+  border: 0;
+}
+
+.synon-ask-user-card__option {
+  border: 0;
+  border-radius: 10px;
+}
+
+.synon-ask-user-card__composer {
+  border: 0;
+  background: var(--conversation-code-surface);
+  box-shadow: none;
+}
+
+.synon-ask-user-card__composer:focus-within {
+  box-shadow: 0 0 0 2px var(--workspace-focus);
+}
+
+.synon-ask-user-card__input.arco-input,
+.synon-ask-user-card__input.arco-input:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.synon-ask-user-card__action--quiet.arco-btn,
+.synon-ask-user-card__action--quiet.arco-btn:hover,
+.synon-ask-user-card__action--quiet.arco-btn:active {
+  border: 0;
+  box-shadow: none;
+}
+
+.synon-ask-user-card__action--quiet.arco-btn {
+  color: var(--workspace-text-secondary);
+  background: transparent;
+}
+
+.synon-ask-user-card__action--quiet.arco-btn:hover {
+  color: var(--workspace-text);
+  background: var(--workspace-hover);
+}
+
+.synon-ask-user-card__submit.arco-btn,
+.synon-ask-user-card__submit.arco-btn:disabled {
+  border: 0;
+  box-shadow: none;
+}
+
+.synon-ask-user-card [role='alert'] {
+  color: var(--color-danger-6);
+  font-size: 13px;
+}
+
+@media (max-width: 767px) {
+  .synon-ask-user-card {
+    padding: 14px;
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schema": "synon.governance.dependency-authority.v1",
+  "go": {
+    "manifest": "go.mod",
+    "lock": "go.sum"
+  },
+  "frontend": {
+    "root": "frontend",
+    "manager": "npm",
+    "install_argv": ["npm", "ci"],
+    "manifest": "frontend/package.json",
+    "lock": "frontend/package-lock.json",
+    "lockfile_version": 3,
+    "forbidden_paths": [
+      "frontend/npm-shrinkwrap.json",
+      "frontend/pnpm-lock.yaml",
+      "frontend/pnpm-workspace.yaml",
+      "frontend/yarn.lock",
+      "frontend/bun.lock",
+      "frontend/bun.lockb"
+    ]
+  },
+  "rule": "go.mod plus go.sum and frontend package.json plus package-lock.json are the only dependency authorities; npm ci is the only frontend install command"
+}

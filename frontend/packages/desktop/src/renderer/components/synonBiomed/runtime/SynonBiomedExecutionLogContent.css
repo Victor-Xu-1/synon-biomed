@@ -1,0 +1,161 @@
+/* Codex-like execution log: a quiet list with code as the only visual emphasis. */
+.synon-biomed-execution-log {
+  color: var(--workspace-text, #171717);
+}
+
+.synon-biomed-execution-log__navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--workspace-overlay-divider, #ebeae6);
+}
+
+html body .synon-biomed-execution-log__page-button {
+  min-width: 52px;
+  min-height: 30px;
+  padding: 5px 10px !important;
+  color: var(--workspace-text-secondary, #525252) !important;
+  background: transparent !important;
+  border: 1px solid var(--workspace-overlay-divider, #ebeae6) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+html body .synon-biomed-execution-log__page-button:not(:disabled):hover {
+  color: var(--workspace-text, #171717) !important;
+  background: var(--workspace-overlay-hover, #f3f2ef) !important;
+  border-color: var(--workspace-border-strong, #d2d2d2) !important;
+}
+
+.synon-biomed-execution-log__page-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.synon-biomed-execution-log__range {
+  color: var(--workspace-text-tertiary, #737373);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+  text-align: center;
+}
+
+.synon-biomed-execution-log__records {
+  border-top: 1px solid var(--workspace-overlay-divider, #ebeae6);
+}
+
+.synon-biomed-execution-log__record,
+.synon-biomed-execution-log__event {
+  border-bottom: 1px solid var(--workspace-overlay-divider, #ebeae6);
+}
+
+.synon-biomed-execution-log__record {
+  padding: 14px 0;
+}
+
+.synon-biomed-execution-log__record:last-child,
+.synon-biomed-execution-log__event:last-child {
+  border-bottom: 0;
+}
+
+.synon-biomed-execution-log__record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--workspace-text-secondary, #525252);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.synon-biomed-execution-log__record-index {
+  color: var(--workspace-text-tertiary, #737373);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.synon-biomed-execution-log__record-language {
+  padding: 0 6px;
+  color: var(--workspace-text-secondary, #525252);
+  background: transparent;
+  border: 1px solid var(--workspace-overlay-divider, #ebeae6);
+  border-radius: 4px;
+}
+
+.synon-biomed-execution-log__record-status {
+  color: var(--color-success-6, #2f7d47);
+  font-weight: 600;
+}
+
+.synon-biomed-execution-log__record-status--error {
+  color: var(--color-danger-6, #b42318);
+}
+
+.synon-biomed-execution-log__record-environment {
+  margin-left: auto;
+  color: var(--workspace-text-tertiary, #737373);
+}
+
+.synon-biomed-execution-log__source {
+  max-height: 240px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  overflow: auto;
+  color: var(--workspace-text, #171717);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--workspace-overlay-surface-muted, #f7f7f5);
+  border: 1px solid var(--workspace-overlay-divider, #ebeae6);
+  border-left: 2px solid var(--workspace-border-strong, #d2d2d2);
+  border-radius: 6px;
+}
+
+.synon-biomed-execution-log__output {
+  margin: 8px 0 0;
+  color: var(--workspace-text-secondary, #525252);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.synon-biomed-execution-log__output--error {
+  color: var(--color-danger-6, #b42318);
+}
+
+.synon-biomed-execution-log__files {
+  margin-top: 8px;
+  color: var(--workspace-text-tertiary, #737373);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.synon-biomed-execution-log__event {
+  padding: 14px 0;
+  color: var(--workspace-text-secondary, #525252);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.synon-biomed-execution-log__event-label {
+  color: var(--workspace-text, #171717);
+  font-weight: 600;
+}
+
+.synon-biomed-execution-log__event-detail {
+  margin-left: 8px;
+  color: var(--workspace-text-secondary, #525252);
+}
+
+@media (max-width: 520px) {
+  .synon-biomed-execution-log__record-environment {
+    width: 100%;
+    margin-left: 0;
+  }
+}

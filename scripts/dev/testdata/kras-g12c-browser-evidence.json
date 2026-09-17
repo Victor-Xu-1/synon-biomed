@@ -1,0 +1,66 @@
+{
+  "schema": "synon.codex-browser-evidence.v1",
+  "browser": "codex_builtin",
+  "taskId": "kras-g12c-design",
+  "conversationId": "9b6531ff-a652-4c3f-b26f-28657b14ed3f",
+  "capturedAt": "2026-08-07T09:07:54.812Z",
+  "url": "http://localhost:8765/#/conversation/9b6531ff-a652-4c3f-b26f-28657b14ed3f",
+  "screenshotSha256": "f7dfe3dab2cbab025e2bb068798c2e8ca5df2c47ca657d7a4d126f5fc23ea979",
+  "checks": [
+    {
+      "id": "conversation_stream_visible",
+      "status": "pass",
+      "evidence": "Codex built-in browser showed the KRAS G12C task stream, its final summary, and the recorded failed-tool recovery step."
+    },
+    {
+      "id": "terminal_status_consistent",
+      "status": "pass",
+      "evidence": "The browser showed the completed task state and the transcript's 11-step, 3-failure diagnostic summary; the read-only audit matched the completed runner frame."
+    },
+    {
+      "id": "artifact_library_visible",
+      "status": "pass",
+      "evidence": "The artifact library visibly listed the Markdown report and five KRAS G12C PNG structure artifacts, with no JSON/JSONL deliverable."
+    },
+    {
+      "id": "report_preview_visible",
+      "status": "pass",
+      "evidence": "The report preview opened in the browser and rendered KRAS_G12C_Inhibitor_Review_Final.md as MARKDOWN (24 KB)."
+    },
+    {
+      "id": "structure_preview_visible",
+      "status": "pass",
+      "evidence": "The browser opened the kras_g12c_inhibitors_2d.png preview and exposed the image preview control."
+    },
+    {
+      "id": "refresh_recovery",
+      "status": "pass",
+      "evidence": "After an intentional 8765 page reload and a bounded recovery wait, the same conversation URL restored the task title, completed state, report, structure artifact, and recorded failure evidence."
+    },
+    {
+      "id": "clinical_trials_real_tool",
+      "status": "pass",
+      "evidence": "The transcript records a completed real ClinicalTrials search with the compatibility-normalized legacy page-size argument."
+    },
+    {
+      "id": "chembl_real_query",
+      "status": "pass",
+      "evidence": "The transcript records completed real ChEMBL compound and activity retrieval used in the decision package."
+    },
+    {
+      "id": "pdb_pubmed_real_query",
+      "status": "pass",
+      "evidence": "The transcript records completed real PDB structure and PubMed literature retrieval with source provenance."
+    },
+    {
+      "id": "rdkit_real_calc",
+      "status": "pass",
+      "evidence": "The transcript records completed managed-runtime RDKit property and structure rendering calls, and the PNG artifacts are visible in the browser."
+    },
+    {
+      "id": "report_scientific_quality",
+      "status": "pass",
+      "evidence": "The visible final Markdown report is described as containing the Go/No-Go recommendation, evidence levels, resistance analysis, ADMET risks, and a four-week validation plan."
+    }
+  ]
+}

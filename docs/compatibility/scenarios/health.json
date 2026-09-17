@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "health-check",
+  "contracts": [
+    {
+      "kind": "service",
+      "name": "healthCheck"
+    }
+  ],
+  "steps": [
+    {
+      "name": "health",
+      "method": "GET",
+      "path": "/health",
+      "expectedStatus": [
+        200
+      ]
+    }
+  ],
+  "maxBodyBytes": 1048576,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime"
+  ],
+  "redactions": []
+}

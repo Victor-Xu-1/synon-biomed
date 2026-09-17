@@ -1,0 +1,125 @@
+/* Cool palette: restrained neutral-white surfaces in independent light/dark modes. */
+:root,
+[data-color-scheme='default'] {
+  --workspace-canvas: #f7f7f6;
+  --workspace-sidebar: #eeeeec;
+  --workspace-subtle: #e9e9e7;
+  --workspace-hover: #e3e3e0;
+  --workspace-selected: #dcdcd8;
+  --workspace-border: #d8d8d4;
+  --workspace-border-strong: #c8c8c2;
+  --workspace-text: #1f1f1d;
+  --workspace-text-secondary: #5f5f5b;
+  --workspace-text-tertiary: #686864;
+  --workspace-accent: #20201e;
+  --workspace-accent-contrast: #ffffff;
+  --workspace-focus: rgb(32 32 30 / 11%);
+  --workspace-shadow-popover: 0 8px 28px rgb(24 24 22 / 10%);
+  --conversation-user-surface: #e9e9e7;
+  --conversation-user-border: transparent;
+  --conversation-stream-surface: #fafaf9;
+  --conversation-stream-border: transparent;
+  --conversation-stream-accent: #5b5b57;
+  --conversation-stream-accent-soft: #e7e7e4;
+  --conversation-code-surface: #ededeb;
+  --theme-primary-3: 216, 216, 212;
+  --theme-primary-5: 82, 82, 78;
+  --theme-primary-6: 32, 32, 30;
+  --theme-primary-7: 23, 23, 22;
+  --primary-6: 32, 32, 30;
+  --composer-surface: var(--workspace-canvas);
+  --composer-border: transparent;
+  --composer-border-active: transparent;
+  --composer-shadow: 0 8px 28px rgb(24 24 22 / 7%);
+  --composer-shadow-active: 0 0 0 1px rgb(32 32 30 / 7%), 0 12px 34px rgb(24 24 22 / 11%);
+  --workspace-overlay-surface: #ffffff;
+  --workspace-overlay-surface-muted: #f0f0ee;
+  --workspace-overlay-hover: #e8e8e5;
+  --workspace-overlay-selected: #dfdfdb;
+  --workspace-overlay-border: transparent;
+  --workspace-overlay-divider: #e4e4e1;
+  --workspace-overlay-shadow: 0 18px 48px rgb(24 24 22 / 12%), 0 2px 10px rgb(24 24 22 / 5%);
+  --workspace-dialog-shadow: 0 28px 80px rgb(24 24 22 / 18%), 0 3px 14px rgb(24 24 22 / 7%);
+}
+
+[data-theme='dark'] {
+  --workspace-canvas: #181818;
+  --workspace-sidebar: #111111;
+  --workspace-subtle: #222f38;
+  --workspace-hover: #282828;
+  --workspace-selected: #303030;
+  --workspace-border: #303030;
+  --workspace-border-strong: #454545;
+  --workspace-text: #f2f2f2;
+  --workspace-text-secondary: #b8b8b8;
+  --workspace-text-tertiary: #9c9c9c;
+  --workspace-accent: #f2f2f2;
+  --workspace-accent-contrast: #171717;
+  --workspace-focus: rgb(255 255 255 / 14%);
+  --workspace-shadow-popover: 0 10px 32px rgb(0 0 0 / 42%);
+  --conversation-user-surface: #292927;
+  --conversation-user-border: transparent;
+  --conversation-stream-surface: #1e1e1e;
+  --conversation-stream-border: transparent;
+  --conversation-stream-accent: #f2f2f2;
+  --conversation-stream-accent-soft: #303030;
+  --conversation-code-surface: #222222;
+  --theme-primary-3: 69, 69, 69;
+  --theme-primary-5: 226, 226, 226;
+  --theme-primary-6: 242, 242, 242;
+  --theme-primary-7: 255, 255, 255;
+  --primary-6: 242, 242, 242;
+  --composer-surface: var(--workspace-canvas);
+  --composer-border: transparent;
+  --composer-border-active: transparent;
+  --composer-shadow: 0 10px 30px rgb(0 0 0 / 30%);
+  --composer-shadow-active: 0 0 0 1px rgb(255 255 255 / 10%), 0 14px 38px rgb(0 0 0 / 38%);
+  --workspace-overlay-surface: #202020;
+  --workspace-overlay-surface-muted: #282828;
+  --workspace-overlay-hover: #303030;
+  --workspace-overlay-selected: #383838;
+  --workspace-overlay-border: transparent;
+  --workspace-overlay-divider: #333333;
+  --workspace-overlay-shadow: 0 20px 54px rgb(0 0 0 / 44%), 0 3px 12px rgb(0 0 0 / 28%);
+  --workspace-dialog-shadow: 0 30px 90px rgb(0 0 0 / 58%), 0 4px 16px rgb(0 0 0 / 34%);
+}
+
+/* This file is also adopted by the streaming Markdown shadow root. */
+.markdown-shadow-body img {
+  display: block;
+  border-radius: 12px;
+}
+
+.markdown-shadow-body blockquote {
+  background: var(--conversation-stream-surface);
+  border-left: 1px solid var(--workspace-border-strong);
+  border-radius: 10px;
+}
+
+.markdown-shadow-body pre {
+  overflow: auto;
+  background: var(--conversation-code-surface);
+  border-color: transparent;
+  border-radius: 10px;
+}
+
+.markdown-shadow-body table {
+  overflow: hidden;
+  background: var(--conversation-stream-surface);
+  border-color: transparent;
+  border-radius: 10px;
+}
+
+.markdown-shadow-body th,
+.markdown-shadow-body td {
+  border-color: var(--workspace-border);
+}
+
+.markdown-shadow-body code {
+  border-radius: 6px;
+}
+
+.markdown-shadow-body hr {
+  border: 0;
+  border-top: 1px solid var(--workspace-border);
+}

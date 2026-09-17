@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "feedback-opt-out",
+  "contracts": [
+    {"kind": "service", "name": "getFeedbackAvailability"},
+    {"kind": "service", "name": "submitFeedback"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "availability",
+      "method": "GET",
+      "path": "/api/feedback/available",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-opted-out-feedback",
+      "method": "POST",
+      "path": "/api/feedback",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "Content-Type": "application/json",
+        "X-Synon-User-Id": "local"
+      },
+      "body": {"sentiment": "up", "description": "compatibility probe"},
+      "expectedStatus": [403]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "exact",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

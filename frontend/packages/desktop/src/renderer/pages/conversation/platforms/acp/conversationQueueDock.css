@@ -1,0 +1,64 @@
+.conversation-composer > .conversation-command-queue {
+  --conversation-queue-dock-overlap: 18px;
+
+  box-sizing: border-box;
+  width: var(--conversation-composer-inline-size, 100%);
+  max-width: var(--conversation-composer-inline-size, 100%);
+  z-index: 1;
+  margin: 0 auto calc(var(--conversation-queue-dock-overlap) * -1);
+  margin-inline: auto;
+  padding-bottom: var(--conversation-queue-dock-overlap);
+  border-color: color-mix(in srgb, var(--color-border-2) 76%, transparent);
+  background: var(--color-bg-1);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 3%),
+    0 7px 22px rgb(0 0 0 / 2.5%);
+}
+
+.conversation-composer > .conversation-command-queue .conversation-command-queue__list {
+  padding: 4px 10px 0;
+}
+
+.conversation-composer > .conversation-command-queue .conversation-command-queue__row {
+  min-height: 28px;
+  gap: 6px;
+  padding: 0;
+}
+
+.conversation-composer > .conversation-command-queue .conversation-command-queue__actions {
+  gap: 0;
+}
+
+.conversation-composer > .conversation-command-queue .conversation-command-queue__primary-action,
+.conversation-composer > .conversation-command-queue .conversation-command-queue__icon-action {
+  min-height: 28px !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+}
+
+.conversation-composer > .conversation-command-queue .conversation-command-queue__primary-action {
+  height: 28px !important;
+  padding: 0 6px !important;
+}
+
+.conversation-composer > .conversation-command-queue .conversation-command-queue__icon-action {
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+}
+
+.conversation-composer
+  > .conversation-command-queue
+  :is(.conversation-command-queue__primary-action, .conversation-command-queue__icon-action):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--workspace-text, var(--color-text-1)) 6%, transparent) !important;
+}
+
+@media (max-width: 767px) {
+  .conversation-composer > .conversation-command-queue {
+    --conversation-queue-dock-overlap: 14px;
+  }
+
+  .conversation-composer > .conversation-command-queue .conversation-command-queue__list {
+    padding-inline: 8px;
+  }
+}

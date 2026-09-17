@@ -1,0 +1,16 @@
+UCSC Genome Browser chromosome-size metadata
+
+The four *.chrom.sizes files in this directory are two-column sequence-name
+and sequence-length tables retrieved from the UCSC Genome Browser download
+service on 2026-07-29. They contain no genomic sequence, software binary, or
+annotation track. Exact source URLs, assembly accessions, byte counts, and
+checksums are recorded in PROVENANCE.json.
+
+UCSC states that sequence and annotation data displayed in the Genome Browser
+are freely available for any use subject to the conditions and attribution
+requirements at https://genome.ucsc.edu/conditions.html. Please credit the
+UCSC Genome Browser Group and the Genome Reference Consortium / NCBI assembly
+contributors when these data are used in a publication or web page.
+
+These files are provided for research visualization. They are not a clinical
+reference and must not be used by themselves to make treatment decisions.

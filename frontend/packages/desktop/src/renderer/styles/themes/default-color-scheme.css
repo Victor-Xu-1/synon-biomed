@@ -1,0 +1,144 @@
+/* Default Color Scheme - warm neutral fallback */
+
+/* Light Mode */
+:root,
+[data-color-scheme='default'] {
+  /* AOU Brand Colors - Light Mode */
+  --aou-1: #f2f1ee;
+  --aou-2: #f0efec;
+  --aou-3: #e4e2dd;
+  --aou-4: #d2cfc9;
+  --aou-5: #8f8c86;
+  --aou-6: #6f6b65;
+  --aou-7: #504e4a;
+  --aou-8: #3e3d3a;
+  --aou-9: #2b2a28;
+  --aou-10: #1f1e1c;
+
+  /* Background Colors - Light Mode */
+  --bg-base: #faf9f7; /* bg-base - 主背景 */
+  --bg-1: #faf9f7; /* 次级背景 */
+  --bg-2: #f2f1ee; /* 三级背景 */
+  --bg-3: #e1dfda; /* 边框/分隔 */
+  --bg-4: #d2cfc9;
+  --bg-5: #8f8c86;
+  --bg-6: #6f6b65; /* 禁用/次要文字 */
+  --bg-8: #504e4a;
+  --bg-9: #2b2a28;
+  --bg-10: #1f1e1c;
+
+  /* Interactive State Colors - Light Mode */
+  --bg-hover: #ebe9e5; /* 悬停背景 - 在 bg-1 和 bg-2 之间 */
+  --bg-active: #e4e2dd; /* 激活/按下背景 */
+
+  /* Text Colors - Light Mode */
+  --text-primary: #2b2a28; /* 主要文字 */
+  --color-text-1: #2b2a28; /* Arco 主文字 — 与 --text-primary 对齐 */
+  --text-secondary: #67645f; /* 次要文字 */
+  --text-disabled: #8f8c86; /* 禁用文字 */
+
+  /* Semantic Colors - Light Mode */
+  --primary: #3b3a37;
+  --success: #3f765d;
+  --warning: #9a6b32;
+  --danger: #98534b;
+  --info: #6f6b65;
+
+  /* Border Colors - Light Mode */
+  --border-base: #e1dfda; /* 基础边框 */
+  --border-light: #f0efec; /* 浅色边框 */
+
+  /* Brand Colors - Light Mode */
+  --brand: #6f6b65; /* 品牌色 */
+  --brand-light: #f0efec; /* 品牌浅色背景 */
+  --brand-hover: #d2cfc9; /* 品牌色悬停 */
+
+  /* Message & UI Component Colors - Light Mode */
+  --message-user-bg: #f0efec; /* 用户消息背景 */
+  --message-tips-bg: #f4f2ee; /* 提示信息背景 */
+  --workspace-btn-bg: #f0efec; /* 工作区按钮背景 */
+
+  /* Special Colors - Light Mode */
+  --fill: #f0efec; /* 填充色 */
+  --inverse: #ffffff; /* 反色（黑白切换）*/
+
+  /* Custom Colors - Light Mode */
+  --dialog-fill-0: #fdfcf9; /* 对话框填充色 */
+  --text-0: #2b2a28; /* 主要文字色 */
+  --text-white: #ffffff; /* 纯白文字色 */
+  --fill-0: #fdfcf9; /* 填充色 0 */
+  --fill-white-to-black: #fdfcf9; /* 白到黑填充色 */
+  --border-special: var(--bg-3); /* 特殊边框色 */
+  --color-guid-agent-bar: #f0efec; /* 首页 Agent 选择条背景 - 亮色 */
+}
+
+/* Dark Mode */
+[data-color-scheme='default'][data-theme='dark'] {
+  /* AOU Brand Colors - Dark Mode */
+  --aou-1: #28231e;
+  --aou-2: #332d26;
+  --color-guid-agent-bar: var(--aou-2); /* 首页 Agent 选择条背景 */
+  --aou-3: #3e352c;
+  --aou-4: #574b40;
+  --aou-5: #8f8173;
+  --aou-6: #c9beb1;
+  --aou-7: #d8cec2;
+  --aou-8: #e4d9cb;
+  --aou-9: #f0ebe4;
+  --aou-10: #f3eee7;
+
+  /* Background Colors - Dark Mode */
+  --bg-base: #1e1b18; /* bg-base - 主背景 */
+  --bg-1: #1e1b18; /* 次级背景 */
+  --bg-2: #181512; /* 三级背景 */
+  --bg-3: #40372f; /* 边框/分隔 */
+  --bg-4: #574b40;
+  --bg-5: #6f6154;
+  --bg-6: #aea298; /* 禁用/次要文字 */
+  --bg-8: #c9beb1;
+  --bg-9: #e4d9cb;
+  --bg-10: #f3eee7;
+
+  /* Interactive State Colors - Dark Mode */
+  --bg-hover: #332d26; /* 悬停背景 */
+  --bg-active: #3e352c; /* 激活/按下背景 */
+
+  /* Text Colors - Dark Mode */
+  --text-primary: #f3eee7; /* 主要文字 */
+  --color-text-1: #f3eee7; /* Arco 主文字 — 与 --text-primary 对齐 */
+  --text-secondary: #c9beb1; /* 次要文字 */
+  --text-disabled: #8f8173; /* 禁用文字 */
+
+  /* Semantic Colors - Dark Mode */
+  --primary: #f3eee7;
+  --success: #9bc9a8;
+  --warning: #e0b77e;
+  --danger: #e1a097;
+  --info: #c9beb1;
+
+  /* Border Colors - Dark Mode */
+  --border-base: #40372f; /* 基础边框 */
+  --border-light: #28231e; /* 浅色边框 */
+
+  /* Brand Colors - Dark Mode */
+  --brand: #c9beb1; /* 品牌色 */
+  --brand-light: #332d26; /* 品牌深色背景 */
+  --brand-hover: #8f8173; /* 品牌色悬停 */
+
+  /* Message & UI Component Colors - Dark Mode */
+  --message-user-bg: #28231e; /* 用户消息背景 */
+  --message-tips-bg: #2c261f; /* 提示信息背景 */
+  --workspace-btn-bg: #28231e; /* 工作区按钮背景 */
+
+  /* Special Colors - Dark Mode */
+  --fill: #28231e; /* 填充色 */
+  --inverse: #f3eee7; /* 反色（黑白切换）*/
+
+  /* Custom Colors - Dark Mode */
+  --dialog-fill-0: #24201c; /* 对话框填充色 */
+  --text-0: #f3eee7; /* 主要文字色 */
+  --text-white: #ffffff; /* 纯白文字色 */
+  --fill-0: rgba(243, 238, 231, 0.08); /* 填充色 0 */
+  --fill-white-to-black: #0f0d0b; /* 白到黑填充色 */
+  --border-special: #574b40; /* 特殊边框色 */
+}

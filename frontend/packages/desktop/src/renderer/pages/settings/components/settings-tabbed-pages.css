@@ -1,0 +1,41 @@
+/* A tabbed page may own a compact action rail. Keeping the rail in the
+   header component lets Skills align tabs, search, and create controls on one
+   baseline without changing the shared page title contract. */
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__tabs-row {
+  display: flex;
+  min-width: 0;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--settings-border);
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-page-header__tabs-row
+  > .settings-page-header__tabs {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin-top: 0;
+  border-bottom: 0;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__tabs-actions {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+}
+
+/* Keep route flow overrides after utility declarations. */
+@media (min-width: 768px) {
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page,
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page,
+  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page,
+  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
+    gap: 0 !important;
+    row-gap: 0 !important;
+  }
+}

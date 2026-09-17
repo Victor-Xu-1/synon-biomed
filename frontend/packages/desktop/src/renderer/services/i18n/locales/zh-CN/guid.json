@@ -1,0 +1,147 @@
+{
+  "emptyState": {
+    "guidance": "描述你的研究目标，或上传文件，开始一项新的生物医药研究任务。"
+  },
+  "promptExamplesHint": "试试这些 Synon Biomed 工作流",
+  "defaultPrompts": {
+    "capabilities": "设计一个 STAT6 SBDD PPI 分析流程",
+    "skills": "调用 Boltz2 生成并评估蛋白-配体复合物结构",
+    "tools": "整理 CRBN 项目的结果文件并生成报告"
+  },
+  "synonBiomedStatus": {
+    "healthy": "健康",
+    "checking": "检查中",
+    "offline": "离线",
+    "unavailable": "不可用"
+  },
+  "selectAssistantHint": "选择一位助手开始任务",
+  "workspace": {
+    "workInProject": "在项目中工作",
+    "optional": "可选",
+    "clearWorkspace": "清除",
+    "specifyWorkspace": "选择项目文件夹",
+    "searchPlaceholder": "搜索项目…",
+    "noProject": "不使用项目",
+    "recentLabel": "最近使用",
+    "chooseDifferentFolder": "选择其他文件夹",
+    "synonBiomedProjects": "Synon Biomed 项目",
+    "seedWorkflows": "Seed 工作流"
+  },
+  "quickActions": {
+    "projects": "项目",
+    "skills": "Skill 技能",
+    "mcp": "MCP 工具",
+    "runtime": "运行状态"
+  },
+  "onboarding": {
+    "brand": "Synon Biomed 科研工作台",
+    "progressLabel": "初始化进度",
+    "progressValue": "第 {{current}}/{{total}} 步：{{title}}",
+    "projectDefaultName": "开始使用",
+    "welcome": {
+      "title": "配置你的科研工作空间",
+      "subtitle": "设置网络访问、可复用能力，并启动第一个科研任务。"
+    },
+    "network": {
+      "title": "选择网络访问范围",
+      "subtitle": "控制 Agent 可以使用哪些外部科研服务。",
+      "allowAll": "允许全部可用分组",
+      "enabledCount": "已启用 {{enabled}}/{{total}} 个可选分组"
+    },
+    "capabilities": {
+      "title": "选择科研能力",
+      "subtitle": "设置科研 Agent 可使用的连接器、技能和本地软件。",
+      "connectors": "连接器",
+      "skills": "技能",
+      "runtimes": "本地软件",
+      "tabsLabel": "能力类型",
+      "searchLabel": "搜索能力",
+      "searchPlaceholder": "按名称或说明搜索",
+      "externalNotice": "启用的连接器可能与所列外部科研服务通信。继续前请审阅完整列表。",
+      "runtimeNotice": "目录内环境在首次进入时全部默认勾选。继续前可取消不需要的环境；系统会在后台依次准备，不阻塞工作台。",
+      "unavailable": "当前首启科研助手不可使用",
+      "noConnectors": "当前没有可用连接器。",
+      "noSkills": "当前没有可用技能。",
+      "noRuntimes": "没有匹配的本地软件。",
+      "runtimeSize": "预计新增占用约 {{size}} MB",
+      "runtimeTotal": "当前已选预计约 {{selected}}",
+      "runtimeReady": "已就绪",
+      "runtimeQueued": "完成设置后后台准备",
+      "runtimeUnavailable": "此系统未启用本地科学运行时",
+      "runtimeCommonTitle": "常用结构工具",
+      "runtimeCommonDescription": "RDKit、BioPython、Gemmi 与 PyYAML，用于分子、序列及 PDB/mmCIF 处理。",
+      "runtimeInteractionTitle": "二维相互作用分析",
+      "runtimeInteractionDescription": "ProLIF、MDAnalysis 与 CairoSVG，用于蛋白–配体相互作用图和导出。",
+      "runtimeElectrostaticsTitle": "生物分子电性计算",
+      "runtimeElectrostaticsDescription": "APBS、PDB2PQR、PROPKA 与 RDKit，用于可复现的蛋白、口袋及配体电势图。",
+      "runtimeVinaTitle": "AutoDock Vina 对接",
+      "runtimeVinaDescription": "Vina、Meeko、Gemmi、ProDy 与 BioPython 的完整受控对接环境。",
+      "runtimeDrugChemistryTitle": "药物化学与工艺计算",
+      "runtimeDrugChemistryDescription": "Thermo、Chemicals、ChemPy 与 ASE，用于理化性质、反应工程和工艺计算。",
+      "runtimeConversionTitle": "分子格式与快速量化",
+      "runtimeConversionDescription": "Open Babel、Dimorphite-DL、xTB 与 ASE，用于格式转换、质子化和快速量化计算。",
+      "runtimeQSARTitle": "经典 QSAR 与 ADMET",
+      "runtimeQSARDescription": "scikit-learn、XGBoost、LightGBM、SHAP、Optuna 与 Mordred 描述符。",
+      "runtimeClinicalTitle": "临床统计与药代建模",
+      "runtimeClinicalDescription": "Lifelines、Pingouin、LMFit、Pint 与 OpenPyXL，用于生存、统计和 PK/PD 数据处理。",
+      "runtimeOmicsTitle": "单细胞与组学分析",
+      "runtimeOmicsDescription": "Scanpy、AnnData、Harmony、Leiden 与 igraph 的经典 CPU 分析环境。",
+      "runtimeGenomicsTitle": "药理基因组命令行",
+      "runtimeGenomicsDescription": "SAMtools、BCFtools、BEDTools、Minimap2、SeqKit 与 pysam。",
+      "runtimeSimulationTitle": "分子动力学与模拟",
+      "runtimeSimulationDescription": "MDAnalysis、MDTraj、ParmEd 与 OpenMM 的 CPU 轨迹和模拟环境。",
+      "runtimeImagingTitle": "医学影像分析",
+      "runtimeImagingDescription": "pydicom、NiBabel、SimpleITK 与 scikit-image，用于 DICOM、NIfTI 和影像处理。",
+      "runtimeInstrumentTitle": "仪器与分析数据",
+      "runtimeInstrumentDescription": "Allotropy、Pandas、OpenPyXL 与 PDFPlumber，用于仪器数据标准化和表格提取。",
+      "runtimeUnknown": "受控本地科学运行时。"
+    },
+    "profile": {
+      "title": "补充科研背景",
+      "subtitle": "描述你的目标，也可以附加参考文件。",
+      "summaryLabel": "科研背景",
+      "placeholder": "研究领域、当前目标、约束条件和期望输出",
+      "dropZone": "附加参考文件",
+      "removeFile": "移除文件",
+      "reselectFiles": "请重新选择这些文件后再上传：{{files}}",
+      "suggestionFiles": "个性化建议最多读取 20 个 UTF-8 文本文件；所有已选文件仍会附加到最终任务。"
+    },
+    "task": {
+      "title": "选择第一个任务",
+      "subtitle": "从常用工作流开始，或填写一个明确的任务。",
+      "customLabel": "自定义科研任务",
+      "optionLiterature": {
+        "label": "调研一个科研主题",
+        "description": "检索、比较并综合相关证据。"
+      },
+      "optionData": {
+        "label": "分析一份数据集",
+        "description": "检查数据质量并生成可复现分析。"
+      },
+      "optionProtocol": {
+        "label": "设计实验方案",
+        "description": "生成包含对照和验收标准的可执行方案。"
+      },
+      "personalizing": "正在根据你的科研背景和附件生成三个任务…",
+      "fallback": "个性化建议生成时间较长，你可以先从以下任务中选择。",
+      "customPlaceholder": "描述你准备启动的任务"
+    },
+    "actions": {
+      "back": "上一步",
+      "continue": "继续",
+      "start": "启动任务",
+      "reviewCapabilities": "检查能力选择"
+    },
+    "error": {
+      "loadTitle": "无法加载初始化配置",
+      "loadDescription": "初始化数据暂时不可用，请重试后继续。",
+      "launchFailed": "任务未能启动，请检查所选配置后重试。",
+      "authenticationRequired": "登录会话已结束。重新登录后可继续当前已保存的初始化流程。",
+      "sessionInvalid": "无法验证安全会话。请重新登录后重试。",
+      "permissionDenied": "部分所选能力不属于当前科研助手的权限范围，请检查能力选择。",
+      "configuration": "所选项目或科研助手配置已不可用，请检查初始化设置后重试。",
+      "network": "无法连接本地 Synon Biomed 服务，请检查连接后重试。",
+      "service": "暂时无法启动任务。初始化内容已保存，可在服务恢复后重试。"
+    }
+  }
+}

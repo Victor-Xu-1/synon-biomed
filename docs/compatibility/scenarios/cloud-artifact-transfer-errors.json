@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "cloud-artifact-transfer-errors",
+  "contracts": [
+    {"kind": "service", "name": "listCloudFolder"},
+    {"kind": "service", "name": "importCloudFile"},
+    {"kind": "service", "name": "exportArtifactToCloud"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "list-folder-missing-credential",
+      "method": "GET",
+      "path": "/api/cloud-credentials/missing-credential/folder?bucket=example&prefix=folder%2F",
+      "expectedStatus": [404]
+    },
+    {
+      "name": "import-missing-credential",
+      "method": "POST",
+      "path": "/api/cloud-credentials/missing-credential/import",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"bucket": "example", "key": "folder/input.txt", "project_id": "missing-project"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "export-missing-credential",
+      "method": "POST",
+      "path": "/api/cloud-credentials/missing-credential/export",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"artifact_id": "missing-artifact", "bucket": "example", "key": "folder/output.txt"},
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

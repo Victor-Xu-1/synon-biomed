@@ -1,0 +1,23 @@
+{
+  "name": "jszip",
+  "version": "3.10.1",
+  "sourceArchive": "https://registry.npmjs.org/jszip/-/jszip-3.10.1.tgz",
+  "integrity": "sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==",
+  "archiveSHA256": "5117f4a2a645aeb307bf3b829c575ad58135cc97e75291e594532ab5b5b21b23",
+  "declaredLicense": "(MIT OR GPL-3.0-or-later)",
+  "distributionLicense": "MIT",
+  "licenseFiles": [
+    {
+      "path": "lib/license_header.js",
+      "sourceSHA256": "27873abeec2df3693480a8d1b8fe17dd61bee843d1b39c1c9cfab57ffe93099e",
+      "sourceBytes": 388,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    },
+    {
+      "path": "LICENSE.markdown",
+      "sourceSHA256": "566c953c6090b1218ca6217dd7359d45dde46581968586dc607d59a78af6a9c4",
+      "sourceBytes": 33753,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    }
+  ]
+}

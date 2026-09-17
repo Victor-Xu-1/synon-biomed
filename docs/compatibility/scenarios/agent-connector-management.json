@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "agent-connector-management",
+  "contracts": [
+    {"kind": "service", "name": "attachConnectorToAgent"},
+    {"kind": "service", "name": "detachConnectorFromAgent"},
+    {"kind": "service", "name": "setConnectorExclusions"},
+    {"kind": "service", "name": "getConnectorExclusions"}
+  ],
+  "steps": [
+    {"name": "csrf", "method": "GET", "path": "/api/csrf", "headers": {"Origin": "${origin}"}, "expectedStatus": [204]},
+    {"name": "attach-pubmed", "method": "POST", "path": "/api/agents/OPERON/connectors", "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"}, "body": {"server_id": "bundled:pubmed"}, "expectedStatus": [200]},
+    {"name": "set-exclusions", "method": "PUT", "path": "/api/agents/OPERON/connectors/bundled:pubmed/exclusions", "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"}, "body": {"excludedTools": ["mcp_pubmed_search_articles", "mcp_pubmed_fetch_article"]}, "expectedStatus": [200]},
+    {"name": "get-exclusions", "method": "GET", "path": "/api/agents/OPERON/excluded-tools", "expectedStatus": [200]},
+    {"name": "detach-pubmed", "method": "DELETE", "path": "/api/agents/OPERON/connectors/bundled:pubmed", "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"}, "expectedStatus": [200]}
+  ],
+  "maxBodyBytes": 1048576,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

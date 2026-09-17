@@ -1,0 +1,310 @@
+/* Connector cards use the quiet, editorial artwork treatment from the
+ * approved Scientific connectors sheet. All decorative marks are reviewed
+ * image-2 assets; this file only supplies their palette, scale and opacity. */
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 20px !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-width: 0;
+  height: var(--settings-entity-card-height);
+  min-height: var(--settings-entity-card-height);
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: var(--settings-entity-card-padding) !important;
+  border: 1px solid var(--settings-border) !important;
+  border-radius: var(--settings-card-radius) !important;
+  background: var(--settings-surface) !important;
+  color: var(--settings-text);
+}
+
+/* Tools now expose the same usage rail as Skills. Keep the additional
+   metadata inside a stable card height so the four-column grid remains even. */
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+  height: 220px;
+  min-height: 220px;
+  padding: 16px !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='blue'] {
+  --mcp-accent: #147cf2;
+  --mcp-soft: #eaf3ff;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='cyan'] {
+  --mcp-accent: #159cc8;
+  --mcp-soft: #e8f8fc;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='teal'] {
+  --mcp-accent: #07969b;
+  --mcp-soft: #e6f7f7;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='green'] {
+  --mcp-accent: #28a455;
+  --mcp-soft: #ebf8ef;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='amber'],
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='orange'] {
+  --mcp-accent: #d79016;
+  --mcp-soft: #fff7e8;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='rose'] {
+  --mcp-accent: #d44d82;
+  --mcp-soft: #fff0f6;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='violet'] {
+  --mcp-accent: #7651c9;
+  --mcp-soft: #f3efff;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card > :not(.mcp-connector-visual--artwork) {
+  position: relative;
+  z-index: 1;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .mcp-connector-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .mcp-connector-visual__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .mcp-connector-visual--badge {
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  border-radius: 11px;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .mcp-connector-visual--artwork {
+  position: absolute;
+  z-index: 0;
+  top: 50px;
+  right: 4px;
+  width: 108px;
+  height: 92px;
+  opacity: 0.62;
+  mix-blend-mode: multiply;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__top {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__icon {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border-radius: 11px;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__identity {
+  min-width: 0;
+  max-width: calc(100% - 56px);
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row > span {
+  min-width: 0;
+  color: var(--settings-text) !important;
+  font-size: var(--settings-entity-card-title-size) !important;
+  font-weight: 650 !important;
+  line-height: var(--settings-entity-card-title-line) !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__description {
+  width: 100%;
+  max-width: 100%;
+  min-height: 54px;
+  margin: 6px 0 0 !important;
+  color: var(--settings-text-secondary) !important;
+  font-size: var(--settings-entity-card-body-size) !important;
+  line-height: 18px !important;
+  text-align: justify;
+  text-align-last: left;
+  text-justify: inter-ideograph;
+  word-break: break-word;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__usage {
+  display: flex;
+  min-height: 34px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--settings-border);
+  color: var(--settings-text-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__actions {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 0 !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__action-cluster {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__configure.arco-btn {
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--settings-border) !important;
+  border-radius: 9px !important;
+  background: var(--settings-surface) !important;
+  color: var(--settings-text) !important;
+  font-size: 13px !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__configure.arco-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mcp-accent) 45%, var(--settings-border)) !important;
+  background: var(--mcp-soft) !important;
+  color: var(--mcp-accent) !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__more.arco-btn {
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--settings-text-secondary) !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
+  display: inline-flex;
+  min-width: 0;
+  height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--settings-border) !important;
+  border-radius: 999px;
+  background: var(--settings-surface-subtle) !important;
+  color: #6d706b !important;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control[data-state='connected'] {
+  border-color: #b8e7c5 !important;
+  background: color-mix(in srgb, #22b85a 14%, var(--settings-surface)) !important;
+  color: #18783c !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control[data-state='attention'] {
+  border-color: #ffd08a !important;
+  background: color-mix(in srgb, #ff9800 14%, var(--settings-surface)) !important;
+  color: #b45b00 !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control[data-state='marketplace'] {
+  border-color: var(--settings-border) !important;
+  background: var(--settings-surface) !important;
+  color: var(--settings-text-secondary) !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #a5aaa3;
+}
+
+.settings-page-wrapper[data-settings-route='tools']
+  .synon-mcp-card__status-control[data-state='connected']
+  .synon-mcp-card__status-dot {
+  background: #22b85a;
+  box-shadow: 0 0 0 3px rgba(34, 184, 90, 0.12);
+}
+
+.settings-page-wrapper[data-settings-route='tools']
+  .synon-mcp-card__status-control[data-state='attention']
+  .synon-mcp-card__status-dot {
+  background: #ff9800;
+  box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.13);
+}
+
+@media (max-width: 1199px) {
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+    height: auto;
+    min-height: 224px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+    transition: none;
+  }
+}

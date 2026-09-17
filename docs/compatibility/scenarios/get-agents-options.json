@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "get-agents-options",
+  "contracts": [
+    {
+      "kind": "service",
+      "name": "getAgents"
+    }
+  ],
+  "steps": [
+    {
+      "name": "include-metadata",
+      "method": "GET",
+      "path": "/api/agents?include_metadata=true",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "lite",
+      "method": "GET",
+      "path": "/api/agents?lite=true",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "filter-names",
+      "method": "GET",
+      "path": "/api/agents?names=AIDD_EXPERT%2COPERON",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "combined",
+      "method": "GET",
+      "path": "/api/agents?names=AIDD_EXPERT&include_metadata=true&lite=true",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 8388608,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/0/response/body/11/displayName",
+    "/steps/0/response/body/11/id",
+    "/steps/0/response/body/11/metadata/displayName",
+    "/steps/0/response/body/11/metadata/id",
+    "/steps/1/response/body/11/displayName",
+    "/steps/1/response/body/11/id",
+    "/steps/2/response/body/1/displayName",
+    "/steps/2/response/body/1/id"
+  ],
+  "redactions": []
+}

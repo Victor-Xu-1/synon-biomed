@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "set-data-directory",
+  "contracts": [
+    {"kind": "service", "name": "setDataDir"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "get-current-data-directory",
+      "method": "GET",
+      "path": "/api/settings/data-dir",
+      "expectedStatus": [200],
+      "capture": {"currentDataDirectory": "/current"}
+    },
+    {
+      "name": "stage-data-directory-migration",
+      "method": "POST",
+      "path": "/api/settings/data-dir",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "path": "${capture:currentDataDirectory}/../relocated",
+        "migrate": true,
+        "_noRestart": true
+      },
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-staged-data-directory",
+      "method": "GET",
+      "path": "/api/settings/data-dir",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/current",
+    "/steps/1/response/body/default",
+    "/steps/1/response/body/configPath",
+    "/steps/1/response/body/usageBytes",
+    "/steps/1/response/body/freeBytes",
+    "/steps/1/response/body/lastMove",
+    "/steps/2/request/body/path",
+    "/steps/3/response/body/current",
+    "/steps/3/response/body/default",
+    "/steps/3/response/body/configPath",
+    "/steps/3/response/body/usageBytes",
+    "/steps/3/response/body/freeBytes",
+    "/steps/3/response/body/lastMove",
+    "/steps/3/response/body/source"
+  ],
+  "redactions": []
+}

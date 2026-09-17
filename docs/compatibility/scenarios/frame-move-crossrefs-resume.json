@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "id": "frame-move-crossrefs-resume",
+  "contracts": [
+    {"kind": "service", "name": "listSessionCrossRefs"},
+    {"kind": "service", "name": "moveFrameToProject"},
+    {"kind": "service", "name": "resumeFrame"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-source-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Frame Move Source Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"sourceProjectId": "/project_id"}
+    },
+    {
+      "name": "create-target-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Frame Move Target Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"targetProjectId": "/project_id"}
+    },
+    {
+      "name": "submit-root-frame",
+      "method": "POST",
+      "path": "/api/request",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "target_agent": "ONBOARDING",
+        "project_id": "${capture:sourceProjectId}",
+        "input_data": {"request": "Create a resumable lifecycle fixture."},
+        "plan_mode": false,
+        "intent_id": "00000000-0000-4000-8000-000000000021"
+      },
+      "expectedStatus": [200],
+      "capture": {"rootFrameId": "/root_frame_id"}
+    },
+    {
+      "name": "cancel-root-frame",
+      "method": "POST",
+      "path": "/api/frames/${capture:rootFrameId}/cancel?reason=oracle-move",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "list-empty-cross-references",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootFrameId}/cross-session-refs",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "move-root-frame",
+      "method": "POST",
+      "path": "/api/frames/${capture:rootFrameId}/move",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"target_project_id": "${capture:targetProjectId}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "move-root-frame-idempotently",
+      "method": "POST",
+      "path": "/api/frames/${capture:rootFrameId}/move",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"target_project_id": "${capture:targetProjectId}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-moved-frame",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootFrameId}?shallow=true",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "resume-moved-frame",
+      "method": "POST",
+      "path": "/api/frames/${capture:rootFrameId}/resume",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"plan_mode": false, "target_agent": "ONBOARDING"},
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/created_at",
+    "/steps/2/response/body/updated_at",
+    "/steps/3/request/body/project_id",
+    "/steps/3/request/body/project_id",
+    "/steps/3/response/body/root_frame_id",
+    "/steps/3/response/body/frame_id",
+    "/steps/4/request/path",
+    "/steps/4/response/body/root_frame_id",
+    "/steps/4/response/body/cancelled_frames/0",
+    "/steps/5/request/path",
+    "/steps/6/request/path",
+    "/steps/6/request/body/target_project_id",
+    "/steps/6/response/body/root_frame_id",
+    "/steps/6/response/body/from_project_id",
+    "/steps/6/response/body/to_project_id",
+    "/steps/7/request/path",
+    "/steps/7/request/body/target_project_id",
+    "/steps/7/response/body/root_frame_id",
+    "/steps/7/response/body/from_project_id",
+    "/steps/7/response/body/to_project_id",
+    "/steps/8/request/path",
+    "/steps/8/response/body/id",
+    "/steps/8/response/body/project_id",
+    "/steps/8/response/body/root_frame_id",
+    "/steps/8/response/body/created_at",
+    "/steps/8/response/body/updated_at",
+    "/steps/8/response/body/completed_at",
+    "/steps/8/response/body/message_count",
+    "/steps/8/response/body/output_data",
+    "/steps/9/request/path",
+    "/steps/9/response/body/root_frame_id",
+    "/steps/9/response/body/resumed_frames/0/frame_id"
+  ],
+  "redactions": []
+}

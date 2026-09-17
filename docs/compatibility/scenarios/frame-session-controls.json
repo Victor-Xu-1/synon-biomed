@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "id": "frame-session-controls",
+  "contracts": [
+    {"kind": "service", "name": "createProject"},
+    {"kind": "service", "name": "createFrame"},
+    {"kind": "service", "name": "getReadCursor"},
+    {"kind": "service", "name": "putReadCursor"},
+    {"kind": "service", "name": "cancelFrame"},
+    {"kind": "service", "name": "retractQueuedMessage"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Frame Controls Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "create-frame",
+      "method": "POST",
+      "path": "/api/frames",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"project_id": "${capture:projectId}"},
+      "expectedStatus": [201],
+      "capture": {"frameId": "/root_frame_id"}
+    },
+    {
+      "name": "get-initial-read-cursor",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}/read-cursor",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "put-read-cursor",
+      "method": "PUT",
+      "path": "/api/frames/${capture:frameId}/read-cursor",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"message_uuid": null, "message_index": 0},
+      "expectedStatus": [200, 400]
+    },
+    {
+      "name": "get-stored-read-cursor",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}/read-cursor",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "cancel-frame",
+      "method": "POST",
+      "path": "/api/frames/${capture:frameId}/cancel?reason=oracle-stop",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "cancel-frame-again",
+      "method": "POST",
+      "path": "/api/frames/${capture:frameId}/cancel?reason=oracle-stop-again",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "retract-missing-queued-message",
+      "method": "DELETE",
+      "path": "/api/frames/${capture:frameId}/queued-messages/00000000-0000-4000-8000-000000000001",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200, 400, 404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/3/request/path",
+    "/steps/4/request/path",
+    "/steps/4/response/body/root_frame_id",
+    "/steps/4/response/body/updated_at",
+    "/steps/5/request/path",
+    "/steps/5/response/body/root_frame_id",
+    "/steps/5/response/body/updated_at",
+    "/steps/6/request/path",
+    "/steps/6/response/body/cancelled_frames/0",
+    "/steps/6/response/body/root_frame_id",
+    "/steps/7/request/path",
+    "/steps/7/response/body/cancelled_frames/0",
+    "/steps/7/response/body/root_frame_id",
+    "/steps/8/request/path",
+    "/steps/8/response/body/detail"
+  ],
+  "redactions": []
+}

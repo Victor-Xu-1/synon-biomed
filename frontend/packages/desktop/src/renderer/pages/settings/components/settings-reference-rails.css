@@ -1,0 +1,45 @@
+/* Route-scoped desktop geometry from the accepted settings visual contract. */
+
+@media (min-width: 768px) {
+  /* Each approved sheet has a measured content rail.  The small differences
+     are intentional: they keep the generated reference framing (including
+     its right-hand breathing room) stable while remaining fluid below the
+     desktop canvas. */
+  html body .settings-page-wrapper[data-settings-route='account'] .account-settings,
+  html body .settings-page-wrapper[data-settings-route='account'] .settings-page-header {
+    width: min(1176px, 100%) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
+    width: min(1188px, 100%) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page {
+    width: min(1182px, 100%) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page {
+    width: min(1180px, 100%) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='experts'] .settings-experts-page {
+    width: min(1193px, 100%) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page {
+    width: min(1199px, 100%) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='compute'] .settings-compute-page {
+    width: min(1193px, 100%) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='network'] .settings-network-page {
+    width: min(1184px, 100%) !important;
+    margin-left: min(4px, 100%);
+  }
+
+  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page {
+    width: min(1193px, 100%) !important;
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "duck",
+  "version": "0.1.12",
+  "sourceArchive": "https://registry.npmjs.org/duck/-/duck-0.1.12.tgz",
+  "integrity": "sha512-wkctla1O6VfP89gQ+J/yDesM0S7B7XLXjKGzXxMDVFg7uEn706niAtyYovKbyq1oT9YwDcly721/iUWoc8MVRg==",
+  "archiveSHA256": "851cf25b200ff6e7cb3b18dbc342917d7ab27aee7a5a94a555157601a8f20ba3",
+  "declaredLicense": "BSD",
+  "distributionLicense": "BSD-2-Clause",
+  "licenseFiles": [
+    {
+      "path": "LICENSE",
+      "sourceSHA256": "6663bbd049205d38a496ccacb412a151980b444627d38de218b3b809aef330f1",
+      "sourceBytes": 1307,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    }
+  ]
+}

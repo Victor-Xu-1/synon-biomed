@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "id": "compute-workbench-controls",
+  "contracts": [
+    {"kind": "http-route", "name": "GET /api/compute/gpu"},
+    {"kind": "http-route", "name": "GET /api/compute/gpu/enabled"},
+    {"kind": "http-route", "name": "PUT /api/compute/gpu/enabled"},
+    {"kind": "http-route", "name": "GET /api/compute/bionemo/enabled"},
+    {"kind": "http-route", "name": "PUT /api/compute/bionemo/enabled"},
+    {"kind": "http-route", "name": "GET /api/compute/gpu/detect"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "gpu-default",
+      "method": "GET",
+      "path": "/api/compute/gpu",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "gpu-enabled-default",
+      "method": "GET",
+      "path": "/api/compute/gpu/enabled",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "gpu-enable",
+      "method": "PUT",
+      "path": "/api/compute/gpu/enabled",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"enabled": true},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "gpu-enabled-after-update",
+      "method": "GET",
+      "path": "/api/compute/gpu/enabled",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "gpu-detect",
+      "method": "GET",
+      "path": "/api/compute/gpu/detect",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "bionemo-default",
+      "method": "GET",
+      "path": "/api/compute/bionemo/enabled",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "bionemo-disable",
+      "method": "PUT",
+      "path": "/api/compute/bionemo/enabled",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"enabled": false},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "bionemo-after-update",
+      "method": "GET",
+      "path": "/api/compute/bionemo/enabled",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 1048576,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

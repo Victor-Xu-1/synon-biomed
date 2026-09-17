@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "id": "artifact-content-download",
+  "contracts": [
+    {"kind": "service", "name": "getAttachmentMetadata"},
+    {"kind": "service", "name": "getArtifactAsText"},
+    {"kind": "service", "name": "getVersionAsText"},
+    {"kind": "service", "name": "getVersionAsTextBounded"},
+    {"kind": "service", "name": "getVersionTextHead"},
+    {"kind": "service", "name": "getVersionAsBlob"},
+    {"kind": "service", "name": "getVersionContent"},
+    {"kind": "service", "name": "getArtifactBlob"},
+    {"kind": "service", "name": "getVersionBlob"},
+    {"kind": "service", "name": "downloadArtifactToFile"}
+  ],
+  "steps": [
+    {
+      "name": "missing-attachment-metadata",
+      "method": "GET",
+      "path": "/api/attachments/missing-attachment/metadata",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-artifact-text",
+      "method": "GET",
+      "path": "/api/artifacts/missing-artifact",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-artifact-blob-with-metadata",
+      "method": "GET",
+      "path": "/api/artifacts/missing-artifact?include_metadata=true",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-artifact-anchor-preflight",
+      "method": "GET",
+      "path": "/api/artifacts/missing-artifact?filename=report.txt",
+      "headers": {"Range": "bytes=0-0", "X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-version-text-and-content",
+      "method": "GET",
+      "path": "/api/artifacts/versions/missing-version",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-version-blob-with-metadata",
+      "method": "GET",
+      "path": "/api/artifacts/versions/missing-version?include_metadata=true",
+      "headers": {"X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "missing-version-bounded-head",
+      "method": "GET",
+      "path": "/api/artifacts/versions/missing-version",
+      "headers": {"Range": "bytes=0-7", "X-Synon-User-Id": "local"},
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

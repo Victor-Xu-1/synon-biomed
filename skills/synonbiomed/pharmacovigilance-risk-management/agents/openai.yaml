@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pharmacovigilance Risk Management"
+  short_description: "Plan safety surveillance, signals, RMPs, and reporting"
+  default_prompt: "Use $pharmacovigilance-risk-management to build a source-grounded, review-ready plan."

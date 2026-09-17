@@ -1,0 +1,264 @@
+{
+  "artifacts": {
+    "committedVersionCount": 8,
+    "currentCommittedCount": 8,
+    "duplicateCurrentNames": [],
+    "items": [
+      {
+        "artifactId": "47200753-c861-5ee9-a109-fbc5637b3fdd",
+        "current": true,
+        "digest": "pass",
+        "name": "NLRP3_NEK7_Review_Report.html",
+        "sizeBytes": 37332,
+        "versionId": "d6f3884d-22d8-421b-b033-4b5e0fa37162"
+      },
+      {
+        "artifactId": "311d0a04-c7be-565a-9672-db0e699a7dc3",
+        "current": true,
+        "digest": "pass",
+        "name": "candidate_status.csv",
+        "sizeBytes": 1049,
+        "versionId": "ebe7c669-6a95-402a-b7a1-5ec04f4ad0a6"
+      },
+      {
+        "artifactId": "aedea52d-459d-57a1-9640-6f9eaa258cb6",
+        "current": true,
+        "digest": "pass",
+        "name": "candidate_status.md",
+        "sizeBytes": 2875,
+        "versionId": "c1cb379e-1988-4f54-97cb-32d889dc306b"
+      },
+      {
+        "artifactId": "936a1cf5-94d7-58f4-822e-05331ef82102",
+        "current": true,
+        "digest": "pass",
+        "name": "candidates.sdf",
+        "sizeBytes": 11636,
+        "versionId": "37c1ff2b-f2e0-47ed-bc52-2e04c9bcfcb2"
+      },
+      {
+        "artifactId": "21c875b5-7bb4-5b78-b928-a9558968d5d5",
+        "current": true,
+        "digest": "pass",
+        "name": "designed_candidates.csv",
+        "sizeBytes": 1098,
+        "versionId": "34e91d50-28c5-42b7-86b7-77235025877d"
+      },
+      {
+        "artifactId": "147b7872-c962-58cd-bd61-36f0d5b7a4b3",
+        "current": true,
+        "digest": "pass",
+        "name": "known_inhibitors.csv",
+        "sizeBytes": 1232,
+        "versionId": "8a657da1-097b-4580-86c6-faabfeb4b45f"
+      },
+      {
+        "artifactId": "2d657e84-ac0e-590c-a022-2d81bfed8944",
+        "current": true,
+        "digest": "pass",
+        "name": "molecule_grid.png",
+        "sizeBytes": 118051,
+        "versionId": "e49629b6-2b1e-48fe-8727-fe42cad76d38"
+      },
+      {
+        "artifactId": "2ad4f54e-6c61-5ae6-8fb5-37634db9b03d",
+        "current": true,
+        "digest": "pass",
+        "name": "property_comparison.png",
+        "sizeBytes": 118461,
+        "versionId": "aa3aab4a-74a0-4e77-96fe-e389b00f1abb"
+      }
+    ]
+  },
+  "browser": {
+    "capturedAt": "2026-08-07T11:16:36.950Z",
+    "checks": [
+      {
+        "evidence": "The browser artifact list showed the HTML report, two CSV property tables, two PNG plots, candidates.sdf, candidate_status.csv, and candidate_status.md, with no JSON/JSONL deliverable.",
+        "id": "artifact_library_visible",
+        "status": "pass"
+      },
+      {
+        "evidence": "The follow-up generated candidates.sdf, independently reread four records, and exposed the resulting SDF in the browser preview.",
+        "id": "candidate_structure_integrity",
+        "status": "pass"
+      },
+      {
+        "evidence": "The Codex built-in browser showed the NLRP3-NEK7 task, the recorded Python and evidence failures, the corrected follow-up, and the final summary.",
+        "id": "conversation_stream_visible",
+        "status": "pass"
+      },
+      {
+        "evidence": "The initial RDKit KeyError, ChEMBL empty target query, unsupported PMID save, and invalid Candidate_A were recorded; later tool calls and the follow-up completed without stopping the task.",
+        "id": "failure_recovery",
+        "status": "pass"
+      },
+      {
+        "evidence": "Managed Python/RDKit produced the known-inhibitor and candidate CSVs, while the invalid Candidate_A parse remained recorded as a failure.",
+        "id": "managed_rdkit_calculation",
+        "status": "pass"
+      },
+      {
+        "evidence": "The transcript records real PubMed, PDB, ChEMBL, and ClinicalTrials calls; the final summary retains the source and failure notes.",
+        "id": "real_source_retrieval",
+        "status": "pass"
+      },
+      {
+        "evidence": "After reloading 8765, the same conversation restored the completion summary, HTML report, candidates.sdf, candidate status files, and the artifact list.",
+        "id": "refresh_recovery",
+        "status": "pass"
+      },
+      {
+        "evidence": "The browser opened the NLRP3_NEK7_Review_Report.html preview and showed the report preview modal.",
+        "id": "report_preview_visible",
+        "status": "pass"
+      },
+      {
+        "evidence": "The visible report summary covers NLRP3-NEK7 evidence, four candidates, failure notes, and a four-week validation plan.",
+        "id": "scientific_report_quality",
+        "status": "pass"
+      },
+      {
+        "evidence": "The browser opened candidates.sdf and showed the SDF V3000 3D structure preview control.",
+        "id": "structure_preview_visible",
+        "status": "pass"
+      },
+      {
+        "evidence": "The browser showed both execution units completed; the read-only transcript audit confirmed runner attempts 1 and 2 reached terminal completed.",
+        "id": "terminal_status_consistent",
+        "status": "pass"
+      }
+    ],
+    "screenshotSha256": "308c3a03b8541ae8d562c732070b42a228cb2186c7c6c624c341744ad7400999",
+    "status": "pass",
+    "url": "http://localhost:8765/#/conversation/ccb5f719-1bcf-48fb-8740-34f0b778f101"
+  },
+  "capturedAt": "2026-08-07T11:18:55.274908Z",
+  "conversationId": "ccb5f719-1bcf-48fb-8740-34f0b778f101",
+  "evidenceDigest": "7ec2484ef0504ef585185148d74aa3a0ffa7e81f84b7f8dd2b03ff75f05907aa",
+  "failures": [],
+  "frame": {
+    "createdAt": "2026-08-07 10:56:06.39835633 +0000 UTC",
+    "status": "completed",
+    "updatedAt": "2026-08-07 11:11:38.878287725 +0000 UTC"
+  },
+  "qualityReview": {
+    "criteria": [
+      {
+        "criterion": "PubMed, PDB, ChEMBL, and ClinicalTrials evidence was retrieved through real tool calls and source failures were recorded.",
+        "evidenceSources": [
+          "transcript"
+        ],
+        "id": "real_source_retrieval"
+      },
+      {
+        "criterion": "Known inhibitors and candidate structures were calculated in the managed RDKit runtime; invalid candidate input remained explicitly failed.",
+        "evidenceSources": [
+          "transcript",
+          "artifacts"
+        ],
+        "id": "managed_rdkit_calculation"
+      },
+      {
+        "criterion": "The final SDF has four parseable, non-duplicate candidate records and is independently reread before publication.",
+        "evidenceSources": [
+          "transcript",
+          "artifacts"
+        ],
+        "id": "candidate_structure_integrity"
+      },
+      {
+        "criterion": "The report separates sourced facts, calculations, hypotheses, failures, and a four-week validation package.",
+        "evidenceSources": [
+          "artifacts"
+        ],
+        "id": "scientific_report_quality"
+      },
+      {
+        "criterion": "A failed tool call and an unsupported citation did not terminate the task; the task continued and published corrected deliverables.",
+        "evidenceSources": [
+          "transcript",
+          "database"
+        ],
+        "id": "failure_recovery"
+      }
+    ],
+    "status": "pass"
+  },
+  "runner": {
+    "attemptCount": 2,
+    "attempts": [
+      {
+        "attempt": 1,
+        "claimedAt": "2026-08-07 10:56:19.557177532 +0000 UTC",
+        "expiresAt": "2026-08-07 11:11:11.116818379 +0000 UTC",
+        "finishedAt": "2026-08-07 11:06:18.766743264 +0000 UTC",
+        "finishedEventId": 168,
+        "phase": "terminal",
+        "staleRunning": false,
+        "status": "completed"
+      },
+      {
+        "attempt": 2,
+        "claimedAt": "2026-08-07 11:08:41.620042769 +0000 UTC",
+        "expiresAt": "2026-08-07 11:16:11.64110584 +0000 UTC",
+        "finishedAt": "2026-08-07 11:11:38.878287725 +0000 UTC",
+        "finishedEventId": 235,
+        "phase": "terminal",
+        "staleRunning": false,
+        "status": "completed"
+      }
+    ],
+    "latest": {
+      "attempt": 2,
+      "claimedAt": "2026-08-07 11:08:41.620042769 +0000 UTC",
+      "expiresAt": "2026-08-07 11:16:11.64110584 +0000 UTC",
+      "finishedAt": "2026-08-07 11:11:38.878287725 +0000 UTC",
+      "finishedEventId": 235,
+      "phase": "terminal",
+      "staleRunning": false,
+      "status": "completed"
+    },
+    "staleRunningAttempts": []
+  },
+  "schema": "synon.science-task-audit.v1",
+  "status": "pass",
+  "taskId": "nlrp3-nek7-design",
+  "tools": {
+    "byName": {
+      "Skill": 1,
+      "edit_file": 2,
+      "mcp__chembl__compound_search": 1,
+      "mcp__chembl__get_bioactivity": 1,
+      "mcp__chembl__target_search": 2,
+      "mcp__clinical-trials__search_trials": 1,
+      "mcp__pubmed__get_article_metadata": 1,
+      "mcp__pubmed__search_articles": 1,
+      "mcp__structures-interactions__pdb_get_structures": 1,
+      "mcp__structures-interactions__pdb_search_structures": 1,
+      "python": 5,
+      "save_artifacts": 3,
+      "todo_write": 6
+    },
+    "byState": {
+      "completed": 25,
+      "failed": 1
+    },
+    "count": 26,
+    "openCount": 0
+  },
+  "transcript": {
+    "consumedInputRevision": 2,
+    "eventCounts": {
+      "assistant_message": 2,
+      "content_delta": 145,
+      "runner_checkpoint": 84,
+      "runner_finished": 2,
+      "user_message": 2
+    },
+    "initialPromptSha256": "b11ba872b367eb0953c6048b99e99af533b4b3129af48eb421ae5fa569cd0121",
+    "inputRevision": 2,
+    "streamCount": 1,
+    "streamUid": "frame:ccb5f719-1bcf-48fb-8740-34f0b778f101"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "onboarding-use-intent",
+  "contracts": [
+    {"kind": "service", "name": "getFirstRunOnboarding"},
+    {"kind": "service", "name": "markFirstRunOnboardingComplete"},
+    {"kind": "service", "name": "getUseIntent"},
+    {"kind": "service", "name": "setUseIntent"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "get-incomplete-first-run",
+      "method": "GET",
+      "path": "/api/preferences/first-run-onboarding",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "complete-first-run",
+      "method": "POST",
+      "path": "/api/preferences/first-run-onboarding/complete",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-complete-first-run",
+      "method": "GET",
+      "path": "/api/preferences/first-run-onboarding",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-default-use-intent",
+      "method": "GET",
+      "path": "/api/preferences/use-intent",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "set-use-intent",
+      "method": "PUT",
+      "path": "/api/preferences/use-intent",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"intent": "noncommercial"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-declared-use-intent",
+      "method": "GET",
+      "path": "/api/preferences/use-intent",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

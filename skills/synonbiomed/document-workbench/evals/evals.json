@@ -1,0 +1,20 @@
+{
+  "skill": "document-workbench",
+  "cases": [
+    {
+      "id": "native-office-and-preview",
+      "prompt": "Create Word, Excel, PowerPoint, PDF, HTML, and Notebook project files, then open every built-in project preview without installing an Office suite.",
+      "expected": ["all six native files are created", "each file validates", "artifacts are registered", "every built-in project preview opens"]
+    },
+    {
+      "id": "notebook-no-implicit-execution",
+      "prompt": "Preview this attached notebook and summarize its cells.",
+      "expected": ["notebook is not executed", "static HTML is escaped", "cell summary is returned"]
+    },
+    {
+      "id": "hostile-package-rejected",
+      "prompt": "Inspect an OOXML package containing a traversal entry or expansion bomb.",
+      "expected": ["validation fails before extraction", "source remains unchanged", "diagnostic names the violated limit"]
+    }
+  ]
+}

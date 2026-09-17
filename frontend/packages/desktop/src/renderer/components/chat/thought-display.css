@@ -1,0 +1,58 @@
+.thought-display {
+  display: flex;
+  min-width: 0;
+  min-height: 30px;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 6px;
+  padding: 0 4px;
+  color: var(--workspace-text-secondary, var(--color-text-2));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.thought-display--compact {
+  min-height: 26px;
+  margin-bottom: 4px;
+}
+
+.thought-display__spinner {
+  display: inline-flex;
+  flex: none;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+}
+
+.thought-display__label,
+.thought-display__subject {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--workspace-text, var(--color-text-1));
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thought-display__description {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--workspace-text-secondary, var(--color-text-2));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thought-display__elapsed {
+  flex: none;
+  color: var(--workspace-text-tertiary, var(--color-text-3));
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .thought-display {
+    min-height: 26px;
+    margin-bottom: 4px;
+    padding-inline: 2px;
+  }
+}

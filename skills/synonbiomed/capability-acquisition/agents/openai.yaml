@@ -1,0 +1,4 @@
+interface:
+  display_name: "Capability Acquisition"
+  short_description: "Find, review, install, and verify missing task capabilities"
+  default_prompt: "Use $capability-acquisition to acquire the missing capability and continue the task."

@@ -1,0 +1,44 @@
+{
+  "auth": {
+    "failed": "{{backend}} 认证失败：\n\n{{error}}\n\n请检查本地CLI工具的认证状态",
+    "console_error": "ACP认证错误详情:",
+    "failed_confirm": "ACP {{backend}} 认证失败：\n\n{{error}}\n\n是否现在前往设置页面配置？"
+  },
+  "send": {
+    "failed": "发送消息失败：{{error}}"
+  },
+  "sendbox": {
+    "placeholder": "输入你的问题 - @ 引用产物，# 引用会话，/ 调用 Skills，Ctrl+K 搜索..."
+  },
+  "image": {
+    "download": "下载",
+    "download_aria": "下载图片",
+    "download_success": "下载成功",
+    "download_error": "下载失败",
+    "generated_alt": "生成的图片"
+  },
+  "toolCall": {
+    "id": "工具调用 ID：{{id}}",
+    "kind": {
+      "edit": "编辑文件",
+      "read": "读取文件",
+      "execute": "执行命令"
+    },
+    "status": {
+      "pending": "等待中",
+      "inProgress": "执行中"
+    }
+  },
+  "status": {
+    "connecting": "正在连接 {{agent}}...",
+    "connected": "已连接到 {{agent}}",
+    "authenticated": "已通过 {{agent}} 身份验证",
+    "session_active": "{{agent}} 会话活跃中",
+    "error": "连接错误",
+    "unknown": "未知状态"
+  },
+  "config": {
+    "reasoning_effort": "推理深度",
+    "default": "默认"
+  }
+}

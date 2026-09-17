@@ -1,0 +1,4 @@
+interface:
+  display_name: "nf-core Pipeline Development"
+  short_description: "Run pinned sequencing workflows with reproducible controls"
+  default_prompt: "Use $nextflow-development to create a source-grounded, review-ready workflow."

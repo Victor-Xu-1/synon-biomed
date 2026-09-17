@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "artifact-version-bulk-move",
+  "contracts": [
+    {"kind": "service", "name": "saveArtifactVersion"},
+    {"kind": "service", "name": "saveArtifactVersionBinary"},
+    {"kind": "service", "name": "bulkMoveArtifacts"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "validate-text-before-artifact-lookup",
+      "method": "POST",
+      "path": "/api/artifacts/missing-artifact/versions",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"content": ""},
+      "expectedStatus": [400]
+    },
+    {
+      "name": "reject-missing-text-artifact",
+      "method": "POST",
+      "path": "/api/artifacts/missing-artifact/versions",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"content": "valid edit"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "reject-binary-without-file-before-artifact-lookup",
+      "method": "POST",
+      "path": "/api/artifacts/missing-artifact/versions/binary",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {},
+      "expectedStatus": [406]
+    },
+    {
+      "name": "reject-empty-bulk-move",
+      "method": "POST",
+      "path": "/api/artifacts/bulk-move",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"artifact_ids": [], "folder_id": null},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

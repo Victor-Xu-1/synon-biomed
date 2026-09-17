@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+case "${1-} ${2-} ${3-} ${4-} ${5-}" in
+  "auth token --hostname github.com ")
+    if [ "${SYNON_HOST_GITHUB_FIXTURE_MODE:-gh}" != "gh" ]; then
+      exit 1
+    fi
+    printf '%s\n' 'ghp_1234567890ABCDEF'
+    ;;
+  "api user -q .login ")
+    if [ "${SYNON_HOST_GITHUB_FIXTURE_MODE:-gh}" = "git" ]; then
+      printf '%s\n' 'git-user'
+    else
+      printf '%s\n' 'oracle-user'
+    fi
+    ;;
+  *)
+    printf '%s\n' "unexpected gh arguments: $*" >&2
+    exit 64
+    ;;
+esac

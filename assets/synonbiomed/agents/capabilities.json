@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "agents": [
+    {
+      "name": "AIDD_EXPERT",
+      "skills": ["drug-discovery-pipeline", "autodock-vina", "genmol-nim", "molmim-nim", "diffdock", "diffdock-nim", "cheminfo-render", "chem-physical-properties", "compound-sourcing", "using-model-endpoint", "managed-model-endpoints", "deep-literature-investigation"],
+      "connectors": ["bundled:chembl", "bundled:pubmed", "bundled:biomart", "bundled:chemistry", "bundled:structures-interactions", "bundled:protein-annotation", "bundled:literature"]
+    },
+    {
+      "name": "CLINICAL_DEV_EXPERT",
+      "skills": ["indication-dossier", "deep-literature-investigation", "literature-review", "citation-management", "paper-narrative", "pdf-explore", "drug-discovery-pipeline", "patent-search"],
+      "connectors": ["bundled:clinical-trials", "bundled:pubmed", "bundled:drug-regulatory", "bundled:research-resources", "bundled:literature", "bundled:cancer-models"]
+    },
+    {
+      "name": "COMPUTATIONAL_CHEM_EXPERT",
+      "skills": ["autodock-vina", "quantum-chemistry-postprocessing", "chem-physical-properties", "cheminfo-render", "binding-mode-analysis", "diffdock", "diffdock-nim", "complexa-design", "complexa-evaluate-pdbs", "complexa-target", "reaction-engineering", "compound-sourcing", "using-model-endpoint"],
+      "connectors": ["bundled:chembl", "bundled:chemistry", "bundled:structures-interactions", "bundled:zinc", "bundled:ketcher-chemistry", "bundled:pubmed"]
+    },
+    {
+      "name": "DMPK_EXPERT",
+      "skills": ["chem-physical-properties", "cheminfo-render", "compound-sourcing", "drug-discovery-pipeline", "binding-mode-analysis", "reaction-engineering", "literature-review", "citation-management", "deep-literature-investigation"],
+      "connectors": ["bundled:chembl", "bundled:pubmed", "bundled:chemistry", "bundled:structures-interactions", "bundled:drug-regulatory", "bundled:research-resources"]
+    },
+    {
+      "name": "GENOMICS_BIOINFO_EXPERT",
+      "skills": ["ngs-analysis-router", "genomics-workflow-acceleration", "parabricks", "single-cell-rna-analysis", "scvi-tools", "scgpt", "evo2", "evo2-nim", "borzoi", "msa-search-nim", "msa-structure-prediction-pipeline", "citation-management", "deep-literature-investigation"],
+      "connectors": ["bundled:biomart", "bundled:variants", "bundled:clinical-genomics", "bundled:expression", "bundled:rna", "bundled:genes-ontologies", "bundled:genomes", "bundled:omics-archives", "bundled:pubmed"]
+    },
+    {
+      "name": "IMMUNOLOGY_EXPERT",
+      "skills": ["single-cell-rna-analysis", "scgpt", "scvi-tools", "drug-discovery-pipeline", "deep-literature-investigation", "literature-review", "indication-dossier", "citation-management", "paper-narrative", "proteinmpnn"],
+      "connectors": ["bundled:pubmed", "bundled:clinical-trials", "bundled:cancer-models", "bundled:expression", "bundled:genes-ontologies", "bundled:protein-annotation", "bundled:research-resources", "bundled:literature"]
+    },
+    {
+      "name": "MEDCHEM_EXPERT",
+      "skills": ["autodock-vina", "compound-sourcing", "chem-physical-properties", "cheminfo-render", "reaction-engineering", "binding-mode-analysis", "diffdock", "drug-discovery-pipeline", "quantum-chemistry-postprocessing", "citation-management", "literature-review", "patent-search"],
+      "connectors": ["bundled:chembl", "bundled:pubmed", "bundled:chemistry", "bundled:zinc", "bundled:ketcher-chemistry", "bundled:structures-interactions", "bundled:drug-regulatory", "bundled:research-resources", "bundled:literature"]
+    },
+    {
+      "name": "NEUROSCIENCE_EXPERT",
+      "skills": ["deep-literature-investigation", "literature-review", "indication-dossier", "citation-management", "paper-narrative", "drug-discovery-pipeline", "chem-physical-properties", "single-cell-rna-analysis", "scgpt", "scvi-tools"],
+      "connectors": ["bundled:pubmed", "bundled:clinical-trials", "bundled:biomart", "bundled:expression", "bundled:variants", "bundled:clinical-genomics", "bundled:protein-annotation", "bundled:research-resources", "bundled:literature"]
+    },
+    {
+      "name": "ONCOLOGY_EXPERT",
+      "skills": ["drug-discovery-pipeline", "indication-dossier", "deep-literature-investigation", "literature-review", "citation-management", "paper-narrative", "patent-search", "single-cell-rna-analysis", "scgpt", "scvi-tools", "compound-sourcing"],
+      "connectors": ["bundled:pubmed", "bundled:clinical-trials", "bundled:cancer-models", "bundled:variants", "bundled:expression", "bundled:clinical-genomics", "bundled:drug-regulatory", "bundled:research-resources", "bundled:literature"]
+    },
+    {
+      "name": "STRUCTURAL_BIOLOGY_EXPERT",
+      "skills": ["alphafold2", "boltz", "boltz2-nim", "chai1", "esmfold2", "openfold3", "openfold3-nim", "openfold2-nim", "proteinmpnn", "proteinmpnn-nim", "ligandmpnn", "rfdiffusion-nim", "solublempnn", "nvmolkit-usage", "binding-mode-analysis", "cheminfo-render"],
+      "connectors": ["bundled:protein-annotation", "bundled:structures-interactions", "bundled:chembl", "bundled:pubmed", "bundled:chemistry", "bundled:ketcher-chemistry", "bundled:biomart", "bundled:literature"]
+    }
+  ]
+}

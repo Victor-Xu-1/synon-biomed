@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "id": "frame-session-lifecycle",
+  "contracts": [
+    {"kind": "service", "name": "createProject"},
+    {"kind": "service", "name": "createFrame"},
+    {"kind": "service", "name": "listFrames"},
+    {"kind": "service", "name": "getFrame"},
+    {"kind": "service", "name": "getFrameMessagesPage"},
+    {"kind": "service", "name": "locateFrameMessage"},
+    {"kind": "service", "name": "updateFrame"},
+    {"kind": "service", "name": "deleteFrame"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Frame Session Oracle", "description": "No LLM lifecycle fixture", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "create-frame",
+      "method": "POST",
+      "path": "/api/frames",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"project_id": "${capture:projectId}"},
+      "expectedStatus": [201],
+      "capture": {"frameId": "/root_frame_id"}
+    },
+    {
+      "name": "list-project-frames",
+      "method": "GET",
+      "path": "/api/frames?project_id=${capture:projectId}&root_only=true&limit=10",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-frame-shallow",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}?shallow=true",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-empty-messages",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}/messages?from=0&limit=10",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "locate-absent-message",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}/messages/locate?uuid=oracle-absent-message",
+      "expectedStatus": [200, 404]
+    },
+    {
+      "name": "update-frame",
+      "method": "PATCH",
+      "path": "/api/frames/${capture:frameId}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Renamed Oracle Frame", "task_summary": "Updated without an LLM"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "delete-frame",
+      "method": "DELETE",
+      "path": "/api/frames/${capture:frameId}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-deleted-frame",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}",
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/3/request/path",
+    "/steps/3/response/body/0/id",
+    "/steps/3/response/body/0/project_id",
+    "/steps/3/response/body/0/root_frame_id",
+    "/steps/3/response/body/0/created_at",
+    "/steps/3/response/body/0/updated_at",
+    "/steps/4/request/path",
+    "/steps/4/response/body/id",
+    "/steps/4/response/body/project_id",
+    "/steps/4/response/body/root_frame_id",
+    "/steps/4/response/body/created_at",
+    "/steps/4/response/body/updated_at",
+    "/steps/5/request/path",
+    "/steps/5/response/body/frame_id",
+    "/steps/6/request/path",
+    "/steps/6/response/body/frame_id",
+    "/steps/7/request/path",
+    "/steps/7/response/body/root_frame_id",
+    "/steps/8/request/path",
+    "/steps/8/response/body/frame_id",
+    "/steps/8/response/body/root_frame_id",
+    "/steps/9/request/path",
+    "/steps/9/response/body/detail"
+  ],
+  "redactions": []
+}

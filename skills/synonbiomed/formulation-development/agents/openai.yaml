@@ -1,0 +1,4 @@
+interface:
+  display_name: "Formulation Development"
+  short_description: "Design phase-appropriate dosage forms and product profiles"
+  default_prompt: "Use $formulation-development to build a source-grounded, review-ready plan."

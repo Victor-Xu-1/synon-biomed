@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "id": "fork-conversation",
+  "contracts": [
+    {"kind": "service", "name": "forkConversation"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Fork Conversation Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "create-root-frame",
+      "method": "POST",
+      "path": "/api/frames",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"project_id": "${capture:projectId}"},
+      "expectedStatus": [201],
+      "capture": {"rootFrameId": "/root_frame_id"}
+    },
+    {
+      "name": "send-root-message",
+      "method": "POST",
+      "path": "/api/frames/${capture:rootFrameId}/message",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"input_data": {"request": "Original fork request."}},
+      "expectedStatus": [200],
+      "async": true,
+      "settleMilliseconds": 2000
+    },
+    {
+      "name": "await-root-message",
+      "await": "send-root-message"
+    },
+    {
+      "name": "cancel-root-frame",
+      "method": "POST",
+      "path": "/api/frames/${capture:rootFrameId}/cancel?reason=oracle-fork",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "messages-before-fork",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootFrameId}/messages?from=0&limit=20",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "fork-at-first-message",
+      "method": "POST",
+      "path": "/api/frames/${capture:rootFrameId}/fork",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "message_index": 0,
+        "edited_content": "Edited fork request.",
+        "source_branch_id": null,
+        "verifier_mode": "on",
+        "memory_mode": "off",
+        "ultra_mode": false,
+        "plan_mode": false,
+        "target_agent": "ONBOARDING"
+      },
+      "expectedStatus": [200],
+      "capture": {"branchId": "/branch_id"}
+    },
+    {
+      "name": "messages-after-fork",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootFrameId}/messages?from=0&limit=20",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "frame-after-fork",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootFrameId}?shallow=true",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/3/request/path",
+    "/steps/3/response/body/root_frame_id",
+    "/steps/3/response/body/frame_id",
+    "/steps/4/request/path",
+    "/steps/4/response/body/root_frame_id",
+    "/steps/4/response/body/cancelled_frames/0",
+    "/steps/5/request/path",
+    "/steps/5/response/body/frame_id",
+    "/steps/5/response/body/messages",
+    "/steps/5/response/body/total",
+    "/steps/6/request/path",
+    "/steps/6/response/body/root_frame_id",
+    "/steps/6/response/body/branch_id",
+    "/steps/7/request/path",
+    "/steps/7/response/body/frame_id",
+    "/steps/7/response/body/messages/0/_uuid",
+    "/steps/8/request/path",
+    "/steps/8/response/body/id",
+    "/steps/8/response/body/project_id",
+    "/steps/8/response/body/root_frame_id",
+    "/steps/8/response/body/created_at",
+    "/steps/8/response/body/updated_at",
+    "/steps/8/response/body/completed_at",
+    "/steps/8/response/body/context_data",
+    "/steps/8/response/body/output_data"
+  ],
+  "redactions": []
+}

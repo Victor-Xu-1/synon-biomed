@@ -1,0 +1,5717 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "scripts/audit/audit_web_api_contract.py",
+  "scope": {
+    "frontend": "declared API contracts and current production imports plus confirmed ipcBridge callers",
+    "backend": "literal non-test Go ServeMux Handle/HandleFunc registrations",
+    "matching": "query-stripped exact routes, ServeMux subtree routes, and explicit expansion of bounded frontend path unions"
+  },
+  "counts": {
+    "requiredActivePaths": 286,
+    "coveredActivePaths": 286,
+    "missingActivePaths": 0,
+    "goRoutePatterns": 308,
+    "dormantPaths": 2,
+    "nonEndpointPaths": 3
+  },
+  "missingActivePaths": [],
+  "dormantPaths": [
+    "/api/cron/jobs",
+    "/api/cron/jobs/{param}"
+  ],
+  "nonEndpointPaths": [
+    "/api/",
+    "/api/auth/",
+    "/api/compute/session"
+  ],
+  "records": [
+    {
+      "path": "/api/account/overview?utc_offset_minutes={param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/account/overview"
+      ],
+      "routeLocations": {
+        "/api/account/overview": [
+          {
+            "file": "internal/server/server.go",
+            "line": 698
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/account/security",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/account/security"
+      ],
+      "routeLocations": {
+        "/api/account/security": [
+          {
+            "file": "internal/server/server.go",
+            "line": 700
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/account/security/sessions/revoke-all",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/account/security/"
+      ],
+      "routeLocations": {
+        "/api/account/security/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 701
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/account/security/sessions/revoke-others",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/account/security/"
+      ],
+      "routeLocations": {
+        "/api/account/security/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 701
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/account/security/sessions/{param}/revoke",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/account/security/"
+      ],
+      "routeLocations": {
+        "/api/account/security/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 701
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/adapters/message-channels",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/adapters/message-channels"
+      ],
+      "routeLocations": {
+        "/api/adapters/message-channels": [
+          {
+            "file": "internal/server/server.go",
+            "line": 959
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/adapters/message-channels/unpair",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/adapters/message-channels/unpair"
+      ],
+      "routeLocations": {
+        "/api/adapters/message-channels/unpair": [
+          {
+            "file": "internal/server/server.go",
+            "line": 960
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/adapters/{param}/qr/poll",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/adapters/feishu/qr/poll",
+        "/api/adapters/wechat/qr/poll"
+      ],
+      "routeLocations": {
+        "/api/adapters/feishu/qr/poll": [
+          {
+            "file": "internal/server/server.go",
+            "line": 962
+          }
+        ],
+        "/api/adapters/wechat/qr/poll": [
+          {
+            "file": "internal/server/server.go",
+            "line": 964
+          }
+        ]
+      },
+      "expectedPaths": [
+        "/api/adapters/feishu/qr/poll",
+        "/api/adapters/wechat/qr/poll"
+      ],
+      "missingExpectedPaths": []
+    },
+    {
+      "path": "/api/adapters/{param}/qr/start",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/adapters/feishu/qr/start",
+        "/api/adapters/wechat/qr/start"
+      ],
+      "routeLocations": {
+        "/api/adapters/feishu/qr/start": [
+          {
+            "file": "internal/server/server.go",
+            "line": 961
+          }
+        ],
+        "/api/adapters/wechat/qr/start": [
+          {
+            "file": "internal/server/server.go",
+            "line": 963
+          }
+        ]
+      },
+      "expectedPaths": [
+        "/api/adapters/feishu/qr/start",
+        "/api/adapters/wechat/qr/start"
+      ],
+      "missingExpectedPaths": []
+    },
+    {
+      "path": "/api/agents/{param}/mcp-servers?include_tools=false",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/agents/"
+      ],
+      "routeLocations": {
+        "/api/agents/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 883
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/annotations/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/annotations/"
+      ],
+      "routeLocations": {
+        "/api/annotations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 868
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/approvals/grants",
+      "sources": [
+        "declared-web-api-contract"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/approvals/grants"
+      ],
+      "routeLocations": {
+        "/api/approvals/grants": [
+          {
+            "file": "internal/server/server.go",
+            "line": 786
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/approvals/grants/all",
+      "sources": [
+        "declared-web-api-contract"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/approvals/grants/all"
+      ],
+      "routeLocations": {
+        "/api/approvals/grants/all": [
+          {
+            "file": "internal/server/server.go",
+            "line": 787
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/download?{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/",
+        "/api/artifacts/download"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ],
+        "/api/artifacts/download": [
+          {
+            "file": "internal/server/server.go",
+            "line": 865
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/upload/chunk",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/",
+        "/api/artifacts/upload/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ],
+        "/api/artifacts/upload/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 866
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/upload/finalize?upload_id={param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/",
+        "/api/artifacts/upload/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ],
+        "/api/artifacts/upload/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 866
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/upload/init",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/",
+        "/api/artifacts/upload/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ],
+        "/api/artifacts/upload/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 866
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/upload/status/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/",
+        "/api/artifacts/upload/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ],
+        "/api/artifacts/upload/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 866
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/upload/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/",
+        "/api/artifacts/upload/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ],
+        "/api/artifacts/upload/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 866
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/versions/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/",
+        "/api/artifacts/versions/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ],
+        "/api/artifacts/versions/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 15
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/versions/{param}/verification",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/",
+        "/api/artifacts/versions/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ],
+        "/api/artifacts/versions/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 15
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/copy",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/folder",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/lineage{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/metadata",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/priority",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/rename",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/versions",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/versions/{param}/annotations",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/versions/{param}/apply-edit",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}/versions/{param}/suggest-edits",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/artifacts/{param}?include_metadata=true",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/artifacts/"
+      ],
+      "routeLocations": {
+        "/api/artifacts/": [
+          {
+            "file": "internal/server/workspace_artifact_lineage_api.go",
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/assets/logos/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/assets/logos/"
+      ],
+      "routeLocations": {
+        "/api/assets/logos/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 763
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/assistants",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/assistants"
+      ],
+      "routeLocations": {
+        "/api/assistants": [
+          {
+            "file": "internal/server/server.go",
+            "line": 706
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/assistants/import",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/assistants/"
+      ],
+      "routeLocations": {
+        "/api/assistants/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 707
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/assistants/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/assistants/"
+      ],
+      "routeLocations": {
+        "/api/assistants/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 707
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/assistants/{param}/composer-capabilities",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/assistants/"
+      ],
+      "routeLocations": {
+        "/api/assistants/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 707
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/assistants/{param}/state",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/assistants/"
+      ],
+      "routeLocations": {
+        "/api/assistants/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 707
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/assistants/{param}{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/assistants/"
+      ],
+      "routeLocations": {
+        "/api/assistants/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 707
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/auth/providers",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/auth/providers"
+      ],
+      "routeLocations": {
+        "/api/auth/providers": [
+          {
+            "file": "internal/server/server.go",
+            "line": 694
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/auth/register",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/auth/register"
+      ],
+      "routeLocations": {
+        "/api/auth/register": [
+          {
+            "file": "internal/server/server.go",
+            "line": 697
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/auth/user",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/auth/user"
+      ],
+      "routeLocations": {
+        "/api/auth/user": [
+          {
+            "file": "internal/server/server.go",
+            "line": 693
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/cloud-credentials",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/cloud-credentials"
+      ],
+      "routeLocations": {
+        "/api/cloud-credentials": [
+          {
+            "file": "internal/server/server.go",
+            "line": 807
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/cloud-credentials/{param}/buckets",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/cloud-credentials/"
+      ],
+      "routeLocations": {
+        "/api/cloud-credentials/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 808
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/cloud-credentials/{param}/export",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/cloud-credentials/"
+      ],
+      "routeLocations": {
+        "/api/cloud-credentials/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 808
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/cloud-credentials/{param}/folder?{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/cloud-credentials/"
+      ],
+      "routeLocations": {
+        "/api/cloud-credentials/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 808
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/cloud-credentials/{param}/import",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/cloud-credentials/"
+      ],
+      "routeLocations": {
+        "/api/cloud-credentials/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 808
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/cloud-credentials/{param}/test",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/cloud-credentials/"
+      ],
+      "routeLocations": {
+        "/api/cloud-credentials/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 808
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/bionemo/enabled",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/bionemo/enabled"
+      ],
+      "routeLocations": {
+        "/api/compute/bionemo/enabled": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 29
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/byoc/modal",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/byoc/"
+      ],
+      "routeLocations": {
+        "/api/compute/byoc/": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 30
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/gpu",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/gpu"
+      ],
+      "routeLocations": {
+        "/api/compute/gpu": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 26
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/gpu/enabled",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/gpu/enabled"
+      ],
+      "routeLocations": {
+        "/api/compute/gpu/enabled": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 27
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/inference-providers",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/inference-providers"
+      ],
+      "routeLocations": {
+        "/api/compute/inference-providers": [
+          {
+            "file": "internal/server/server.go",
+            "line": 886
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/jobs",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/jobs"
+      ],
+      "routeLocations": {
+        "/api/compute/jobs": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 33
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/local/download",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/local/download"
+      ],
+      "routeLocations": {
+        "/api/compute/local/download": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 39
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/local/files",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/local/files"
+      ],
+      "routeLocations": {
+        "/api/compute/local/files": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 38
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/local/hostinfo",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/local/hostinfo"
+      ],
+      "routeLocations": {
+        "/api/compute/local/hostinfo": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 37
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/local/import",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/local/import"
+      ],
+      "routeLocations": {
+        "/api/compute/local/import": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 40
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/managed-endpoints",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/managed-endpoints"
+      ],
+      "routeLocations": {
+        "/api/compute/managed-endpoints": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 31
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/providers",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/providers"
+      ],
+      "routeLocations": {
+        "/api/compute/providers": [
+          {
+            "file": "internal/server/server.go",
+            "line": 888
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/ssh-config-aliases",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/ssh-config-aliases"
+      ],
+      "routeLocations": {
+        "/api/compute/ssh-config-aliases": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 35
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/compute/ssh-hosts",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/compute/ssh-hosts"
+      ],
+      "routeLocations": {
+        "/api/compute/ssh-hosts": [
+          {
+            "file": "internal/server/compute_workbench_api.go",
+            "line": 36
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/contact-email",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/contact-email"
+      ],
+      "routeLocations": {
+        "/api/contact-email": [
+          {
+            "file": "internal/server/server.go",
+            "line": 710
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations"
+      ],
+      "routeLocations": {
+        "/api/conversations": [
+          {
+            "file": "internal/server/server.go",
+            "line": 708
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/active-count",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/clone",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/active-lease",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/artifacts",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/artifacts/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/associated",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/composer-capabilities",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/config-options/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/confirmations",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/confirmations/{param}/confirm",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/lineage",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/messages",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/messages/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/messages/{param}/tool-detail?{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/messages?{param}",
+      "sources": [
+        "declared-web-api-contract"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/messages{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/reset",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/runtime/ensure",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/side-question",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/slash-commands",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/workspace/artifacts/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/workspace/uploads",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations/{param}/workspace?{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations/"
+      ],
+      "routeLocations": {
+        "/api/conversations/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 709
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations?{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations"
+      ],
+      "routeLocations": {
+        "/api/conversations": [
+          {
+            "file": "internal/server/server.go",
+            "line": 708
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/conversations{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/conversations"
+      ],
+      "routeLocations": {
+        "/api/conversations": [
+          {
+            "file": "internal/server/server.go",
+            "line": 708
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/csrf",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/csrf"
+      ],
+      "routeLocations": {
+        "/api/csrf": [
+          {
+            "file": "internal/server/server.go",
+            "line": 881
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/document/convert",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/document/convert"
+      ],
+      "routeLocations": {
+        "/api/document/convert": [
+          {
+            "file": "internal/server/server.go",
+            "line": 752
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/events/ws",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/events/ws"
+      ],
+      "routeLocations": {
+        "/api/events/ws": [
+          {
+            "file": "internal/server/server.go",
+            "line": 900
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/excel-preview/start",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/excel-preview/start"
+      ],
+      "routeLocations": {
+        "/api/excel-preview/start": [
+          {
+            "file": "internal/server/server.go",
+            "line": 755
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/excel-preview/stop",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/excel-preview/stop"
+      ],
+      "routeLocations": {
+        "/api/excel-preview/stop": [
+          {
+            "file": "internal/server/server.go",
+            "line": 756
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/artifacts",
+      "sources": [
+        "declared-web-api-contract"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/artifacts/download?include_metadata=true",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/aside",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/audit",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/branches",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/cancel?reason=onboarding-suggestion-superseded",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/cancel?reason=user",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/execution-log",
+      "sources": [
+        "declared-web-api-contract"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/execution-log?{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/export",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/fork",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/fork-at-answer",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/kernel-exec",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/kernel-exec/{param}/interrupt",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/kernels",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/kernels/{param}/stop",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/move",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/read-cursor",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/resolve-input",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/resume",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/session-config",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/streaming-batch",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/structure-electrostatic-map",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/structure-interaction-diagram",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/structure-minimization",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/transcript-annotations",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/transcript-annotations/drain",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/transcript-annotations/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/verification{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}?shallow=true",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/frames/{param}{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/frames/"
+      ],
+      "routeLocations": {
+        "/api/frames/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 871
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/copy",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/copy"
+      ],
+      "routeLocations": {
+        "/api/fs/copy": [
+          {
+            "file": "internal/server/server.go",
+            "line": 727
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/dir",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/dir"
+      ],
+      "routeLocations": {
+        "/api/fs/dir": [
+          {
+            "file": "internal/server/server.go",
+            "line": 717
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/fetch-remote-image",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/fetch-remote-image"
+      ],
+      "routeLocations": {
+        "/api/fs/fetch-remote-image": [
+          {
+            "file": "internal/server/server.go",
+            "line": 720
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/image-base64",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/image-base64"
+      ],
+      "routeLocations": {
+        "/api/fs/image-base64": [
+          {
+            "file": "internal/server/server.go",
+            "line": 719
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/list",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/list"
+      ],
+      "routeLocations": {
+        "/api/fs/list": [
+          {
+            "file": "internal/server/server.go",
+            "line": 718
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/metadata",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/metadata"
+      ],
+      "routeLocations": {
+        "/api/fs/metadata": [
+          {
+            "file": "internal/server/server.go",
+            "line": 725
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/read",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/read"
+      ],
+      "routeLocations": {
+        "/api/fs/read": [
+          {
+            "file": "internal/server/server.go",
+            "line": 721
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/read-buffer",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/read-buffer"
+      ],
+      "routeLocations": {
+        "/api/fs/read-buffer": [
+          {
+            "file": "internal/server/server.go",
+            "line": 722
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/remove",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/remove"
+      ],
+      "routeLocations": {
+        "/api/fs/remove": [
+          {
+            "file": "internal/server/server.go",
+            "line": 728
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/rename",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/rename"
+      ],
+      "routeLocations": {
+        "/api/fs/rename": [
+          {
+            "file": "internal/server/server.go",
+            "line": 729
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/baseline",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/baseline"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/baseline": [
+          {
+            "file": "internal/server/server.go",
+            "line": 734
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/branches",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/branches"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/branches": [
+          {
+            "file": "internal/server/server.go",
+            "line": 743
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/compare",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/compare"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/compare": [
+          {
+            "file": "internal/server/server.go",
+            "line": 733
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/discard",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/discard"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/discard": [
+          {
+            "file": "internal/server/server.go",
+            "line": 741
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/dispose",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/dispose"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/dispose": [
+          {
+            "file": "internal/server/server.go",
+            "line": 736
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/info",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/info"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/info": [
+          {
+            "file": "internal/server/server.go",
+            "line": 735
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/init",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/init"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/init": [
+          {
+            "file": "internal/server/server.go",
+            "line": 732
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/reset",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/reset"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/reset": [
+          {
+            "file": "internal/server/server.go",
+            "line": 742
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/stage",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/stage"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/stage": [
+          {
+            "file": "internal/server/server.go",
+            "line": 737
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/stage-all",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/stage-all"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/stage-all": [
+          {
+            "file": "internal/server/server.go",
+            "line": 738
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/unstage",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/unstage"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/unstage": [
+          {
+            "file": "internal/server/server.go",
+            "line": 739
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/snapshot/unstage-all",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/snapshot/unstage-all"
+      ],
+      "routeLocations": {
+        "/api/fs/snapshot/unstage-all": [
+          {
+            "file": "internal/server/server.go",
+            "line": 740
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/temp",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/temp"
+      ],
+      "routeLocations": {
+        "/api/fs/temp": [
+          {
+            "file": "internal/server/server.go",
+            "line": 723
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/write",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/write"
+      ],
+      "routeLocations": {
+        "/api/fs/write": [
+          {
+            "file": "internal/server/server.go",
+            "line": 724
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/zip",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/zip"
+      ],
+      "routeLocations": {
+        "/api/fs/zip": [
+          {
+            "file": "internal/server/server.go",
+            "line": 730
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/fs/zip/cancel",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/fs/zip/cancel"
+      ],
+      "routeLocations": {
+        "/api/fs/zip/cancel": [
+          {
+            "file": "internal/server/server.go",
+            "line": 731
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/kernels",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/kernels"
+      ],
+      "routeLocations": {
+        "/api/kernels": [
+          {
+            "file": "internal/server/kernel_api.go",
+            "line": 28
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/llm/providers",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/llm/providers"
+      ],
+      "routeLocations": {
+        "/api/llm/providers": [
+          {
+            "file": "internal/server/server.go",
+            "line": 927
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/llm/test",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/llm/test"
+      ],
+      "routeLocations": {
+        "/api/llm/test": [
+          {
+            "file": "internal/server/server.go",
+            "line": 929
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/marketplace/import",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/marketplace/import"
+      ],
+      "routeLocations": {
+        "/api/marketplace/import": [
+          {
+            "file": "internal/server/server.go",
+            "line": 834
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/marketplace/preview",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/marketplace/preview"
+      ],
+      "routeLocations": {
+        "/api/marketplace/preview": [
+          {
+            "file": "internal/server/server.go",
+            "line": 833
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/marketplace/sources",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/marketplace/sources"
+      ],
+      "routeLocations": {
+        "/api/marketplace/sources": [
+          {
+            "file": "internal/server/server.go",
+            "line": 835
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/marketplace/sources/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/marketplace/sources/"
+      ],
+      "routeLocations": {
+        "/api/marketplace/sources/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 836
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-apps/viewer-bindings",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-apps/viewer-bindings"
+      ],
+      "routeLocations": {
+        "/api/mcp-apps/viewer-bindings": [
+          {
+            "file": "internal/server/server.go",
+            "line": 945
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers": [
+          {
+            "file": "internal/server/server.go",
+            "line": 930
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/connectors",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/connectors"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/connectors": [
+          {
+            "file": "internal/server/server.go",
+            "line": 932
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/connectors/{param}/authorize",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/connectors/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/connectors/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 939
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/connectors/{param}/credential",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/connectors/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/connectors/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 939
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/connectors/{param}/disconnect",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/connectors/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/connectors/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 939
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/connectors/{param}/enabled",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/connectors/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/connectors/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 939
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/directory-health",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/directory-health"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/directory-health": [
+          {
+            "file": "internal/server/server.go",
+            "line": 935
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/marketplace",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/marketplace"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/marketplace": [
+          {
+            "file": "internal/server/server.go",
+            "line": 937
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/optional",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/optional"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/optional": [
+          {
+            "file": "internal/server/server.go",
+            "line": 933
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/optional/{param}/install",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/optional/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/optional/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 934
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/reconcile",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/",
+        "/api/mcp-servers/reconcile"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ],
+        "/api/mcp-servers/reconcile": [
+          {
+            "file": "internal/server/server.go",
+            "line": 936
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/{param}/attach-all",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/{param}/detach-all",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/{param}/tool-grants",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp-servers/{param}/tool-permissions",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp-servers/"
+      ],
+      "routeLocations": {
+        "/api/mcp-servers/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 931
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/apps/pin",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/",
+        "/api/mcp/apps/pin"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ],
+        "/api/mcp/apps/pin": [
+          {
+            "file": "internal/server/server.go",
+            "line": 948
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/apps/registrations",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/",
+        "/api/mcp/apps/registrations"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ],
+        "/api/mcp/apps/registrations": [
+          {
+            "file": "internal/server/server.go",
+            "line": 942
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/apps/registrations?registration_id={param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/",
+        "/api/mcp/apps/registrations"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ],
+        "/api/mcp/apps/registrations": [
+          {
+            "file": "internal/server/server.go",
+            "line": 942
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/apps/requests?registration_id={param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/",
+        "/api/mcp/apps/requests"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ],
+        "/api/mcp/apps/requests": [
+          {
+            "file": "internal/server/server.go",
+            "line": 943
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/apps/resource-tickets",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/",
+        "/api/mcp/apps/resource-tickets"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ],
+        "/api/mcp/apps/resource-tickets": [
+          {
+            "file": "internal/server/server.go",
+            "line": 946
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/apps/results",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/",
+        "/api/mcp/apps/results"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ],
+        "/api/mcp/apps/results": [
+          {
+            "file": "internal/server/server.go",
+            "line": 944
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/oauth/authenticated",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/oauth/check-status",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/oauth/login",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/oauth/logout",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/servers",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/servers/import",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/servers/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/servers/{param}/toggle",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/mcp/test-connection",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/mcp/"
+      ],
+      "routeLocations": {
+        "/api/mcp/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 940
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memories",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memories"
+      ],
+      "routeLocations": {
+        "/api/memories": [
+          {
+            "file": "internal/server/server.go",
+            "line": 906
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memories/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memories/"
+      ],
+      "routeLocations": {
+        "/api/memories/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 907
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memory/auto-enabled",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memory/auto-enabled"
+      ],
+      "routeLocations": {
+        "/api/memory/auto-enabled": [
+          {
+            "file": "internal/server/server.go",
+            "line": 910
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memory/categories",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memory/categories"
+      ],
+      "routeLocations": {
+        "/api/memory/categories": [
+          {
+            "file": "internal/server/server.go",
+            "line": 911
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memory/categories/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memory/categories/"
+      ],
+      "routeLocations": {
+        "/api/memory/categories/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 912
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memory/categories/{param}?delete_facts={param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memory/categories/"
+      ],
+      "routeLocations": {
+        "/api/memory/categories/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 912
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memory/context{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memory/context"
+      ],
+      "routeLocations": {
+        "/api/memory/context": [
+          {
+            "file": "internal/server/server.go",
+            "line": 908
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memory/enabled",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memory/enabled"
+      ],
+      "routeLocations": {
+        "/api/memory/enabled": [
+          {
+            "file": "internal/server/server.go",
+            "line": 909
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/memory/sessions/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/memory/sessions/"
+      ],
+      "routeLocations": {
+        "/api/memory/sessions/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 913
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/notes/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/notes/"
+      ],
+      "routeLocations": {
+        "/api/notes/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 894
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/office-watch-proxy",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "declared-web-api-contract"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/office-watch-proxy"
+      ],
+      "routeLocations": {
+        "/api/office-watch-proxy": [
+          {
+            "file": "internal/server/server.go",
+            "line": 759
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/ppt-preview/start",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/ppt-preview/start"
+      ],
+      "routeLocations": {
+        "/api/ppt-preview/start": [
+          {
+            "file": "internal/server/server.go",
+            "line": 757
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/ppt-preview/stop",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/ppt-preview/stop"
+      ],
+      "routeLocations": {
+        "/api/ppt-preview/stop": [
+          {
+            "file": "internal/server/server.go",
+            "line": 758
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/ppt-proxy",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "declared-web-api-contract"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/ppt-proxy"
+      ],
+      "routeLocations": {
+        "/api/ppt-proxy": [
+          {
+            "file": "internal/server/server.go",
+            "line": 761
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/allowed-domains",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/allowed-domains"
+      ],
+      "routeLocations": {
+        "/api/preferences/allowed-domains": [
+          {
+            "file": "internal/server/server.go",
+            "line": 784
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/allowed-domains/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/allowed-domains/"
+      ],
+      "routeLocations": {
+        "/api/preferences/allowed-domains/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 785
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/builtin-allowlist",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/builtin-allowlist"
+      ],
+      "routeLocations": {
+        "/api/preferences/builtin-allowlist": [
+          {
+            "file": "internal/server/server.go",
+            "line": 788
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/builtin-allowlist/disabled-groups",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/builtin-allowlist/disabled-groups"
+      ],
+      "routeLocations": {
+        "/api/preferences/builtin-allowlist/disabled-groups": [
+          {
+            "file": "internal/server/server.go",
+            "line": 790
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/builtin-allowlist/onboarding-seen",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/builtin-allowlist/onboarding-seen"
+      ],
+      "routeLocations": {
+        "/api/preferences/builtin-allowlist/onboarding-seen": [
+          {
+            "file": "internal/server/server.go",
+            "line": 791
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/disk-usage",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/disk-usage"
+      ],
+      "routeLocations": {
+        "/api/preferences/disk-usage": [
+          {
+            "file": "internal/server/server.go",
+            "line": 841
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/first-run-onboarding",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/first-run-onboarding"
+      ],
+      "routeLocations": {
+        "/api/preferences/first-run-onboarding": [
+          {
+            "file": "internal/server/server.go",
+            "line": 798
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/first-run-onboarding/complete",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/first-run-onboarding/complete"
+      ],
+      "routeLocations": {
+        "/api/preferences/first-run-onboarding/complete": [
+          {
+            "file": "internal/server/server.go",
+            "line": 799
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/host-grants",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/host-grants"
+      ],
+      "routeLocations": {
+        "/api/preferences/host-grants": [
+          {
+            "file": "internal/server/server.go",
+            "line": 811
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/scientific-runtimes",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/scientific-runtimes"
+      ],
+      "routeLocations": {
+        "/api/preferences/scientific-runtimes": [
+          {
+            "file": "internal/server/server.go",
+            "line": 800
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preferences/use-intent",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preferences/use-intent"
+      ],
+      "routeLocations": {
+        "/api/preferences/use-intent": [
+          {
+            "file": "internal/server/server.go",
+            "line": 801
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preview-history/get-content",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preview-history/get-content"
+      ],
+      "routeLocations": {
+        "/api/preview-history/get-content": [
+          {
+            "file": "internal/server/server.go",
+            "line": 751
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preview-history/list",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preview-history/list"
+      ],
+      "routeLocations": {
+        "/api/preview-history/list": [
+          {
+            "file": "internal/server/server.go",
+            "line": 749
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/preview-history/save",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/preview-history/save"
+      ],
+      "routeLocations": {
+        "/api/preview-history/save": [
+          {
+            "file": "internal/server/server.go",
+            "line": 750
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects"
+      ],
+      "routeLocations": {
+        "/api/projects": [
+          {
+            "file": "internal/server/server.go",
+            "line": 860
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects/"
+      ],
+      "routeLocations": {
+        "/api/projects/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 862
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects/{param}/artifacts",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects/"
+      ],
+      "routeLocations": {
+        "/api/projects/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 862
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects/{param}/attachments",
+      "sources": [
+        "declared-web-api-contract"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects/"
+      ],
+      "routeLocations": {
+        "/api/projects/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 862
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects/{param}/benches",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects/"
+      ],
+      "routeLocations": {
+        "/api/projects/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 862
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects/{param}/folders",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects/"
+      ],
+      "routeLocations": {
+        "/api/projects/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 862
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects/{param}/memory/enabled",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects/"
+      ],
+      "routeLocations": {
+        "/api/projects/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 862
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects/{param}/notes",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects/"
+      ],
+      "routeLocations": {
+        "/api/projects/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 862
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/projects/{param}/notes?{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/projects/"
+      ],
+      "routeLocations": {
+        "/api/projects/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 862
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/request",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/request"
+      ],
+      "routeLocations": {
+        "/api/request": [
+          {
+            "file": "internal/server/server.go",
+            "line": 872
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/secrets",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/secrets"
+      ],
+      "routeLocations": {
+        "/api/secrets": [
+          {
+            "file": "internal/server/server.go",
+            "line": 805
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/secrets/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/secrets/"
+      ],
+      "routeLocations": {
+        "/api/secrets/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 806
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/settings/client",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/settings/client"
+      ],
+      "routeLocations": {
+        "/api/settings/client": [
+          {
+            "file": "internal/server/server.go",
+            "line": 702
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/settings/client?keys={param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/settings/client"
+      ],
+      "routeLocations": {
+        "/api/settings/client": [
+          {
+            "file": "internal/server/server.go",
+            "line": 702
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/settings/client?scope=ui-preferences",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/settings/client"
+      ],
+      "routeLocations": {
+        "/api/settings/client": [
+          {
+            "file": "internal/server/server.go",
+            "line": 702
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/settings/data-dir",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/settings/data-dir"
+      ],
+      "routeLocations": {
+        "/api/settings/data-dir": [
+          {
+            "file": "internal/server/server.go",
+            "line": 850
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/settings/data-dir/last-move?deleteSource={param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/settings/data-dir/last-move"
+      ],
+      "routeLocations": {
+        "/api/settings/data-dir/last-move": [
+          {
+            "file": "internal/server/server.go",
+            "line": 851
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/settings/storage-rules",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/settings/storage-rules"
+      ],
+      "routeLocations": {
+        "/api/settings/storage-rules": [
+          {
+            "file": "internal/server/server.go",
+            "line": 852
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/shell/check-tool-installed",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/shell/check-tool-installed"
+      ],
+      "routeLocations": {
+        "/api/shell/check-tool-installed": [
+          {
+            "file": "internal/server/server.go",
+            "line": 747
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/shell/open-external",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/shell/open-external"
+      ],
+      "routeLocations": {
+        "/api/shell/open-external": [
+          {
+            "file": "internal/server/server.go",
+            "line": 746
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/shell/open-file",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/shell/open-file"
+      ],
+      "routeLocations": {
+        "/api/shell/open-file": [
+          {
+            "file": "internal/server/server.go",
+            "line": 744
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/shell/open-folder-with",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/shell/open-folder-with"
+      ],
+      "routeLocations": {
+        "/api/shell/open-folder-with": [
+          {
+            "file": "internal/server/server.go",
+            "line": 748
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/shell/show-item-in-folder",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/shell/show-item-in-folder"
+      ],
+      "routeLocations": {
+        "/api/shell/show-item-in-folder": [
+          {
+            "file": "internal/server/server.go",
+            "line": 745
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills"
+      ],
+      "routeLocations": {
+        "/api/skills": [
+          {
+            "file": "internal/server/server.go",
+            "line": 819
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/assistant-rule/read",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/assistant-rule/",
+        "/api/skills/assistant-rule/read"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/assistant-rule/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 839
+          }
+        ],
+        "/api/skills/assistant-rule/read": [
+          {
+            "file": "internal/server/server.go",
+            "line": 837
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/assistant-rule/write",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/assistant-rule/",
+        "/api/skills/assistant-rule/write"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/assistant-rule/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 839
+          }
+        ],
+        "/api/skills/assistant-rule/write": [
+          {
+            "file": "internal/server/server.go",
+            "line": 838
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/assistant-rule/{param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/assistant-rule/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/assistant-rule/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 839
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/builtin-rule",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/builtin-rule"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/builtin-rule": [
+          {
+            "file": "internal/server/server.go",
+            "line": 831
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/builtin-skill",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/builtin-skill"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/builtin-skill": [
+          {
+            "file": "internal/server/server.go",
+            "line": 832
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/catalog",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/catalog"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/catalog": [
+          {
+            "file": "internal/server/server.go",
+            "line": 918
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/catalog/{param}/content?path={param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/catalog/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/catalog/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 919
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/catalog/{param}/enabled",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/catalog/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/catalog/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 919
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/catalog/{param}/files",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/catalog/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/catalog/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 919
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/detect-external",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/detect-external"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/detect-external": [
+          {
+            "file": "internal/server/server.go",
+            "line": 826
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/detect-paths",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/detect-paths"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/detect-paths": [
+          {
+            "file": "internal/server/server.go",
+            "line": 825
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/drafts",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/drafts"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/drafts": [
+          {
+            "file": "internal/server/server.go",
+            "line": 921
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/external-paths",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/external-paths"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/external-paths": [
+          {
+            "file": "internal/server/server.go",
+            "line": 830
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/external-paths?path={param}",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/external-paths"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/external-paths": [
+          {
+            "file": "internal/server/server.go",
+            "line": 830
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/from-conversation",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/from-conversation"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/from-conversation": [
+          {
+            "file": "internal/server/server.go",
+            "line": 821
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/import",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/import"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/import": [
+          {
+            "file": "internal/server/server.go",
+            "line": 820
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/import-history",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/import-history"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/import-history": [
+          {
+            "file": "internal/server/server.go",
+            "line": 827
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/import-limits",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/import-limits"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/import-limits": [
+          {
+            "file": "internal/server/server.go",
+            "line": 828
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/info",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/info"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/info": [
+          {
+            "file": "internal/server/server.go",
+            "line": 823
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/materialize-for-agent",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/materialize-for-agent"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/materialize-for-agent": [
+          {
+            "file": "internal/server/server.go",
+            "line": 822
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/paths",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/paths"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/paths": [
+          {
+            "file": "internal/server/server.go",
+            "line": 829
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/scan",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/scan"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/scan": [
+          {
+            "file": "internal/server/server.go",
+            "line": 824
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/usage",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/",
+        "/api/skills/usage"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ],
+        "/api/skills/usage": [
+          {
+            "file": "internal/server/server.go",
+            "line": 920
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/{param}",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/{param}/duplicate",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/{param}/edit",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/{param}/full",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/skills/{param}/publish",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/skills/"
+      ],
+      "routeLocations": {
+        "/api/skills/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 922
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/status/update/check",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/status/update/"
+      ],
+      "routeLocations": {
+        "/api/status/update/": [
+          {
+            "file": "internal/server/server.go",
+            "line": 854
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/stt/local/prepare",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/stt/local/prepare"
+      ],
+      "routeLocations": {
+        "/api/stt/local/prepare": [
+          {
+            "file": "internal/server/server.go",
+            "line": 705
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/synonbiomed/catalog",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/synonbiomed/catalog"
+      ],
+      "routeLocations": {
+        "/api/synonbiomed/catalog": [
+          {
+            "file": "internal/server/server.go",
+            "line": 713
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/synonbiomed/expert-profiles",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/synonbiomed/expert-profiles"
+      ],
+      "routeLocations": {
+        "/api/synonbiomed/expert-profiles": [
+          {
+            "file": "internal/server/server.go",
+            "line": 884
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/synonbiomed/experts",
+      "sources": [
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/synonbiomed/experts"
+      ],
+      "routeLocations": {
+        "/api/synonbiomed/experts": [
+          {
+            "file": "internal/server/server.go",
+            "line": 712
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/synonbiomed/projects",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/synonbiomed/projects"
+      ],
+      "routeLocations": {
+        "/api/synonbiomed/projects": [
+          {
+            "file": "internal/server/server.go",
+            "line": 714
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/system/info",
+      "sources": [
+        "declared-web-api-contract",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/system/info"
+      ],
+      "routeLocations": {
+        "/api/system/info": [
+          {
+            "file": "internal/server/server.go",
+            "line": 715
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/system/provenance-census",
+      "sources": [
+        "confirmed-ipcBridge-production-caller"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/system/provenance-census"
+      ],
+      "routeLocations": {
+        "/api/system/provenance-census": [
+          {
+            "file": "internal/server/server.go",
+            "line": 716
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/word-preview/start",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/word-preview/start"
+      ],
+      "routeLocations": {
+        "/api/word-preview/start": [
+          {
+            "file": "internal/server/server.go",
+            "line": 753
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/word-preview/stop",
+      "sources": [
+        "confirmed-ipcBridge-production-caller",
+        "target-frontend-active-graph"
+      ],
+      "covered": true,
+      "coveredBy": [
+        "/api/word-preview/stop"
+      ],
+      "routeLocations": {
+        "/api/word-preview/stop": [
+          {
+            "file": "internal/server/server.go",
+            "line": 754
+          }
+        ]
+      }
+    }
+  ]
+}

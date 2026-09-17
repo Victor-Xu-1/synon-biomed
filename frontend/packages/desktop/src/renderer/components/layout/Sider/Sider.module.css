@@ -1,0 +1,33 @@
+/* Keep the history area independently scrollable while exposing a thin,
+   neutral scrollbar when the task list exceeds the available height. */
+.scrollArea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-2) transparent;
+  scrollbar-gutter: stable;
+}
+
+.scrollArea::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+  background: var(--color-border-2);
+  border-radius: 999px;
+}
+
+/* Pinned sidebar row — reserve a dedicated 28px slot on the right for the
+   pushpin indicator so it never overlaps the row title. When the row is
+   hovered, the three-dot menu takes over that slot and the text reclaims
+   the gap (18px), matching non-pinned rows. */
+.pinnedTextSlot {
+  padding-right: 28px;
+}
+
+:global(.group):hover .pinnedTextSlot {
+  padding-right: 18px;
+}

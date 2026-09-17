@@ -1,0 +1,2019 @@
+/*
+ * Shared visual shell for the independent warm and cool palettes.
+ * Family presets own color tokens; this layer owns geometry, typography,
+ * overlays, interaction states, and module-level consistency.
+ */
+:root,
+[data-color-scheme='default'] {
+  --workspace-canvas: #faf9f7;
+  --workspace-sidebar: #f2f1ee;
+  --workspace-subtle: #f0efec;
+  --workspace-hover: #ebe9e5;
+  --workspace-selected: #e4e2dd;
+  --workspace-border: #e1dfda;
+  --workspace-border-strong: #d2cfc9;
+  --workspace-text: #2b2a28;
+  --workspace-text-secondary: #67645f;
+  --workspace-text-tertiary: #6f6b65;
+  --workspace-accent: #3b3a37;
+  --workspace-accent-contrast: #faf9f7;
+  --workspace-success-text: #166534;
+  --workspace-danger-text: #2b2a28;
+  --workspace-focus: rgb(59 58 55 / 12%);
+  --workspace-shadow-popover: 0 8px 28px rgb(35 33 29 / 10%);
+  --workspace-ui-font-size: 13px;
+  --workspace-ui-line-height: 20px;
+  --workspace-meta-font-size: 12px;
+  --workspace-meta-line-height: 18px;
+  --composer-surface: var(--workspace-canvas);
+  --composer-border: transparent;
+  --composer-border-active: transparent;
+  --composer-shadow: 0 8px 28px rgb(23 23 23 / 7%);
+  --composer-shadow-active: 0 0 0 1px rgb(23 23 23 / 6%), 0 12px 34px rgb(23 23 23 / 10%);
+  --composer-radius: 20px;
+  --aou-1: #f2f1ee;
+  --aou-2: #f0efec;
+  --aou-3: #e4e2dd;
+  --aou-4: #d2cfc9;
+  --aou-5: #6f6b65;
+  --aou-6: #67645f;
+  --aou-7: #4f4d49;
+  --aou-8: #3e3d3a;
+  --aou-9: #2b2a28;
+  --aou-10: #1f1e1c;
+  --bg-base: var(--workspace-canvas);
+  --bg-1: var(--workspace-canvas);
+  --bg-2: var(--workspace-sidebar);
+  --bg-3: var(--workspace-border);
+  --bg-hover: var(--workspace-hover);
+  --bg-active: var(--workspace-selected);
+  --fill: var(--workspace-subtle);
+  --fill-0: var(--workspace-canvas);
+  --dialog-fill-0: var(--workspace-canvas);
+  --text-primary: var(--workspace-text);
+  --color-text-1: var(--workspace-text);
+  --text-secondary: var(--workspace-text-secondary);
+  --color-text-2: var(--workspace-text-secondary);
+  --color-text-3: var(--workspace-text-tertiary);
+  --border-base: var(--workspace-border);
+  --border-light: #eee;
+  --color-border: var(--workspace-border);
+  --color-border-1: var(--workspace-border);
+  --color-border-2: var(--workspace-border);
+  --primary: var(--workspace-accent);
+  --color-primary: var(--workspace-accent);
+  --brand: var(--workspace-accent);
+  --brand-light: var(--workspace-subtle);
+  --brand-hover: var(--workspace-selected);
+  --message-user-bg: var(--workspace-subtle);
+  --message-tips-bg: var(--workspace-sidebar);
+  --workspace-btn-bg: var(--workspace-subtle);
+  --color-guid-agent-bar: var(--workspace-subtle);
+  --synon-ai-overlay-bg: var(--workspace-canvas);
+  --synon-ai-overlay-text: var(--workspace-text);
+  --synon-ai-overlay-border: var(--workspace-border);
+  --synon-ai-overlay-shadow: var(--workspace-shadow-popover);
+}
+[data-theme='dark'] {
+  --workspace-canvas: #1f1e1c;
+  --workspace-sidebar: #191816;
+  --workspace-subtle: #282724;
+  --workspace-hover: #302f2c;
+  --workspace-selected: #393733;
+  --workspace-border: #393835;
+  --workspace-border-strong: #4a4843;
+  --workspace-text: #f1efeb;
+  --workspace-text-secondary: #c5c0b8;
+  --workspace-text-tertiary: #a39f98;
+  --workspace-accent: #f1efeb;
+  --workspace-accent-contrast: #1f1e1c;
+  --workspace-success-text: #86efac;
+  --workspace-danger-text: #f1efeb;
+  --workspace-focus: rgb(241 239 235 / 14%);
+  --workspace-shadow-popover: 0 10px 32px rgb(0 0 0 / 38%);
+  --composer-surface: var(--workspace-canvas);
+  --composer-border: transparent;
+  --composer-border-active: transparent;
+  --composer-shadow: 0 10px 30px rgb(0 0 0 / 30%);
+  --composer-shadow-active: 0 0 0 1px rgb(255 255 255 / 10%), 0 14px 38px rgb(0 0 0 / 38%);
+  --aou-1: #282724;
+  --aou-2: #302f2c;
+  --aou-3: #393733;
+  --aou-4: #4a4843;
+  --aou-5: #a39f98;
+  --aou-6: #c5c0b8;
+  --aou-7: #d8d3ca;
+  --aou-8: #e6e2dc;
+  --aou-9: #f1efeb;
+  --aou-10: #ffffff;
+}
+html,
+body,
+#root,
+.layout,
+.layout-content {
+  background: var(--workspace-canvas);
+  color: var(--workspace-text);
+}
+.app-titlebar,
+.layout-sider,
+.sider-section-label,
+.sider-action-btn {
+  background: var(--workspace-sidebar) !important;
+}
+.layout-sider {
+  border-right-color: var(--workspace-border) !important;
+}
+.layout-content {
+  background: var(--workspace-canvas) !important;
+}
+.chat-history__item,
+.settings-sider__item,
+.conversation-item,
+.layout-sider [class*='rd-8px'] {
+  border-radius: 10px !important;
+}
+html body .layout-sider button[data-testid='sider-new-chat'] > span:first-child {
+  border-radius: 8px !important;
+}
+html body button.synon-biomed-brand {
+  border-radius: 10px !important;
+}
+.chat-history__item:hover,
+.settings-sider__item:hover,
+.conversation-item:hover {
+  background: var(--workspace-hover) !important;
+}
+.chat-history__item[class~='!bg-fill-3'],
+.settings-sider__item[class~='!bg-fill-3'],
+.conversation-item[class~='!bg-fill-3'] {
+  background: var(--workspace-selected) !important;
+}
+.arco-btn {
+  min-height: 32px;
+  border-color: var(--workspace-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-family: inherit !important;
+  font-size: var(--workspace-ui-font-size) !important;
+  font-weight: 500;
+  line-height: var(--workspace-ui-line-height) !important;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    opacity 120ms ease;
+}
+.arco-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--workspace-text) 42%, transparent) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+.arco-btn:not(.arco-btn-primary, .arco-btn-status-danger, .arco-btn-text) {
+  background: var(--workspace-canvas) !important;
+  color: var(--workspace-text) !important;
+}
+.arco-btn:not(.arco-btn-primary, .arco-btn-status-danger):hover {
+  background: var(--workspace-subtle) !important;
+  border-color: var(--workspace-border-strong) !important;
+}
+.arco-btn-primary,
+.send-button-custom:not(:disabled) {
+  background: var(--workspace-accent) !important;
+  border-color: transparent !important;
+  color: var(--workspace-accent-contrast) !important;
+}
+.arco-btn-primary:hover,
+.send-button-custom:not(:disabled):hover {
+  opacity: 0.86;
+}
+.arco-btn-primary.arco-btn-disabled,
+.arco-btn-primary[disabled],
+.arco-btn-primary:disabled {
+  background: var(--workspace-subtle) !important;
+  border-color: var(--workspace-border) !important;
+  color: var(--workspace-text-tertiary) !important;
+  opacity: 1;
+}
+/* Native buttons are normalized for compact rows, cards, history controls,
+   and tool affordances without flattening intentional text utilities. */
+html
+  body
+  button:not(.arco-btn):not(.text-10px):not(.text-11px):not(.text-12px):not(.text-13px):not(.text-14px):not(
+    .text-15px
+  ):not(.text-16px):not(.text-xs):not(.text-sm):not(.text-base):not(.conversation-scroll-control) {
+  font-family: inherit;
+  font-size: var(--workspace-ui-font-size);
+  line-height: var(--workspace-ui-line-height);
+}
+html body button.text-10px,
+html body button.text-11px,
+html body button.text-12px {
+  line-height: var(--workspace-meta-line-height);
+}
+html body button.text-13px {
+  line-height: var(--workspace-ui-line-height);
+}
+html body button.text-14px,
+html body button.text-15px {
+  line-height: 22px;
+}
+html body button.text-16px {
+  line-height: 24px;
+}
+html body .settings-text-danger-button {
+  font-family: inherit;
+  font-size: var(--workspace-meta-font-size);
+  line-height: var(--workspace-meta-line-height);
+}
+html body .settings-page-wrapper {
+  background: var(--workspace-canvas) !important;
+  color: var(--workspace-text) !important;
+}
+
+/* Match settings navigation to the 15 px conversation reading scale while
+   preserving compact 36 px rows and a distinct current-page weight. */
+html body .settings-sider__item-label {
+  font-size: 15px !important;
+  line-height: 24px !important;
+  font-weight: 500 !important;
+}
+
+html body .settings-sider__item[aria-current='page'] .settings-sider__item-label {
+  font-weight: 600 !important;
+}
+
+html body .settings-sider__group-header {
+  font-size: 12px !important;
+  line-height: 18px !important;
+  font-weight: 600 !important;
+}
+
+/* Keep section headings consistent across the independently authored
+   settings pages while leaving Markdown rendered in portaled dialogs alone. */
+html body .settings-page-content h2 {
+  font-family: inherit;
+  font-size: 15px !important;
+  line-height: 22px !important;
+  font-weight: 620;
+}
+html body .settings-page-content h3 {
+  font-family: inherit;
+  font-size: 14px !important;
+  line-height: 21px !important;
+  font-weight: 620;
+}
+html body .settings-page-content h4 {
+  font-family: inherit;
+  font-size: 13px !important;
+  line-height: 20px !important;
+  font-weight: 620;
+}
+.arco-input,
+.arco-input-inner-wrapper,
+.arco-textarea,
+.arco-select-view,
+.arco-picker,
+.arco-input-number {
+  background: var(--workspace-canvas) !important;
+  border-color: var(--workspace-border) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  font-family: inherit !important;
+  font-size: var(--workspace-ui-font-size) !important;
+  line-height: var(--workspace-ui-line-height) !important;
+}
+
+.arco-input,
+.arco-textarea,
+.arco-select-view-value,
+.arco-picker-input,
+.arco-input-number-input {
+  font-family: inherit !important;
+  font-size: var(--workspace-ui-font-size) !important;
+  line-height: var(--workspace-ui-line-height) !important;
+}
+
+/* Arco normally uses the control-height line box to align single-select text.
+   The compact theme deliberately uses a shorter type line-height, so center
+   the value and suffix explicitly instead of letting their baselines drift. */
+html body .arco-select-single .arco-select-view {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+html body .arco-select-single .arco-select-view-selector {
+  align-items: center;
+  min-width: 0;
+}
+
+html body .arco-select-single .arco-select-view-value {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+html body .arco-select-single .arco-select-suffix {
+  align-self: stretch;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.arco-input:focus,
+.arco-input-inner-wrapper-focus,
+.arco-textarea:focus,
+.arco-select-focused .arco-select-view,
+.arco-picker-focused {
+  border-color: var(--workspace-border-strong) !important;
+  outline: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+}
+.arco-card,
+.arco-collapse,
+.arco-list,
+.arco-table-container,
+.arco-descriptions {
+  background: var(--workspace-canvas) !important;
+  border: 1px solid var(--workspace-border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.arco-card-header,
+.arco-collapse-item-header,
+.arco-table-th {
+  background: var(--workspace-sidebar) !important;
+  border-color: var(--workspace-border) !important;
+}
+.arco-table-td,
+.arco-table-th,
+.arco-list-item,
+.arco-collapse-item {
+  border-color: var(--workspace-border) !important;
+}
+.arco-tag {
+  border-radius: 6px !important;
+}
+
+.arco-form-item-label,
+.arco-form-item-control,
+.arco-radio-text,
+.arco-checkbox-text,
+.arco-pagination-item,
+.arco-pagination-jumper,
+.arco-breadcrumb-item {
+  font-family: inherit !important;
+  font-size: var(--workspace-ui-font-size) !important;
+  line-height: var(--workspace-ui-line-height) !important;
+}
+
+.arco-form-item-help,
+.arco-form-item-extra,
+.arco-empty-description,
+.arco-result-subtitle,
+.arco-spin-tip {
+  color: var(--workspace-text-tertiary) !important;
+  font-family: inherit !important;
+  font-size: var(--workspace-meta-font-size) !important;
+  line-height: var(--workspace-meta-line-height) !important;
+}
+
+.arco-empty,
+.arco-result,
+.arco-spin {
+  color: var(--workspace-text-secondary) !important;
+  font-family: inherit !important;
+}
+
+.arco-spin-icon,
+.arco-spin-dot-spin {
+  color: var(--workspace-accent) !important;
+}
+
+.arco-table,
+.arco-table-th,
+.arco-table-td,
+.arco-descriptions-item-label,
+.arco-descriptions-item-value {
+  font-family: inherit !important;
+  font-size: var(--workspace-ui-font-size) !important;
+  line-height: var(--workspace-ui-line-height) !important;
+}
+.arco-tabs-header-nav::before {
+  border-color: var(--workspace-border) !important;
+}
+.arco-tabs-header-title {
+  color: var(--workspace-text-secondary) !important;
+}
+.arco-tabs-header-title-active,
+.arco-tabs-header-title:hover {
+  color: var(--workspace-text) !important;
+}
+.arco-tabs-header-ink {
+  background: var(--workspace-accent) !important;
+}
+.chat-layout-header {
+  min-height: 48px !important;
+  padding: 8px 20px 9px !important;
+  background: var(--workspace-canvas) !important;
+  border-bottom: 1px solid var(--workspace-border);
+}
+.chat-layout-header--glass {
+  isolation: auto;
+  contain: none;
+  backdrop-filter: none !important;
+}
+.chat-layout-header--glass::after {
+  display: none;
+}
+.chat-layout-right-sider {
+  background: var(--workspace-sidebar) !important;
+  border-left-color: var(--workspace-border) !important;
+}
+.workspace-panel-header {
+  background: var(--workspace-sidebar);
+  border-bottom-color: var(--workspace-border) !important;
+}
+.chat-workspace {
+  background: var(--workspace-sidebar);
+}
+.sendbox-panel {
+  padding: 16px !important;
+  background: var(--composer-surface) !important;
+  border: 1px solid var(--composer-border) !important;
+  border-radius: var(--composer-radius) !important;
+  box-shadow: var(--composer-shadow) !important;
+}
+.sendbox-panel:focus-within {
+  border-color: var(--composer-border-active) !important;
+  box-shadow: var(--composer-shadow-active) !important;
+}
+.sendbox-panel .arco-textarea,
+.sendbox-panel .arco-textarea:focus {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.runtime-operations-banner {
+  border-radius: 12px !important;
+  box-shadow: none;
+}
+.runtime-operations-banner .arco-btn {
+  min-height: 30px;
+}
+.runtime-operations-banner__summary {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-start;
+  gap: 8px;
+}
+.runtime-operations-banner__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.artifact-page,
+.artifact-shell {
+  background: var(--workspace-canvas) !important;
+}
+.artifact-shell {
+  max-width: none !important;
+}
+.artifact-header {
+  min-height: 64px !important;
+  background: var(--workspace-canvas);
+  border-bottom-color: var(--workspace-border) !important;
+}
+.artifact-header .arco-btn:not(.arco-btn-primary) {
+  background: var(--workspace-sidebar) !important;
+}
+.artifact-preview-pane {
+  padding: 24px;
+  background: var(--workspace-sidebar) !important;
+}
+.artifact-preview-pane > * {
+  overflow: hidden;
+  background: var(--workspace-canvas);
+  border: 1px solid var(--workspace-border);
+  border-radius: 12px;
+}
+.artifact-inspector {
+  background: var(--workspace-canvas) !important;
+  border-color: var(--workspace-border) !important;
+}
+.artifact-inspector .arco-tabs-header {
+  padding: 0 12px;
+}
+.artifact-inspector .arco-tabs-content {
+  padding-top: 4px;
+}
+.sendbox-container {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: var(--composer-border) !important;
+  border-radius: var(--composer-radius) !important;
+  box-shadow: var(--composer-shadow) !important;
+}
+.guid-input-card-shell {
+  background: var(--composer-surface) !important;
+  border: 1px solid var(--composer-border) !important;
+  border-radius: var(--composer-radius) !important;
+  box-shadow: var(--composer-shadow) !important;
+}
+.guid-input-card-shell:focus-within {
+  border-color: var(--composer-border-active) !important;
+  box-shadow: var(--composer-shadow-active) !important;
+}
+.guid-input-card-shell--dragging,
+.guid-input-card-shell--dragging:focus-within {
+  border-color: var(--workspace-border-strong) !important;
+  border-style: dashed !important;
+  box-shadow: none !important;
+}
+.guid-input-card-shell > [class*='guidInputInner'] {
+  border: 0 !important;
+  border-radius: inherit !important;
+  box-shadow: none !important;
+}
+.guid-input-card-shell .arco-textarea,
+.guid-input-card-shell .arco-textarea:hover,
+.guid-input-card-shell .arco-textarea:focus,
+.guid-input-card-shell .arco-textarea:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+pre,
+code {
+  border-radius: 6px;
+}
+@media (max-width: 767px) {
+  .sendbox-panel {
+    padding: 12px !important;
+    border-radius: var(--composer-radius) !important;
+  }
+  .chat-surface-container {
+    padding-inline: 20px !important;
+  }
+  .runtime-operations-banner {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .runtime-operations-banner__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .runtime-operations-banner__actions .arco-btn {
+    margin: 0 !important;
+  }
+  .artifact-preview-pane {
+    padding: 12px;
+  }
+  .artifact-header {
+    padding-inline: 12px !important;
+  }
+}
+
+/* The mobile action sheet is a hand-built dialog. Scope by its stable
+ * data-testid descendants so its CSS-module hash can change without creating
+ * a second overlay theme. */
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-color: var(--workspace-overlay-border) !important;
+  border-radius: 16px 16px 0 0 !important;
+  box-shadow: var(--workspace-dialog-shadow) !important;
+  font-family: var(--conversation-font-sans) !important;
+}
+
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menu'] {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  font-family: var(--conversation-font-sans) !important;
+  font-size: var(--conversation-ui-font-size) !important;
+  line-height: var(--conversation-ui-line-height) !important;
+}
+
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menuitem'],
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menuitemradio'] {
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  color: var(--workspace-text) !important;
+  border-radius: 9px !important;
+  font-family: var(--conversation-font-sans) !important;
+  font-size: var(--conversation-ui-font-size) !important;
+  line-height: var(--conversation-ui-line-height) !important;
+}
+
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menuitem']:hover,
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menuitem']:focus-visible,
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menuitemradio']:hover,
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menuitemradio']:focus-visible {
+  background: var(--workspace-overlay-hover) !important;
+}
+
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menuitem']:focus-visible,
+html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menuitemradio']:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--workspace-text) 42%, transparent) !important;
+  outline-offset: -2px;
+}
+
+/*
+ * Global overlay authority
+ * ------------------------
+ * Arco portals and the application's hand-built menus used to inherit a mix
+ * of transparent theme fills, page-local radii, and several unrelated shadow
+ * recipes. Keep behavior in the owning components, but make every transient
+ * surface read as one quiet, opaque, Claude-inspired system.
+ */
+:root,
+[data-color-scheme='default'] {
+  --workspace-overlay-surface: #fffdfa;
+  --workspace-overlay-surface-muted: #f5efe8;
+  --workspace-overlay-hover: #ede5da;
+  --workspace-overlay-selected: #e4d9cb;
+  --workspace-overlay-border: transparent;
+  --workspace-overlay-divider: #e9dfd3;
+  --workspace-overlay-radius: 12px;
+  --workspace-overlay-radius-sm: 8px;
+  --workspace-overlay-shadow: 0 18px 48px rgb(53 43 34 / 10%), 0 2px 10px rgb(53 43 34 / 5%);
+  --workspace-dialog-shadow: 0 28px 80px rgb(53 43 34 / 16%), 0 3px 14px rgb(53 43 34 / 7%);
+}
+
+[data-theme='dark'],
+body[arco-theme='dark'] {
+  --workspace-overlay-surface: #24201c;
+  --workspace-overlay-surface-muted: #2c261f;
+  --workspace-overlay-hover: #393027;
+  --workspace-overlay-selected: #453a30;
+  --workspace-overlay-border: transparent;
+  --workspace-overlay-divider: #463b31;
+  --workspace-overlay-shadow: 0 20px 54px rgb(0 0 0 / 40%), 0 3px 12px rgb(0 0 0 / 24%);
+  --workspace-dialog-shadow: 0 30px 90px rgb(0 0 0 / 54%), 0 4px 16px rgb(0 0 0 / 30%);
+}
+
+html body .arco-dropdown-menu,
+html body .arco-menu-pop,
+html body .arco-select-popup,
+html body .arco-popover-content,
+html body .arco-popconfirm-content,
+html body .arco-tooltip-content,
+html body .app-overlay-menu {
+  isolation: isolate;
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  border: 1px solid var(--workspace-overlay-border) !important;
+  border-radius: var(--workspace-overlay-radius) !important;
+  box-shadow: var(--workspace-overlay-shadow) !important;
+  backdrop-filter: none !important;
+}
+
+html body .arco-dropdown-menu,
+html body .arco-menu-pop,
+html body .arco-select-popup,
+html body .app-overlay-menu {
+  padding: 6px !important;
+}
+
+html body .arco-dropdown-menu-item,
+html body .arco-menu-pop .arco-menu-item,
+html body .arco-select-option {
+  min-height: 34px;
+  margin: 1px 0 !important;
+  padding: 7px 9px !important;
+  color: var(--workspace-text) !important;
+  background: transparent !important;
+  border-radius: var(--workspace-overlay-radius-sm) !important;
+  font-size: 13px;
+  line-height: 19px;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease;
+}
+
+html body .arco-dropdown-menu-item:hover,
+html body .arco-dropdown-menu-active,
+html body .arco-menu-pop .arco-menu-item:hover,
+html body .arco-menu-pop .arco-menu-item-active,
+html body .arco-select-option:hover {
+  background: var(--workspace-overlay-hover) !important;
+}
+
+html body .arco-dropdown-menu-selected,
+html body .arco-menu-pop .arco-menu-selected,
+html body .arco-select-option-selected {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-selected) !important;
+  font-weight: 550;
+}
+
+html body .arco-dropdown-menu-disabled,
+html body .arco-menu-pop .arco-menu-item-disabled,
+html body .arco-select-option-disabled {
+  color: var(--workspace-text-tertiary) !important;
+  background: transparent !important;
+  opacity: 0.7;
+}
+
+html body .arco-dropdown-menu-item-danger,
+html body .arco-menu-pop .arco-menu-item-danger,
+html body [role='menuitem'][data-danger='true'] {
+  color: var(--workspace-danger-text) !important;
+}
+
+html body .arco-dropdown-menu-group-title,
+html body .arco-menu-pop .arco-menu-group-title,
+html body .arco-select-group-title {
+  padding: 8px 9px 5px !important;
+  color: var(--workspace-text-tertiary) !important;
+  background: var(--workspace-overlay-surface) !important;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+html body .arco-dropdown-menu-separator,
+html body .arco-menu-pop .arco-menu-item-divider {
+  margin: 5px 4px !important;
+  border-color: var(--workspace-overlay-divider) !important;
+}
+
+html body .arco-popover-arrow,
+html body .arco-popconfirm-arrow {
+  background: var(--workspace-overlay-surface) !important;
+  border-color: var(--workspace-overlay-border) !important;
+}
+
+/* Hand-built desktop overlays opt in through app-overlay-menu. Keeping the
+ * rule explicit avoids styling semantic menus nested inside mobile sheets. */
+html body .app-overlay-menu [role='menuitem'],
+html body .app-overlay-menu [role='menuitemradio'],
+html body .app-overlay-menu [role='menuitemcheckbox'],
+html body .app-overlay-menu [role='option'] {
+  color: var(--workspace-text) !important;
+  background: transparent !important;
+  border-radius: var(--workspace-overlay-radius-sm) !important;
+}
+
+html body .app-overlay-menu [role='menuitem']:hover,
+html body .app-overlay-menu [role='menuitemradio']:hover,
+html body .app-overlay-menu [role='menuitemcheckbox']:hover,
+html body .app-overlay-menu [role='option']:hover {
+  background: var(--workspace-overlay-hover) !important;
+}
+
+html body [role='menu'] [aria-checked='true'],
+html body [role='listbox'] [aria-selected='true'] {
+  background: var(--workspace-overlay-selected) !important;
+}
+
+/* The three conversation-option switches already communicate selection.
+ * Keep their rows flat so the checked state does not look like three stacked
+ * cards; hover and keyboard focus still receive the rules below. */
+html body .app-overlay-menu .session-options-menu__row[aria-checked='true'] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body [role='menu'] :is(button, [role^='menuitem']):focus-visible,
+html body [role='listbox'] [role='option']:focus-visible,
+html body .arco-dropdown-menu-item:focus-visible,
+html body .arco-select-option:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--workspace-text) 42%, transparent) !important;
+  outline-offset: -1px !important;
+}
+
+/* Session toggles keep keyboard location visible without leaving a blue click ring. */
+html body .app-overlay-menu .session-options-menu__row:focus,
+html body .app-overlay-menu .session-options-menu__row:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+html body .app-overlay-menu .session-options-menu__row:focus-visible {
+  background: var(--workspace-overlay-hover) !important;
+}
+
+/* Dialogs and drawers share one elevation and spacing language. */
+html body .arco-modal {
+  max-height: calc(100vh - 32px);
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  border: 1px solid var(--workspace-overlay-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--workspace-dialog-shadow) !important;
+}
+
+html body .arco-modal:not(.arco-modal-simple) {
+  display: inline-flex;
+  flex-direction: column;
+}
+
+html body .arco-modal-content,
+html body .synon-ai-modal .arco-modal-content {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px !important;
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html body .arco-modal-header {
+  min-height: 54px;
+  padding: 17px 20px 13px !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-bottom: 1px solid var(--workspace-overlay-divider) !important;
+}
+
+html body .arco-modal-title,
+html body .arco-modal-simple .arco-modal-title {
+  color: var(--workspace-text) !important;
+  font-size: 16px !important;
+  font-weight: 620 !important;
+  line-height: 23px !important;
+  letter-spacing: -0.01em;
+}
+
+html body .arco-modal-content {
+  color: var(--workspace-text-secondary) !important;
+  background: var(--workspace-overlay-surface) !important;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+/* Long skill files need a real modal layout: fixed chrome, one bounded scroll region. */
+html body .synon-biomed-skill-detail-modal .arco-modal-header,
+html body .synon-biomed-skill-detail-modal .arco-modal-footer {
+  flex: 0 0 auto;
+}
+
+html body .synon-biomed-skill-detail-modal {
+  display: inline-flex !important;
+  flex-direction: column;
+  height: calc(100vh - 32px);
+}
+
+html body .synon-biomed-skill-detail-modal > [data-focus-lock-disabled] {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+
+html body .synon-biomed-skill-detail-modal .arco-modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+html body .arco-modal-footer {
+  gap: 8px;
+  padding: 13px 20px 17px !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-top: 1px solid var(--workspace-overlay-divider) !important;
+}
+
+html body .arco-modal-footer .arco-btn {
+  min-width: 82px;
+  min-height: 36px;
+  border-radius: 9px !important;
+}
+
+html body .arco-modal-close-icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  color: var(--workspace-text-tertiary) !important;
+  border-radius: 8px;
+}
+
+html body .arco-modal-close-icon:hover {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-hover) !important;
+}
+
+html body .arco-modal-simple {
+  overflow: visible;
+  padding: 24px 32px 32px !important;
+}
+
+html body .arco-modal-simple .arco-modal-header,
+html body .arco-modal-simple .arco-modal-footer {
+  min-height: 0;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html body .arco-modal-simple .arco-modal-header {
+  margin-bottom: 20px;
+}
+
+html body .arco-modal-simple .arco-modal-content {
+  overflow-y: auto;
+  padding: 0 !important;
+}
+
+html body .arco-modal-simple .arco-modal-footer {
+  margin-top: 26px;
+}
+
+html body .arco-modal-mask,
+html body .arco-drawer-mask {
+  background: rgb(28 27 24 / 38%) !important;
+  backdrop-filter: blur(2px);
+}
+
+html body .accessible-content-dialog__overlay {
+  background: rgb(28 27 24 / 38%) !important;
+  backdrop-filter: blur(2px);
+}
+
+html body .accessible-content-dialog__surface {
+  overflow: hidden;
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-color: var(--workspace-overlay-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--workspace-dialog-shadow) !important;
+}
+
+html body .accessible-content-dialog__header {
+  min-height: 54px;
+  background: var(--workspace-overlay-surface) !important;
+  border-color: var(--workspace-overlay-divider) !important;
+}
+
+html body .accessible-content-dialog__close {
+  border-radius: 8px !important;
+}
+
+html body .accessible-content-dialog__close:hover {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-hover) !important;
+}
+
+html body .arco-drawer,
+html body .arco-drawer-content {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+}
+
+html body .arco-drawer {
+  border-left: 1px solid var(--workspace-overlay-border) !important;
+  box-shadow: var(--workspace-dialog-shadow) !important;
+}
+
+html body .synon-approval-scope-drawer .arco-drawer {
+  border-top: 1px solid var(--workspace-overlay-border) !important;
+  border-left: 0 !important;
+  border-radius: 14px 14px 0 0;
+}
+
+html body .arco-drawer-header {
+  min-height: 54px;
+  padding: 15px 18px !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-bottom: 1px solid var(--workspace-overlay-divider) !important;
+}
+
+html body .arco-drawer-title {
+  color: var(--workspace-text) !important;
+  font-size: 15px;
+  font-weight: 620;
+}
+
+html body .arco-drawer-content {
+  padding: 18px !important;
+  color: var(--workspace-text-secondary) !important;
+  background: var(--workspace-overlay-surface) !important;
+}
+
+html body .arco-drawer-footer {
+  padding: 13px 18px 17px !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-top: 1px solid var(--workspace-overlay-divider) !important;
+}
+
+/* Toasts and alerts stay semantic without turning the whole surface into a
+ * saturated color block. */
+html body .arco-message,
+html body .arco-notification {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  border: 1px solid var(--workspace-overlay-border) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--workspace-overlay-shadow) !important;
+}
+
+html body .arco-alert {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface-muted) !important;
+  border: 1px solid var(--workspace-overlay-border) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html body .arco-alert-title {
+  color: var(--workspace-text) !important;
+  font-weight: 600;
+}
+
+html body .arco-alert-content,
+html body .arco-alert-description {
+  color: var(--workspace-text-secondary) !important;
+}
+
+/* The accessible confirmation component is deliberately hand-built to retain
+ * Cancel-first focus and a strict focus trap. Its appearance belongs to the
+ * global overlay system, not to the runtime approval-card module. */
+.accessible-action-dialog__overlay {
+  background: rgb(28 27 24 / 38%) !important;
+  backdrop-filter: blur(2px);
+}
+
+.accessible-action-dialog__dialog {
+  overflow: hidden;
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  border: 1px solid var(--workspace-overlay-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--workspace-dialog-shadow) !important;
+}
+
+.accessible-action-dialog__header {
+  padding: 17px 20px 14px !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-color: var(--workspace-overlay-divider) !important;
+}
+
+.accessible-action-dialog__header h2 {
+  color: var(--workspace-text) !important;
+  font-size: 16px !important;
+  font-weight: 620 !important;
+  line-height: 23px;
+}
+
+.accessible-action-dialog__body {
+  padding: 18px 20px !important;
+  color: var(--workspace-text-secondary) !important;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.accessible-action-dialog__footer {
+  align-items: center;
+  padding: 13px 20px 17px !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-color: var(--workspace-overlay-divider) !important;
+}
+
+.accessible-action-dialog__cancel,
+.accessible-action-dialog__confirm {
+  min-width: 82px;
+  min-height: 36px;
+  padding: 0 15px !important;
+  border-radius: 9px !important;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.accessible-action-dialog__cancel {
+  color: var(--workspace-text) !important;
+  background: var(--workspace-overlay-surface) !important;
+  border-color: var(--workspace-overlay-border) !important;
+}
+
+.accessible-action-dialog__cancel:hover {
+  background: var(--workspace-overlay-hover) !important;
+}
+
+.accessible-action-dialog__confirm:not(.bg-danger-6) {
+  color: var(--workspace-accent-contrast) !important;
+  background: var(--workspace-accent) !important;
+  border-color: transparent !important;
+}
+
+@media (max-width: 519px) {
+  html body .arco-modal,
+  .accessible-action-dialog__dialog {
+    border-radius: 12px !important;
+  }
+
+  .accessible-action-dialog__footer {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .accessible-action-dialog__cancel,
+  .accessible-action-dialog__confirm {
+    width: 100%;
+    min-height: 42px;
+  }
+}
+
+/* Shared conversation typography with warm/cool live surfaces. */
+:root,
+[data-color-scheme='default'] {
+  --conversation-font-sans:
+    ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --conversation-font-size: 15px;
+  --conversation-line-height: 1.6;
+  --conversation-ui-font-size: 13px;
+  --conversation-ui-line-height: 20px;
+  --conversation-meta-font-size: 12px;
+  --conversation-meta-line-height: 18px;
+  --conversation-user-surface: #efeeeb;
+  --conversation-user-border: transparent;
+  --conversation-stream-surface: #faf9f7;
+  --conversation-stream-border: transparent;
+  --conversation-stream-accent: #6f6b65;
+  --conversation-stream-accent-soft: #efede9;
+  --conversation-code-surface: #f5f4f1;
+}
+
+[data-theme='dark'],
+body[arco-theme='dark'] {
+  --conversation-user-surface: #292927;
+  --conversation-user-border: transparent;
+  --conversation-stream-surface: #232321;
+  --conversation-stream-border: transparent;
+  --conversation-stream-accent: #f2f2f2;
+  --conversation-stream-accent-soft: #303030;
+  --conversation-code-surface: #1f1f1d;
+}
+
+html,
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--conversation-font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+html body .message-item {
+  color: var(--workspace-text) !important;
+  font-family: var(--conversation-font-sans);
+  font-size: var(--conversation-font-size);
+  line-height: var(--conversation-line-height);
+}
+
+html body .message-item [data-testid='message-text-content'] {
+  max-width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+html body .message-item.justify-end .message-text-bubble--user {
+  width: fit-content !important;
+  max-width: min(100%, var(--conversation-content-max-width, 56rem)) !important;
+  padding: 10px 16px !important;
+  color: var(--workspace-text) !important;
+  background: var(--conversation-user-surface) !important;
+  border: 1px solid var(--conversation-user-border) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+
+html body .message-item.justify-end .whitespace-pre-wrap {
+  font-size: var(--conversation-font-size) !important;
+  line-height: 20px !important;
+}
+
+html body .synon-biomed-task-status {
+  box-sizing: border-box;
+  min-height: 26px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 8px !important;
+  padding: 4px 10px !important;
+  color: var(--workspace-text-secondary) !important;
+  background: var(--conversation-stream-surface) !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  font-family: var(--conversation-font-sans) !important;
+  font-size: var(--conversation-meta-font-size) !important;
+  line-height: var(--conversation-meta-line-height) !important;
+}
+
+html body .synon-biomed-task-status[data-state='waiting_input'],
+html body .synon-biomed-task-status[data-state='waiting_confirmation'] {
+  background: var(--conversation-stream-accent-soft) !important;
+}
+
+html body .runtime-operations-banner {
+  color: var(--workspace-text-secondary) !important;
+  background: var(--conversation-stream-surface) !important;
+  border-color: transparent !important;
+  border-radius: 10px !important;
+  font-family: var(--conversation-font-sans) !important;
+  font-size: var(--conversation-ui-font-size) !important;
+  line-height: var(--conversation-ui-line-height) !important;
+}
+
+html body .app-overlay-menu [role='menuitem'],
+html body .app-overlay-menu [role='menuitemradio'],
+html body .app-overlay-menu [role='menuitemcheckbox'],
+html body .app-overlay-menu [role='option'],
+html body .arco-dropdown-menu-item,
+html body .arco-menu-pop .arco-menu-item,
+html body .arco-select-option {
+  font-family: var(--conversation-font-sans) !important;
+  font-size: var(--conversation-ui-font-size) !important;
+  line-height: var(--conversation-ui-line-height) !important;
+}
+
+html body .arco-tooltip-content,
+html body .arco-popover-content,
+html body .arco-popconfirm-content {
+  font-family: var(--conversation-font-sans) !important;
+  font-size: var(--conversation-meta-font-size) !important;
+  line-height: var(--conversation-meta-line-height) !important;
+}
+
+html body .arco-message,
+html body .arco-notification {
+  min-height: 40px;
+  padding: 9px 12px !important;
+  font-family: var(--conversation-font-sans) !important;
+  font-size: var(--conversation-ui-font-size) !important;
+  line-height: var(--conversation-ui-line-height) !important;
+}
+
+html body .accessible-content-dialog__body,
+html body .accessible-action-dialog__body,
+html body .arco-modal-content,
+html body .arco-drawer-content {
+  font-family: var(--conversation-font-sans) !important;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+html body [role='dialog'] button:focus-visible,
+html body [role='alertdialog'] button:focus-visible,
+html body [role='menu'] :is(button, [role^='menuitem']):focus-visible,
+html body [role='listbox'] [role='option']:focus-visible {
+  outline-color: color-mix(in srgb, var(--workspace-text) 42%, transparent) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body .css-theme-card,
+  html body .arco-message,
+  html body .arco-notification {
+    transition: none !important;
+  }
+
+  html body .css-theme-card {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html body .message-item.justify-end .whitespace-pre-wrap {
+    font-size: 15px !important;
+    line-height: 23px !important;
+  }
+}
+
+/*
+ * Theme-family bridge
+ * -------------------
+ * Warm/cool palettes own their colors; light/dark is a separate mode. This layer
+ * only maps the active preset tokens onto legacy application variables, so a
+ * style family can provide both modes without being overwritten by geometry
+ * CSS. Important aliases also neutralize provider inline blue defaults.
+ */
+html[data-theme][data-color-scheme='default'],
+html[data-theme][data-color-scheme='default'] body {
+  --bg-base: var(--workspace-canvas) !important;
+  --bg-1: var(--workspace-canvas) !important;
+  --bg-2: var(--workspace-sidebar) !important;
+  --bg-3: var(--workspace-border) !important;
+  /* Canonical surface aliases used by raw CSS and preview modules. */
+  --color-bg-0: var(--workspace-canvas) !important;
+  --color-bg-1: var(--workspace-canvas) !important;
+  --color-bg-2: var(--workspace-sidebar) !important;
+  --color-bg-3: var(--workspace-border) !important;
+  --color-bg-4: var(--workspace-border-strong) !important;
+  --color-bg-5: var(--workspace-text-tertiary) !important;
+  --bg-hover: var(--workspace-hover) !important;
+  --bg-active: var(--workspace-selected) !important;
+  --fill: var(--workspace-subtle) !important;
+  --fill-0: var(--workspace-canvas) !important;
+  --dialog-fill-0: var(--workspace-overlay-surface) !important;
+  --color-fill-1: var(--workspace-overlay-surface) !important;
+  --color-fill-2: var(--workspace-subtle) !important;
+  --color-fill-3: var(--workspace-selected) !important;
+  --color-fill-4: var(--workspace-border-strong) !important;
+  --text-primary: var(--workspace-text) !important;
+  --text-secondary: var(--workspace-text-secondary) !important;
+  --text-tertiary: var(--workspace-text-tertiary) !important;
+  --color-text-1: var(--workspace-text) !important;
+  --color-text-2: var(--workspace-text-secondary) !important;
+  --color-text-3: var(--workspace-text-tertiary) !important;
+  --color-text-4: var(--workspace-text-tertiary) !important;
+  --border-base: var(--workspace-border) !important;
+  --border-light: var(--workspace-hover) !important;
+  --color-border: var(--workspace-border) !important;
+  --color-border-1: var(--workspace-border) !important;
+  --color-border-2: color-mix(in srgb, var(--workspace-border) 72%, transparent) !important;
+  --color-border-3: var(--workspace-border-strong) !important;
+  /* First-party surface contract: modules depend on these, not provider names. */
+  --synon-surface-canvas: var(--workspace-canvas) !important;
+  --synon-surface-panel: var(--workspace-sidebar) !important;
+  --synon-surface-card: var(--workspace-overlay-surface) !important;
+  --synon-surface-subtle: var(--workspace-subtle) !important;
+  --synon-surface-hover: var(--workspace-hover) !important;
+  --synon-divider: var(--workspace-border) !important;
+  --synon-divider-strong: var(--workspace-border-strong) !important;
+  --synon-overlay-surface: var(--workspace-overlay-surface) !important;
+  --synon-overlay-muted: var(--workspace-overlay-surface-muted) !important;
+  --synon-shadow-soft: var(--workspace-shadow-popover) !important;
+  --primary: var(--workspace-accent) !important;
+  --color-primary: var(--workspace-accent) !important;
+  --brand: var(--workspace-accent) !important;
+  --brand-light: var(--workspace-subtle) !important;
+  --brand-hover: var(--workspace-selected) !important;
+  --message-user-bg: var(--conversation-user-surface) !important;
+  --message-tips-bg: var(--workspace-sidebar) !important;
+  --workspace-btn-bg: var(--workspace-subtle) !important;
+  --color-guid-agent-bar: var(--workspace-subtle) !important;
+  --synon-ai-overlay-bg: var(--workspace-overlay-surface) !important;
+  --synon-ai-overlay-text: var(--workspace-text) !important;
+  --synon-ai-overlay-border: var(--workspace-overlay-border) !important;
+  --conversation-user-border: transparent !important;
+  --conversation-stream-border: transparent !important;
+  --primary-3: var(--theme-primary-3, 225, 223, 218) !important;
+  --primary-5: var(--theme-primary-5, 82, 80, 76) !important;
+  --primary-6: var(--theme-primary-6, 59, 58, 55) !important;
+  --primary-7: var(--theme-primary-7, 43, 42, 40) !important;
+  --arcoblue-5: var(--theme-primary-5, 82, 80, 76) !important;
+  --arcoblue-6: var(--theme-primary-6, 59, 58, 55) !important;
+  --arcoblue-7: var(--theme-primary-7, 43, 42, 40) !important;
+}
+
+/* Controls retain a quiet one-pixel boundary; filled actions carry their
+ * emphasis through the fill rather than a matching colored frame. */
+html body .arco-btn,
+html body .arco-input,
+html body .arco-input-inner-wrapper,
+html body .arco-textarea,
+html body .arco-select-view,
+html body .arco-picker,
+html body .arco-input-number {
+  border-width: 1px !important;
+  border-color: var(--workspace-border) !important;
+}
+
+html body .arco-btn-primary,
+html body .arco-btn-status-danger,
+html body .send-button-custom:not(:disabled),
+html body .accessible-action-dialog__confirm,
+html body .message-channel-card__primary-button {
+  border-color: transparent !important;
+}
+
+html body .arco-btn:focus-visible,
+html body [role='dialog'] button:focus-visible,
+html body [role='alertdialog'] button:focus-visible,
+html body [role='menu'] :is(button, [role^='menuitem']):focus-visible,
+html body [role='listbox'] [role='option']:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--workspace-text) 42%, transparent) !important;
+  outline-offset: 2px !important;
+}
+
+html body .arco-radio-mask,
+html body .arco-checkbox-mask {
+  border-width: 1px !important;
+  border-color: var(--workspace-border-strong) !important;
+}
+
+html body .arco-radio-checked .arco-radio-mask,
+html body .arco-checkbox-checked .arco-checkbox-mask {
+  border-color: transparent !important;
+  background: var(--workspace-accent) !important;
+}
+
+html body .arco-steps-item-icon,
+html body .synon-ai-steps .arco-steps-item-process .arco-steps-item-icon,
+html body .synon-ai-steps .arco-steps-item-finish .arco-steps-item-icon {
+  border-color: transparent !important;
+}
+
+html body .synon-ai-steps .arco-steps-item-finish .arco-steps-item-icon {
+  color: var(--workspace-text-secondary) !important;
+  background: var(--workspace-subtle) !important;
+}
+
+html body .synon-ai-steps .arco-steps-item-process .arco-steps-item-icon {
+  color: var(--workspace-accent-contrast) !important;
+  background: var(--workspace-accent) !important;
+}
+
+html body .arco-tag {
+  border-color: transparent !important;
+}
+
+/* Hand-built settings controls previously fell back to the browser's 2 px
+ * outset border. Their gray fill and small shadow now provide the boundary. */
+html body button.settings-action-button,
+html body button.settings-icon-button,
+html body button.settings-text-danger-button,
+html body .arco-modal button.text-left {
+  border: 1px solid transparent !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 6%) !important;
+}
+
+html body button.settings-action-button,
+html body button.settings-icon-button {
+  background: var(--workspace-subtle) !important;
+}
+
+html body button.settings-text-danger-button,
+html body .arco-modal button.text-left {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Side-specific Uno utilities set border-style without resetting the browser's
+ * other three medium-width sides. Scope the repair to the artifact workspace. */
+html body .chat-layout-right-sider .border-solid.border-t {
+  border-width: 0 !important;
+  border-top: 1px solid var(--workspace-border) !important;
+}
+
+html body .chat-layout-right-sider .border-solid.border-b {
+  border-width: 0 !important;
+  border-bottom: 1px solid var(--workspace-border) !important;
+}
+
+html body .synon-sidebar-project-row {
+  border-width: 0 !important;
+}
+
+/* Global module shells use neutral structure and neutral depth. */
+html
+  body
+  :is(
+    .arco-card,
+    .arco-collapse,
+    .arco-list,
+    .arco-table-container,
+    .arco-descriptions,
+    .arco-alert,
+    .arco-message,
+    .arco-notification,
+    .arco-modal,
+    .arco-drawer,
+    .accessible-content-dialog__surface,
+    .accessible-action-dialog__dialog,
+    .permissions-toolbar,
+    .permission-rule,
+    .artifact-library__card,
+    .message-scientific-files__card
+  ) {
+  border-width: 1px !important;
+  border-color: transparent !important;
+}
+
+html
+  body
+  :is(
+    .arco-card,
+    .arco-collapse,
+    .arco-list,
+    .arco-table-container,
+    .arco-descriptions,
+    .permissions-toolbar,
+    .permission-rule,
+    .artifact-library__card,
+    .message-scientific-files__card
+  ) {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 5%) !important;
+}
+
+html body :is(.arco-modal-header, .arco-modal-footer, .arco-drawer-header, .arco-drawer-footer) {
+  border-color: var(--workspace-overlay-divider) !important;
+}
+
+html body [class*='border-\[var'] {
+  border-color: var(--workspace-border) !important;
+}
+
+html body :is(.artifact-library__preview, .message-scientific-files__preview) {
+  border-color: var(--workspace-border) !important;
+  background: var(--workspace-subtle) !important;
+}
+
+html
+  body
+  :is(
+    .message-item.justify-end .bg-aou-2,
+    .synon-biomed-task-status,
+    .runtime-operations-banner,
+    [data-testid='synon-biomed-ask-user-card'],
+    .synon-approval-card,
+    .synon-approval-card__code
+  ) {
+  border-width: 1px !important;
+  border-color: var(--conversation-stream-border) !important;
+}
+
+html
+  body
+  :is(
+    .synon-biomed-task-status,
+    .runtime-operations-banner,
+    [data-testid='synon-biomed-ask-user-card'],
+    .synon-approval-card
+  ) {
+  border-left-width: 1px !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
+}
+
+html body .guid-input-card-shell--dragging,
+html body .guid-input-card-shell--dragging:focus-within {
+  border: 1px dashed var(--workspace-border-strong) !important;
+}
+
+html body .arco-tag .arco-tag-content {
+  color: var(--workspace-text-secondary) !important;
+}
+
+html body .text-green-6 {
+  color: var(--workspace-success-text) !important;
+}
+
+html body .arco-btn-status-danger,
+html body .settings-text-danger-button {
+  color: var(--workspace-danger-text) !important;
+}
+
+html body button.border-none,
+html body button.border-0 {
+  border: 0 !important;
+}
+
+html body .arco-tag-gray,
+html body .arco-tag-gray .arco-tag-content {
+  color: var(--workspace-text-secondary) !important;
+}
+
+html body .arco-tag-gray {
+  background: var(--workspace-subtle) !important;
+  border-color: transparent !important;
+}
+
+/* Destructive semantics stay visible in the copy and confirmation flow, but
+ * destructive text is intentionally monochrome. This keeps white surfaces
+ * readable with dark text and dark surfaces readable with light text across
+ * settings, dialogs, menus, runtime logs, and artifact viewers. */
+html
+  body
+  :is(
+    [class~='text-danger-6'],
+    [class~='text-danger-7'],
+    [class~='text-red-5'],
+    [class~='text-red-6'],
+    [class~='text-red-7'],
+    [class~='text-red-500'],
+    [class~='text-red-600'],
+    [class~='text-red-700'],
+    [class~='text-warning-5'],
+    [class~='text-warning-6'],
+    [class~='text-warning-7'],
+    [class~='text-orange-5'],
+    [class~='text-orange-6'],
+    [class~='text-orange-7'],
+    .arco-btn-status-danger,
+    .settings-text-danger-button,
+    .message-channel-card__danger-button,
+    .message-channel-card__error,
+    .permission-revoke-button,
+    .arco-dropdown-menu-item-danger,
+    .arco-menu-pop .arco-menu-item-danger,
+    [role='menuitem'][data-danger='true']
+  ) {
+  color: var(--workspace-text) !important;
+}
+
+/* Error semantics may keep a calm tinted surface, but their frames follow the
+ * same neutral border system as every other module. */
+html
+  body
+  :is([class*='border-danger-'], [class*='border-red-'], [class*='border-warning-'], [class*='border-orange-']) {
+  border-color: var(--workspace-border) !important;
+}
+
+html body .arco-btn-status-danger {
+  background: var(--workspace-canvas) !important;
+  border-color: var(--workspace-border) !important;
+}
+
+html body .arco-btn-status-danger:hover:not(:disabled),
+html body .message-channel-card__danger-button:hover:not(:disabled),
+html body .permission-revoke-button:hover:not(:disabled) {
+  background: var(--workspace-subtle) !important;
+  border-color: var(--workspace-border-strong) !important;
+}
+
+html body .message-channel-card__danger-button {
+  background: var(--workspace-canvas) !important;
+  border-color: var(--workspace-border) !important;
+}
+
+html body :is(.arco-tag-red, .arco-tag-red .arco-tag-content) {
+  color: var(--workspace-text-secondary) !important;
+}
+
+html body .arco-tag-red {
+  background: var(--workspace-subtle) !important;
+  border-color: transparent !important;
+}
+
+/* Keep the application frame bounded when the dynamically generated size-full
+ * utility is refreshed. Without an explicit height on this root flex frame,
+ * the main layout grows to its content height and collapses the conversation
+ * viewport after a hot style update. */
+html body #root > .app-shell {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root > .app-shell > .layout {
+  flex: 1 1 0% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* The app uses size-full for full-frame, absolute, and virtual-scroll
+ * containers. Reassert the utility here so a dev-style refresh cannot turn
+ * those regions into a 0 × 0 box while their content remains mounted. */
+html body #root .size-full {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Final geometry and type system. Every user-facing module has a shared
+ * rounded silhouette; controls stay compact but never fall back to browser
+ * square corners. Fills and shadows carry hierarchy instead of heavy frames. */
+html
+  body
+  :is(
+    .arco-card,
+    .arco-collapse,
+    .arco-list,
+    .arco-table-container,
+    .arco-descriptions,
+    .arco-alert,
+    .permissions-toolbar,
+    .permission-rule,
+    .artifact-library__card,
+    .message-scientific-files__card,
+    .synon-biomed-task-status,
+    .runtime-operations-banner,
+    [data-testid='synon-biomed-ask-user-card'],
+    .synon-approval-card
+  ) {
+  border-radius: 14px !important;
+}
+
+html body :is(.arco-card, .arco-collapse, .arco-list, .arco-table-container, .arco-alert) {
+  overflow: hidden !important;
+}
+
+html body .artifact-library__card,
+html body .message-scientific-files__card {
+  overflow: hidden !important;
+}
+
+html body .artifact-library__preview,
+html body .message-scientific-files__preview {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+html body .message-scientific-files__metadata {
+  border-radius: 0 0 18px 18px !important;
+  background: var(--workspace-canvas) !important;
+}
+
+html body :is(.arco-modal, .accessible-content-dialog__surface, .accessible-action-dialog__dialog) {
+  border-radius: 16px !important;
+}
+
+html body .arco-drawer {
+  border-radius: 16px 0 0 16px !important;
+}
+
+html
+  body
+  :is(
+    .arco-btn,
+    .arco-input,
+    .arco-input-inner-wrapper,
+    .arco-textarea,
+    .arco-select-view,
+    .arco-picker,
+    .arco-input-number,
+    .arco-switch,
+    .arco-radio-mask,
+    .arco-checkbox-mask
+  ) {
+  border-radius: 9px !important;
+}
+
+/* Arco exposes visually different small/default switch geometries. Keep one
+ * calm, borderless pill everywhere so independently authored modules do not
+ * shrink the control or change its silhouette through a local size prop. */
+html body .arco-switch {
+  box-sizing: border-box !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  flex: 0 0 40px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+html body .arco-switch .arco-switch-dot {
+  top: 4px !important;
+  left: 4px !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  line-height: 16px !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 18%) !important;
+}
+
+html body .arco-switch-checked .arco-switch-dot {
+  left: 20px !important;
+}
+
+html body .arco-switch:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--workspace-text) 42%, transparent) !important;
+  outline-offset: 2px !important;
+}
+
+html body .message-item.justify-end .bg-aou-2 {
+  border-radius: 16px !important;
+}
+
+html body .synon-ai-markdown :where(img) {
+  border-radius: 12px !important;
+}
+
+html body .synon-ai-markdown :where(blockquote) {
+  padding: 10px 12px !important;
+  background: var(--conversation-stream-surface) !important;
+  border-left: 1px solid var(--workspace-border-strong) !important;
+  border-radius: 10px !important;
+}
+
+html body .synon-ai-markdown :where(pre),
+html body .synon-ai-markdown [data-streamdown='code-block'] {
+  overflow: auto;
+  background: var(--conversation-code-surface) !important;
+  border-color: transparent !important;
+  border-radius: 10px !important;
+}
+
+html body .synon-ai-markdown :where(table) {
+  overflow: hidden;
+  background: var(--conversation-stream-surface) !important;
+  border: 1px solid transparent !important;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 10px !important;
+}
+
+html body .synon-ai-markdown :where(code):not(:where(pre code)) {
+  border-radius: 6px !important;
+}
+
+html body .synon-ai-markdown :where(hr) {
+  border: 0 !important;
+  border-top: 1px solid var(--workspace-border) !important;
+}
+
+html body .synon-ai-markdown :is(pre, table, blockquote),
+html body .arco-table-container {
+  border-radius: 10px !important;
+}
+
+/* Uno's legacy text-t-tertiary utility points at --bg-6, which is also used
+ * as a hover fill. Override the text utility itself so dark-mode captions
+ * remain readable without turning hover surfaces into bright blocks. */
+html body .text-t-tertiary,
+html body .placeholder\:text-t-tertiary::placeholder {
+  color: var(--workspace-text-tertiary) !important;
+}
+
+html
+  body
+  :is(.arco-modal, .arco-drawer, .accessible-content-dialog__surface, .accessible-action-dialog__dialog)
+  .text-10px {
+  font-size: 11px !important;
+  line-height: 16px !important;
+}
+
+html body .artifact-library__card .text-10px {
+  font-size: 11px !important;
+  line-height: 16px !important;
+}
+
+html body .artifact-library__card .text-11px,
+html body .synon-sidebar-project-meta {
+  font-size: 12px !important;
+  line-height: 18px !important;
+}
+
+html body .synon-sidebar-section-title-button .sider-section-title,
+html body .synon-sidebar-timeline .text-t-secondary,
+html body .synon-sidebar-project-meta {
+  color: var(--workspace-text-secondary) !important;
+}
+
+html body .message-item {
+  font-size: 15px !important;
+  line-height: 1.65 !important;
+}
+
+html body .sendbox-panel textarea,
+html body .sendbox-panel [contenteditable='true'] {
+  font-size: 14px !important;
+  line-height: 22px !important;
+}
+
+html body .css-theme-card:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--workspace-text) 42%, transparent) !important;
+  outline-offset: 2px !important;
+}
+
+html body .css-theme-card {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html body .css-theme-card:hover {
+    opacity: 0.96;
+    transform: translateY(-1px);
+  }
+
+  html body .css-theme-card:active {
+    transform: translateY(0);
+  }
+}
+
+/* Popovers, menus, dropdowns, tooltips, and confirmation layers share the
+ * same rounded surface and depth at every nesting level. */
+html
+  body
+  :is(
+    .arco-trigger-popup,
+    .arco-dropdown-menu,
+    .arco-select-popup,
+    .arco-select-popup-inner,
+    .arco-picker-popup,
+    .arco-cascader-popup,
+    .arco-tree-select-popup,
+    .arco-tooltip-content,
+    .arco-popover-content,
+    .arco-popconfirm-content,
+    .arco-menu
+  ) {
+  border-radius: 12px !important;
+  border-color: transparent !important;
+  box-shadow: var(--workspace-shadow-popover) !important;
+}
+
+html
+  body
+  :is(
+    .arco-dropdown-option,
+    .arco-select-option,
+    .arco-cascader-option,
+    .arco-tree-select-option,
+    .arco-menu-item,
+    .arco-menu-group-title
+  ) {
+  border-radius: 8px !important;
+}
+
+html body :is(.arco-tooltip-content, .arco-popover-content, .arco-popconfirm-content) {
+  padding: 9px 12px !important;
+}
+
+/* Shell-adjacent submodules still need the same soft silhouette as content
+ * cards. Keep auto placement intact while removing square footer/header
+ * blocks from both workspace columns. */
+html body .sider-footer {
+  margin-right: 10px !important;
+  margin-bottom: 10px !important;
+  margin-left: 10px !important;
+  background: var(--workspace-subtle) !important;
+  border-radius: 12px !important;
+}
+
+html body .workspace-panel-header {
+  margin: 8px 8px 4px !important;
+  background: var(--workspace-subtle) !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+}
+
+/* Utility border classes inside the account menu can otherwise expand to a
+ * three-pixel frame. Only the intended divider remains. */
+html body .app-overlay-menu > .border-b {
+  border-width: 0 0 1px !important;
+  border-style: solid !important;
+  border-color: var(--workspace-overlay-divider) !important;
+  border-radius: 10px 10px 6px 6px !important;
+}
+
+/* Clip modal and drawer header/footer fills to the parent curve so nested
+ * surfaces never reintroduce square corners. */
+html body :is(.arco-modal, .arco-drawer, .accessible-content-dialog__surface, .accessible-action-dialog__dialog) {
+  overflow: hidden !important;
+}
+
+html body .arco-modal-header,
+html body .arco-drawer-header {
+  border-radius: 16px 16px 0 0 !important;
+}
+
+html body .arco-modal-footer,
+html body .arco-drawer-footer {
+  border-radius: 0 0 16px 16px !important;
+}
+
+html body .message-scientific-files__more {
+  background: var(--workspace-subtle) !important;
+  border-color: transparent !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 5%) !important;
+}
+
+/* Ask User is one calm decision surface. Options and secondary actions stay
+ * borderless; only the custom-answer composer receives a soft fill and focus
+ * halo, avoiding the previous card + divider + input + button frame stack. */
+/* Text fields use their own one-pixel border as the focus affordance. Do not
+ * stack a browser outline, an Arco focus shadow, and a dialog focus ring. The
+ * surrounding composer/card may still provide its single intentional focus
+ * surface, but the field itself stays flat and neutral. */
+html
+  body
+  :is(
+    input:not([type='checkbox']):not([type='radio']):not([type='range']),
+    textarea,
+    select,
+    .arco-input,
+    .arco-textarea
+  ):focus,
+html
+  body
+  :is(
+    .arco-input-inner-wrapper-focus,
+    .arco-select-focused .arco-select-view,
+    .arco-cascader-focused .arco-cascader-view,
+    .arco-tree-select-focused .arco-tree-select-view,
+    .arco-picker-focused,
+    .arco-input-tag.arco-input-tag-focus
+  ) {
+  border-color: var(--workspace-border-strong) !important;
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 800px) {
+  /* The responsive workspace is a hand-built fixed drawer rather than an
+   * Arco drawer, so it needs an explicit mobile silhouette. */
+  html body .chat-layout-right-sider {
+    overflow: hidden !important;
+    border: 1px solid transparent !important;
+    border-radius: 16px 0 0 16px !important;
+    box-shadow: var(--workspace-dialog-shadow) !important;
+  }
+}

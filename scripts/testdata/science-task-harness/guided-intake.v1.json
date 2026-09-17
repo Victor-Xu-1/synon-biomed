@@ -1,0 +1,94 @@
+{
+  "schema": "synon.science-task-suite.v1",
+  "suiteId": "guided-drug-discovery-real-v1",
+  "browserAuthority": "codex_builtin",
+  "scientificDeliverablePolicy": {
+    "defaultForbiddenExtensions": [".json", ".jsonl"],
+    "engineeringEvidenceExtensions": [".json", ".jsonl"],
+    "explicitUserExportTool": "session_export"
+  },
+  "tasks": [
+    {
+      "id": "guided-cdk12-zh",
+      "title": "Chinese guided CDK12 lead-discovery intake and execution",
+      "initialPrompt": "我是刚入门的药物化学研究生，导师让我启动一个选择性 CDK12 小分子抑制剂项目。实验室可以做激酶酶活、细胞增殖、Western blot 和常规有机合成，但导师没有指定癌种、选择性边界、起始化合物、项目周期或成功标准。我也不知道应该先解决哪个问题。\n\n请像资深项目负责人一样先通过 Ask User 分 3–4 轮逐步澄清关键决策，每轮只问真正会改变方案的问题；在获得答案后，再执行真实公共数据检索和本地化学计算，形成可以交给实验同事开工的项目包。不得根据记忆伪造数据、工具结果或引用；普通工具失败要记录并继续可行路径，不能因此终止整个任务。默认用户产物不得包含 JSON/JSONL。",
+      "initialPromptSha256": "6c7c36f7050f13d9e0ea2f84641540f2a01dba0aa148c8ad06f4784666aec9e9",
+      "maxAskUserRounds": 4,
+      "askUserResponses": [
+        {
+          "questionPattern": "癌种|适应症|疾病领域|肿瘤类型",
+          "answer": "优先卵巢癌的 HRD/复制压力背景；先做可获得的细胞系，不把尚无资源的患者样本作为起点。"
+        },
+        {
+          "questionPattern": "选择性边界|CDK13|CDK7|CDK9",
+          "answer": "现阶段接受 CDK12/13 双靶点，但要求相对 CDK7/CDK9 大于 100 倍、相对主要细胞周期 CDK 大于 30 倍，并把这些门槛写进 go/no-go。"
+        },
+        {
+          "questionPattern": "起始化合物|起始系列|起始骨架|参考化合物|化学起点",
+          "answer": "以 THZ531 的公开结构和机制为可追溯参考，走 me-better 路线；必须区分已验证数据和设计假设。"
+        },
+        {
+          "questionPattern": "项目周期|时间表|里程碑|成功标准",
+          "answer": "按 12 个月规划；前 3 个月必须形成可合成起始系列、双生化测定和首轮细胞 PD 证据，给出明确失败门槛。"
+        }
+      ],
+      "acceptance": {
+        "terminalFrameStatuses": ["completed"],
+        "minimumToolCalls": 5,
+        "requiredArtifacts": [
+          {"nameRegex": "(?i)(cdk12|project|lead).*(package|plan|report).*\\.md$", "minCount": 1},
+          {"nameRegex": "(?i)(structure|sar|timeline|cdk12|analog|grid).*(\\.png|\\.svg|\\.sdf|\\.pdb)$", "minCount": 2}
+        ],
+        "requiredBrowserChecks": [
+          "ask_user_rounds_visible",
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "refresh_recovery"
+        ],
+        "requireSingleUserSubmission": true
+      }
+    },
+    {
+      "id": "guided-mcl1-en",
+      "title": "English guided MCL1 lead-discovery intake and execution",
+      "initialPrompt": "I am a first-year medicinal chemistry student and my supervisor asked me to start a selective MCL1 small-molecule inhibitor program. Our lab can run biochemical binding assays, cell viability, Western blots, and routine organic synthesis, but no indication, selectivity boundary, starting series, timeline, or success criteria were specified, and I do not know which uncertainty to resolve first.\n\nAct as an experienced project lead. First use Ask User for 3–4 focused rounds to clarify only decisions that materially change the program. After those answers, perform real public-source retrieval and local chemistry calculations and produce a package that an experimental team can start from. Never invent data, tool results, or citations from memory. Record ordinary tool failures and continue through viable evidence routes instead of terminating the task. Do not create JSON or JSONL as default user deliverables.",
+      "initialPromptSha256": "b212205c64fdad4c61d8b0aaf9cd1e27f973e2ce9385a58aadb50ab5f53381e8",
+      "maxAskUserRounds": 4,
+      "askUserResponses": [
+        {
+          "questionPattern": "indication|cancer type|disease setting",
+          "answer": "Prioritize acute myeloid leukemia with an MCL1-dependent context and use tractable cell models before patient-derived systems."
+        },
+        {
+          "questionPattern": "selectivity|BCL-2|BCL-XL|family boundary",
+          "answer": "Require at least 100-fold biochemical selectivity over BCL-2 and BCL-XL and explicitly monitor platelet-liability risk."
+        },
+        {
+          "questionPattern": "starting series|starting point|reference compound|scaffold",
+          "answer": "Use a traceable literature reference series as the starting point, but design a non-covalent me-better series and label every untested hypothesis."
+        },
+        {
+          "questionPattern": "timeline|milestone|success criteria|project duration",
+          "answer": "Plan twelve months, with a three-month gate requiring a synthetically tractable series, orthogonal binding evidence, cellular target engagement, and explicit no-go thresholds."
+        }
+      ],
+      "acceptance": {
+        "terminalFrameStatuses": ["completed"],
+        "minimumToolCalls": 5,
+        "requiredArtifacts": [
+          {"nameRegex": "(?i)(mcl1|project|lead).*(package|plan|report).*\\.md$", "minCount": 1},
+          {"nameRegex": "(?i)(structure|sar|timeline|mcl1|analog|grid).*(\\.png|\\.svg|\\.sdf|\\.pdb)$", "minCount": 2}
+        ],
+        "requiredBrowserChecks": [
+          "ask_user_rounds_visible",
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "refresh_recovery"
+        ],
+        "requireSingleUserSubmission": true
+      }
+    }
+  ]
+}

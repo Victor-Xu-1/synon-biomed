@@ -1,0 +1,4 @@
+interface:
+  display_name: "Drug Development Lifecycle"
+  short_description: "Plan evidence and gates from discovery through post-market"
+  default_prompt: "Use $drug-development-lifecycle to build a source-grounded, review-ready plan."

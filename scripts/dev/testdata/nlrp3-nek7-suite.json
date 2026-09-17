@@ -1,0 +1,65 @@
+{
+  "schema": "synon.science-task-suite.v1",
+  "suiteId": "nlrp3-nek7-real-v1",
+  "browserAuthority": "codex_builtin",
+  "scientificDeliverablePolicy": {
+    "defaultForbiddenExtensions": [".json", ".jsonl"],
+    "engineeringEvidenceExtensions": [".json", ".jsonl"],
+    "explicitUserExportTool": "session_export"
+  },
+  "tasks": [
+    {
+      "id": "nlrp3-nek7-design",
+      "title": "NLRP3-NEK7 multi-source evidence and candidate design",
+      "initialPromptSha256": "b11ba872b367eb0953c6048b99e99af533b4b3129af48eb421ae5fa569cd0121",
+      "acceptance": {
+        "terminalFrameStatuses": ["completed"],
+        "minimumToolCalls": 10,
+        "requiredArtifacts": [
+          {"nameRegex": "(?i)NLRP3_NEK7_Review_Report\\.html$", "minCount": 1},
+          {"nameRegex": "(?i)known_inhibitors\\.csv$", "minCount": 1},
+          {"nameRegex": "(?i)designed_candidates\\.csv$", "minCount": 1},
+          {"nameRegex": "(?i)molecule_grid\\.png$", "minCount": 1},
+          {"nameRegex": "(?i)property_comparison\\.png$", "minCount": 1},
+          {"nameRegex": "(?i)candidates\\.sdf$", "minCount": 1},
+          {"nameRegex": "(?i)candidate_status\\.(csv|md)$", "minCount": 2}
+        ],
+        "requiredBrowserChecks": [
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "report_preview_visible",
+          "structure_preview_visible",
+          "refresh_recovery"
+        ]
+      },
+      "reviewRubric": [
+        {
+          "id": "real_source_retrieval",
+          "criterion": "PubMed, PDB, ChEMBL, and ClinicalTrials evidence was retrieved through real tool calls and source failures were recorded.",
+          "evidenceSources": ["transcript"]
+        },
+        {
+          "id": "managed_rdkit_calculation",
+          "criterion": "Known inhibitors and candidate structures were calculated in the managed RDKit runtime; invalid candidate input remained explicitly failed.",
+          "evidenceSources": ["transcript", "artifacts"]
+        },
+        {
+          "id": "candidate_structure_integrity",
+          "criterion": "The final SDF has four parseable, non-duplicate candidate records and is independently reread before publication.",
+          "evidenceSources": ["transcript", "artifacts"]
+        },
+        {
+          "id": "scientific_report_quality",
+          "criterion": "The report separates sourced facts, calculations, hypotheses, failures, and a four-week validation package.",
+          "evidenceSources": ["artifacts"]
+        },
+        {
+          "id": "failure_recovery",
+          "criterion": "A failed tool call and an unsupported citation did not terminate the task; the task continued and published corrected deliverables.",
+          "evidenceSources": ["transcript", "database"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "schema": "synon.science-task-suite.v1",
+  "browserAuthority": "codex_builtin",
+  "tasks": [
+    {
+      "id": "kras-g12c-design",
+      "initialPromptSha256": "858210d0544d12a0a8fb95118ccf206a2cf9734711c3e81f7012781bc122a6cd",
+      "acceptance": {
+        "terminalFrameStatuses": [
+          "completed"
+        ],
+        "minimumToolCalls": 8,
+        "requiredArtifacts": [
+          {
+            "nameRegex": "(?i)KRAS_G12C_Inhibitor_Review_Final\\.md$",
+            "minCount": 1
+          },
+          {
+            "nameRegex": "(?i)kras_g12c_inhibitors_2d\\.png$",
+            "minCount": 1
+          },
+          {
+            "nameRegex": "(?i)kras_g12c_(sotorasib|adagrasib|divarasib|olomorasib)\\.png$",
+            "minCount": 4
+          }
+        ],
+        "requiredBrowserChecks": [
+          "conversation_stream_visible",
+          "terminal_status_consistent",
+          "artifact_library_visible",
+          "report_preview_visible",
+          "structure_preview_visible",
+          "refresh_recovery"
+        ],
+        "requireSingleUserSubmission": true
+      },
+      "reviewRubric": [
+        {
+          "id": "clinical_trials_real_tool",
+          "criterion": "ClinicalTrials search must use the real tool path, return real records, and accept normalized legacy arguments",
+          "evidenceSources": [
+            "transcript"
+          ]
+        },
+        {
+          "id": "chembl_real_query",
+          "criterion": "ChEMBL MCP queries must return real compound and activity data",
+          "evidenceSources": [
+            "transcript"
+          ]
+        },
+        {
+          "id": "pdb_pubmed_real_query",
+          "criterion": "PDB and PubMed searches must return real structural and literature evidence with source provenance",
+          "evidenceSources": [
+            "transcript"
+          ]
+        },
+        {
+          "id": "rdkit_real_calc",
+          "criterion": "RDKit properties must be computed from real SMILES input",
+          "evidenceSources": [
+            "transcript",
+            "artifacts"
+          ]
+        },
+        {
+          "id": "report_scientific_quality",
+          "criterion": "Report must distinguish evidence levels and include resistance, ADMET, and a four-week validation plan",
+          "evidenceSources": [
+            "artifacts"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,672 @@
+package server
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
+	"synon-go/internal/tools/securefetch"
+)
+
+const (
+	agentPublicScientificDownloadStageVersion = 1
+	agentPublicScientificTransferIdleTimeout  = 5 * time.Minute
+)
+
+type agentPublicScientificDownloadStageState struct {
+	Version       int    `json:"version"`
+	RequestSHA256 string `json:"request_sha256"`
+	Filename      string `json:"filename"`
+	Validator     string `json:"validator,omitempty"`
+	ContentType   string `json:"content_type,omitempty"`
+	ExpectedTotal int64  `json:"expected_total"`
+}
+
+type agentPublicScientificDownloadStage struct {
+	directory string
+	payload   string
+	metadata  string
+	file      *os.File
+	state     agentPublicScientificDownloadStageState
+}
+
+type agentPublicScientificStagedFile struct {
+	file       *os.File
+	directory  string
+	sizeBytes  int64
+	contentSHA string
+	unlock     func()
+}
+
+func (staged *agentPublicScientificStagedFile) close() {
+	if staged == nil {
+		return
+	}
+	if staged.file != nil {
+		_ = staged.file.Close()
+		staged.file = nil
+	}
+	if staged.unlock != nil {
+		staged.unlock()
+		staged.unlock = nil
+	}
+}
+
+func (staged *agentPublicScientificStagedFile) discard() {
+	if staged == nil {
+		return
+	}
+	if staged.file != nil {
+		_ = staged.file.Close()
+		staged.file = nil
+	}
+	if staged.directory != "" {
+		_ = os.RemoveAll(staged.directory)
+		staged.directory = ""
+	}
+	if staged.unlock != nil {
+		staged.unlock()
+		staged.unlock = nil
+	}
+}
+
+type agentPublicScientificStageLock struct {
+	mu   sync.Mutex
+	refs int
+}
+
+var agentPublicScientificStageLocks = struct {
+	mu    sync.Mutex
+	locks map[string]*agentPublicScientificStageLock
+}{locks: map[string]*agentPublicScientificStageLock{}}
+
+func acquireAgentPublicScientificStageLock(key string) func() {
+	agentPublicScientificStageLocks.mu.Lock()
+	lock := agentPublicScientificStageLocks.locks[key]
+	if lock == nil {
+		lock = &agentPublicScientificStageLock{}
+		agentPublicScientificStageLocks.locks[key] = lock
+	}
+	lock.refs++
+	agentPublicScientificStageLocks.mu.Unlock()
+	lock.mu.Lock()
+	return func() {
+		lock.mu.Unlock()
+		agentPublicScientificStageLocks.mu.Lock()
+		lock.refs--
+		if lock.refs == 0 {
+			delete(agentPublicScientificStageLocks.locks, key)
+		}
+		agentPublicScientificStageLocks.mu.Unlock()
+	}
+}
+
+func (s *Server) fetchAndStageAgentPublicScientificFile(
+	ctx context.Context,
+	workspaceDir string,
+	request agentPublicScientificFileRequest,
+) (*agentPublicScientificStagedFile, string, error) {
+	maximumBytes := request.maximumBytes()
+	stageKey, err := agentPublicScientificDownloadStageKey(workspaceDir, request)
+	if err != nil {
+		return nil, "", errAgentPublicScientificFileAuthority
+	}
+	unlock := acquireAgentPublicScientificStageLock(stageKey)
+	transferredLock := false
+	defer func() {
+		if !transferredLock {
+			unlock()
+		}
+	}()
+	stage, err := s.openAgentPublicScientificDownloadStage(stageKey, request)
+	if err != nil {
+		return nil, "", err
+	}
+	keepOpen := false
+	defer func() {
+		if !keepOpen && stage.file != nil {
+			_ = stage.file.Close()
+			stage.file = nil
+		}
+	}()
+	offset, err := stage.size()
+	if err != nil {
+		return nil, "", errAgentPublicScientificFileAuthority
+	}
+	if offset == 0 {
+		adopted, adoptErr := s.adoptExistingAgentPublicScientificPartial(ctx, workspaceDir, request, stage)
+		if adoptErr != nil {
+			return nil, "", adoptErr
+		}
+		if adopted {
+			offset, err = stage.size()
+			if err != nil {
+				return nil, "", errAgentPublicScientificFileAuthority
+			}
+		}
+	}
+	if offset > 0 && stage.state.Validator == "" {
+		if err := stage.reset(request); err != nil {
+			return nil, "", errAgentPublicScientificFileAuthority
+		}
+		offset = 0
+	}
+	if stage.state.ExpectedTotal > 0 && offset > stage.state.ExpectedTotal {
+		if err := stage.reset(request); err != nil {
+			return nil, "", errAgentPublicScientificFileAuthority
+		}
+		offset = 0
+	}
+	if offset == 0 || stage.state.ExpectedTotal <= 0 || offset < stage.state.ExpectedTotal {
+		if err := s.continueAgentPublicScientificDownload(ctx, workspaceDir, request, stage, &offset); err != nil {
+			return nil, "", err
+		}
+	}
+	if stage.state.ExpectedTotal > 0 && offset != stage.state.ExpectedTotal {
+		return nil, "", io.ErrUnexpectedEOF
+	}
+	if err := stage.file.Sync(); err != nil {
+		return nil, "", errors.New("public scientific file download staging failed")
+	}
+	if _, err := stage.file.Seek(0, io.SeekStart); err != nil {
+		return nil, "", errors.New("public scientific file download staging failed")
+	}
+	reportAgentPublicScientificDownloadProgress(ctx, "verifying_download", offset, offset, nil)
+	hasher := sha256.New()
+	sizeBytes, err := io.Copy(hasher, io.LimitReader(stage.file, maximumBytes+1))
+	if err != nil || sizeBytes <= 0 || sizeBytes > maximumBytes || sizeBytes != offset {
+		return nil, "", errors.New("public scientific file download staging failed")
+	}
+	if _, err := stage.file.Seek(0, io.SeekStart); err != nil {
+		return nil, "", errors.New("public scientific file download staging failed")
+	}
+	reportAgentPublicScientificDownloadProgress(ctx, "download_verified", sizeBytes, sizeBytes, nil)
+	keepOpen, transferredLock = true, true
+	return &agentPublicScientificStagedFile{
+		file: stage.file, directory: stage.directory, sizeBytes: sizeBytes,
+		contentSHA: hex.EncodeToString(hasher.Sum(nil)), unlock: unlock,
+	}, stage.state.ContentType, nil
+}
+
+func (s *Server) adoptExistingAgentPublicScientificPartial(
+	ctx context.Context,
+	workspaceDir string,
+	request agentPublicScientificFileRequest,
+	stage *agentPublicScientificDownloadStage,
+) (bool, error) {
+	maximumBytes := request.maximumBytes()
+	workspaceRoot, err := canonicalHostDirectory(workspaceDir)
+	if err != nil || filepath.Base(request.Filename) != request.Filename || stage == nil || stage.file == nil {
+		return false, errAgentPublicScientificFileAuthority
+	}
+	target := filepath.Join(workspaceRoot, request.Filename)
+	info, err := os.Lstat(target)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 ||
+		info.Size() <= 0 || info.Size() > maximumBytes {
+		return false, errAgentPublicScientificFileConflict
+	}
+	local, err := os.Open(target)
+	if err != nil {
+		return false, errAgentPublicScientificFileConflict
+	}
+	defer local.Close()
+	response, err := s.publicScientificFiles.Fetch(ctx, request.DownloadURL, securefetch.Policy{
+		AllowedHosts: agentPublicScientificAllowedHosts(request), AllowedPorts: []string{"443"},
+		AcceptedMediaTypes: request.AcceptedTypes, MaxRedirects: 3,
+		AllowMissingContentType: true, IdentityEncoding: true,
+		MaxBytes: maximumBytes, Timeout: agentPublicScientificFileTimeout,
+		UserAgent: "Synon-Biomed-scientific-data/1.0", PrefixBytes: info.Size(),
+	})
+	if err != nil {
+		return false, err
+	}
+	if response == nil || response.Body == nil || response.FinalURL == nil ||
+		!agentPublicScientificResponseHostAllowed(request, response.FinalURL.Hostname()) {
+		if response != nil && response.Body != nil {
+			_ = response.Body.Close()
+		}
+		return false, errAgentPublicScientificFileAuthority
+	}
+	defer response.Body.Close()
+	remoteTotal := response.ContentLength
+	if response.StatusCode == http.StatusPartialContent {
+		remoteTotal = response.ContentRangeTotal
+	}
+	validator := securefetch.ResumeValidator(response)
+	if remoteTotal < info.Size() || remoteTotal > maximumBytes || validator == "" {
+		return false, errAgentPublicScientificFileConflict
+	}
+	localHash, remoteHash := sha256.New(), sha256.New()
+	localBytes, localErr := io.Copy(localHash, io.LimitReader(local, info.Size()+1))
+	remoteBytes, remoteErr := io.Copy(remoteHash, io.LimitReader(response.Body, info.Size()+1))
+	if localErr != nil || remoteErr != nil || localBytes != info.Size() || remoteBytes != info.Size() ||
+		!bytes.Equal(localHash.Sum(nil), remoteHash.Sum(nil)) {
+		return false, errAgentPublicScientificFileConflict
+	}
+	if err := ensureAgentPublicScientificDiskSpace(workspaceDir, s.fileRoot, remoteTotal, maximumBytes); err != nil {
+		return false, err
+	}
+	if _, err := local.Seek(0, io.SeekStart); err != nil {
+		return false, errAgentPublicScientificFileAuthority
+	}
+	if err := stage.file.Truncate(0); err != nil {
+		return false, errAgentPublicScientificFileAuthority
+	}
+	if _, err := stage.file.Seek(0, io.SeekStart); err != nil {
+		return false, errAgentPublicScientificFileAuthority
+	}
+	written, err := io.Copy(stage.file, io.LimitReader(local, info.Size()+1))
+	if err != nil || written != info.Size() || stage.file.Sync() != nil {
+		return false, errAgentPublicScientificFileAuthority
+	}
+	stage.state.Validator = validator
+	stage.state.ContentType = response.ContentType
+	stage.state.ExpectedTotal = remoteTotal
+	if err := stage.persist(); err != nil {
+		return false, errAgentPublicScientificFileAuthority
+	}
+	if err := local.Close(); err != nil {
+		return false, errAgentPublicScientificFileAuthority
+	}
+	if err := os.Remove(target); err != nil {
+		return false, errAgentPublicScientificFileAuthority
+	}
+	return true, nil
+}
+
+func (s *Server) continueAgentPublicScientificDownload(
+	ctx context.Context,
+	workspaceDir string,
+	request agentPublicScientificFileRequest,
+	stage *agentPublicScientificDownloadStage,
+	offset *int64,
+) error {
+	maximumBytes := request.maximumBytes()
+	var lastErr error
+	for attempt := 0; attempt < agentPublicScientificDownloadMaxAttempts; attempt++ {
+		if attempt > 0 {
+			if err := waitAgentPublicScientificDownloadRetry(ctx, attempt-1); err != nil {
+				return err
+			}
+		}
+		if *offset > 0 && stage.state.Validator == "" {
+			if err := stage.reset(request); err != nil {
+				return errAgentPublicScientificFileAuthority
+			}
+			*offset = 0
+		}
+		if _, err := stage.file.Seek(*offset, io.SeekStart); err != nil {
+			return errors.New("public scientific file download staging failed")
+		}
+		response, fetchErr := s.publicScientificFiles.Fetch(ctx, request.DownloadURL, securefetch.Policy{
+			AllowedHosts: agentPublicScientificAllowedHosts(request), AllowedPorts: []string{"443"},
+			AcceptedMediaTypes: request.AcceptedTypes, MaxRedirects: 3,
+			AllowMissingContentType: true, IdentityEncoding: true,
+			MaxBytes: maximumBytes, Timeout: agentPublicScientificFileTimeout,
+			LongLivedTransfer: true, TransferIdleTimeout: agentPublicScientificTransferIdleTimeout,
+			UserAgent: "Synon-Biomed-scientific-data/1.0", RangeStart: *offset,
+			IfRange: stage.state.Validator,
+		})
+		if fetchErr != nil {
+			lastErr = fetchErr
+			if attempt+1 < agentPublicScientificDownloadMaxAttempts && isRetryableAgentPublicScientificDownloadError(fetchErr) {
+				log.Printf("download_public_scientific_file retrying filename=%q host=%q attempt=%d offset=%d reason=%v", request.Filename, request.SourceHost, attempt+1, *offset, fetchErr)
+				continue
+			}
+			return fetchErr
+		}
+		if response == nil || response.Body == nil || response.FinalURL == nil ||
+			!agentPublicScientificResponseHostAllowed(request, response.FinalURL.Hostname()) {
+			if response != nil && response.Body != nil {
+				_ = response.Body.Close()
+			}
+			return errAgentPublicScientificFileAuthority
+		}
+		freshResponse := response.StatusCode == http.StatusOK
+		partialResponse := response.StatusCode == http.StatusPartialContent
+		if !freshResponse && !partialResponse {
+			_ = response.Body.Close()
+			return errAgentPublicScientificFileResume
+		}
+		if partialResponse {
+			if response.ContentRangeStart != *offset || response.ContentRangeEnd < *offset ||
+				response.ContentRangeTotal <= response.ContentRangeEnd || response.ContentRangeTotal > maximumBytes ||
+				stage.state.Validator == "" || securefetch.ResumeValidator(response) != stage.state.Validator {
+				_ = response.Body.Close()
+				return errAgentPublicScientificFileResume
+			}
+			stage.state.ExpectedTotal = response.ContentRangeTotal
+		} else {
+			if *offset > 0 {
+				if err := stage.file.Truncate(0); err != nil {
+					_ = response.Body.Close()
+					return errors.New("public scientific file download staging failed")
+				}
+				*offset = 0
+				if _, err := stage.file.Seek(0, io.SeekStart); err != nil {
+					_ = response.Body.Close()
+					return errors.New("public scientific file download staging failed")
+				}
+			}
+			stage.state.ExpectedTotal = response.ContentLength
+			stage.state.Validator = securefetch.ResumeValidator(response)
+		}
+		if stage.state.ContentType == "" {
+			stage.state.ContentType = response.ContentType
+		} else if response.ContentType != "" && response.ContentType != stage.state.ContentType {
+			_ = response.Body.Close()
+			return errAgentPublicScientificFileResume
+		}
+		if err := stage.persist(); err != nil {
+			_ = response.Body.Close()
+			return errAgentPublicScientificFileAuthority
+		}
+		diskMeasurement := stage.state.ExpectedTotal
+		if diskMeasurement <= 0 {
+			diskMeasurement = response.ContentLength
+		}
+		if err := ensureAgentPublicScientificDiskSpace(workspaceDir, s.fileRoot, diskMeasurement, maximumBytes); err != nil {
+			_ = response.Body.Close()
+			return err
+		}
+		remaining := maximumBytes - *offset
+		bodyClosed := make(chan struct{})
+		go func(body io.ReadCloser) {
+			select {
+			case <-ctx.Done():
+				_ = body.Close()
+			case <-bodyClosed:
+			}
+		}(response.Body)
+		progressReader := newAgentPublicScientificProgressReader(
+			ctx, response.Body, *offset, stage.state.ExpectedTotal,
+		)
+		written, copyErr := io.Copy(
+			stage.file,
+			io.LimitReader(&contextReader{ctx: ctx, reader: progressReader}, remaining+1),
+		)
+		progressReader.Complete()
+		close(bodyClosed)
+		closeErr := response.Body.Close()
+		if copyErr == nil && closeErr != nil {
+			copyErr = closeErr
+		}
+		*offset += written
+		if syncErr := stage.file.Sync(); copyErr == nil && syncErr != nil {
+			copyErr = syncErr
+		}
+		if *offset > maximumBytes || (stage.state.ExpectedTotal > 0 && *offset > stage.state.ExpectedTotal) {
+			return errors.New("public scientific file download exceeds the maximum size")
+		}
+		if copyErr == nil && stage.state.ExpectedTotal > 0 && *offset < stage.state.ExpectedTotal {
+			copyErr = io.ErrUnexpectedEOF
+		}
+		if copyErr != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			lastErr = copyErr
+			if attempt+1 < agentPublicScientificDownloadMaxAttempts && isRetryableAgentPublicScientificDownloadError(copyErr) {
+				log.Printf("download_public_scientific_file retrying filename=%q host=%q attempt=%d offset=%d reason=%v", request.Filename, request.SourceHost, attempt+1, *offset, copyErr)
+				continue
+			}
+			return fmt.Errorf("public scientific file transfer remained interrupted after %d attempts: %w", attempt+1, copyErr)
+		}
+		if *offset <= 0 {
+			return errors.New("public scientific file download staging failed")
+		}
+		return nil
+	}
+	return lastErr
+}
+
+func agentPublicScientificAllowedHosts(request agentPublicScientificFileRequest) []string {
+	return appendUniqueFolded([]string{request.SourceHost}, request.RedirectHosts...)
+}
+
+func agentPublicScientificResponseHostAllowed(
+	request agentPublicScientificFileRequest,
+	host string,
+) bool {
+	for _, allowed := range agentPublicScientificAllowedHosts(request) {
+		if strings.EqualFold(strings.TrimSpace(allowed), strings.TrimSpace(host)) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Server) openAgentPublicScientificDownloadStage(
+	key string,
+	request agentPublicScientificFileRequest,
+) (*agentPublicScientificDownloadStage, error) {
+	if s == nil || s.fileRoot == "" {
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	root := filepath.Join(s.fileRoot, "workspace", "public-scientific-downloads")
+	if err := ensureAgentPublicScientificPrivateDirectory(root); err != nil {
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	directory := filepath.Join(root, key)
+	if err := ensureAgentPublicScientificPrivateDirectory(directory); err != nil {
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	stage := &agentPublicScientificDownloadStage{
+		directory: directory, payload: filepath.Join(directory, "content.part"),
+		metadata: filepath.Join(directory, "state.json"),
+		state: agentPublicScientificDownloadStageState{
+			Version: agentPublicScientificDownloadStageVersion, RequestSHA256: agentPublicScientificDownloadRequestDigest(request),
+			Filename: request.Filename, ExpectedTotal: -1,
+		},
+	}
+	if raw, err := os.ReadFile(stage.metadata); err == nil {
+		var persisted agentPublicScientificDownloadStageState
+		if json.Unmarshal(raw, &persisted) != nil || !persisted.matches(request) {
+			if err := stage.resetFiles(); err != nil {
+				return nil, errAgentPublicScientificFileAuthority
+			}
+		} else {
+			stage.state = persisted
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	if info, err := os.Lstat(stage.payload); err == nil {
+		if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 || info.Size() > request.maximumBytes() {
+			return nil, errAgentPublicScientificFileAuthority
+		}
+		// A process may stop after validation but before atomic publication.
+		// Staging lives in a private 0700 directory, so restore owner-write here
+		// and let the checksum gate decide whether the completed bytes are reusable.
+		if info.Mode().Perm() != 0o600 && os.Chmod(stage.payload, 0o600) != nil {
+			return nil, errAgentPublicScientificFileAuthority
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	file, err := os.OpenFile(stage.payload, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	stage.file = file
+	if err := file.Chmod(0o600); err != nil {
+		_ = file.Close()
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	info, err := file.Stat()
+	if err != nil || info.Size() > request.maximumBytes() ||
+		(stage.state.ExpectedTotal > 0 && info.Size() > stage.state.ExpectedTotal) {
+		_ = file.Close()
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	if info.Size() > 0 {
+		if _, err := os.Stat(stage.metadata); err != nil {
+			if err := stage.reset(request); err != nil {
+				_ = file.Close()
+				return nil, errAgentPublicScientificFileAuthority
+			}
+		}
+	} else if err := stage.persist(); err != nil {
+		_ = file.Close()
+		return nil, errAgentPublicScientificFileAuthority
+	}
+	return stage, nil
+}
+
+func agentPublicScientificDownloadStageKey(workspaceDir string, request agentPublicScientificFileRequest) (string, error) {
+	workspaceRoot, err := canonicalHostDirectory(workspaceDir)
+	if err != nil {
+		return "", err
+	}
+	digest := sha256.Sum256([]byte("synon-public-scientific-download-v1\x00" + workspaceRoot + "\x00" +
+		request.SourceURL + "\x00" + request.DownloadURL + "\x00" + request.Filename))
+	return hex.EncodeToString(digest[:]), nil
+}
+
+func (state agentPublicScientificDownloadStageState) matches(request agentPublicScientificFileRequest) bool {
+	return state.Version == agentPublicScientificDownloadStageVersion &&
+		state.RequestSHA256 == agentPublicScientificDownloadRequestDigest(request) &&
+		state.Filename == request.Filename && state.ExpectedTotal >= -1
+}
+
+func agentPublicScientificDownloadRequestDigest(request agentPublicScientificFileRequest) string {
+	digest := sha256.Sum256([]byte(request.SourceURL + "\x00" + request.DownloadURL + "\x00" + request.Filename))
+	return hex.EncodeToString(digest[:])
+}
+
+func (stage *agentPublicScientificDownloadStage) size() (int64, error) {
+	if stage == nil || stage.file == nil {
+		return 0, errAgentPublicScientificFileAuthority
+	}
+	info, err := stage.file.Stat()
+	if err != nil || !info.Mode().IsRegular() {
+		return 0, errAgentPublicScientificFileAuthority
+	}
+	return info.Size(), nil
+}
+
+func (stage *agentPublicScientificDownloadStage) reset(request agentPublicScientificFileRequest) error {
+	if stage == nil || stage.file == nil {
+		return errAgentPublicScientificFileAuthority
+	}
+	if err := stage.file.Truncate(0); err != nil {
+		return err
+	}
+	if _, err := stage.file.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+	stage.state = agentPublicScientificDownloadStageState{
+		Version: agentPublicScientificDownloadStageVersion, RequestSHA256: agentPublicScientificDownloadRequestDigest(request),
+		Filename: request.Filename, ExpectedTotal: -1,
+	}
+	return stage.persist()
+}
+
+func (stage *agentPublicScientificDownloadStage) resetFiles() error {
+	for _, path := range []string{stage.payload, stage.metadata} {
+		if info, err := os.Lstat(path); err == nil {
+			if info.Mode()&os.ModeSymlink != 0 || (!info.Mode().IsRegular() && path == stage.payload) {
+				return errAgentPublicScientificFileAuthority
+			}
+			if err := os.Remove(path); err != nil {
+				return err
+			}
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	return nil
+}
+
+func (stage *agentPublicScientificDownloadStage) persist() error {
+	raw, err := json.Marshal(stage.state)
+	if err != nil {
+		return err
+	}
+	temporary, err := os.CreateTemp(stage.directory, ".state-*")
+	if err != nil {
+		return err
+	}
+	temporaryPath := temporary.Name()
+	ok := false
+	defer func() {
+		_ = temporary.Close()
+		if !ok {
+			_ = os.Remove(temporaryPath)
+		}
+	}()
+	if err := temporary.Chmod(0o600); err != nil {
+		return err
+	}
+	if _, err := temporary.Write(raw); err != nil {
+		return err
+	}
+	if err := temporary.Sync(); err != nil {
+		return err
+	}
+	if err := temporary.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(temporaryPath, stage.metadata); err != nil {
+		return err
+	}
+	ok = true
+	return nil
+}
+
+func ensureAgentPublicScientificPrivateDirectory(path string) error {
+	if err := os.MkdirAll(path, 0o700); err != nil {
+		return err
+	}
+	info, err := os.Lstat(path)
+	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		return errAgentPublicScientificFileAuthority
+	}
+	if info.Mode().Perm()&0o077 != 0 {
+		return os.Chmod(path, 0o700)
+	}
+	return nil
+}
+
+func waitAgentPublicScientificDownloadRetry(ctx context.Context, retry int) error {
+	delay := agentPublicScientificRetryBaseDelay << min(retry, 4)
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
+func isRetryableAgentPublicScientificDownloadError(err error) bool {
+	if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	if errors.Is(err, io.ErrUnexpectedEOF) || securefetch.IsCode(err, securefetch.CodeTransport) {
+		return true
+	}
+	var networkError net.Error
+	if errors.As(err, &networkError) {
+		return true
+	}
+	status, ok := securefetch.HTTPStatus(err)
+	return ok && (status == http.StatusRequestTimeout || status == http.StatusTooManyRequests || status >= 500)
+}

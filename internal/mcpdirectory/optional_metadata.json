@@ -1,0 +1,30 @@
+[
+  {
+    "id": "bundled:renkin-local",
+    "name": "renkin",
+    "displayName": "RENKIN · 本地逆合成",
+    "description": "开源本地计算机辅助合成规划：路线发现、验证、解释、约束规划和路线多样性评估。首次使用时才下载并安装，不携带模型权重。",
+    "category": "small-molecule-design",
+    "license": "MIT",
+    "repositoryUrl": "https://github.com/kent-tokyo/renkin",
+    "installKind": "cargo-git",
+    "installLabel": "需要 Rust/Cargo；安装的是官方 renkin-mcp 二进制。",
+    "sizeLabel": "无模型权重；源码编译产生本地二进制，实际占用在安装前测量。",
+    "requirements": ["cargo"],
+    "sourceRef": "https://github.com/kent-tokyo/renkin"
+  },
+  {
+    "id": "bundled:rna-design-local",
+    "name": "rna-design",
+    "displayName": "ViennaRNA · RNA Design",
+    "description": "开源 RNA 结构与设计工具：RNAfold、共折叠、结构评估、结构约束序列设计和 RNA-RNA 相互作用。首次使用时才安装运行时包。",
+    "category": "rna-design",
+    "license": "ViennaRNA license",
+    "repositoryUrl": "https://github.com/ViennaRNA/ViennaRNA",
+    "installKind": "python-wheel",
+    "installLabel": "需要可用的 Python/pip；不下载模型，不需要 GPU。",
+    "sizeLabel": "官方运行时核心约 113 MB；不会安装开发文件或文档包。",
+    "requirements": ["python", "pip"],
+    "sourceRef": "https://github.com/ViennaRNA/ViennaRNA"
+  }
+]

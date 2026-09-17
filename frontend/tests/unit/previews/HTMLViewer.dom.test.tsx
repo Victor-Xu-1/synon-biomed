@@ -1,0 +1,114 @@
+/**
+ * @license
+ * Copyright 2026 Synon-AI
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { act, cleanup } from '@testing-library/react';
+import React from 'react';
+import { renderWithI18n } from '../i18nTestUtils';
+
+const htmlInfo = vi.hoisted(() => vi.fn());
+
+vi.mock('@/common', () => ({
+  ipcBridge: {
+    fs: {
+      getImageBase64: { invoke: vi.fn(() => Promise.resolve('')) },
+      readFile: { invoke: vi.fn(() => Promise.resolve('')) },
+    },
+  },
+}));
+
+vi.mock('@monaco-editor/react', () => ({
+  default: ({ value }: { value: string }) => <div data-testid='monaco-editor'>{value}</div>,
+}));
+
+vi.mock('@arco-design/web-react', () => ({
+  Message: {
+    useMessage: () => [{ info: htmlInfo, success: vi.fn(), error: vi.fn() }, null],
+  },
+}));
+
+import HTMLViewer from '@/renderer/pages/conversation/Preview/components/viewers/HTMLViewer';
+import HTMLRenderer from '@/renderer/pages/conversation/Preview/components/renderers/HTMLRenderer';
+
+beforeEach(() => vi.clearAllMocks());
+afterEach(cleanup);
+
+describe('HTMLViewer', () => {
+  it('renders iframe with HTML content', async () => {
+    const { container } = await renderWithI18n(<HTMLViewer content='<h1>Test</h1>' />, 'en-US');
+    const iframe = container.querySelector('iframe');
+    expect(iframe).toBeInTheDocument();
+    expect(iframe).toHaveAttribute('title', 'HTML preview');
+  });
+
+  it('hides toolbar when hideToolbar is true', async () => {
+    const { container } = await renderWithI18n(<HTMLViewer content='<h1>Test</h1>' hideToolbar />);
+    expect(container.querySelector('[class*="toolbar"]')).not.toBeInTheDocument();
+  });
+
+  it('accepts file_path prop', async () => {
+    const { container } = await renderWithI18n(<HTMLViewer content='<h1>Test</h1>' file_path='/test/index.html' />);
+    expect(container.querySelector('iframe')).toBeInTheDocument();
+  });
+
+  it('accepts inspector messages only from its own iframe', async () => {
+    const { container } = await renderWithI18n(<HTMLViewer content='<h1>Test</h1>' />, 'en-US');
+    const iframe = container.querySelector('iframe');
+    expect(iframe?.contentWindow).toBeTruthy();
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: window,
+        data: { type: 'element-selected', data: { path: 'body > h1', html: '<h1>Forged</h1>' } },
+      })
+    );
+    expect(htmlInfo).not.toHaveBeenCalled();
+
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: iframe?.contentWindow,
+          data: { type: 'element-selected', data: { path: 'body > h1', html: '<h1>Test</h1>' } },
+        })
+      );
+    });
+    expect(htmlInfo).toHaveBeenCalledWith('Selected element: body > h1');
+  });
+});
+
+describe('HTMLRenderer', () => {
+  it('renders clean local HTML through a sandboxed browser iframe', async () => {
+    const { container } = await renderWithI18n(
+      <HTMLRenderer
+        content='<script src="https://cdn.example.com/app.js"></script><script>localStorage.getItem("theme")</script>'
+        file_path='/workspace/financial-wechat-miniapp.html'
+      />,
+      'en-US'
+    );
+
+    const iframe = container.querySelector('iframe');
+    expect(iframe).toBeInTheDocument();
+    expect(iframe).toHaveAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-modals');
+    expect(iframe).toHaveAttribute('title', 'HTML preview');
+    expect(iframe?.getAttribute('srcdoc')).toContain('cdn.example.com/app.js');
+    expect(container.querySelector('webview')).not.toBeInTheDocument();
+  });
+
+  it('keeps dirty local HTML content in the browser iframe', async () => {
+    const dirtyProps = {
+      content: '<h1>Unsaved edit</h1>',
+      file_path: '/workspace/index.html',
+      isDirty: true,
+    } as React.ComponentProps<typeof HTMLRenderer> & { isDirty: boolean };
+
+    const { container } = await renderWithI18n(<HTMLRenderer {...dirtyProps} />);
+
+    const iframe = container.querySelector('iframe');
+    expect(iframe).toBeInTheDocument();
+    expect(iframe?.getAttribute('srcdoc')).toContain('Unsaved edit');
+    expect(container.querySelector('webview')).not.toBeInTheDocument();
+  });
+});

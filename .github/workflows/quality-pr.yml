@@ -1,0 +1,137 @@
+name: Synon Biomed PR Fast Gate
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-quality-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-quality:
+    name: PR policy and static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Verify immutable GitHub Actions policy
+        run: |
+          go test -buildvcs=false ./scripts/quality/github-actions-gate
+          go run -buildvcs=false ./scripts/quality/github-actions-gate --repo . --policy docs/governance/github-actions-pins.json
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Verify changed-source policy
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_portable_paths scripts.quality.test_module_topology_gate scripts.quality.test_product_identity_gate scripts.quality.test_release_candidate_manifest scripts.quality.test_release_receipt_gate scripts.quality.test_pr_fast_scope
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/portable_paths.py --repo .
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/module_topology_gate.py --repo .
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/product_identity_gate.py --repo . --mode candidate
+          bash scripts/audit/audit-source-clean.sh
+
+      - name: Verify formatting and static analysis
+        run: |
+          test -z "$(gofmt -l $(git ls-files '*.go'))"
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py --vet \
+            --base '${{ github.event.pull_request.base.sha }}' --head '${{ github.sha }}'
+
+  pr-go-tests:
+    name: PR changed Go packages
+    needs: pr-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Set up runtime test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          bwrap --unshare-user --disable-userns --unshare-ipc --unshare-uts \
+            --new-session --die-with-parent --unshare-net --unshare-pid \
+            --ro-bind / / --proc /proc --dev /dev /bin/true
+          runtime_python="$(command -v python3)"
+          sudo "$runtime_python" -m pip install --break-system-packages --ignore-installed \
+            --requirement assets/optional/mcp-servers/bio-tools/requirements-test.txt
+          "$runtime_python" -c 'import anyio, httpx, jsonschema, lxml, mcp, pandas, requests, urllib3; from PIL import Image'
+
+      - name: Test changed Go dependency closure
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py \
+            --base '${{ github.event.pull_request.base.sha }}' --head '${{ github.sha }}' \
+            --log-dir "$RUNNER_TEMP/runtime-test-evidence"
+
+      - name: Audit PR test source residue
+        if: always()
+        run: bash scripts/audit/audit-source-clean.sh
+
+      - name: Upload PR test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pr-runtime-evidence
+          path: ${{ runner.temp }}/runtime-test-evidence/
+          if-no-files-found: warn
+          retention-days: 7
+
+  pr-frontend-tests:
+    name: PR frontend scope
+    needs: pr-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Set up frontend build runtime
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Test changed frontend scope
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/pr_fast_scope.py --frontend --base '${{ github.event.pull_request.base.sha }}' --head '${{ github.sha }}'
+
+  merge-gate:
+    name: Merge Gate / CI required
+    needs: [pr-frontend-tests, pr-go-tests, pr-quality]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify all required job results
+        run: |
+          test '${{ needs.pr-frontend-tests.result }}' = 'success'
+          test '${{ needs.pr-go-tests.result }}' = 'success'
+          test '${{ needs.pr-quality.result }}' = 'success'

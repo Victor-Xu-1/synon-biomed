@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "compaction-archives",
+  "contracts": [
+    {"kind": "service", "name": "fetchCompactionArchive"},
+    {"kind": "service", "name": "fetchAllCompactionMessages"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Compaction Archive Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "create-frame",
+      "method": "POST",
+      "path": "/api/frames",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"project_id": "${capture:projectId}"},
+      "expectedStatus": [201],
+      "capture": {"frameId": "/root_frame_id"}
+    },
+    {
+      "name": "list-empty-archives",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}/compaction-archives",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "get-missing-archive-0",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}/compaction-archives/0",
+      "expectedStatus": [404]
+    },
+    {
+      "name": "get-missing-archive-1",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}/compaction-archives/1",
+      "expectedStatus": [404]
+    },
+    {
+      "name": "get-missing-archive-2",
+      "method": "GET",
+      "path": "/api/frames/${capture:frameId}/compaction-archives/2",
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/3/request/path",
+    "/steps/4/request/path",
+    "/steps/4/response/body/detail",
+    "/steps/5/request/path",
+    "/steps/5/response/body/detail",
+    "/steps/6/request/path",
+    "/steps/6/response/body/detail"
+  ],
+  "redactions": []
+}

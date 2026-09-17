@@ -1,0 +1,316 @@
+.account-security {
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--account-border);
+  border-radius: 18px;
+  background: var(--account-panel);
+  box-shadow: 0 10px 32px rgba(20, 30, 48, 0.055);
+}
+
+.account-security__header,
+.account-security__section-heading,
+.account-security__methods,
+.account-security__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.account-security__header {
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--account-border);
+}
+
+.account-security__title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.account-security__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  color: #315f56;
+  background: #e8f2ef;
+}
+
+.account-security h2,
+.account-security h3,
+.account-security p {
+  margin: 0;
+}
+
+.account-security h2 {
+  color: var(--account-text);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.account-security h3 {
+  color: var(--account-text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.account-security p {
+  margin-top: 4px;
+  color: var(--account-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.account-security__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 150px;
+  color: var(--account-muted);
+  font-size: 13px;
+}
+
+.account-security__state--error {
+  flex-direction: column;
+  color: #a44343;
+}
+
+.account-security__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4e8278;
+  animation: account-security-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes account-security-pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.78);
+  }
+}
+
+.account-security__methods {
+  padding: 18px 22px;
+  background: var(--account-panel-subtle);
+  border-bottom: 1px solid var(--account-border);
+}
+
+.account-security__method-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.account-security__method {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid var(--account-border);
+  border-radius: 10px;
+  background: var(--account-panel);
+  color: var(--account-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.account-security__method > span:last-child {
+  color: #528075;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.account-security__method-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 7px;
+  background: var(--settings-surface-subtle, #edf0f2);
+  color: #4d5661;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.account-security__method-mark--google {
+  background: color-mix(in srgb, #3268c7 12%, var(--account-panel));
+  color: #3268c7;
+}
+
+.account-security__method-mark--wechat {
+  background: color-mix(in srgb, #078f4a 12%, var(--account-panel));
+  color: #078f4a;
+}
+
+.account-security__local-mode {
+  display: grid;
+  gap: 4px;
+  margin: 16px 22px 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #4e8278 24%, var(--account-border));
+  border-radius: 11px;
+  background: color-mix(in srgb, #4e8278 8%, var(--account-panel));
+}
+
+.account-security__local-mode strong {
+  color: #365f57;
+  font-size: 12px;
+}
+
+.account-security__local-mode span {
+  color: var(--account-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.account-security__section-heading {
+  padding: 18px 22px 10px;
+}
+
+.account-security__sessions {
+  margin: 0 22px;
+  border: 1px solid var(--account-border);
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.account-security__session {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 10px 12px;
+  background: var(--account-panel);
+}
+
+.account-security__session + .account-security__session {
+  border-top: 1px solid var(--account-border);
+}
+
+.account-security__device {
+  position: relative;
+  width: 28px;
+  height: 21px;
+  border: 1.5px solid #78838c;
+  border-radius: 5px;
+}
+
+.account-security__device::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -5px;
+  height: 1.5px;
+  background: #78838c;
+}
+
+.account-security__session-copy {
+  min-width: 0;
+}
+
+.account-security__session-copy > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-security__session-copy strong {
+  overflow: hidden;
+  color: var(--account-text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-security__session-copy > span {
+  display: block;
+  margin-top: 4px;
+  color: var(--account-muted);
+  font-size: 11px;
+}
+
+.account-security__current {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #4e8278 12%, var(--account-panel));
+  color: #3f7569;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.account-security__legacy-note {
+  display: grid;
+  gap: 4px;
+  margin: 12px 22px 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #7b8290 20%, var(--account-border));
+  border-radius: 11px;
+  background: color-mix(in srgb, #7b8290 6%, var(--account-panel));
+}
+
+.account-security__legacy-note strong {
+  color: var(--account-text);
+  font-size: 12px;
+}
+
+.account-security__legacy-note span {
+  color: var(--account-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.account-security__footer {
+  margin-top: 18px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--account-border);
+  background: color-mix(in srgb, #8f5e52 5%, var(--account-panel));
+}
+
+.account-security__footer div {
+  display: grid;
+  gap: 3px;
+}
+
+.account-security__footer strong {
+  color: #5d4545;
+  font-size: 12px;
+}
+
+.account-security__footer span {
+  color: var(--account-muted);
+  font-size: 11px;
+}
+
+@media (max-width: 700px) {
+  .account-security__header,
+  .account-security__methods,
+  .account-security__section-heading,
+  .account-security__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-security__method-list {
+    justify-content: flex-start;
+  }
+
+  .account-security__session {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .account-security__session > button {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

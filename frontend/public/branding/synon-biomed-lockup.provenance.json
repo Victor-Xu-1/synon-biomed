@@ -1,0 +1,32 @@
+{
+  "asset": "synon-biomed-lockup.png",
+  "source": "User-provided image attached to the 2026-08-03 complete lockup replacement request",
+  "sourceSha256": "689b890a9db32c5c3be5706e4c7994d686f3e8fb4d958e11207a7d3de79cbe2f",
+  "sha256": "0cac2ebf9b89fbdace5383216651d77a9b2f7a0a1253caee0c9765e2a77529f0",
+  "bytes": 197569,
+  "dimensions": {
+    "width": 2172,
+    "height": 724
+  },
+  "transformations": [
+    {
+      "operation": "background-to-alpha",
+      "tool": "remove_chroma_key.py",
+      "autoKey": "border",
+      "sampledKeyColor": "#fbfbfc",
+      "softMatte": true,
+      "transparentThreshold": 12,
+      "opaqueThreshold": 220,
+      "despill": true
+    }
+  ],
+  "alpha": {
+    "transparentPixels": 1498708,
+    "partiallyTransparentPixels": 31906,
+    "opaquePixels": 41914,
+    "cornersTransparent": true,
+    "opaqueRgbExactMatchToSource": true
+  },
+  "publicationRights": "Project owner must confirm redistribution rights before a public release",
+  "updateProcedure": "Run the installed imagegen remove_chroma_key.py helper against the approved user-provided lockup, validate RGBA dimensions, transparent corners and opaque RGB fidelity, then update hashes and alpha counts in this file"
+}

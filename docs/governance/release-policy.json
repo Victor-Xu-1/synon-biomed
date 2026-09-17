@@ -1,0 +1,49 @@
+{
+  "schema": "synon.governance.release-policy.v1",
+  "authority_owner": "user",
+  "operator_role": "release-operator",
+  "repository": "Victor-Xu-1/synon-biomed",
+  "product_identity_authority": "product-identity.json",
+  "candidate_manifest": {
+    "schema": "synon.release-candidate.v1",
+    "workflow": ".github/workflows/quality.yml",
+    "artifact_name_prefix": "synon-biomed-release-candidate-",
+    "required_platforms": ["linux-amd64", "windows-amd64"],
+    "build_once": true
+  },
+  "authorization_receipt": {
+    "schema": "synon.release-authorization-receipt.v1",
+    "tracked_in_source": false,
+    "signature_algorithm": "hmac-sha256",
+    "max_ttl_seconds": 86400,
+    "required_bindings": [
+      "receipt_id",
+      "authorization_reference",
+      "repository",
+      "candidate_run_id",
+      "candidate_run_attempt",
+      "source_commit",
+      "source_tree",
+      "product_version",
+      "tag",
+      "candidate_manifest_sha256",
+      "artifact_set_sha256",
+      "issued_at",
+      "expires_at"
+    ]
+  },
+  "promotion": {
+    "tag_pattern": "^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+    "annotated_tag_required": true,
+    "same_artifact_bytes_required": true,
+    "rebuild_forbidden": true,
+    "draft_before_publish": true,
+    "immutable_release_required": true,
+    "receipt_single_use": true
+  },
+  "rules": [
+    "Source commits can define release policy but can never grant current release or tag authorization.",
+    "A release requires a valid external signed receipt bound to the exact source tree and candidate artifact set.",
+    "Promotion publishes the verified candidate bytes without rebuilding and never moves or reuses a tag."
+  ]
+}

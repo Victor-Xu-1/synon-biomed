@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "scripts/full_product_inventory.py",
+  "source": "/home/victor_1/synonbiomed-workbench",
+  "sourceMutationPolicy": "read-only",
+  "policy": "reuse-first; rewrite only for incompatible runtime language/architecture, disproportionate dependency weight, or security/maintenance failure",
+  "entries": [
+    {
+      "sourcePath": "frontend/packages/desktop/src/common",
+      "targetPath": "frontend/packages/desktop/src/common",
+      "decision": "direct-copy",
+      "reason": "Typed browser adapter, services, and shared contracts are language-compatible.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "9c4644d3e792412aab31ba9c82bb514516d344aec571aa560c26f1afed118c5c",
+        "files": 65,
+        "symlinks": 0,
+        "bytes": 246976,
+        "filesByExtension": {
+          ".json": 1,
+          ".ts": 64
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/packages/desktop/src/renderer",
+      "targetPath": "frontend/packages/desktop/src/renderer",
+      "decision": "direct-copy-adapt",
+      "reason": "Preserve UI and interaction behavior; adapt backend contracts only at service boundaries.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "a99e7a2e71d92f7e9a7ab807643c36b3423fadf4c2ee1a2fb9dd60d36e18adb0",
+        "files": 888,
+        "symlinks": 0,
+        "bytes": 6542671,
+        "filesByExtension": {
+          ".css": 44,
+          ".html": 4,
+          ".json": 217,
+          ".md": 7,
+          ".png": 7,
+          ".svg": 13,
+          ".ts": 321,
+          ".tsx": 275
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/public",
+      "targetPath": "frontend/public",
+      "decision": "direct-copy",
+      "reason": "Required static and PWA assets; inventory and license every binary asset.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "e016cf5516d33d55627616b84db3998098285877ee4c48e9d69e19baf12877d6",
+        "files": 27,
+        "symlinks": 0,
+        "bytes": 157706,
+        "filesByExtension": {
+          ".html": 1,
+          ".js": 1,
+          ".png": 3,
+          ".svg": 21,
+          ".webmanifest": 1
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/tests",
+      "targetPath": "frontend/tests",
+      "decision": "selective-copy",
+      "reason": "Keep tests that exercise imported Web behavior; remove Electron/Bun-only harnesses after replacement coverage exists.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "f4464f0828decb4df5e16620ffc3f810339c13b6bfd226d0d2774e995c30b312",
+        "files": 488,
+        "symlinks": 0,
+        "bytes": 2883808,
+        "filesByExtension": {
+          ".js": 2,
+          ".md": 1,
+          ".png": 16,
+          ".ts": 331,
+          ".tsx": 122,
+          ".zip": 1,
+          "<none>": 15
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/vite.config.ts",
+      "targetPath": "frontend/vite.config.ts",
+      "decision": "direct-copy-adapt",
+      "reason": "Build-only Node tooling is allowed; remove WebHost runtime coupling.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "71a926e99f8994aaabf2b98ac6e24e768b0656135e071c75f4ca479200fa7d7b",
+        "files": 1,
+        "symlinks": 0,
+        "bytes": 3294,
+        "filesByExtension": {
+          ".ts": 1
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/uno.config.ts",
+      "targetPath": "frontend/uno.config.ts",
+      "decision": "direct-copy",
+      "reason": "Frontend styling source.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "cd20f14ec21a1673142841a6ee3e97652230a803342776c594d84b81efa93913",
+        "files": 1,
+        "symlinks": 0,
+        "bytes": 8536,
+        "filesByExtension": {
+          ".ts": 1
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/package.json",
+      "targetPath": "frontend/package.json",
+      "decision": "direct-copy-adapt",
+      "reason": "Remove server-only dependencies and produce a committed deterministic lockfile.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "9921d8f5e2298102ac043d12895f11b794fc0edaed2baa781dd2bb0f2a188a77",
+        "files": 1,
+        "symlinks": 0,
+        "bytes": 6453,
+        "filesByExtension": {
+          ".json": 1
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/packages/web-host",
+      "targetPath": "internal/server",
+      "decision": "behavior-port",
+      "reason": "Reuse contracts and tests; production runtime must be Go and same-origin.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "8794982f3a167eac4a71d0f861796d70d22e444476c286acb6200fa9b864ec7f",
+        "files": 23,
+        "symlinks": 0,
+        "bytes": 388636,
+        "filesByExtension": {
+          ".html": 1,
+          ".js": 1,
+          ".json": 2,
+          ".md": 1,
+          ".ts": 18
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/packages/web-cli",
+      "targetPath": null,
+      "decision": "exclude",
+      "reason": "Bun launcher is incompatible with the release runtime requirement.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "711b44babc1c03af15ccf299d63bf25eb0263b4c88c8fde261a4be9fa98f7f33",
+        "files": 5,
+        "symlinks": 0,
+        "bytes": 13103,
+        "filesByExtension": {
+          ".js": 1,
+          ".json": 2,
+          ".ts": 2
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/node_modules",
+      "targetPath": null,
+      "decision": "exclude",
+      "reason": "Generated dependency tree; never migrate.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "9093bf2857c356adf9cb36ebd24b7c8458c162dd249fa26b48226f2e11fe94e6",
+        "files": 1,
+        "symlinks": 29,
+        "bytes": 23839,
+        "filesByExtension": {
+          ".json": 1
+        }
+      }
+    },
+    {
+      "sourcePath": "frontend/out",
+      "targetPath": null,
+      "decision": "exclude",
+      "reason": "Generated build output; rebuild reproducibly.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "69f88ef851435dda111ee77e21ec4da26082681bc0711d7714d193d4631426da",
+        "files": 678,
+        "symlinks": 0,
+        "bytes": 44315833,
+        "filesByExtension": {
+          ".css": 9,
+          ".html": 2,
+          ".js": 572,
+          ".mjs": 1,
+          ".png": 10,
+          ".svg": 21,
+          ".ttf": 20,
+          ".wasm": 1,
+          ".webmanifest": 1,
+          ".woff": 20,
+          ".woff2": 19,
+          "<none>": 2
+        }
+      }
+    },
+    {
+      "sourcePath": "docs/PRODUCT_TARGET.md",
+      "targetPath": "docs/provenance/workbench-reference",
+      "decision": "reference-copy",
+      "reason": "Preserve product intent and source hash as provenance.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "49227d490b9d59984e3c376d281df938c572627e9f75f74b50cfd00abd7ce098",
+        "files": 1,
+        "symlinks": 0,
+        "bytes": 1698,
+        "filesByExtension": {
+          ".md": 1
+        }
+      }
+    },
+    {
+      "sourcePath": "docs/MODULE_INVENTORY.md",
+      "targetPath": "docs/provenance/workbench-reference",
+      "decision": "reference-copy",
+      "reason": "Preserve module decisions and source hash as provenance.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "537aebed7c3470c162cd9967ea59962f5fe896595d37cefc068ce39e54c6cf17",
+        "files": 1,
+        "symlinks": 0,
+        "bytes": 16233,
+        "filesByExtension": {
+          ".md": 1
+        }
+      }
+    },
+    {
+      "sourcePath": "docs/BACKEND_CONTRACTS.md",
+      "targetPath": "docs/provenance/workbench-reference",
+      "decision": "reference-copy",
+      "reason": "Seed Go contract mapping without recreating it.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "0a96ecb74735e51c12b0d5080f01a7812724556d336edd95e0919faa81697855",
+        "files": 1,
+        "symlinks": 0,
+        "bytes": 4449,
+        "filesByExtension": {
+          ".md": 1
+        }
+      }
+    },
+    {
+      "sourcePath": "docs/SCIENTIFIC_PREVIEW_MATRIX.md",
+      "targetPath": "docs/provenance/workbench-reference",
+      "decision": "reference-copy",
+      "reason": "Seed scientific viewer acceptance obligations.",
+      "license": "Apache-2.0 (synonbiomed-workbench repository)",
+      "sourceEvidence": {
+        "sha256": "798f948c8ab3b862ec7a8a12ed228226433fc7154e885aa716bedec5908df61c",
+        "files": 1,
+        "symlinks": 0,
+        "bytes": 4179,
+        "filesByExtension": {
+          ".md": 1
+        }
+      }
+    }
+  ]
+}

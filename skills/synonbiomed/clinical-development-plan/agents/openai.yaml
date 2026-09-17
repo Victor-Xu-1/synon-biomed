@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clinical Development Plan"
+  short_description: "Plan clinical phases, endpoints, evidence, and decision gates"
+  default_prompt: "Use $clinical-development-plan to build a source-grounded, review-ready plan."

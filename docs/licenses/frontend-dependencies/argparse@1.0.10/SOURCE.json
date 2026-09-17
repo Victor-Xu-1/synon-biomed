@@ -1,0 +1,17 @@
+{
+  "name": "argparse",
+  "version": "1.0.10",
+  "sourceArchive": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
+  "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
+  "archiveSHA256": "7faa149cd7811b7e11fc8353dc6e4e9c4de68a02f8221aa8f7dc22108315ac0d",
+  "declaredLicense": "MIT",
+  "distributionLicense": "MIT",
+  "licenseFiles": [
+    {
+      "path": "LICENSE",
+      "sourceSHA256": "c8442419dc614089ea022b3da6bfc089b41a58fb7b9030d1e651f2f36189dce2",
+      "sourceBytes": 1079,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    }
+  ]
+}

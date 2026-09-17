@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "id": "project-artifact-bench-reads",
+  "contracts": [
+    {"kind": "service", "name": "listProjectArtifacts"},
+    {"kind": "service", "name": "listBenches"},
+    {"kind": "service", "name": "listBenchesBatch"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-first-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Bench Read Oracle A", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectA": "/project_id"}
+    },
+    {
+      "name": "create-second-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Bench Read Oracle B", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectB": "/project_id"}
+    },
+    {
+      "name": "submit-named-root-frame",
+      "method": "POST",
+      "path": "/api/projects/${capture:projectA}/request",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "input_data": {"request": "Create a visible bench for the read contract."},
+        "target_agent": "OPERON",
+        "intent_id": "00000000-0000-4000-8000-000000000101"
+      },
+      "expectedStatus": [200],
+      "capture": {"rootFrame": "/root_frame_id"}
+    },
+    {
+      "name": "list-empty-project-artifacts",
+      "method": "GET",
+      "path": "/api/projects/${capture:projectA}/artifacts?limit=2",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "list-missing-project-artifacts",
+      "method": "GET",
+      "path": "/api/projects/missing-project/artifacts",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "list-project-benches",
+      "method": "GET",
+      "path": "/api/projects/${capture:projectA}/benches?limit=2",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-short-bench-query",
+      "method": "GET",
+      "path": "/api/projects/${capture:projectA}/benches?q=x",
+      "expectedStatus": [400]
+    },
+    {
+      "name": "list-benches-batch",
+      "method": "GET",
+      "path": "/api/projects/batch/benches?pids=${capture:projectA},${capture:projectB},missing-project&limit=2",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-short-batch-query",
+      "method": "GET",
+      "path": "/api/projects/batch/benches?pids=${capture:projectA}&q=x",
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/created_at",
+    "/steps/2/response/body/updated_at",
+    "/steps/3/request/path",
+    "/steps/3/response/body/root_frame_id",
+    "/steps/3/response/body/frame_id",
+    "/steps/4/request/path",
+    "/steps/6/request/path",
+    "/steps/6/response/body/0/id",
+    "/steps/6/response/body/0/project_id",
+    "/steps/6/response/body/0/root_frame_id",
+    "/steps/6/response/body/0/created_at",
+    "/steps/6/response/body/0/updated_at",
+    "/steps/6/response/body/0/last_activity_at",
+    "/steps/7/request/path",
+    "/steps/8/request/path",
+    "/steps/8/response/body",
+    "/steps/9/request/path"
+  ],
+  "redactions": []
+}

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "artifact-read-copy",
+  "contracts": [
+    {"kind": "service", "name": "getArtifactMetadata"},
+    {"kind": "service", "name": "listArtifactVersions"},
+    {"kind": "service", "name": "copyArtifact"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "reject-missing-metadata",
+      "method": "GET",
+      "path": "/api/artifacts/missing-artifact/metadata",
+      "expectedStatus": [404]
+    },
+    {
+      "name": "reject-missing-versions",
+      "method": "GET",
+      "path": "/api/artifacts/missing-artifact/versions",
+      "expectedStatus": [404]
+    },
+    {
+      "name": "reject-missing-copy",
+      "method": "POST",
+      "path": "/api/artifacts/missing-artifact/copy",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "reject-invalid-copy-filename-type",
+      "method": "POST",
+      "path": "/api/artifacts/missing-artifact/copy",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"new_filename": 7},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": ["/runtime"],
+  "redactions": []
+}

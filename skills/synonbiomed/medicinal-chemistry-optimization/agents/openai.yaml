@@ -1,0 +1,4 @@
+interface:
+  display_name: "Medicinal Chemistry Optimization"
+  short_description: "Optimize chemical series with evidence-based design cycles"
+  default_prompt: "Use $medicinal-chemistry-optimization to build a source-grounded, review-ready plan."

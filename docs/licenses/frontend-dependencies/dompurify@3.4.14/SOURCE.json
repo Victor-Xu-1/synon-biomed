@@ -1,0 +1,29 @@
+{
+  "name": "dompurify",
+  "version": "3.4.14",
+  "sourceArchive": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.14.tgz",
+  "integrity": "sha512-dVoH9z+MY+C9IilgGCk3YfFqjLi3fChm2OiKJMzh6axrJ5qwxqWaZamgmHrpv22CN/KdbZJuGEGgfQoL00LTdg==",
+  "archiveSHA256": "af9969677147123e4bd411529ba1af33954f4064ce32efdf0944f2819105b2eb",
+  "declaredLicense": "(MPL-2.0 OR Apache-2.0)",
+  "distributionLicense": "Apache-2.0",
+  "licenseFiles": [
+    {
+      "path": "LICENSE",
+      "sourceSHA256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "sourceBytes": 11358,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    },
+    {
+      "path": "src/license_header",
+      "sourceSHA256": "5803fa925ae1703b9c752921c95a321570e6cabf06fcf2de895ddaf1687cebef",
+      "sourceBytes": 192,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    },
+    {
+      "path": "LICENSE-MPL",
+      "sourceSHA256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85",
+      "sourceBytes": 16726,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    }
+  ]
+}

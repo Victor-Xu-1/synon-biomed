@@ -1,0 +1,29 @@
+/*
+ * Settings visual-system manifest.
+ *
+ * Keep the shell, reusable components, and the memory workbench independent:
+ * settings pages should compose these modules instead of introducing another
+ * page-wide styling path.
+ */
+@import './settings-layout.css';
+@import './settings-core.css';
+@import './settings-skills.css';
+@import './settings-connectors.css';
+@import './settings-card-surfaces.css';
+@import './settings-compute-components.css';
+@import './settings-route-layouts.css';
+@import './settings-breakpoints.css';
+@import './settings-tabbed-pages.css';
+@import './settings-memory.css';
+@import './settings-reference-rails.css';
+@import './settings-models.css';
+@import './settings-experts.css';
+@import './settings-compute.css';
+@import './settings-governance.css';
+@import './settings-network.css';
+@import './settings-general.css';
+@import './settings-storage.css';
+@import './settings-plans.css';
+@import './settings-tools.css';
+@import './settings-responsive.css';
+@import './settings-compact-desktop.css';

@@ -1,0 +1,17 @@
+{
+  "name": "react",
+  "version": "19.2.7",
+  "sourceArchive": "https://registry.npmjs.org/react/-/react-19.2.7.tgz",
+  "integrity": "sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==",
+  "archiveSHA256": "d0065884db7670ffb89046826995cf0d7754a31653d23908532e52671bf83d7d",
+  "declaredLicense": "MIT",
+  "distributionLicense": "MIT",
+  "licenseFiles": [
+    {
+      "path": "LICENSE",
+      "sourceSHA256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceBytes": 1088,
+      "normalization": "UTF-8 LF; trailing line whitespace and final blank lines removed; final newline"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "id": "system-control-feedback",
+  "contracts": [
+    {"kind": "service", "name": "retryFailedEnvironments"},
+    {"kind": "service", "name": "logout"},
+    {"kind": "service", "name": "submitSafetyFeedback"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "retry-failed-environments",
+      "method": "POST",
+      "path": "/api/environments/retry",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "X-Synon-User-Id": "local-dev",
+        "Content-Type": "application/json"
+      },
+      "body": {},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "logout-local-session",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "X-Synon-User-Id": "local-dev",
+        "Content-Type": "application/json"
+      },
+      "body": {},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "safety-feedback-requires-root",
+      "method": "POST",
+      "path": "/api/feedback/safety",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "X-Synon-User-Id": "local-dev",
+        "Content-Type": "application/json"
+      },
+      "body": {},
+      "expectedStatus": [400]
+    },
+    {
+      "name": "safety-feedback-rejects-non-string-root",
+      "method": "POST",
+      "path": "/api/feedback/safety",
+      "headers": {
+        "Origin": "${origin}",
+        "X-Operon-CSRF": "${cookie:operon_csrf}",
+        "X-Synon-User-Id": "local-dev",
+        "Content-Type": "application/json"
+      },
+      "body": {"root_frame_id": 123},
+      "expectedStatus": [400]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/disabled_reason"
+  ],
+  "redactions": []
+}

@@ -1,0 +1,270 @@
+/* Route-scoped desktop geometry from the accepted settings visual contract. */
+
+@media (min-width: 768px) {
+  /* Plans and usage: enlarge the plan identity and statistic hierarchy to
+     the same 78/30px rhythm shown in the approved sheet. */
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-balance-content {
+    grid-template-columns: 272px minmax(0, 1fr) !important;
+    column-gap: 0 !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-plan-identity__icon {
+    width: 56px !important;
+    height: 56px !important;
+    flex-basis: 56px !important;
+    border-radius: 12px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-plan-identity {
+    gap: 14px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-plan-identity .text-15px {
+    font-size: 18px !important;
+    line-height: 25px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-plan-identity .text-11px {
+    font-size: 13px !important;
+    line-height: 20px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-stat-grid > div {
+    min-height: 84px !important;
+    padding: 12px 20px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-stat-grid > div > div:first-child,
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-stat-grid > div > div:last-child {
+    font-size: 13px !important;
+    line-height: 19px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-stat-grid > div > div:nth-child(2) {
+    font-size: 24px !important;
+    line-height: 30px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-progress {
+    padding-top: 12px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-progress > div:first-child {
+    font-size: 13px !important;
+    line-height: 19px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-rate-card {
+    min-height: 148px !important;
+    padding: 16px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-rate-card__icon {
+    display: block;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border-radius: 12px;
+    object-fit: contain;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-rate-card h3 {
+    font-size: 15px !important;
+    line-height: 21px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-rate-card .text-11px {
+    font-size: 12px !important;
+    line-height: 18px !important;
+  }
+
+  /* Billing keeps the existing bill/invoice records but presents them as the
+     single horizontal summary used by the approved sheet. Empty local-edition
+     states remain readable; no purchase or invoice action is invented. */
+  html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section--billing {
+    position: relative !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .settings-section__header {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-sizing: border-box;
+    padding: 20px 20px 12px !important;
+    z-index: 4 !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .settings-section__heading {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    width: 100% !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .settings-section__icon {
+    display: block !important;
+    position: static !important;
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    flex: 0 0 56px !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    clip: auto !important;
+    clip-path: none !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 5 !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .settings-section__title {
+    margin-top: 0 !important;
+    font-size: 18px !important;
+    line-height: 25px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .settings-section__description {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin-top: 6px !important;
+    font-size: 13px !important;
+    line-height: 20px !important;
+    max-width: 520px !important;
+    clip: auto !important;
+    overflow: visible !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .settings-section__body {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-sizing: border-box;
+    padding: 0 20px 20px 92px !important;
+    pointer-events: auto;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .plans-usage-billing-grid {
+    position: static !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    column-gap: 28px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .plans-usage-billing-grid
+    article {
+    display: block !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .plans-usage-billing-grid
+    article
+    h3 {
+    margin: 0 !important;
+    color: var(--settings-text-secondary) !important;
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .plans-usage-billing-grid
+    article
+    > div {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    min-height: 0 !important;
+    margin-top: 6px !important;
+    text-align: left !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .plans-usage-billing-grid
+    article
+    > div
+    .settings-empty-artwork-icon {
+    display: none !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .plans-usage-billing-grid
+    article
+    > div
+    > div {
+    margin: 0 !important;
+    color: var(--settings-text) !important;
+    font-size: 13px !important;
+    line-height: 20px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper[data-settings-route='plans-usage']
+    .plans-usage-section--billing
+    .plans-usage-billing-grid
+    article
+    > div
+    > div
+    + div {
+    margin-left: 8px !important;
+    color: var(--settings-text-tertiary) !important;
+    font-size: 12px !important;
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "version": "settings-generated-v3",
+  "assetRevision": "20260831a",
+  "generator": "image-2",
+  "reference": "Scientific connectors visual reference supplied by the user",
+  "sourceSheets": {
+    "moduleIcons": "exec-3e67c4f3-2375-4bce-b7fb-5f0c38d2d603.png",
+    "connectorIcons": "exec-dd9f68a4-30d1-4ab8-a1ce-888627241cc8.png",
+    "editorialArtwork": "exec-c5397882-4134-408d-8c0b-7601d97f8e14.png",
+    "emptyStateArtwork": "exec-0c55f3e2-8796-463f-b5f3-6621dd1fb269.png",
+    "databaseBadge": "exec-9515273e-c7c9-48db-b965-679f5de1eacf.png",
+    "expressionArtwork": "exec-d1c31d8c-edc2-4b17-a89b-2cedcd2a5eb7.png",
+    "accountNetworkArtwork": "exec-0b02310f-1278-4e75-921e-41d0b9c3d838.png",
+    "networkGlobeArtwork": "exec-3150d6e2-57b0-46d0-8d2e-4411aa2081e9.png"
+  },
+  "treatment": "Pure white background, clean scientific line work, restrained cyan/blue/green/violet/amber palette, no text, no logo, no checkerboard transparency.",
+  "interactivePalette": "Codex neutral controls (#3b3a37 primary, #f0efec selected surfaces); artwork colors are preserved.",
+  "usage": "Decorative and module artwork only. Existing product and service trademarks remain unchanged."
+}

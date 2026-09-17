@@ -1,0 +1,32 @@
+{
+  "schema": "synon.verification-scope.v1",
+  "groups": [
+    {
+      "name": "frontend-provenance",
+      "paths": [
+        "scripts/audit/audit_frontend_migration.py",
+        "scripts/audit/audit_frontend_migration_test.py",
+        "scripts/audit/audit-frontend-migration-test.py"
+      ],
+      "frontend": true,
+      "checks": [
+        ["python3", "-B", "-m", "unittest", "scripts.audit.audit_frontend_migration_test"],
+        ["python3", "-B", "scripts/audit/audit-frontend-migration-test.py"]
+      ]
+    },
+    {
+      "name": "verification-selection",
+      "paths": [
+        "scripts/quality/verification_scope.json",
+        "scripts/quality/verification_scope.py",
+        "scripts/quality/test_verification_scope.py",
+        "scripts/quality/pr_fast_scope.py",
+        "scripts/quality/test_pr_fast_scope.py"
+      ],
+      "frontend": false,
+      "checks": [
+        ["python3", "-B", "-m", "unittest", "scripts.quality.test_pr_fast_scope", "scripts.quality.test_verification_scope"]
+      ]
+    }
+  ]
+}

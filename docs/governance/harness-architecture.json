@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "architecture": {
+    "modules": [
+      {
+        "name": "server-composition",
+        "target": "internal/server",
+        "source": "internal/server/server.go",
+        "owns": [
+          "dependency construction",
+          "service lifecycle",
+          "HTTP route registration"
+        ],
+        "mustNotOwn": [
+          "tool business logic",
+          "scientific workflow policy",
+          "task-run orchestration",
+          "adapter delivery logic",
+          "runtime diagnosis rules"
+        ]
+      },
+      {
+        "name": "tool-gateway",
+        "target": "internal/toolgateway",
+        "source": "internal/toolgateway/pipeline.go with internal/server/agent_runtime_gateway_pipeline.go and responsibility-specific gateway adapters",
+        "owns": [
+          "normalization",
+          "schema admission",
+          "structural preflight",
+          "failure budget",
+          "review scope",
+          "pre-tool hooks",
+          "post-hook revalidation",
+          "permission",
+          "source budget",
+          "execution delegation",
+          "result materialization",
+          "post-tool hooks",
+          "audit"
+        ],
+        "order": [
+          "normalize",
+          "admit",
+          "preflight",
+          "failure-budget",
+          "review-scope",
+          "pre-hooks",
+          "revalidate",
+          "permission",
+          "source-budget",
+          "execute",
+          "materialize",
+          "post-hooks",
+          "audit"
+        ],
+        "mustNotOwn": [
+          "HTTP transport",
+          "model provider loop",
+          "kernel implementation",
+          "MCP client implementation"
+        ]
+      },
+      {
+        "name": "session-runner",
+        "target": "internal/sessionrunner",
+        "source": "internal/server/runner_chat.go and runner_* phase files",
+        "owns": [
+          "durable context and compaction",
+          "prompt and tool snapshot",
+          "provider round",
+          "tool round",
+          "pause and recovery",
+          "completion coordination"
+        ],
+        "order": [
+          "claim",
+          "recovery",
+          "context",
+          "snapshot",
+          "provider",
+          "tool",
+          "verify",
+          "complete",
+          "paused",
+          "terminal"
+        ],
+        "loop": "provider and tool may alternate; all other transitions move forward or to paused/terminal",
+        "mustNotOwn": [
+          "HTTP transport",
+          "tool implementation",
+          "raw database access",
+          "frontend projection"
+        ]
+      },
+      {
+        "name": "kernel-runtime",
+        "target": "internal/kernel",
+        "source": "internal/server/agent_kernel.go and internal/kernel",
+        "owns": [
+          "kernel catalog",
+          "execution context",
+          "preflight",
+          "execution",
+          "settlement and result normalization"
+        ],
+        "adapters": [
+          "agent_kernel_catalog.go",
+          "agent_kernel_execution.go",
+          "agent_kernel_policy.go",
+          "agent_kernel_settlement.go",
+          "agent_kernel_preflight.go",
+          "agent_kernel_result.go"
+        ],
+        "mustNotOwn": [
+          "tool permission policy",
+          "runner lifecycle",
+          "artifact completion policy"
+        ]
+      },
+      {
+        "name": "managed-environment",
+        "target": "internal/kernel",
+        "source": "internal/kernel/managed_environment.go",
+        "owns": [
+          "environment catalog",
+          "provisioning and registration",
+          "package mutation",
+          "dependency lock and witness",
+          "recovery and publication"
+        ],
+        "modules": [
+          "managed_environment_mutation.go",
+          "managed_environment_publication.go",
+          "managed_environment_inventory.go",
+          "managed_environment_process.go",
+          "managed_environment_validation.go",
+          "managed_environment_generation.go",
+          "managed_environment_input.go"
+        ],
+        "mustNotOwn": [
+          "remote compute submission",
+          "runner retry policy"
+        ]
+      },
+      {
+        "name": "artifact-completion",
+        "target": "internal/artifacts and internal/sessionrunner completion adapters",
+        "source": "internal/server/runner_artifact_completion.go",
+        "owns": [
+          "deliverable eligibility",
+          "scientific validation",
+          "reference integrity",
+          "lineage",
+          "completion decision inputs"
+        ],
+        "adapters": [
+          "runner_completion_deliverables.go",
+          "runner_completion_references.go",
+          "runner_completion_evidence.go",
+          "runner_completion_syntax.go",
+          "runner_completion_lineage.go"
+        ],
+        "mustNotOwn": [
+          "provider invocation",
+          "UI rendering",
+          "tool dispatch"
+        ]
+      },
+      {
+        "name": "agent-engine",
+        "target": "internal/agentruntime",
+        "source": "internal/agentruntime/engine.go",
+        "owns": [
+          "provider loop",
+          "protocol repair",
+          "tool batch scheduling",
+          "media blocks",
+          "typed runtime errors"
+        ],
+        "modules": [
+          "engine_run.go",
+          "engine_protocol.go",
+          "engine_tool_batch.go",
+          "engine_materialization.go",
+          "openai_client.go"
+        ],
+        "mustNotOwn": [
+          "server routes",
+          "tool policy",
+          "persistence implementation"
+        ]
+      },
+      {
+        "name": "frontend-transport",
+        "target": "frontend domain clients behind the stable IPC facade",
+        "source": "frontend/packages/desktop/src/common/adapter/ipcBridge.ts",
+        "modules": [
+          "ipcConversationClient.ts",
+          "ipcRuntimeClient.ts",
+          "ipcFileClient.ts",
+          "ipcProviderClient.ts",
+          "ipcDatabaseClient.ts",
+          "ipcPreviewClient.ts",
+          "ipcOperationsClient.ts"
+        ],
+        "owns": [
+          "conversation client",
+          "runtime client",
+          "artifact client",
+          "MCP client",
+          "settings client",
+          "realtime client"
+        ]
+      },
+      {
+        "name": "frontend-conversation-controllers",
+        "target": "conversation hooks and presentational components",
+        "source": "AcpSendBox.tsx, MessageList.tsx and SynonBiomedRuntimeOperations.tsx",
+        "modules": [
+          "useAcpSendBoxDraftController.ts",
+          "useAcpMobileActionSheetController.tsx",
+          "messageListProjection.ts",
+          "SynonBiomedRuntimeOperationsController.tsx",
+          "SynonBiomedPlanReviewContent.tsx"
+        ],
+        "owns": [
+          "composer controller",
+          "message projection and navigation",
+          "runtime snapshot",
+          "pending input",
+          "plan review",
+          "review repair"
+        ],
+        "mustNotOwn": [
+          "direct HTTP calls",
+          "cross-conversation mutable caches",
+          "backend workflow policy"
+        ]
+      }
+    ]
+  }
+}

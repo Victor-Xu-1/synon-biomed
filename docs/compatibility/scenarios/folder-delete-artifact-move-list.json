@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "id": "folder-delete-artifact-move-list",
+  "contracts": [
+    {"kind": "service", "name": "deleteFolder"},
+    {"kind": "service", "name": "updateArtifactFolder"},
+    {"kind": "service", "name": "listArtifacts"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Folder Delete Artifact Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"project": "/project_id"}
+    },
+    {
+      "name": "submit-root-frame",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/request",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "input_data": {"request": "Create a root conversation for artifact listing."},
+        "target_agent": "OPERON",
+        "intent_id": "00000000-0000-4000-8000-000000000131"
+      },
+      "expectedStatus": [200],
+      "capture": {"rootFrame": "/root_frame_id"}
+    },
+    {
+      "name": "list-empty-conversation-artifacts",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootFrame}/artifacts",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "list-empty-conversation-artifacts-including-intermediate",
+      "method": "GET",
+      "path": "/api/frames/${capture:rootFrame}/artifacts?exclude_intermediate=false",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "list-system-folder",
+      "method": "GET",
+      "path": "/api/projects/${capture:project}/folders",
+      "expectedStatus": [200],
+      "capture": {"uploadsFolder": "/0/id"}
+    },
+    {
+      "name": "create-delete-root",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/folders",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Delete root"},
+      "expectedStatus": [201],
+      "capture": {"deleteRoot": "/id"}
+    },
+    {
+      "name": "create-delete-child",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/folders",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Delete child", "parent_id": "${capture:deleteRoot}"},
+      "expectedStatus": [201]
+    },
+    {
+      "name": "delete-folder-tree-and-artifacts",
+      "method": "DELETE",
+      "path": "/api/projects/${capture:project}/folders/${capture:deleteRoot}?delete_artifacts=true",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "create-move-target",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/folders",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Move target"},
+      "expectedStatus": [201],
+      "capture": {"moveTarget": "/id"}
+    },
+    {
+      "name": "create-move-source",
+      "method": "POST",
+      "path": "/api/projects/${capture:project}/folders",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Move source"},
+      "expectedStatus": [201],
+      "capture": {"moveSource": "/id"}
+    },
+    {
+      "name": "delete-folder-and-move-artifacts",
+      "method": "DELETE",
+      "path": "/api/projects/${capture:project}/folders/${capture:moveSource}?delete_artifacts=false&move_artifacts_to=${capture:moveTarget}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-system-folder-delete",
+      "method": "DELETE",
+      "path": "/api/projects/${capture:project}/folders/${capture:uploadsFolder}",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [403]
+    },
+    {
+      "name": "reject-missing-folder-delete",
+      "method": "DELETE",
+      "path": "/api/projects/${capture:project}/folders/missing-folder",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "expectedStatus": [404]
+    },
+    {
+      "name": "reject-missing-artifact-folder-update",
+      "method": "PATCH",
+      "path": "/api/artifacts/missing-artifact/folder",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {},
+      "expectedStatus": [404]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/path",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/2/response/body/frame_id",
+    "/steps/3/request/path",
+    "/steps/4/request/path",
+    "/steps/5/request/path",
+    "/steps/5/response/body/0/id",
+    "/steps/5/response/body/0/project_id",
+    "/steps/5/response/body/0/created_at",
+    "/steps/5/response/body/0/updated_at",
+    "/steps/6/request/path",
+    "/steps/6/response/body/id",
+    "/steps/6/response/body/project_id",
+    "/steps/6/response/body/created_at",
+    "/steps/6/response/body/updated_at",
+    "/steps/7/request/path",
+    "/steps/7/request/body/parent_id",
+    "/steps/7/response/body/id",
+    "/steps/7/response/body/project_id",
+    "/steps/7/response/body/parent_id",
+    "/steps/7/response/body/created_at",
+    "/steps/7/response/body/updated_at",
+    "/steps/8/request/path",
+    "/steps/9/request/path",
+    "/steps/9/response/body/id",
+    "/steps/9/response/body/project_id",
+    "/steps/9/response/body/created_at",
+    "/steps/9/response/body/updated_at",
+    "/steps/10/request/path",
+    "/steps/10/response/body/id",
+    "/steps/10/response/body/project_id",
+    "/steps/10/response/body/created_at",
+    "/steps/10/response/body/updated_at",
+    "/steps/11/request/path",
+    "/steps/12/request/path",
+    "/steps/13/request/path"
+  ],
+  "redactions": []
+}

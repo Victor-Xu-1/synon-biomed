@@ -1,0 +1,254 @@
+[
+  {
+    "id": "bundled:biomart", "name": "biomart", "displayName": "BioMart", "package": "mcp_biomart",
+    "description": "Ensembl BioMart — genomic annotations, identifier translation, and cross-reference queries.",
+    "upstreams": [{"name": "Ensembl BioMart", "termsUrl": "https://www.ensembl.org/info/about/legal/disclaimer.html"}]
+  },
+  {
+    "id": "bundled:pubmed", "name": "pubmed", "displayName": "PubMed", "package": "mcp_pubmed",
+    "description": "PubMed biomedical literature — search, metadata, abstracts, full-text (PMC), related articles, ID conversion, copyright status, citation lookup.",
+    "upstreams": [{"name": "NCBI PubMed / PMC", "termsUrl": "https://www.ncbi.nlm.nih.gov/home/about/policies/"}]
+  },
+  {
+    "id": "bundled:clinical-trials", "name": "clinical-trials", "displayName": "Clinical Trials", "package": "mcp_clinical_trials",
+    "description": "ClinicalTrials.gov — trial search, details, endpoints, sponsor/investigator/eligibility queries.",
+    "upstreams": [{"name": "ClinicalTrials.gov", "termsUrl": "https://clinicaltrials.gov/about-site/terms-conditions"}]
+  },
+  {
+    "id": "bundled:chembl", "name": "chembl", "displayName": "ChEMBL", "package": "mcp_chembl",
+    "description": "ChEMBL bioactivity database — compound/drug/target search, bioactivities, mechanisms, ADMET.",
+    "upstreams": [{"name": "ChEMBL", "license": "CC-BY-SA 3.0", "termsUrl": "https://chembl.github.io/chembl-licensing/"}]
+  },
+  {
+    "id": "bundled:biorxiv", "name": "biorxiv", "displayName": "bioRxiv", "package": "mcp_biorxiv",
+    "description": "bioRxiv/medRxiv preprints — search, metadata, published links, funder search, usage statistics.",
+    "upstreams": [
+      {"name": "bioRxiv", "license": "Per-article", "infoUrl": "https://www.biorxiv.org/tdm"},
+      {"name": "medRxiv", "license": "Per-article", "infoUrl": "https://www.medrxiv.org/tdm"},
+      {"name": "ROR", "license": "CC0", "termsUrl": "https://ror.org/about/terms/"}
+    ]
+  },
+  {
+    "id": "bundled:variants", "name": "variants", "displayName": "Variants", "package": "mcp_variants",
+    "description": "Human genetic variants — gnomAD population frequencies/constraint (r4), ClinVar records/search (direct NCBI), dbSNP, structural and mitochondrial variants.",
+    "upstreams": [
+      {"name": "gnomAD", "license": "CC0", "termsUrl": "https://gnomad.broadinstitute.org/policies"},
+      {"name": "ClinVar", "infoUrl": "https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use"},
+      {"name": "dbSNP", "termsUrl": "https://www.ncbi.nlm.nih.gov/home/about/policies/"}
+    ]
+  },
+  {
+    "id": "bundled:clinical-genomics", "name": "clinical-genomics", "displayName": "Clinical Genomics", "package": "mcp_clinical_genomics",
+    "description": "Clinical genomics knowledge — ClinGen gene validity, dosage and actionability curations plus CIViC clinical evidence.",
+    "upstreams": [
+      {"name": "ClinGen", "license": "CC0 1.0", "termsUrl": "https://clinicalgenome.org/docs/terms-of-use/"},
+      {"name": "CIViC", "license": "CC0 1.0", "infoUrl": "https://docs.civicdb.org/en/latest/about/faq.html#how-is-civic-licensed"}
+    ]
+  },
+  {
+    "id": "bundled:expression", "name": "expression", "displayName": "Expression", "package": "mcp_expression",
+    "description": "Gene expression — GTEx tissue expression and eQTLs (pinned dataset).",
+    "upstreams": [{"name": "GTEx", "termsUrl": "https://www.gtexportal.org/home/license"}]
+  },
+  {
+    "id": "bundled:regulation", "name": "regulation", "displayName": "Regulation", "package": "mcp_regulation",
+    "description": "Gene regulation — ENCODE experiments/files/biosamples, JASPAR transcription-factor binding matrices, UniBind TFBS.",
+    "upstreams": [
+      {"name": "JASPAR", "license": "CC BY 4.0", "homepageUrl": "https://jaspar.elixir.no"},
+      {"name": "UniBind", "license": "CC BY 4.0", "homepageUrl": "https://unibind.uio.no"},
+      {"name": "ENCODE", "termsUrl": "https://www.encodeproject.org/about/data-use-policy/"},
+      {"name": "UCSC Genome Browser API", "termsUrl": "https://genome.ucsc.edu/license/"}
+    ]
+  },
+  {
+    "id": "bundled:protein-annotation", "name": "protein-annotation", "displayName": "Protein Annotation", "package": "mcp_protein_annotation",
+    "description": "Protein annotation — InterPro/Pfam domains and families, Human Protein Atlas, STRING interaction networks.",
+    "upstreams": [
+      {"name": "InterPro", "license": "CC0-1.0", "termsUrl": "https://www.ebi.ac.uk/interpro/about/license/"},
+      {"name": "Pfam", "license": "CC0-1.0", "termsUrl": "https://www.ebi.ac.uk/interpro/about/license/"},
+      {"name": "Human Protein Atlas", "license": "CC-BY-4.0", "termsUrl": "https://www.proteinatlas.org/about/licence"},
+      {"name": "STRING", "license": "CC-BY-4.0", "termsUrl": "https://string-db.org/cgi/access?footer_active_subpage=licensing"}
+    ]
+  },
+  {
+    "id": "bundled:rna", "name": "rna", "displayName": "RNA", "package": "mcp_rna",
+    "description": "Non-coding RNA — Rfam families, seed alignments, covariance models, trees, sequence regions.",
+    "upstreams": [{"name": "Rfam", "license": "CC0", "termsUrl": "https://docs.rfam.org/en/latest/#license"}]
+  },
+  {
+    "id": "bundled:structures-interactions", "name": "structures-interactions", "displayName": "Structures & Interactions", "package": "mcp_structures_interactions",
+    "description": "Structures and molecular interactions — PDB structures, AlphaFold predictions, EMDB cryo-EM entries, Complex Portal complexes, IntAct interaction networks.",
+    "upstreams": [
+      {"name": "RCSB PDB", "license": "CC0", "termsUrl": "https://www.rcsb.org/pages/usage-policy"},
+      {"name": "AlphaFold DB", "license": "CC-BY-4.0", "infoUrl": "https://alphafold.ebi.ac.uk/download"},
+      {"name": "EMDB", "termsUrl": "https://www.ebi.ac.uk/about/terms-of-use"},
+      {"name": "Complex Portal", "termsUrl": "https://www.ebi.ac.uk/about/terms-of-use"},
+      {"name": "IntAct", "termsUrl": "https://www.ebi.ac.uk/about/terms-of-use"}
+    ]
+  },
+  {
+    "id": "bundled:omics-archives", "name": "omics-archives", "displayName": "Omics Archives", "package": "mcp_omics_archives",
+    "description": "Omics data archives — ArrayExpress/BioStudies, GEO, MGnify, PRIDE proteomics projects.",
+    "upstreams": [
+      {"name": "GEO", "termsUrl": "https://www.ncbi.nlm.nih.gov/geo/info/disclaimer.html"},
+      {"name": "ArrayExpress", "termsUrl": "https://www.ebi.ac.uk/about/terms-of-use"},
+      {"name": "PRIDE", "license": "CC0", "infoLabel": "Data policy", "infoUrl": "https://www.ebi.ac.uk/pride/markdownpage/datapolicy"},
+      {"name": "MGnify", "termsUrl": "https://www.ebi.ac.uk/about/terms-of-use"},
+      {"name": "MetaboLights", "termsUrl": "https://www.ebi.ac.uk/about/terms-of-use"}
+    ]
+  },
+  {
+    "id": "bundled:genes-ontologies", "name": "genes-ontologies", "displayName": "Genes & Ontologies", "package": "mcp_genes_ontologies",
+    "description": "Gene identity and ontologies — MyGene queries, OLS4 ontology terms, GO annotations (QuickGO), UniProt entries, Reactome pathways.",
+    "upstreams": [
+      {"name": "GO", "license": "CC BY 4.0", "termsUrl": "https://geneontology.org/docs/go-citation-policy/"},
+      {"name": "OLS", "termsUrl": "https://www.ebi.ac.uk/about/terms-of-use"},
+      {"name": "Reactome", "license": "CC0 1.0", "termsUrl": "https://reactome.org/license/"},
+      {"name": "MyGene", "termsUrl": "https://www.mygene.info/terms"},
+      {"name": "UniProt", "license": "CC BY 4.0", "termsUrl": "https://www.uniprot.org/help/license"}
+    ]
+  },
+  {
+    "id": "bundled:drug-regulatory", "name": "drug-regulatory", "displayName": "Drug Regulatory", "package": "mcp_drug_regulatory",
+    "description": "FDA drug data — Drugs@FDA applications, approvals, pharmacologic classes, generic equivalents, SPL drug labels.",
+    "upstreams": [
+      {"name": "Drugs@FDA", "infoUrl": "https://www.fda.gov/about-fda/about-website/website-policies"},
+      {"name": "openFDA", "license": "CC0 1.0", "termsUrl": "https://open.fda.gov/terms/"}
+    ]
+  },
+  {
+    "id": "bundled:research-resources", "name": "research-resources", "displayName": "Research Resources", "package": "mcp_research_resources",
+    "description": "Research resources — Grants.gov funding opportunity search, Antibody Registry lookups.",
+    "upstreams": [
+      {"name": "Antibody Registry", "license": "CC-BY-3.0", "termsUrl": "https://www.antibodyregistry.org/terms-and-conditions", "privacyUrl": "https://scicrunch.org/page/privacy"},
+      {"name": "Grants.gov", "termsUrl": "https://www.grants.gov/api/terms-conditions"}
+    ]
+  },
+  {
+    "id": "bundled:synon-research", "name": "synon-research", "displayName": "Synon-research", "package": "mcp_synon_research",
+    "description": "Independent Synon-research MCP — compact discovery and bounded execution of an operator-verified research capability pack without exposing each source as a separate Skill.",
+    "runtimeEnvironment": ["SYNON_RESEARCH_ROOT", "SYNON_RESEARCH_EXPECTED_VERSION"],
+    "upstreams": [
+      {"name": "OpenAI Life Science Research capability pack", "license": "Proprietary", "infoUrl": "https://github.com/openai/plugins/tree/main/plugins/life-science-research"}
+    ]
+  },
+  {
+    "id": "bundled:cancer-models", "name": "cancer-models", "displayName": "Cancer Models", "package": "mcp_cancer_models",
+    "description": "Cancer genomics cohorts — cBioPortal studies, mutations, copy-number alterations, clinical attributes.",
+    "upstreams": [{"name": "cBioPortal", "license": "ODbL-1.0", "infoUrl": "https://docs.cbioportal.org/user-guide/faq/#do-i-need-permission-or-a-license-to-use-the-cbioportal-logo-or-figures-or-data"}]
+  },
+  {
+    "id": "bundled:chemistry", "name": "chemistry", "displayName": "Chemistry", "package": "mcp_chemistry",
+    "description": "Small-molecule chemistry — PubChem compounds/properties/similarity, ChEBI ontology, Rhea reactions, BindingDB affinities.",
+    "upstreams": [
+      {"name": "PubChem", "infoLabel": "Policies", "infoUrl": "https://www.ncbi.nlm.nih.gov/home/about/policies/"},
+      {"name": "ChEBI", "license": "CC-BY-4.0", "infoUrl": "https://www.ebi.ac.uk/chebi/aboutChebiForward.do"},
+      {"name": "Rhea", "license": "CC-BY-4.0", "termsUrl": "https://www.rhea-db.org/help/license-disclaimer"},
+      {"name": "BindingDB", "license": "CC-BY-3.0 / CC-BY-SA-3.0", "infoUrl": "https://www.bindingdb.org/rwd/bind/info.jsp"}
+    ]
+  },
+  {
+    "id": "bundled:human-genetics", "name": "human-genetics", "displayName": "Human Genetics", "package": "mcp_human_genetics",
+    "description": "Human genetics associations — GWAS Catalog, eQTL Catalogue, FinnGen/BioBank-Japan PheWAS portals.",
+    "upstreams": [
+      {"name": "GWAS Catalog", "termsUrl": "https://www.ebi.ac.uk/about/terms-of-use"},
+      {"name": "eQTL Catalogue", "license": "CC-BY-4.0", "termsUrl": "https://www.ebi.ac.uk/eqtl/License"},
+      {"name": "FinnGen", "infoUrl": "https://www.finngen.fi/en/access_results"},
+      {"name": "BioBank Japan", "infoUrl": "https://pheweb.jp/about"}
+    ]
+  },
+  {
+    "id": "bundled:literature", "name": "literature", "displayName": "Literature Graph", "package": "mcp_literature",
+    "description": "Scholarly literature graph — OpenAlex works/authors/venues/citations, arXiv metadata.",
+    "upstreams": [
+      {"name": "OpenAlex", "license": "CC0 1.0", "termsUrl": "https://openalex.org/OpenAlex_termsofservice.pdf"},
+      {"name": "arXiv", "license": "CC0 1.0", "termsUrl": "https://info.arxiv.org/help/api/tou.html", "privacyUrl": "https://info.arxiv.org/help/policies/privacy_policy.html"}
+    ]
+  },
+  {
+    "id": "bundled:genomes", "name": "genomes", "displayName": "Genomes", "package": "mcp_genomes",
+    "description": "Genome annotation — Ensembl REST lookup/sequence/homology/VEP, UCSC Genome Browser tracks and conservation.",
+    "upstreams": [
+      {"name": "Ensembl REST", "termsUrl": "https://www.ensembl.org/info/about/legal/disclaimer.html"},
+      {"name": "UCSC Genome Browser", "termsUrl": "https://genome.ucsc.edu/license"}
+    ]
+  },
+  {
+    "id": "bundled:cellguide", "name": "cellguide", "displayName": "CellGuide", "package": "mcp_cellguide",
+    "description": "Cell type information from CELLxGENE — descriptions, marker genes, tissue distribution, source datasets.",
+    "upstreams": [{"name": "CZ CELLxGENE", "license": "CC-BY-4.0", "termsUrl": "https://cellxgene.cziscience.com/tos", "privacyUrl": "https://cellxgene.cziscience.com/privacy"}]
+  },
+  {
+    "id": "bundled:zinc", "name": "zinc", "displayName": "ZINC", "package": "mcp_zinc",
+    "description": "ZINC22 purchasable chemical space (CartBlanche22) — compound lookup by ZINC id, SMILES exact/similarity search, supplier-code resolution, random sampling, 3D structure locations for docking.",
+    "upstreams": [{"name": "ZINC22", "termsUrl": "https://wiki.docking.org/index.php/Terms_And_Conditions", "privacyUrl": "https://wiki.docking.org/index.php/Privacy_policy"}]
+  },
+  {
+    "id": "bundled:omtx-om", "name": "omtx-om", "displayName": "Om (OMTX)",
+    "description": "Official hosted Om MCP — target-conditioned small-molecule ranking with LULA, accessible-space screening, molecule fulfillment, generated-data access and discovery diligence without local model deployment.",
+    "config": {"type": "streamable-http", "url": "https://agents.omtx.ai/mcp", "permissionPolicy": "always-confirm"},
+    "authRequired": true, "oauthSupported": true,
+    "authHint": "Sign in to Om through the hosted MCP OAuth flow. Scoring, data access and molecule orders are account-scoped; review each launch or credit-consuming action before approval.",
+    "upstreams": [{"name": "Om / OMTX", "infoLabel": "Hosted MCP documentation", "infoUrl": "https://develop.omtx.ai/docs/api/mcp/quickstart", "homepageUrl": "https://develop.omtx.ai/", "termsUrl": "https://develop.omtx.ai/terms"}]
+  },
+  {
+    "id": "bundled:patsnap-chemical-molecular", "name": "patsnap-chemical-molecular", "displayName": "PatSnap Chemical Molecular",
+    "description": "Official hosted PatSnap Chemical Molecular MCP — structure and similarity search, fragment and scaffold analysis, ADMET prediction, patent-linked compound intelligence and SAR extraction.",
+    "config": {"type": "streamable-http", "url": "https://connect.patsnap.com/713886/logic-mcp", "permissionPolicy": "always-confirm"},
+    "authRequired": true,
+    "apiKeyQueryParam": "apikey", "apiKeyLabel": "PatSnap Open Platform API Key",
+    "authHint": "Create a PatSnap Open Platform API key and configure it here. The key is encrypted and injected only on the server side; PatSnap's documented Chemical Molecular MCP endpoint uses the apikey query parameter.",
+    "upstreams": [{"name": "PatSnap Chemical Molecular", "infoLabel": "Official MCP marketplace", "infoUrl": "https://open.patsnap.com/marketplace/mcp-servers/chemistry-small-molecule", "homepageUrl": "https://open.patsnap.com/", "termsUrl": "https://eureka.patsnap.com/terms"}]
+  },
+  {
+    "id": "bundled:inductive-bio", "name": "inductive-bio", "displayName": "Inductive Bio",
+    "description": "Official hosted Inductive Bio MCP — small-molecule ADMET and PK property prediction for solubility, permeability, stability, efflux, CYP, hERG, BBB and related development risks without local model deployment.",
+    "config": {"type": "streamable-http", "url": "https://api.inductive.bio/mcp", "permissionPolicy": "always-confirm"},
+    "authRequired": true, "oauthSupported": true,
+    "authHint": "Sign in to Inductive Bio through the hosted MCP OAuth flow. Prediction inputs and account-scoped models remain subject to the provider's terms; review every external call before approval.",
+    "upstreams": [{"name": "Inductive Bio", "infoLabel": "Beacon-1 ADMET models", "infoUrl": "https://www.inductive.bio/beacon-1", "homepageUrl": "https://www.inductive.bio/"}]
+  },
+  {
+    "id": "bundled:boltz-api-official", "name": "boltz-api-official", "displayName": "Boltz API (Official)",
+    "description": "Official hosted Boltz MCP — small-molecule and protein structure or binding prediction, library screening, binder design and ADME workflows without local model deployment.",
+    "config": {"type": "streamable-http", "url": "https://mcp.boltz.bio/mcp", "permissionPolicy": "always-confirm"},
+    "authRequired": true, "oauthSupported": true,
+    "apiKeyHeader": "x-api-key", "apiKeyLabel": "Boltz API Key",
+    "authHint": "Sign in to Boltz through OAuth or configure a workspace API key. Structure, screening and design jobs may consume credits and always require confirmation in Synon Biomed.",
+    "upstreams": [{"name": "Boltz", "infoLabel": "Official API documentation", "infoUrl": "https://api.boltz.bio/docs/guides/agent-integrations/", "homepageUrl": "https://boltz.bio/api", "termsUrl": "https://boltz.bio/terms"}]
+  },
+  {
+    "id": "bundled:open-targets-official", "name": "open-targets-official", "displayName": "Open Targets (Official)",
+    "description": "Official hosted Open Targets Platform MCP — target/disease evidence, tractability, safety, genetics, drug mechanisms and clinical candidates through schema-guided GraphQL.",
+    "config": {"type": "streamable-http", "url": "https://mcp.platform.opentargets.org/mcp"},
+    "upstreams": [{"name": "Open Targets Platform", "license": "CC0 1.0", "termsUrl": "https://platform-docs.opentargets.org/licence", "homepageUrl": "https://platform.opentargets.org/"}]
+  },
+  {
+    "id": "bundled:tamarind-bio", "name": "tamarind-bio", "displayName": "Tamarind Bio",
+    "description": "Hosted computational drug-design MCP — molecular and protein structure prediction, docking, protein/antibody/RNA design, molecular generation and property workflows without local GPU deployment.",
+    "config": {"type": "streamable-http", "url": "https://mcp.tamarind.bio/mcp", "permissionPolicy": "confirm"},
+    "authRequired": true,
+    "apiKeyHeader": "x-api-key", "apiKeyLabel": "Tamarind API Key",
+    "authHint": "Create a Tamarind API key in your Tamarind account. Compute jobs can consume account credits and always require confirmation in Synon Biomed.",
+    "upstreams": [{"name": "Tamarind Bio", "infoLabel": "MCP documentation", "infoUrl": "https://app.tamarind.bio/api-docs/mcp-server", "homepageUrl": "https://www.tamarind.bio/"}]
+  },
+  {
+    "id": "bundled:adaptyv-cloud-lab", "name": "adaptyv-cloud-lab", "displayName": "Adaptyv Cloud Lab",
+    "description": "Official hosted cloud-lab MCP for protein and antibody validation — target catalog, experiment design, quotes, binding/affinity, expression, thermostability and structured results.",
+    "config": {"type": "streamable-http", "url": "https://mcp.adaptyvbio.com/mcp/", "permissionPolicy": "confirm"},
+    "authRequired": true, "oauthSupported": true,
+    "apiKeyHeader": "Authorization", "apiKeyPrefix": "Bearer ", "apiKeyLabel": "Adaptyv Foundry Token",
+    "authHint": "Sign in to Adaptyv Bio. Creating experiments, accepting quotes or making payments always requires confirmation in Synon Biomed.",
+    "upstreams": [{"name": "Adaptyv Bio", "infoLabel": "MCP documentation", "infoUrl": "https://docs.adaptyvbio.com/api-reference/mcp-server", "homepageUrl": "https://www.adaptyvbio.com/"}]
+  },
+  {
+    "id": "bundled:ketcher-chemistry", "name": "ketcher-chemistry", "displayName": "Ketcher Chemistry",
+    "description": "Interactive 2D molecule sketcher (Ketcher) as an MCP App. Backs the .ket/.smi/.mol/.sdf/.rxn artifact viewer."
+  },
+  {
+    "id": "bundled:idc-rest", "name": "idc-rest", "displayName": "Imaging Data Commons",
+    "description": "Public clinical imaging MCP — read-only cohort discovery, metadata, guarded SQL and citation-ready cancer imaging evidence. No API key or local data download required.",
+    "config": {"type": "streamable-http", "url": "https://api.imaging.datacommons.cancer.gov/mcp", "permissionPolicy": "always-confirm"},
+    "upstreams": [{"name": "NCI Imaging Data Commons", "license": "Per-collection", "infoUrl": "https://datacommons.cancer.gov/", "homepageUrl": "https://datacommons.cancer.gov/"}]
+  }
+]

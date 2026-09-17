@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "id": "create-aside",
+  "contracts": [
+    {"kind": "service", "name": "createAside"}
+  ],
+  "steps": [
+    {
+      "name": "csrf",
+      "method": "GET",
+      "path": "/api/csrf",
+      "headers": {"Origin": "${origin}"},
+      "expectedStatus": [204]
+    },
+    {
+      "name": "create-project",
+      "method": "POST",
+      "path": "/api/projects",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"name": "Create Aside Oracle", "find_or_create": true},
+      "expectedStatus": [200, 201],
+      "capture": {"projectId": "/project_id"}
+    },
+    {
+      "name": "create-parent-root",
+      "method": "POST",
+      "path": "/api/frames",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {"project_id": "${capture:projectId}"},
+      "expectedStatus": [201],
+      "capture": {"parentRootId": "/root_frame_id"}
+    },
+    {
+      "name": "create-hidden-aside",
+      "method": "POST",
+      "path": "/api/frames/${capture:parentRootId}/aside",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "request": "Investigate the independent path.",
+        "model": null,
+        "intent_id": "11111111-1111-4111-8111-111111111111",
+        "as_session": false
+      },
+      "expectedStatus": [200],
+      "capture": {"asideFrameId": "/frame_id"}
+    },
+    {
+      "name": "read-hidden-aside",
+      "method": "GET",
+      "path": "/api/frames/${capture:asideFrameId}?shallow=true",
+      "expectedStatus": [200]
+    },
+    {
+      "name": "reject-reused-intent",
+      "method": "POST",
+      "path": "/api/frames/${capture:parentRootId}/aside",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "request": "This must not create another aside.",
+        "intent_id": "11111111-1111-4111-8111-111111111111",
+        "as_session": false
+      },
+      "expectedStatus": [409]
+    },
+    {
+      "name": "create-visible-session",
+      "method": "POST",
+      "path": "/api/frames/${capture:parentRootId}/aside",
+      "headers": {"Origin": "${origin}", "X-Operon-CSRF": "${cookie:operon_csrf}"},
+      "body": {
+        "request": "Forked visible session",
+        "as_session": true
+      },
+      "expectedStatus": [200],
+      "capture": {"sessionFrameId": "/frame_id"}
+    },
+    {
+      "name": "read-visible-session",
+      "method": "GET",
+      "path": "/api/frames/${capture:sessionFrameId}?shallow=true",
+      "expectedStatus": [200]
+    }
+  ],
+  "maxBodyBytes": 4194304,
+  "comparisonMode": "candidate-superset",
+  "normalization": [
+    "/runtime",
+    "/steps/1/response/body/project_id",
+    "/steps/1/response/body/created_at",
+    "/steps/1/response/body/updated_at",
+    "/steps/2/request/body/project_id",
+    "/steps/2/response/body/project_id",
+    "/steps/2/response/body/root_frame_id",
+    "/steps/3/request/path",
+    "/steps/3/response/body/frame_id",
+    "/steps/4/request/path",
+    "/steps/4/response/body/id",
+    "/steps/4/response/body/project_id",
+    "/steps/4/response/body/root_frame_id",
+    "/steps/4/response/body/status",
+    "/steps/4/response/body/created_at",
+    "/steps/4/response/body/updated_at",
+    "/steps/4/response/body/completed_at",
+    "/steps/4/response/body/context_data",
+    "/steps/4/response/body/output_data",
+    "/steps/4/response/body/input_data",
+    "/steps/4/response/body/message_count",
+    "/steps/5/request/path",
+    "/steps/6/request/path",
+    "/steps/6/response/body/frame_id",
+    "/steps/7/request/path",
+    "/steps/7/response/body/id",
+    "/steps/7/response/body/project_id",
+    "/steps/7/response/body/root_frame_id",
+    "/steps/7/response/body/status",
+    "/steps/7/response/body/created_at",
+    "/steps/7/response/body/updated_at",
+    "/steps/7/response/body/completed_at",
+    "/steps/7/response/body/context_data",
+    "/steps/7/response/body/output_data",
+    "/steps/7/response/body/input_data",
+    "/steps/7/response/body/message_count"
+  ],
+  "redactions": []
+}

@@ -38,6 +38,7 @@ type MemoryPressurePolicy struct {
 	reliefAfter, recoveryAfter         time.Duration
 	previous                           MemoryPressureSample
 	stalledSince                       time.Time
+	reliefElapsed, reliefStall         time.Duration
 	reliefAttempted, recoveryRequested bool
 }
 
@@ -51,7 +52,7 @@ func (p *MemoryPressurePolicy) Observe(s MemoryPressureSample) MemoryPressureAct
 	elapsed := s.At.Sub(before.At)
 	if s.Status == "unavailable" || s.LimitBytes == 0 || s.ProgressSequence != before.ProgressSequence || s.At.IsZero() || before.At.IsZero() || s.Cgroup != before.Cgroup ||
 		elapsed <= 0 || elapsed > 30*time.Second || s.FullStallUsec < before.FullStallUsec || s.UserCPUUsec < before.UserCPUUsec {
-		p.stalledSince = time.Time{}
+		p.resetPressureWindow()
 		return MemoryPressureObserve
 	}
 	interval := float64(elapsed.Microseconds())
@@ -64,7 +65,29 @@ func (p *MemoryPressurePolicy) Observe(s MemoryPressureSample) MemoryPressureAct
 	// a severe stall solely because its delta exceeds the observer interval;
 	// require the kernel's independent bounded average to corroborate it.
 	uncorroboratedSkew := full > 1.05 && s.FullStallPercent < 80
-	if full < 0.8 || uncorroboratedSkew || userCPU >= 0.1 || (!aboveHigh && !nearLimit) {
+	if uncorroboratedSkew || userCPU >= 0.1 || (!aboveHigh && !nearLimit) {
+		p.resetPressureWindow()
+		return MemoryPressureObserve
+	}
+	// Raising the soft threshold within an unchanged hard budget is lossless.
+	// Assess its stall fraction over a bounded time window: short reclaim
+	// fluctuations must not postpone relief forever. Windows do not accumulate
+	// isolated peaks across a long task. Destructive recovery below deliberately
+	// retains the stricter consecutive-stall requirement.
+	if !p.reliefAttempted {
+		p.reliefElapsed += elapsed
+		p.reliefStall += time.Duration(min(full, 1) * float64(elapsed))
+		if p.reliefElapsed >= p.reliefAfter {
+			sustained := float64(p.reliefStall)/float64(p.reliefElapsed) >= 0.8
+			p.reliefElapsed, p.reliefStall = 0, 0
+			if sustained && s.HighBytes > 0 && s.HighBytes < s.LimitBytes {
+				p.reliefAttempted = true
+				p.stalledSince = s.At
+				return MemoryPressureRelieve
+			}
+		}
+	}
+	if full < 0.8 {
 		p.stalledSince = time.Time{}
 		return MemoryPressureObserve
 	}
@@ -72,14 +95,14 @@ func (p *MemoryPressurePolicy) Observe(s MemoryPressureSample) MemoryPressureAct
 		p.stalledSince = before.At
 	}
 	stalledFor := s.At.Sub(p.stalledSince)
-	if !p.reliefAttempted && s.LimitBytes > 0 && s.HighBytes > 0 && s.HighBytes < s.LimitBytes && stalledFor >= p.reliefAfter {
-		p.reliefAttempted = true
-		p.stalledSince = s.At
-		return MemoryPressureRelieve
-	}
 	if !p.recoveryRequested && stalledFor >= p.recoveryAfter {
 		p.recoveryRequested = true
 		return MemoryPressureRecover
 	}
 	return MemoryPressureObserve
+}
+
+func (p *MemoryPressurePolicy) resetPressureWindow() {
+	p.stalledSince = time.Time{}
+	p.reliefElapsed, p.reliefStall = 0, 0
 }

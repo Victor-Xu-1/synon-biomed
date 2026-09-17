@@ -213,13 +213,16 @@ Unsupported delegation fails launch explicitly; it does not select another
 launcher or take control of the caller's cgroup.
 
 The executor samples workload memory, full memory-stall time, user CPU time and
-its active execution's output sequence every five seconds. Thirty seconds of
-sustained severe memory stalls without useful CPU or output progress permits
-one relaxation of `memory.high`, no further than the already-admitted workload
-hard ceiling. Relief is written and verified by the existing supervisor without
-forking a control command into the pressured workload. If severe stalls persist
-for two minutes, the same execution handle requests recovery through the normal
-worker owner. These are continuous-stall windows, not task-duration limits.
+its active execution's output sequence every five seconds. A bounded thirty-second
+window with at least 80% full memory-stall time and no useful CPU or output
+progress permits one relaxation of `memory.high`, no further than the already-
+admitted workload hard ceiling. Brief reclaim fluctuations do not restart this
+lossless-relief window; separate windows never accumulate isolated peaks.
+Relief is written and verified by the existing supervisor without forking a
+control command into the pressured workload. Destructive recovery retains a
+stricter two-minute consecutive severe-stall window before the same execution
+handle requests recovery through the normal worker owner. Neither is a task-
+duration limit.
 Productive silent computation, output progress, transient peaks, stale samples,
 counter resets and unavailable telemetry do not consume a recovery window.
 

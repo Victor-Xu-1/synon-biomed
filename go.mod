@@ -8,7 +8,7 @@ require (
 	github.com/dlclark/regexp2 v1.12.0
 	github.com/go-jose/go-jose/v4 v4.1.5
 	github.com/google/uuid v1.6.0
-	github.com/larksuite/oapi-sdk-go/v3 v3.11.0
+	github.com/larksuite/oapi-sdk-go/v3 v3.12.0
 	github.com/mholt/archives v0.1.5
 	github.com/pkg/sftp v1.13.10
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2

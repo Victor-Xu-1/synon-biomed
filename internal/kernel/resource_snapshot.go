@@ -6,13 +6,15 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"synon-go/internal/processsupervisor"
 	"time"
 )
 
 type KernelProcessResources struct {
-	PIDVisible bool     `json:"pid_visible"`
-	RSSBytes   *uint64  `json:"rss_bytes"`
-	CPUPct     *float64 `json:"cpu_pct"`
+	PIDVisible  bool                  `json:"pid_visible"`
+	RSSBytes    *uint64               `json:"rss_bytes"`
+	CPUPct      *float64              `json:"cpu_pct"`
+	Observation *ExecutionObservation `json:"execution_observation,omitempty"`
 }
 
 type MachineResourceSnapshot struct {
@@ -53,10 +55,14 @@ type ExternalSessionKernel struct {
 }
 
 type processResourceCounter struct {
-	pid        int
-	visible    bool
-	rssBytes   uint64
-	cpuCounter uint64
+	pid                int
+	visible            bool
+	rssBytes           uint64
+	cpuCounter         uint64
+	startIdentity      uint64
+	observedProcesses  []ObservedProcess
+	observationPartial bool
+	memoryPressure     *processsupervisor.MemoryPressure
 }
 
 type platformResourceSnapshot struct {
@@ -73,8 +79,9 @@ type platformResourceSnapshot struct {
 }
 
 type previousProcessCounter struct {
-	pid        int
-	cpuCounter uint64
+	pid           int
+	cpuCounter    uint64
+	startIdentity uint64
 }
 
 type resourceSampler struct {
@@ -93,6 +100,10 @@ func newResourceSampler() *resourceSampler {
 }
 
 func (s *resourceSampler) sample(targets []resourceTarget, diskPath string) (MachineResourceSnapshot, map[string]KernelProcessResources) {
+	// Serialize acquisition as well as delta publication. Concurrent inventory
+	// requests must not overwrite a newer CPU baseline with an older sample.
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	raw := readPlatformResourceSnapshot(targets, diskPath)
 	if raw.sampledAt.IsZero() {
 		raw.sampledAt = time.Now().UTC()
@@ -113,9 +124,6 @@ func (s *resourceSampler) sample(targets []resourceTarget, diskPath string) (Mac
 		DiskAvailableBytes:   raw.diskAvailableBytes,
 	}
 	resources := make(map[string]KernelProcessResources, len(targets))
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	deltaTotal := uint64(0)
 	if s.hasHostSample && raw.hostTotalCPU >= s.hostTotalCPU {
@@ -142,11 +150,11 @@ func (s *resourceSampler) sample(targets []resourceTarget, diskPath string) (Mac
 			resources[target.kernelID] = KernelProcessResources{}
 			continue
 		}
-		resource := KernelProcessResources{PIDVisible: counter.visible}
+		resource := KernelProcessResources{PIDVisible: counter.visible, Observation: executionObservation(counter, raw.sampledAt)}
 		if counter.visible {
 			resource.RSSBytes = uint64Pointer(counter.rssBytes)
 		}
-		if previous, found := s.processes[target.kernelID]; found && previous.pid == counter.pid &&
+		if previous, found := s.processes[target.kernelID]; found && previous.pid == counter.pid && previous.startIdentity == counter.startIdentity &&
 			counter.cpuCounter >= previous.cpuCounter && deltaTotal > 0 {
 			value := float64(counter.cpuCounter-previous.cpuCounter) / float64(deltaTotal) * float64(raw.hostCores) * 100
 			value = clampCPU(value, raw.hostCores)
@@ -154,7 +162,7 @@ func (s *resourceSampler) sample(targets []resourceTarget, diskPath string) (Mac
 			kernelCPUTotal += value
 			hasKernelCPU = true
 		}
-		nextProcesses[target.kernelID] = previousProcessCounter{pid: counter.pid, cpuCounter: counter.cpuCounter}
+		nextProcesses[target.kernelID] = previousProcessCounter{pid: counter.pid, cpuCounter: counter.cpuCounter, startIdentity: counter.startIdentity}
 		resources[target.kernelID] = resource
 	}
 	if len(targets) == 0 {
@@ -220,6 +228,7 @@ func (m *Manager) ListAllSessionKernelsWithExternalResources(
 	m.mu.Unlock()
 
 	kernels := make([]SessionKernel, 0, len(workers)+len(external))
+	fences := make(map[string]workerResourceFence, len(workers))
 	targets := make([]resourceTarget, 0, len(workers)+len(external))
 	seen := make(map[string]struct{}, len(workers)+len(external))
 	for _, worker := range workers {
@@ -229,12 +238,23 @@ func (m *Manager) ListAllSessionKernelsWithExternalResources(
 		}
 		state.mu.Lock()
 		projection := snapshotSessionKernel(state)
+		fences[projection.KernelID] = workerResourceFence{worker: worker, state: state, current: state.current, generation: state.generation}
 		if strings.TrimSpace(diskPath) == "" && strings.TrimSpace(state.spec.WorkspaceDir) != "" {
 			diskPath = state.spec.WorkspaceDir
 		}
 		state.mu.Unlock()
 		kernels = append(kernels, projection)
-		targets = append(targets, resourceTarget{kernelID: projection.KernelID, pid: workerPID(worker)})
+		pid := workerPID(worker)
+		var startTicks uint64
+		if runtime.GOOS == "linux" && pid > 0 {
+			identity, err := worker.ProcessIdentity()
+			if err != nil {
+				pid = 0
+			} else {
+				startTicks = uint64(identity.StartTicks)
+			}
+		}
+		targets = append(targets, resourceTarget{kernelID: projection.KernelID, pid: pid, pidStartTicks: startTicks})
 		seen[projection.KernelID] = struct{}{}
 	}
 	for _, item := range external {
@@ -261,9 +281,16 @@ func (m *Manager) ListAllSessionKernelsWithExternalResources(
 	machine, resources := sampler.sample(targets, diskPath)
 	for index := range kernels {
 		resource := resources[kernels[index].KernelID]
+		if fence, exists := fences[kernels[index].KernelID]; exists && !fence.unchanged() {
+			resource = KernelProcessResources{Observation: executionObservation(processResourceCounter{}, machine.SampledAt)}
+		}
 		kernels[index].PIDVisible = resource.PIDVisible
 		kernels[index].RSSBytes = resource.RSSBytes
 		kernels[index].CPUPct = resource.CPUPct
+		kernels[index].ExecutionObservation = resource.Observation
+		if resource.Observation != nil && kernels[index].CurrentCellTag != nil {
+			resource.Observation.ExecutionID = *kernels[index].CurrentCellTag
+		}
 		if resource.RSSBytes != nil {
 			machine.KernelRSSBytes += *resource.RSSBytes
 		}
@@ -288,5 +315,23 @@ func workerPID(worker *Worker) int {
 	if worker == nil || worker.process == nil || worker.process.command == nil || worker.process.command.Process == nil {
 		return 0
 	}
+	select {
+	case <-worker.done:
+		return 0
+	default:
+	}
 	return worker.process.command.Process.Pid
+}
+
+type workerResourceFence struct {
+	worker     *Worker
+	state      *workerLifecycle
+	current    *currentExecution
+	generation uint64
+}
+
+func (f workerResourceFence) unchanged() bool {
+	f.state.mu.Lock()
+	defer f.state.mu.Unlock()
+	return workerPID(f.worker) > 0 && f.state.current == f.current && f.state.generation == f.generation && !f.state.closing
 }

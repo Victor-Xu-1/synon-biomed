@@ -332,7 +332,7 @@ func TestBundledPythonWorkerUsesOneModularRuntimeAndHostBridge(t *testing.T) {
 	if !strings.Contains(bootstrap, "from synon_biomed_runtime.worker_execution import run") {
 		t.Fatal("kernel entrypoint does not delegate to its owned runtime")
 	}
-	for _, module := range []string{"worker_transport.py", "worker_streams.py", "worker_compile.py", "worker_execution.py", "worker_safety.py"} {
+	for _, module := range []string{"worker_transport.py", "worker_streams.py", "worker_compile.py", "worker_execution.py", "worker_safety.py", "worker_reads.py"} {
 		if len(read(filepath.Join("synon_biomed_runtime", module))) == 0 {
 			t.Fatalf("worker module %s is empty", module)
 		}
@@ -473,15 +473,26 @@ func TestBundledMicromambaManifestIncludesLicenseAndPinnedVersion(t *testing.T) 
 	if err != nil {
 		t.Fatalf("load micromamba manifest: %v", err)
 	}
-	if manifest.Version != "2.5.0" || manifest.License != "BSD-3-Clause" || manifest.LicenseFile != "LICENSE" ||
-		manifest.SourceURL != "https://github.com/mamba-org/mamba/releases/tag/2.5.0" {
+	if manifest.Version != "2.9.0+synon.1" || manifest.License != "BSD-3-Clause" || manifest.LicenseFile != "LICENSE" ||
+		manifest.SourceURL != "https://github.com/mamba-org/mamba/tree/2676ec2050f7dd5b8a524287526f50a8a4fb9652" {
 		t.Fatalf("micromamba provenance metadata = %#v", manifest)
 	}
 	report, err := Verify(root, manifest)
 	if err != nil {
 		t.Fatalf("verify micromamba assets: %v", err)
 	}
-	if report.Checked != 2 || report.TotalBytes != 17548418 {
+	required := map[string]bool{
+		"linux-x86_64/micromamba": true, "LICENSE": true, "BUILD.md": true,
+		"build-linux-64.sh": true, "build-linux-64.lock": true,
+		"link-script-exit.patch": true, "collect-build-notices.py": true, "DEPENDENCY-NOTICES.txt": true,
+	}
+	for _, entry := range manifest.Files {
+		if !required[entry.Path] {
+			t.Fatalf("unexpected or duplicate installer asset %q", entry.Path)
+		}
+		delete(required, entry.Path)
+	}
+	if len(required) != 0 || report.Checked != 8 || report.TotalBytes <= 0 {
 		t.Fatalf("micromamba asset report = %#v", report)
 	}
 }

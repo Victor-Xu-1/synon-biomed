@@ -16,6 +16,7 @@ import (
 type managedEnvironmentOperation struct {
 	done    chan struct{}
 	cancel  context.CancelFunc
+	context context.Context
 	waiters int
 	result  ManagedEnvironment
 	err     error
@@ -382,6 +383,21 @@ func (m *Manager) runManagedEnvironmentOperation(
 	}
 
 	m.managedEnvironmentMu.Lock()
+	// A cancelled owner retains the slot until its side effects and cleanup
+	// have finished. New waiters must not join an already-cancelled operation.
+	for {
+		previous := m.managedEnvironmentOperations[key]
+		if previous == nil || previous.context.Err() == nil {
+			break
+		}
+		m.managedEnvironmentMu.Unlock()
+		select {
+		case <-waitCtx.Done():
+			return ManagedEnvironment{}, waitCtx.Err()
+		case <-previous.done:
+		}
+		m.managedEnvironmentMu.Lock()
+	}
 	supervisor := m.managedEnvironmentSupervisor
 	if supervisor == nil || supervisor.Err() != nil {
 		m.managedEnvironmentMu.Unlock()
@@ -389,7 +405,8 @@ func (m *Manager) runManagedEnvironmentOperation(
 	}
 	operation := m.managedEnvironmentOperations[key]
 	if operation == nil {
-		operationContext, cancelOperation := context.WithCancel(supervisor)
+		var operationContext context.Context
+		var cancelOperation context.CancelFunc
 		// The first waiter establishes the operation's hard deadline. The
 		// operation may be shared by later waiters, but a later waiter must not
 		// extend an installer past the earliest admitted task budget. Without
@@ -398,9 +415,11 @@ func (m *Manager) runManagedEnvironmentOperation(
 		// running until service restart.
 		if deadline, ok := waitCtx.Deadline(); ok {
 			operationContext, cancelOperation = context.WithDeadline(supervisor, deadline)
+		} else {
+			operationContext, cancelOperation = context.WithCancel(supervisor)
 		}
 		operation = &managedEnvironmentOperation{
-			done: make(chan struct{}), cancel: cancelOperation,
+			done: make(chan struct{}), cancel: cancelOperation, context: operationContext,
 			progressSubscribers: map[int]toolprogress.Reporter{},
 		}
 		operationContext = toolprogress.WithReporter(operationContext, operation.publishProgress)
@@ -428,7 +447,11 @@ func (m *Manager) runManagedEnvironmentOperation(
 	select {
 	case <-waitCtx.Done():
 		operation.unsubscribeProgress(progressSubscription)
-		m.releaseManagedEnvironmentOperationWaiter(key, operation, true)
+		if m.releaseManagedEnvironmentOperationWaiter(key, operation, true) {
+			// The last owner cannot advertise terminal cancellation while the
+			// installer is still draining or holds the publication lock.
+			<-operation.done
+		}
 		return ManagedEnvironment{}, waitCtx.Err()
 	case <-operation.done:
 		operation.unsubscribeProgress(progressSubscription)
@@ -444,23 +467,23 @@ func (m *Manager) releaseManagedEnvironmentOperationWaiter(
 	key string,
 	operation *managedEnvironmentOperation,
 	cancelled bool,
-) {
+) bool {
 	if m == nil || operation == nil {
-		return
+		return false
 	}
 	m.managedEnvironmentMu.Lock()
 	active := m.managedEnvironmentOperations[key]
 	if active != operation {
 		m.managedEnvironmentMu.Unlock()
-		return
+		return false
 	}
 	if operation.waiters > 0 {
 		operation.waiters--
 	}
 	shouldCancel := cancelled && operation.waiters == 0 && operation.cancel != nil
-	cancel := operation.cancel
-	m.managedEnvironmentMu.Unlock()
 	if shouldCancel {
-		cancel()
+		operation.cancel()
 	}
+	m.managedEnvironmentMu.Unlock()
+	return shouldCancel
 }

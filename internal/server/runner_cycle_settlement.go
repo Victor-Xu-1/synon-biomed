@@ -81,7 +81,8 @@ func (s *Server) settleSessionRunnerChatOutcome(
 			message = stopHookErr.Error()
 		}
 	}
-	if status == "completed" || status == "cancelled" {
+	if status == "completed" || status == "cancelled" ||
+		(status == "failed" && !runnerInterruptionMayContinueSameTask(sessionRunnerFailureReasonCode(message))) {
 		if cleanupErr := s.releaseSessionRunnerKernels(ctx, session.ID, transcriptAuthority); cleanupErr != nil {
 			status = "failed"
 			message = "task runtime cleanup failed: " + cleanupErr.Error()

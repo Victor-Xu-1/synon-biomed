@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -14,6 +15,39 @@ import (
 	transcriptstore "synon-go/internal/persistence/transcript"
 	"synon-go/internal/toolprogress"
 )
+
+type observedEnvironmentTestAuthority struct {
+	*recordingManagedEnvironmentAuthority
+	execute func(context.Context) (kernelruntime.ManagedEnvironment, error)
+}
+
+func (a observedEnvironmentTestAuthority) CreateManagedEnvironment(ctx context.Context, _ kernelruntime.CreateManagedEnvironmentInput) (kernelruntime.ManagedEnvironment, error) {
+	return a.execute(ctx)
+}
+
+func startObservedOperationDispatcher(t *testing.T, server *Server, authority managedEnvironmentAuthority) {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- server.runTaskOperationDispatcher(ctx, authority) }()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case err := <-done:
+			if err != nil {
+				t.Error(err)
+			}
+		case <-time.After(3 * time.Second):
+			t.Error("durable operation dispatcher did not stop")
+		}
+	})
+}
+
+func observedOperationRequest(id string) (map[string]any, managedOperationRequest) {
+	return map[string]any{"operation_id": id, "mode": "create"}, managedOperationRequest{
+		Kind: "create", Create: &kernelruntime.CreateManagedEnvironmentInput{Name: "observed", Language: "python", OperationID: id},
+	}
+}
 
 func TestManagedEnvironmentObservationRetainsOneRowAndFinalFacts(t *testing.T) {
 	store, repo, _ := newTranscriptWebFixture(t)
@@ -48,27 +82,36 @@ func TestManagedEnvironmentObservationRetainsOneRowAndFinalFacts(t *testing.T) {
 	ctx := withTranscriptRunnerChatRun(context.Background(), run)
 	var executions atomic.Int32
 	release := make(chan struct{})
+	var releaseOnce sync.Once
+	t.Cleanup(func() { releaseOnce.Do(func() { close(release) }) })
 	operation := func(ctx context.Context) (kernelruntime.ManagedEnvironment, error) {
 		executions.Add(1)
 		completed, total := int64(1024), int64(2048)
 		toolprogress.Report(ctx, toolprogress.Update{Phase: "downloading_packages", BytesCompleted: &completed, BytesTotal: &total})
-		<-release
+		select {
+		case <-release:
+		case <-ctx.Done():
+			return kernelruntime.ManagedEnvironment{}, ctx.Err()
+		}
 		toolprogress.Report(ctx, toolprogress.Update{Phase: "verifying_environment"})
 		return kernelruntime.ManagedEnvironment{Name: "observed", Status: "ready", Language: "python"}, nil
 	}
-	result, err := srv.executeManagedEnvironmentOperation(ctx, access, call, call.Name, true, nil, operation)
+	authority := observedEnvironmentTestAuthority{&recordingManagedEnvironmentAuthority{}, operation}
+	metadata, requestInput := observedOperationRequest(call.ID)
+	result, err := srv.executeManagedEnvironmentOperation(ctx, access, call, call.Name, true, metadata, requestInput, authority)
 	if err != nil {
-		close(release)
+		releaseOnce.Do(func() { close(release) })
 		t.Fatal(err)
 	}
-	duplicate, err := srv.executeManagedEnvironmentOperation(ctx, access, call, call.Name, true, nil, operation)
+	duplicate, err := srv.executeManagedEnvironmentOperation(ctx, access, call, call.Name, true, metadata, requestInput, authority)
 	if err != nil {
-		close(release)
+		releaseOnce.Do(func() { close(release) })
 		t.Fatal(err)
 	}
 	if mapValue(duplicate)["operation_id"] != mapValue(result)["operation_id"] {
 		t.Fatal("duplicate changed identity")
 	}
+	startObservedOperationDispatcher(t, srv, authority)
 	waitStatus := func(want string) {
 		t.Helper()
 		deadline := time.Now().Add(3 * time.Second)
@@ -101,7 +144,7 @@ func TestManagedEnvironmentObservationRetainsOneRowAndFinalFacts(t *testing.T) {
 		}
 	}
 	waitStatus("running")
-	close(release)
+	releaseOnce.Do(func() { close(release) })
 	waitStatus("completed")
 	// A fast operation may finish before its protocol admission receipt. The
 	// admission must not revert the public row or create a second message.
@@ -163,8 +206,10 @@ func TestManagedEnvironmentObservationRetainsOneRowAndFinalFacts(t *testing.T) {
 	if err := srv.checkpointSessionRunnerToolEvent(ctx, options, run, agentruntime.Event{Type: agentruntime.EventToolStarted, ToolName: call.Name, ToolCallID: call.ID, Arguments: string(call.Arguments)}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := srv.executeManagedEnvironmentOperation(ctx, access, call, call.Name, true, nil, operation); err == nil {
+	if _, err := srv.executeManagedEnvironmentOperation(ctx, access, call, call.Name, true, metadata, requestInput, authority); err == nil {
 		t.Fatal("shutdown admitted another operation")
+	} else if err := srv.checkpointSessionRunnerToolEvent(ctx, options, run, agentruntime.Event{Type: agentruntime.EventToolFailed, ToolName: call.Name, ToolCallID: call.ID, Arguments: string(call.Arguments), Message: err.Error()}); err != nil {
+		t.Fatal(err)
 	}
 	messages, _, err := srv.loadTranscriptWebHistory(ctx, stream.OwnerID, stream.SessionID)
 	if err != nil {
@@ -182,17 +227,20 @@ func TestManagedEnvironmentObservationRetainsOneRowAndFinalFacts(t *testing.T) {
 	}
 }
 
-func TestManagedEnvironmentBackgroundObserverShutdownCancelsWork(t *testing.T) {
+func TestManagedEnvironmentBackgroundDispatcherShutdownPreservesRecoverableWork(t *testing.T) {
 	srv, identity := managedEnvironmentToolFixture(t)
 	started := make(chan struct{})
-	_, err := srv.executeManagedEnvironmentOperation(context.Background(), identity.access, agentruntime.ToolCall{ID: "cancel-background"}, manageEnvironmentsToolName, true, nil, func(ctx context.Context) (kernelruntime.ManagedEnvironment, error) {
+	authority := observedEnvironmentTestAuthority{&recordingManagedEnvironmentAuthority{}, func(ctx context.Context) (kernelruntime.ManagedEnvironment, error) {
 		close(started)
 		<-ctx.Done()
 		return kernelruntime.ManagedEnvironment{}, ctx.Err()
-	})
+	}}
+	metadata, request := observedOperationRequest("cancel-background")
+	_, err := srv.executeManagedEnvironmentOperation(context.Background(), identity.access, agentruntime.ToolCall{ID: "cancel-background"}, manageEnvironmentsToolName, true, metadata, request, authority)
 	if err != nil {
 		t.Fatal(err)
 	}
+	startObservedOperationDispatcher(t, srv, authority)
 	select {
 	case <-started:
 	case <-time.After(time.Second):
@@ -204,7 +252,11 @@ func TestManagedEnvironmentBackgroundObserverShutdownCancelsWork(t *testing.T) {
 		t.Fatal(err)
 	}
 	notifications, err := srv.workspaceStore.ConsumeUnreadNotifications(context.Background(), identity.access.Frame.ID, identity.access.Frame.RootFrameID, identity.access.UserID, 10)
-	if err != nil || len(notifications) != 1 || notifications[0].Payload["status"] != "cancelled" {
+	if err != nil || len(notifications) != 0 {
 		t.Fatalf("shutdown receipt=%#v err=%v", notifications, err)
+	}
+	pending, err := srv.workspaceStore.CountPendingTaskOperations(context.Background(), identity.access)
+	if err != nil || pending != 1 {
+		t.Fatalf("service drain lost recoverable task operation: pending=%d err=%v", pending, err)
 	}
 }

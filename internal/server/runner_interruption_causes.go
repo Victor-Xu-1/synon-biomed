@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	sessionRunnerSupervisorInterruptedReasonCode      = "runner_supervisor_interrupted"
 	sessionRunnerResumeDispatchInterruptedReasonCode  = "resume_dispatch_lease_interrupted"
 	sessionRunnerModelProviderUnavailableReasonCode   = "model_provider_unavailable"
 	sessionRunnerModelProviderTemporaryReasonCode     = "model_provider_temporarily_unavailable"

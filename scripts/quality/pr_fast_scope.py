@@ -18,12 +18,13 @@ import subprocess
 import sys
 
 if __package__:
-    from . import pr_dependency_scope, pr_test_partition, verification_scope
+    from . import pr_dependency_scope, pr_test_partition, runtime_input_scope, verification_scope
     from .runtime_test_inventory import discover, execution_plan
     from .runtime_test_shards import execute
 else:
     import pr_dependency_scope
     import pr_test_partition
+    import runtime_input_scope
     import verification_scope
     from runtime_test_inventory import discover, execution_plan
     from runtime_test_shards import execute
@@ -90,6 +91,7 @@ def documentation_only(path: str) -> bool:
 def select_packages(repo: Path, paths: list[str], entries: list[dict],
                     dependency_owners: set[str] | None = None) -> tuple[list[str], str]:
     verification_paths = {path for group in verification_scope.load(repo) for path in group["paths"]}
+    runtime_owners = runtime_input_scope.load(repo)
     local = [entry for entry in entries if Path(entry["Dir"]).is_relative_to(repo)]
     all_packages = sorted(entry["ImportPath"] for entry in local)
     directories = {entry["ImportPath"]: Path(entry["Dir"]).relative_to(repo).as_posix() for entry in local}
@@ -104,7 +106,9 @@ def select_packages(repo: Path, paths: list[str], entries: list[dict],
             return all_packages, "Go dependency authority changed"
         if documentation_only(path) or path.startswith("frontend/") and not path.endswith(".go"):
             continue
-        owners = set()
+        owners = set(runtime_owners.get(path, set()))
+        if not owners.issubset(all_packages):
+            return all_packages, "Declared runtime consumer is unavailable"
         for entry in local:
             name = entry["ImportPath"]
             directory = directories[name]

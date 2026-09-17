@@ -286,6 +286,7 @@ func runnerInterruptionNeedsRecoveryBackoff(reasonCode string) bool {
 func runnerInterruptionMayContinueSameTask(reasonCode string) bool {
 	switch strings.TrimSpace(reasonCode) {
 	case "runtime_draining",
+		sessionRunnerSupervisorInterruptedReasonCode,
 		sessionRunnerResumeDispatchInterruptedReasonCode,
 		sessionRunnerToolLifecyclePersistenceReasonCode,
 		sessionRunnerKernelOperationPendingRecoveryReasonCode,
@@ -334,6 +335,7 @@ func runnerInterruptionMayContinueSameTask(reasonCode string) bool {
 func runnerInterruptionAutoResume(reasonCode string) bool {
 	switch strings.TrimSpace(reasonCode) {
 	case "runtime_draining",
+		sessionRunnerSupervisorInterruptedReasonCode,
 		sessionRunnerResumeDispatchInterruptedReasonCode,
 		sessionRunnerToolLifecyclePersistenceReasonCode,
 		sessionRunnerKernelOperationPendingRecoveryReasonCode,
@@ -384,6 +386,7 @@ func runnerInterruptionAutoResume(reasonCode string) bool {
 func runnerInterruptionIsProgressBoundary(reasonCode string) bool {
 	switch strings.TrimSpace(reasonCode) {
 	case "runtime_draining",
+		sessionRunnerSupervisorInterruptedReasonCode,
 		sessionRunnerResumeDispatchInterruptedReasonCode,
 		sessionRunnerToolLifecyclePersistenceReasonCode,
 		sessionRunnerStoreContentionReasonCode,
@@ -628,7 +631,12 @@ func (s *Server) startSessionRunnerChatHeartbeatWithTicks(
 	heartbeatCtx, cancel := context.WithCancel(parent)
 	done := make(chan struct{})
 	heartbeatErr := make(chan error, 1)
+	var initialExpiry time.Time
+	if transcriptAuthority != nil {
+		initialExpiry = transcriptAuthority.Claim.ExpiresAt
+	}
 	go func() {
+		expiresAt := initialExpiry
 		defer close(done)
 		if stopTicks != nil {
 			defer stopTicks()
@@ -639,15 +647,14 @@ func (s *Server) startSessionRunnerChatHeartbeatWithTicks(
 				return
 			case <-ticks:
 				if transcriptAuthority != nil {
-					transcriptHeartbeat, err := s.transcriptStore.HeartbeatRunner(heartbeatCtx, transcriptstore.HeartbeatRunnerInput{
-						Claim: transcriptAuthority.Claim, TTL: options.LeaseTTL,
-					})
+					transcriptHeartbeat, err := s.renewTranscriptRunnerLease(heartbeatCtx, transcriptAuthority.Claim, options.LeaseTTL, expiresAt)
 					// Joining the heartbeat cancels any SQLite acquisition in flight.
 					// That cleanup is not a loss of the durable runner claim.
 					if heartbeatCtx.Err() != nil && errors.Is(err, heartbeatCtx.Err()) {
 						return
 					}
 					if err == nil && transcriptHeartbeat.Renewed {
+						expiresAt = transcriptHeartbeat.ExpiresAt
 						if afterRenewal != nil {
 							afterRenewal()
 						}

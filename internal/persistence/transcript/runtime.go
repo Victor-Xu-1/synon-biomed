@@ -33,11 +33,13 @@ func (r *Repository) HeartbeatRunner(
 	if input.TTL <= 0 {
 		return HeartbeatRunnerResult{}, errors.New("positive runner ttl is required")
 	}
-	now := r.now().UTC()
-	expiresAt := now.Add(input.TTL)
 	var result HeartbeatRunnerResult
 	terminalSettled := false
 	err := r.withImmediate(ctx, func(conn *sql.Conn) error {
+		// Lock acquisition can outlive a lease. Validate against the clock
+		// after obtaining the write lock, never a timestamp captured before it.
+		now := r.now().UTC()
+		expiresAt := now.Add(input.TTL)
 		_, err := validateClaimConn(ctx, conn, input.Claim, now, true)
 		if err != nil {
 			stream, authorityErr := validateClaimConn(ctx, conn, input.Claim, now, false)

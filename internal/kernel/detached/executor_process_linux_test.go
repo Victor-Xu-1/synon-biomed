@@ -29,6 +29,10 @@ const (
 
 type detachedTestLauncher struct{}
 
+func (detachedTestLauncher) Observe(context.Context, string, int64) (detached.ExecutorLaunchState, error) {
+	return detached.ExecutorLaunchUnknown, nil
+}
+
 func (detachedTestLauncher) Launch(request detached.ExecutorLaunchRequest) error {
 	logFile, err := os.OpenFile(request.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
@@ -222,6 +226,28 @@ func TestDetachedExecutorSurvivesControllerProcessExitAndSettlesAfterRestart(t *
 }
 
 func TestDetachedExecutorConsumesPersistedCancellationAndKillsProcessTree(t *testing.T) {
+	testDetachedExecutorTerminalTaskCleanup(t, terminalTaskCleanupCase{})
+}
+
+func TestDetachedExecutorReapsFailedTaskAndPersistsLateResult(t *testing.T) {
+	testDetachedExecutorTerminalTaskCleanup(t, terminalTaskCleanupCase{failed: true})
+}
+
+func TestDetachedExecutorCancelsAcceptedWorkWithoutDispatch(t *testing.T) {
+	testDetachedExecutorTerminalTaskCleanup(t, terminalTaskCleanupCase{failed: true, queued: true})
+}
+
+func TestDetachedExecutorRecoversAcknowledgementWithoutReceipt(t *testing.T) {
+	testDetachedExecutorTerminalTaskCleanup(t, terminalTaskCleanupCase{failed: true, queued: true, acknowledged: true})
+}
+
+type terminalTaskCleanupCase struct {
+	failed, queued, acknowledged bool
+}
+
+func testDetachedExecutorTerminalTaskCleanup(t *testing.T, test terminalTaskCleanupCase) {
+	t.Helper()
+	failed, queued := test.failed, test.queued
 	realBinary := strings.TrimSpace(os.Getenv("SYNON_REAL_BINARY"))
 	repositoryRoot := strings.TrimSpace(os.Getenv("SYNON_REPOSITORY_ROOT"))
 	if realBinary == "" || repositoryRoot == "" {
@@ -232,16 +258,22 @@ func TestDetachedExecutorConsumesPersistedCancellationAndKillsProcessTree(t *tes
 	for _, directory := range []string{
 		filepath.Join(home, "workspace"), workspaceDir,
 		filepath.Join(home, "sockets"), filepath.Join(home, "executor-logs"),
+		filepath.Join(home, "runtime", "skills"),
 	} {
 		if err := os.MkdirAll(directory, 0o700); err != nil {
 			t.Fatal(err)
 		}
 	}
 	databasePath := filepath.Join(home, "workspace", "synonbiomed-v1.1.sqlite")
-	code := `import subprocess, sys, time
-child_code = "import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(300)']); time.sleep(300)"
-subprocess.Popen([sys.executable, "-c", child_code])
+	code := `import subprocess, sys, threading, time
+child_code = "import subprocess, sys, time; from pathlib import Path; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(300)'], start_new_session=True); Path('process-tree-ready').write_text('ready'); time.sleep(300)"
+def spawn():
+    subprocess.Popen([sys.executable, "-c", child_code], start_new_session=True).wait()
+threading.Thread(target=spawn, daemon=True).start()
 time.sleep(300)`
+	if queued {
+		code = `from pathlib import Path; Path('must-not-run').write_text('unexpected dispatch')`
+	}
 	store, claim, operation := seedDetachedProcessFixtureWithCode(
 		t, databasePath, "python-cancel-tree", code,
 	)
@@ -263,6 +295,9 @@ time.sleep(300)`
 		"SYNON_DETACHED_CLAIM="+string(claimJSON),
 		"SYNON_DETACHED_OPERATION="+operation.OperationID,
 	)
+	if queued {
+		helper.Env = append(helper.Env, "SYNON_DETACHED_ACCEPT_ONLY=1")
+	}
 	output, err := helper.CombinedOutput()
 	if err != nil {
 		t.Fatalf("controller helper failed: %v\n%s\nexecutor diagnostics:\n%s",
@@ -276,7 +311,11 @@ time.sleep(300)`
 	defer store.Close()
 	executionID := strings.TrimSpace(readRequiredTestFile(t, filepath.Join(home, "controller-execution-id")))
 	execution, found, err := store.GetDetachedKernelExecution(context.Background(), executionID)
-	if err != nil || !found || execution.State != workspace.DetachedKernelExecutionStateStarted {
+	expectedState := workspace.DetachedKernelExecutionStateStarted
+	if queued {
+		expectedState = workspace.DetachedKernelExecutionStateAccepted
+	}
+	if err != nil || !found || execution.State != expectedState {
 		t.Fatalf("active execution=%#v found=%t err=%v", execution, found, err)
 	}
 	backend, found, err := store.GetKernelExecutionBackend(context.Background(), execution.BackendID)
@@ -291,10 +330,56 @@ time.sleep(300)`
 			_ = syscall.Kill(-int(backend.ExecutorPID), syscall.SIGKILL)
 		}
 	})
-	descendants := waitForProcessDescendants(t, int(backend.WorkerPID), 2, 15*time.Second)
+	var descendants []int
+	if !queued {
+		readyDeadline := time.Now().Add(10 * time.Second)
+		for {
+			if _, err := os.Stat(filepath.Join(workspaceDir, "process-tree-ready")); err == nil {
+				break
+			}
+			if time.Now().After(readyDeadline) {
+				t.Fatal("nested process tree never reached execution readiness")
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		descendants = waitForProcessDescendants(t, int(backend.WorkerPID), 4, 15*time.Second)
+	}
 
-	if _, _, err := store.CancelFrameWithTranscript(context.Background(), operation.FrameID); err != nil {
-		t.Fatal(err)
+	if failed {
+		if test.acknowledged {
+			// Simulate the interruption window after a durable acknowledgement
+			// but before any observer or terminal receipt exists.
+			_, lease, err := store.AcquireKernelExecutionBackendControl(context.Background(), workspace.AcquireKernelExecutionBackendControlInput{
+				BackendID: backend.BackendID, BackendGeneration: backend.BackendGeneration,
+				Token: strings.Repeat("test-cancel-control-", 3), LeaseExpiresAt: time.Now().Add(time.Minute),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			requested, err := store.RequestKernelExecutionCancel(context.Background(), workspace.RequestKernelExecutionCancelInput{
+				KernelDetachedExecutionControlInput: workspace.KernelDetachedExecutionControlInput{
+					ExecutionID: executionID, BackendGeneration: backend.BackendGeneration,
+					ControllerEpoch: lease.Epoch, ControllerToken: lease.Token, ExpectedVersion: execution.StateVersion,
+				}, CancelRequestID: "queued-cancel", Reason: "user_stop",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := store.AcknowledgeKernelExecutionCancel(context.Background(), workspace.AcknowledgeKernelExecutionCancelInput{
+				ExecutionID: executionID, BackendGeneration: backend.BackendGeneration, ExecutorInstanceID: backend.ExecutorInstanceID,
+				ExpectedVersion: requested.StateVersion, CancelRequestID: requested.CancelRequestID, AckSequence: 1, Signal: "dequeue",
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		status := workspace.FrameStatusFailed
+		if _, err := store.UpdateFrame(operation.FrameID, workspace.UpdateFrameInput{Status: &status}); err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		if _, _, err := store.CancelFrameWithTranscript(context.Background(), operation.FrameID); err != nil {
+			t.Fatal(err)
+		}
 	}
 	deadline := time.Now().Add(20 * time.Second)
 	for time.Now().Before(deadline) {
@@ -307,14 +392,18 @@ time.sleep(300)`
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
+	expectedMethod, expectedSignal := "sigint", "SIGINT"
+	if queued {
+		expectedMethod, expectedSignal = "dequeue", ""
+	}
 	if !found || execution.State != workspace.DetachedKernelExecutionStateTerminal ||
-		execution.CancelAckAt == nil || execution.CancelSignal != "sigint" || execution.TerminalReceiptID == "" {
+		execution.CancelAckAt == nil || execution.CancelSignal != expectedMethod || execution.TerminalReceiptID == "" {
 		t.Fatalf("cancelled execution=%#v found=%t err=%v\nexecutor diagnostics:\n%s",
 			execution, found, err, detachedExecutorDiagnostics(home))
 	}
 	receipt, found, err := store.GetKernelExecutionResultReceipt(context.Background(), execution.TerminalReceiptID)
 	if err != nil || !found || receipt.Outcome != workspace.KernelExecutionResultCancelled || !receipt.Interrupted ||
-		receipt.TerminationSignal != "SIGINT" {
+		receipt.TerminationSignal != expectedSignal {
 		t.Fatalf("cancel receipt=%#v found=%t err=%v", receipt, found, err)
 	}
 	for _, pid := range descendants {
@@ -373,6 +462,17 @@ time.sleep(300)`
 		t.Fatalf("cancelled backend=%#v found=%t err=%v", stoppedBackend, found, err)
 	}
 	waitForProcessExit(t, int(backend.ExecutorPID), 15*time.Second)
+	if queued {
+		if _, err := os.Stat(filepath.Join(workspaceDir, "must-not-run")); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("cancelled queued code ran: %v", err)
+		}
+	}
+	if failed {
+		frame, found, err := store.GetFrame(operation.FrameID)
+		if err != nil || !found || frame.Status != workspace.FrameStatusFailed {
+			t.Fatal("late cleanup rewrote original task failure")
+		}
+	}
 }
 
 func TestDefaultSocketRootIsStableDistinctAndBounded(t *testing.T) {
@@ -619,6 +719,9 @@ func runDetachedControllerHelper() error {
 		BackendID: execution.BackendID, BackendGeneration: execution.BackendGeneration,
 		RequestSHA256: execution.RequestSHA256, ConfinementSHA256: execution.ConfinementSHA256,
 	}
+	if os.Getenv("SYNON_DETACHED_ACCEPT_ONLY") == "1" {
+		return os.WriteFile(filepath.Join(home, "controller-execution-id"), []byte(executionID+"\n"), 0o600)
+	}
 	if _, err := backend.Start(context.Background(), ref, kernelruntime.BackendStartFence{
 		ExecutionStateVersion: execution.StateVersion, ControllerEpoch: lease.Epoch,
 		ControllerToken: lease.Token, DispatchSequence: 1,
@@ -704,18 +807,24 @@ func processDescendants(root int) []int {
 	for len(queue) > 0 {
 		parent := queue[0]
 		queue = queue[1:]
-		raw, err := os.ReadFile(filepath.Join("/proc", fmt.Sprint(parent), "task", fmt.Sprint(parent), "children"))
+		threads, err := os.ReadDir(filepath.Join("/proc", fmt.Sprint(parent), "task"))
 		if err != nil {
 			continue
 		}
-		for _, field := range strings.Fields(string(raw)) {
-			var child int
-			if _, err := fmt.Sscan(field, &child); err != nil || child <= 0 || seen[child] {
+		for _, thread := range threads {
+			raw, err := os.ReadFile(filepath.Join("/proc", fmt.Sprint(parent), "task", thread.Name(), "children"))
+			if err != nil {
 				continue
 			}
-			seen[child] = true
-			result = append(result, child)
-			queue = append(queue, child)
+			for _, field := range strings.Fields(string(raw)) {
+				var child int
+				if _, err := fmt.Sscan(field, &child); err != nil || child <= 0 || seen[child] {
+					continue
+				}
+				seen[child] = true
+				result = append(result, child)
+				queue = append(queue, child)
+			}
 		}
 	}
 	return result

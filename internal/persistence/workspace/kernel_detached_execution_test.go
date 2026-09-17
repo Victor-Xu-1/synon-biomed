@@ -818,11 +818,15 @@ func TestKernelExecutionBackendRecreatesInPlaceAfterEvidenceLost(t *testing.T) {
 		t.Fatalf("recreated=%#v err=%v", recreated, err)
 	}
 
-	// An executor may exit before it publishes process identity. That row
-	// cannot transition to a terminal state because terminal rows require PID
-	// evidence, so recovery restarts the executor generation in place while
-	// leaving the logical backend and kernel generation unchanged.
-	restarted, err := store.RestartStartingKernelExecutionBackend(ctx, RecreateKernelExecutionBackendInput{
+	// An unstarted generation must first settle an explicit failure receipt;
+	// it can then use the same recreation path as every other terminal backend.
+	if err := store.FailKernelExecutorStartup(ctx, KernelStartupFailure{
+		BackendID: recreated.BackendID, BackendGeneration: recreated.BackendGeneration,
+		ExecutorInstanceID: recreated.ExecutorInstanceID, Stage: "worker_start",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	restarted, err := store.RecreateKernelExecutionBackend(ctx, RecreateKernelExecutionBackendInput{
 		BackendID: backend.BackendID, ExecutorInstanceID: "executor-restarted-before-ready",
 		MachineBootID: "machine-boot-restarted-before-ready",
 		SocketPath:    "/run/user/1000/synon-biomed/backend-detached-lifecycle.sock",
@@ -830,7 +834,7 @@ func TestKernelExecutionBackendRecreatesInPlaceAfterEvidenceLost(t *testing.T) {
 		SessionSpec: spec,
 	})
 	if err != nil || restarted.BackendGeneration != 3 ||
-		restarted.State != KernelExecutionBackendStateStarting || restarted.StateVersion != 2 ||
+		restarted.State != KernelExecutionBackendStateStarting || restarted.StateVersion != 1 ||
 		restarted.ExecutorInstanceID != "executor-restarted-before-ready" || restarted.ExecutorPID != 0 ||
 		restarted.WorkerPID != 0 || restarted.HeartbeatAt != nil || restarted.ControllerEpoch != 0 ||
 		len(restarted.ControllerTokenSHA256) != 0 || restarted.ControllerLeaseExpiresAt != nil ||
@@ -866,7 +870,7 @@ func TestKernelExecutionBackendRecreatesInPlaceAfterEvidenceLost(t *testing.T) {
 		activated.BackendGeneration != 3 || activated.ExecutorPID != 3101 {
 		t.Fatalf("activated=%#v err=%v", activated, err)
 	}
-	if _, err := store.RestartStartingKernelExecutionBackend(ctx, RecreateKernelExecutionBackendInput{
+	if _, err := store.RecreateKernelExecutionBackend(ctx, RecreateKernelExecutionBackendInput{
 		BackendID: backend.BackendID, ExecutorInstanceID: "executor-stale-restart",
 		MachineBootID: "machine-boot-stale-restart",
 		SocketPath:    "/run/user/1000/synon-biomed/backend-detached-lifecycle.sock",
@@ -929,8 +933,13 @@ func newAcceptedDetachedKernelExecutionFixture(
 	t *testing.T,
 ) (*Store, KernelExecutionBackend, KernelExecutionControlLease, DetachedKernelExecution) {
 	t.Helper()
-	ctx := context.Background()
 	store, repo, claim := newKernelLocalOperationFixture(t)
+	return acceptDetachedKernelExecutionFixture(t, store, repo, claim)
+}
+
+func acceptDetachedKernelExecutionFixture(t *testing.T, store *Store, repo *transcriptstore.Repository, claim transcriptstore.RunnerClaim) (*Store, KernelExecutionBackend, KernelExecutionControlLease, DetachedKernelExecution) {
+	t.Helper()
+	ctx := context.Background()
 	operation := createKernelLocalOperationForTest(t, store, repo, claim, "detached-lifecycle", "call-detached-lifecycle")
 	approved, err := store.ResolveKernelLocalOperationApproval(ctx, ResolveKernelLocalOperationApprovalInput{
 		OwnerUserID: "owner", OperationID: operation.OperationID, ExpectedStateVersion: 1,

@@ -18,6 +18,7 @@ func (r *Repository) RecoverInterruptedToolObservations(ctx context.Context, boo
  JOIN transcript_branch_state branch ON branch.stream_uid=event.stream_uid
  JOIN transcript_branch_events membership ON membership.stream_uid=event.stream_uid AND membership.branch_id=branch.active_branch_id AND membership.event_id=event.event_id
  WHERE event.event_type=? AND json_extract(event.payload_json,'$.observerBootId')!=?
+ AND COALESCE(json_extract(event.payload_json,'$.durableOperationId'),'')=''
  AND json_extract(event.payload_json,'$.status')='running'
  AND NOT EXISTS(SELECT 1 FROM transcript_events later WHERE later.stream_uid=event.stream_uid AND later.event_type=event.event_type AND later.event_id>event.event_id AND json_extract(later.payload_json,'$.operationId')=json_extract(event.payload_json,'$.operationId'))
  ORDER BY event.event_id LIMIT 100`, ToolOperationObservationEventType, bootID)

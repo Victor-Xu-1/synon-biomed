@@ -159,6 +159,12 @@ tests its environment isolation, then performs the complete installed lifecycle.
 A promotion of an exact verified revision does not repeat checks merely because
 the branch name changed. Changed inputs require fresh applicable evidence.
 This split does not waive configured required checks or release qualification.
+Non-embedded runtime assets use exact declarations in
+`runtime_input_scope.json` to select their Go owners and every production/test
+import consumer. Missing declarations or unavailable owners retain conservative
+coverage. These declarations cannot exempt runtime tests or replace the scheduled
+full release matrix. Installer build inputs retain the same runtime consumers
+as the resulting installer, including the asset-integrity and environment tests.
 GitHub's scheduled execution can be delayed by runner/platform load. When hosted
 execution is unavailable, local evidence must identify the exact revision,
 environment, tested scope and missing gates under a distinct local status; it

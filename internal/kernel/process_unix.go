@@ -7,8 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -17,16 +15,33 @@ func configureWorkerProcess(command *exec.Cmd) {
 }
 
 type workerProcess struct {
-	command *exec.Cmd
+	command    *exec.Cmd
+	startTicks uint64
 }
 
-func startWorkerProcess(command *exec.Cmd) (*workerProcess, error) {
+func startWorkerProcess(command *exec.Cmd, directories ...string) (*workerProcess, error) {
 	configureWorkerProcess(command)
+	release, err := configureWorkerResourceDomain(command, directories)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	process := &workerProcess{command: command}
+	publish := bindWorkerProcessCancellation(command, process.kill)
+	defer publish()
 	if err := command.Start(); err != nil {
 		return nil, err
 	}
-	process := &workerProcess{command: command}
-	command.Cancel = process.kill
+	if runtime.GOOS == "linux" {
+		start, err := linuxProcessStartTicks(command.Process.Pid)
+		if err != nil {
+			publish()
+			_ = command.Process.Kill()
+			_ = command.Wait()
+			return nil, fmt.Errorf("capture worker process identity: %w", err)
+		}
+		process.startTicks = uint64(start)
+	}
 	return process, nil
 }
 
@@ -47,57 +62,17 @@ func (process *workerProcess) signal(signal os.Signal) error {
 	if !ok {
 		return process.command.Process.Signal(signal)
 	}
-	var firstErr error
 	if runtime.GOOS == "linux" {
-		descendants := linuxProcessDescendants(process.command.Process.Pid)
-		confined := kernelProcessName(process.command.Process.Pid) == "bwrap"
-		for index := len(descendants) - 1; index >= 0; index-- {
-			if confined && value != syscall.SIGKILL && kernelProcessName(descendants[index]) == "bwrap" {
-				continue
-			}
-			if err := syscall.Kill(descendants[index], value); err != nil && err != syscall.ESRCH && firstErr == nil {
-				firstErr = err
-			}
-		}
-		if confined && value != syscall.SIGKILL {
-			// The sandbox supervisor (bubblewrap) has no SIGINT handler and
-			// would tear the whole sandbox down before the worker can report
-			// the interrupt. Deliver directly to the worker processes only.
-			return firstErr
-		}
+		return process.signalLinuxTree(value)
 	}
-	// Descendants can move into their own process groups or PID namespaces,
-	// so Linux receives a direct deepest-first signal above. The worker root
-	// and every child that stayed in its group must still receive the group
-	// signal; returning after the descendant walk left the main kernel alive.
-	if err := syscall.Kill(-process.command.Process.Pid, value); err != nil && err != syscall.ESRCH && firstErr == nil {
-		firstErr = err
-	}
-	return firstErr
-}
-
-func kernelProcessName(pid int) string {
-	comm, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/comm")
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(comm))
-}
-
-func (process *workerProcess) kill() error {
-	if process == nil || process.command == nil || process.command.Process == nil {
-		return nil
-	}
-	if runtime.GOOS == "linux" {
-		descendants := linuxProcessDescendants(process.command.Process.Pid)
-		for index := len(descendants) - 1; index >= 0; index-- {
-			_ = syscall.Kill(descendants[index], syscall.SIGKILL)
-		}
-	}
-	if err := syscall.Kill(-process.command.Process.Pid, syscall.SIGKILL); err != nil && err != syscall.ESRCH {
+	if err := syscall.Kill(-process.command.Process.Pid, value); err != nil && err != syscall.ESRCH {
 		return err
 	}
 	return nil
+}
+
+func (process *workerProcess) kill() error {
+	return process.signal(syscall.SIGKILL)
 }
 
 // killWorkerProcess keeps Linux confinement probes on the same process-group
@@ -148,28 +123,4 @@ func unixKernelSignalName(signal syscall.Signal) string {
 		return name
 	}
 	return fmt.Sprintf("signal %d", signal)
-}
-
-func linuxProcessDescendants(root int) []int {
-	result := []int{}
-	queue := []int{root}
-	seen := map[int]bool{root: true}
-	for len(queue) > 0 {
-		parent := queue[0]
-		queue = queue[1:]
-		raw, err := os.ReadFile("/proc/" + strconv.Itoa(parent) + "/task/" + strconv.Itoa(parent) + "/children")
-		if err != nil {
-			continue
-		}
-		for _, field := range strings.Fields(string(raw)) {
-			child, err := strconv.Atoi(field)
-			if err != nil || child <= 0 || seen[child] {
-				continue
-			}
-			seen[child] = true
-			result = append(result, child)
-			queue = append(queue, child)
-		}
-	}
-	return result
 }

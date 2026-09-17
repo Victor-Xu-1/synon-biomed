@@ -1,0 +1,36 @@
+{
+  "schema": "synon.runtime-input-scope.v1",
+  "groups": [
+    {
+      "name": "kernel-worker-assets",
+      "paths": [
+        "assets/optional/kernel-compute.manifest.json",
+        "assets/optional/kernels/synon_biomed_runtime/worker_execution.py",
+        "assets/optional/kernels/synon_biomed_runtime/worker_reads.py"
+      ],
+      "packages": [
+        "synon-go/internal/assets",
+        "synon-go/internal/kernel",
+        "synon-go/internal/compat/v11reuse"
+      ]
+    },
+    {
+      "name": "managed-installer-assets",
+      "paths": [
+        "assets/optional/micromamba/BUILD.md",
+        "assets/optional/micromamba/DEPENDENCY-NOTICES.txt",
+        "assets/optional/micromamba/build-linux-64.lock",
+        "assets/optional/micromamba/build-linux-64.sh",
+        "assets/optional/micromamba/collect-build-notices.py",
+        "assets/optional/micromamba/link-script-exit.patch",
+        "assets/optional/micromamba/linux-x86_64/micromamba",
+        "assets/optional/micromamba/manifest.json"
+      ],
+      "packages": [
+        "synon-go/internal/assets",
+        "synon-go/internal/kernel",
+        "synon-go/internal/compat/v11reuse"
+      ]
+    }
+  ]
+}

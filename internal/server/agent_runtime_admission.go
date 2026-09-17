@@ -122,7 +122,11 @@ func (g serverAgentRuntimeToolGateway) ToolCallPreflightDiagnostic(call agentrun
 		preflight = agentRuntimePythonSyntaxPreflight(name, input)
 	}
 	if preflight == nil {
-		preflight = agentKernelPackageManagerMutationPreflight(name, input)
+		var preparer executionSourcePreparer
+		if g.server != nil && g.server.kernelManager != nil {
+			preparer = g.server.kernelManager
+		}
+		preflight = agentExecutionPreparationPreflight(name, input, g.kernel, preparer)
 	}
 	if preflight == nil && g.server != nil && g.server.kernelManager != nil {
 		preflight = agentRuntimePythonEnvironmentAPIPreflight(name, input, g.server.kernelManager)
@@ -141,9 +145,6 @@ func (g serverAgentRuntimeToolGateway) ToolCallPreflightDiagnostic(call agentrun
 	}
 	if preflight == nil {
 		preflight = agentKernelMCPCatalogCallPreflight(name, input)
-	}
-	if preflight == nil {
-		preflight = agentRuntimeBashDownloadPreflight(name, input)
 	}
 	if preflight == nil && g.reviewerEvidence == nil {
 		preflight = agentRuntimeREPLThirdPartyImportPreflight(name, input)

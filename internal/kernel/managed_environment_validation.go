@@ -115,6 +115,12 @@ func readManagedEnvironmentMarker(prefix string) (managedEnvironmentMarker, erro
 	if marker.SpecDigest != "" && !validSHA256(marker.SpecDigest) {
 		return managedEnvironmentMarker{}, errors.New("managed environment marker specification is invalid")
 	}
+	if marker.ValidationRevision < 0 || marker.ValidationRevision > managedEnvironmentValidationRevision {
+		return marker, errors.New("managed environment verification revision is unsupported")
+	}
+	if marker.SchemaVersion == managedEnvironmentLegacyVersion && marker.ValidationRevision != 0 {
+		return marker, errors.New("legacy environment receipt cannot assert current installation verification")
+	}
 	if _, err := validateManagedImportNames(marker.ImportNames); err != nil {
 		return managedEnvironmentMarker{}, errors.New("managed environment marker import witness is invalid")
 	}
@@ -123,7 +129,7 @@ func readManagedEnvironmentMarker(prefix string) (managedEnvironmentMarker, erro
 	}
 	switch marker.Kind {
 	case "conda":
-		wantGeneration := managedEnvironmentGeneration(marker.Name, marker.Language, marker.Packages, marker.SpecDigest)
+		wantGeneration := managedEnvironmentGenerationAtValidation(marker.Name, marker.Language, marker.Packages, marker.SpecDigest, marker.ValidationRevision)
 		if marker.SchemaVersion == managedEnvironmentLegacyVersion {
 			wantGeneration = managedEnvironmentLegacyGeneration(marker.Name, marker.Language, marker.Packages, marker.SpecDigest)
 		}

@@ -24,6 +24,7 @@ func (s *Server) runSessionRunnerChatLoop(
 	runCycle sessionRunnerChatCycle,
 ) error {
 	idlePollInterval := options.PollInterval
+	contentionDelay := time.Duration(0)
 
 	for {
 		if s.isDraining() {
@@ -46,19 +47,24 @@ func (s *Server) runSessionRunnerChatLoop(
 			if context.Cause(ctx) != nil {
 				return nil
 			}
-			if result.Claimed {
-				// One conversation is an isolation boundary. A task-local failure
-				// must never cancel the shared worker cohort and consequently abort
-				// unrelated long-running conversations. RunSessionRunnerChatOnce
-				// owns settlement/recovery for the claimed task; the worker remains
-				// available for the next durable claim.
-				log.Printf("isolated claimed session runner cycle failure session=%q runner=%q error_type=%T",
-					result.SessionID, result.RunnerID, err)
-				idlePollInterval = options.PollInterval
+			if result.Claimed || isTransientSQLiteContention(err) {
+				// Admission contention and task-owned failures stay local to this
+				// worker. Re-enter the durable scheduler, never replay a side effect;
+				// use bounded, cancellable backoff while sibling tasks continue.
+				contentionDelay = nextRunnerIdlePollInterval(contentionDelay, max(options.PollInterval, 50*time.Millisecond))
+				log.Printf("runner_cycle_retry runner=%q claimed=%t error_type=%T retry_after=%s", options.RunnerID, result.Claimed, err, contentionDelay)
+				timer := time.NewTimer(contentionDelay)
+				select {
+				case <-ctx.Done():
+					stopRunnerIdleTimer(timer)
+					return nil
+				case <-timer.C:
+				}
 				continue
 			}
 			return err
 		}
+		contentionDelay = 0
 		if result.Claimed {
 			idlePollInterval = options.PollInterval
 			continue
@@ -86,16 +92,20 @@ func (s *Server) runSessionRunnerChatLoop(
 // one worker failure cancels and restarts the cohort through the process
 // supervisor instead of leaving a partially degraded pool behind.
 func (s *Server) RunSessionRunnerChatPool(ctx context.Context, options SessionRunnerChatOptions, workers int) error {
+	return s.runSessionRunnerChatPool(ctx, options, workers, s.RunSessionRunnerChatOnce)
+}
+
+func (s *Server) runSessionRunnerChatPool(ctx context.Context, options SessionRunnerChatOptions, workers int, cycle sessionRunnerChatCycle) error {
 	if workers <= 0 {
 		return errors.New("session runner chat worker count must be positive")
 	}
 	if workers == 1 {
-		return s.RunSessionRunnerChatLoop(ctx, options)
+		return s.runSessionRunnerChatLoop(ctx, normalizeSessionRunnerChatOptions(options), cycle)
 	}
 
 	options = normalizeSessionRunnerChatOptions(options)
-	runCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	runCtx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
 
 	errCh := make(chan error, workers)
 	var group sync.WaitGroup
@@ -114,7 +124,7 @@ func (s *Server) RunSessionRunnerChatPool(ctx context.Context, options SessionRu
 				case <-timer.C:
 				}
 			}
-			errCh <- s.RunSessionRunnerChatLoop(runCtx, workerOptions)
+			errCh <- s.runSessionRunnerChatLoop(runCtx, workerOptions, cycle)
 		}(workerOptions, initialDelay)
 	}
 
@@ -123,7 +133,11 @@ func (s *Server) RunSessionRunnerChatPool(ctx context.Context, options SessionRu
 	case <-ctx.Done():
 	case result = <-errCh:
 	}
-	cancel()
+	if result != nil {
+		cancel(newSessionRunnerInfrastructureInterruption(sessionRunnerSupervisorInterruptedReasonCode, result))
+	} else {
+		cancel(context.Cause(ctx))
+	}
 	group.Wait()
 	close(errCh)
 	if result == nil {

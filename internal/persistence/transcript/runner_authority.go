@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"strings"
 	"time"
 )
@@ -58,7 +59,10 @@ func (tx *ImmediateTransaction) ValidateLiveTrustedRunnerAuthority(
 	}
 	stream, err := getStreamConn(ctx, tx.conn, authority.StreamUID, authority.OwnerID)
 	if err != nil {
-		return Stream{}, ErrClaimStale
+		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, ErrOwnerMismatch) || errors.Is(err, ErrEventConflict) {
+			return Stream{}, ErrClaimStale
+		}
+		return Stream{}, err
 	}
 	if stream.ProjectID != authority.ProjectID || stream.RootFrameID != authority.RootFrameID ||
 		stream.FrameID != authority.FrameID || stream.Epoch != authority.StreamEpoch || stream.Kind != StreamKindFrameRef {
@@ -69,7 +73,7 @@ func (tx *ImmediateTransaction) ValidateLiveTrustedRunnerAuthority(
 		ClaimDigest: claimDigest, ClaimedInputRevision: authority.ClaimedInputRevision,
 		ResumeSource: authority.ResumeSource, ResumeCheckpoint: authority.ResumeCheckpoint,
 	}, tx.repository.now().UTC(), true); err != nil {
-		return Stream{}, ErrClaimStale
+		return Stream{}, err
 	}
 	return stream, nil
 }
@@ -101,7 +105,10 @@ func validateRunnerAttemptAuthorityConn(
 		FROM transcript_runner_attempts WHERE stream_uid=? AND attempt=?`,
 		authority.StreamUID, authority.Attempt,
 	).Scan(&runnerID, &storedDigest, &claimedRevision, &resumeSource, &resumeCheckpoint, &status, &expiresAt); err != nil {
-		return ErrClaimStale
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrClaimStale
+		}
+		return err
 	}
 	if runnerID != authority.RunnerID || !equalDigestBytes(storedDigest, authority.ClaimDigest) ||
 		claimedRevision != authority.ClaimedInputRevision || resumeSource != string(authority.ResumeSource) ||

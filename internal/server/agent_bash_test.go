@@ -58,8 +58,8 @@ func TestAgentBashWrapperRoundTripsCommandAndTerminalStatus(t *testing.T) {
 	}
 }
 
-func TestAgentBashRejectsCompetingPackageAndUnsafeShellPaths(t *testing.T) {
-	for _, command := range []string{"pip install scanpy", "python -m pip install scanpy", "sudo id"} {
+func TestAgentBashRejectsUnsafeShellPaths(t *testing.T) {
+	for _, command := range []string{"sudo id"} {
 		err := validateAgentBashCommand(command)
 		var safetyErr shellops.SafetyError
 		if !errors.As(err, &safetyErr) {

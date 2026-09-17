@@ -60,7 +60,15 @@ func (m *Manager) readManagedEnvironment(name string, includePackages bool) (Man
 	if includePackages {
 		packages = append(packages, marker.Packages...)
 	}
-	return ManagedEnvironment{Name: name, Language: marker.Language, Kind: marker.Kind, Generation: marker.Generation, SpecDigest: marker.SpecDigest, Packages: packages, Status: "ready"}, nil
+	status := "ready"
+	needsRebuild, err := managedEnvironmentNeedsRebuild(prefix, marker)
+	if err != nil {
+		return ManagedEnvironment{}, err
+	}
+	if needsRebuild {
+		status = "verification_required"
+	}
+	return ManagedEnvironment{Name: name, Language: marker.Language, Kind: marker.Kind, Generation: marker.Generation, SpecDigest: marker.SpecDigest, Packages: packages, Status: status}, nil
 }
 
 // ManagedEnvironmentActiveGeneration returns the immutable generation for an
@@ -94,6 +102,9 @@ func (m *Manager) ManagedEnvironmentActiveGeneration(name string) (generation st
 	environment, err := m.readManagedEnvironment(name, false)
 	if err != nil {
 		return "", false, err
+	}
+	if environment.Status != "ready" {
+		return "", false, ErrManagedEnvironmentRebuildRequired
 	}
 	marker, err := readManagedEnvironmentMarker(prefix)
 	if err != nil {
@@ -166,20 +177,27 @@ func (m *Manager) RegisteredEnvironmentPaths(name string) (sourcePath, runtimePa
 func (m *Manager) inspectManagedEnvironmentPackages(ctx context.Context, prefix string) ([]string, error) {
 	command := newWorkerProcessCommand(ctx, m.config.Micromamba, "--no-rc", "list", "-p", prefix, "--json")
 	command.Env = m.managedEnvironmentInstallerEnv()
-	var stdout bytes.Buffer
+	stdout := newTailBuffer(maxManagedEnvironmentListBytes + 1)
 	stderr := newTailBuffer(maxDiagnosticBytes)
-	command.Stdout, command.Stderr = &stdout, stderr
+	command.Stdout, command.Stderr = stdout, stderr
 	if err := runWorkerProcess(command); err != nil {
 		return nil, fmt.Errorf("inspect managed environment packages: %w: %s", err, strings.TrimSpace(stderr.String()))
 	}
-	if stdout.Len() <= 0 || stdout.Len() > maxManagedEnvironmentListBytes {
+	raw := stdout.String()
+	if len(raw) <= 0 || len(raw) > maxManagedEnvironmentListBytes {
 		return nil, errors.New("managed environment package inventory is outside the supported size")
 	}
-	decoder := json.NewDecoder(io.LimitReader(bytes.NewReader(stdout.Bytes()), maxManagedEnvironmentListBytes+1))
-	var inventory []micromambaPackage
-	if err := decoder.Decode(&inventory); err != nil || len(inventory) == 0 {
+	decoder := json.NewDecoder(strings.NewReader(raw))
+	var envelope struct {
+		Packages []micromambaPackage `json:"packages"`
+	}
+	if err := decoder.Decode(&envelope); err != nil || len(envelope.Packages) == 0 {
 		return nil, errors.New("managed environment package inventory is invalid")
 	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		return nil, errors.New("managed environment package inventory contains trailing data")
+	}
+	inventory := envelope.Packages
 	packages := make([]string, 0, len(inventory))
 	for index, item := range inventory {
 		name := strings.ToLower(strings.TrimSpace(item.Name))

@@ -38,6 +38,10 @@ func (s *Server) settleSessionRunnerPreparationError(
 			options, result, activeRun, projectionClaim, transcriptAuthority, reasonCode, resumeDetail,
 		)
 	}
+	if ctx.Err() == nil && isTransientSQLiteContention(preparationErr) {
+		return true, s.interruptClaimedSessionRunner(options, result, activeRun, projectionClaim, transcriptAuthority,
+			sessionRunnerStoreContentionReasonCode, "preparation could not acquire the persistence lock; preserve the owned claim and resume from durable state")
+	}
 	if !errors.Is(context.Cause(ctx), errSessionRunnerPreparationDeadline) {
 		return false, nil
 	}

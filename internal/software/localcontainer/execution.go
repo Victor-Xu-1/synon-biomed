@@ -17,6 +17,10 @@ import (
 
 var ErrExecutorDetached = errors.New("container executor detached while the workload remains externally owned")
 
+// ErrExecutionOutcomeUnconfirmed retains the durable operation for recovery.
+// A control-plane error is not evidence that the externally owned workload ended.
+var ErrExecutionOutcomeUnconfirmed = errors.New("container execution terminal outcome is unconfirmed")
+
 type ExecutionRequest struct {
 	ExecutionID string
 	ToolName    string
@@ -125,17 +129,19 @@ func (m *Manager) RunExecution(
 		pollInterval = 5 * time.Second
 	}
 	for {
+		// Task cancellation takes precedence when shutdown and cancellation are
+		// both ready. Shutdown alone must still leave the durable container alive.
+		if ctx.Err() != nil {
+			return m.finishCancelledExecution(container, name, environment, request.ExecutionID, resumed)
+		}
 		select {
 		case <-detach:
+			if ctx.Err() != nil {
+				return m.finishCancelledExecution(container, name, environment, request.ExecutionID, resumed)
+			}
 			return ExecutionResult{ContainerID: container.ID, ContainerName: name, ImageID: environment.ImageID, Resumed: resumed}, ErrExecutorDetached
 		case <-ctx.Done():
-			_, stopStderr, stopErr := m.docker.Run(context.Background(), "stop", "--time", "30", name)
-			if stopErr != nil {
-				return ExecutionResult{}, fmt.Errorf("stop cancelled managed container: %s", boundedDiagnostic(stopStderr, stopErr))
-			}
-			container, _, _ = m.inspectContainer(context.Background(), name)
-			stdout, stderr := m.containerLogs(context.Background(), name)
-			return executionResult(container, name, environment.ImageID, stdout, stderr, resumed, true), nil
+			return m.finishCancelledExecution(container, name, environment, request.ExecutionID, resumed)
 		case <-time.After(pollInterval):
 		}
 		observed, exists, inspectErr := m.inspectContainer(context.Background(), name)
@@ -161,6 +167,31 @@ func (m *Manager) RunExecution(
 		}
 		return result, nil
 	}
+}
+
+func (m *Manager) finishCancelledExecution(previous dockerContainer, name string, environment Environment, executionID string, resumed bool) (ExecutionResult, error) {
+	// This deadline bounds Docker control, not the scientific task's duration.
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+	_, stopStderr, stopErr := m.docker.Run(ctx, "stop", "--time", "30", name)
+	if stopErr != nil {
+		return ExecutionResult{}, errors.Join(ErrExecutionOutcomeUnconfirmed,
+			fmt.Errorf("stop cancelled managed container: %s", boundedDiagnostic(stopStderr, stopErr)))
+	}
+	container, found, err := m.inspectContainer(ctx, name)
+	if err != nil || !found || container.ID != previous.ID {
+		return ExecutionResult{}, errors.Join(ErrExecutionOutcomeUnconfirmed, err,
+			errors.New("cancelled managed container identity could not be verified"))
+	}
+	if err := validateExistingContainer(container, environment, executionID); err != nil {
+		return ExecutionResult{}, errors.Join(ErrExecutionOutcomeUnconfirmed, err)
+	}
+	if container.State.Running || (container.State.Status != "exited" && container.State.Status != "dead") {
+		return ExecutionResult{}, errors.Join(ErrExecutionOutcomeUnconfirmed,
+			errors.New("managed container has no verified terminal state after cancellation"))
+	}
+	stdout, stderr := m.containerLogs(ctx, name)
+	return executionResult(container, name, environment.ImageID, stdout, stderr, resumed, true), nil
 }
 
 func normalizeExecutionRequest(environment Environment, input ExecutionRequest) (ExecutionRequest, string, error) {

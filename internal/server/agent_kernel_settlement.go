@@ -270,6 +270,9 @@ func (s *Server) finishAgentKernelExecution(
 		if detachedReceipt != nil && strings.TrimSpace(detachedReceipt.Outcome) == workspace.KernelExecutionResultCancelled {
 			normalizeCancelledAgentKernelTerminalResult(result, operation.Tool)
 		}
+		if detachedReceipt != nil {
+			annotateDetachedKernelState(result, session.Reused, detachedReceipt.BackendGeneration)
+		}
 		if claim == nil && detachedReceipt == nil {
 			return nil, errors.New("kernel local operation claim is unavailable")
 		}
@@ -343,6 +346,16 @@ func (s *Server) finishAgentKernelExecution(
 		return visible, nil
 	}
 	return result, nil
+}
+
+// Interpreter memory cannot be reconstructed by reopening the durable backend.
+// Publish the physical-generation transition before materializing the result.
+func annotateDetachedKernelState(result map[string]any, reused bool, backendGeneration int64) {
+	result["kernel_backend_generation"] = backendGeneration
+	if backendGeneration > 1 && !reused {
+		result["kernel_restarted"] = true
+		result["kernel_memory_state"] = "reset"
+	}
 }
 
 func decodeMaterializedAgentKernelResult(raw json.RawMessage) (map[string]any, error) {
@@ -531,6 +544,11 @@ func prepareAgentKernelExecution(
 		"cell_index": outcome.CellIndex, "files_written": outcome.FilesWritten,
 		"dropped_roots": outcome.DroppedRoots,
 	}
+	if reads, ok := outcome.Response.Trace["execution_reads"].(map[string]any); ok {
+		result["execution_dependencies"] = map[string]any{
+			"version": 1, "files": reads["paths"], "truncated": reads["truncated"],
+		}
+	}
 	if environment := strings.TrimSpace(spec.Environment); environment != "" {
 		result["environment"] = environment
 	}
@@ -547,6 +565,13 @@ func prepareAgentKernelExecution(
 	if outcome.TimedOut {
 		result["timed_out"] = true
 		result["code"] = "kernel_execution_timeout"
+	}
+	if pressure := kernelResourcePressureReceipt(outcome.Response.Trace); pressure != nil && exitStatus == "error" {
+		result["code"] = "kernel_memory_pressure"
+		result["resource_pressure"] = pressure
+		result["recoverable"] = true
+		result["retry_unchanged"] = false
+		result["in_memory_state_lost"] = true
 	}
 	if environmentCode := agentKernelEnvironmentFailureCode(exitStatus, stderr); environmentCode != "" {
 		applyAgentKernelFailureRecovery(result, environmentCode)

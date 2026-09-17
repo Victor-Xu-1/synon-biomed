@@ -109,6 +109,9 @@ type ManagedEnvironmentQuery struct {
 }
 
 type CreateManagedEnvironmentInput struct {
+	// RequireAbsent is an admission precondition for an explicitly named fork.
+	// It is checked under the publication lock after idempotent receipt recovery.
+	RequireAbsent            bool
 	Name                     string
 	Language                 string
 	PythonVersion            string
@@ -150,21 +153,30 @@ type RegisterManagedEnvironmentInput struct {
 	OperationID string
 }
 
+type DeleteManagedEnvironmentInput struct {
+	Name        string
+	OperationID string
+	// Empty means the name was absent when admitted. Never deactivate a
+	// successor generation created after this operation was admitted.
+	ExpectedGeneration string
+}
+
 type managedEnvironmentMarker struct {
-	SchemaVersion int      `json:"schemaVersion"`
-	Name          string   `json:"name"`
-	Language      string   `json:"language"`
-	Generation    string   `json:"generation"`
-	Packages      []string `json:"packages"`
-	Channels      []string `json:"channels,omitempty"`
-	CreatedAt     string   `json:"createdAt"`
-	Operation     string   `json:"operation"`
-	Kind          string   `json:"kind,omitempty"`
-	SourcePath    string   `json:"sourcePath,omitempty"`
-	RuntimePath   string   `json:"runtimePath,omitempty"`
-	OperationKey  string   `json:"operationKey,omitempty"`
-	SpecDigest    string   `json:"specDigest,omitempty"`
-	ImportNames   []string `json:"importNames,omitempty"`
+	ValidationRevision int      `json:"validationRevision,omitempty"`
+	SchemaVersion      int      `json:"schemaVersion"`
+	Name               string   `json:"name"`
+	Language           string   `json:"language"`
+	Generation         string   `json:"generation"`
+	Packages           []string `json:"packages"`
+	Channels           []string `json:"channels,omitempty"`
+	CreatedAt          string   `json:"createdAt"`
+	Operation          string   `json:"operation"`
+	Kind               string   `json:"kind,omitempty"`
+	SourcePath         string   `json:"sourcePath,omitempty"`
+	RuntimePath        string   `json:"runtimePath,omitempty"`
+	OperationKey       string   `json:"operationKey,omitempty"`
+	SpecDigest         string   `json:"specDigest,omitempty"`
+	ImportNames        []string `json:"importNames,omitempty"`
 }
 
 type micromambaPackage struct {
@@ -209,7 +221,7 @@ func (m *Manager) ListManagedEnvironments(ctx context.Context, query ManagedEnvi
 		// even when the caller does not request that potentially large list in
 		// the response. Filter first, then project packages away.
 		environment, err := m.readManagedEnvironment(entry.Name(), query.IncludePackages || len(dependencies) > 0)
-		if err != nil || language != "" && environment.Language != language || !managedDependenciesSatisfied(environment.Packages, dependencies) {
+		if err != nil || environment.Status != "ready" || language != "" && environment.Language != language || !managedDependenciesSatisfied(environment.Packages, dependencies) {
 			continue
 		}
 		if err := validateManagedRequiredAccelerator(environment.Packages, query.RequiredAccelerator); err != nil {

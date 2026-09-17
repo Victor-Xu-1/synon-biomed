@@ -188,6 +188,20 @@ func (s *Server) executeManagedEnvironmentResourcePreflight(
 	if _, err := s.validateKernelHostIdentity(ctx, identity.access); err != nil {
 		return nil, err
 	}
+	if strings.EqualFold(strings.TrimSpace(spec.Operation), "install") && strings.TrimSpace(spec.Environment) != "" {
+		source, found, err := authority.InspectManagedEnvironment(ctx, strings.TrimSpace(spec.Environment))
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			return nil, errors.New("managed environment does not exist")
+		}
+		// Mutation retains the source runtime. Neither a tool default nor the
+		// package manager used for a stage may change its execution language.
+		if source.Language != "" {
+			spec.Language = source.Language
+		}
+	}
 	spec, err := normalizeManagedEnvironmentPreflightSpec(spec)
 	if err != nil {
 		return nil, err
@@ -280,7 +294,7 @@ func (s *Server) executeManagedEnvironmentResourcePreflight(
 		if len(spec.Imports) > 0 {
 			verified := make([]kernelruntime.ManagedEnvironment, 0, len(candidates))
 			for _, candidate := range candidates {
-				if err := s.kernelManager.VerifyManagedEnvironmentImports(ctx, candidate.Name, spec.Imports); err == nil {
+				if err := authority.VerifyManagedEnvironmentImports(ctx, candidate.Name, spec.Imports); err == nil {
 					verified = append(verified, candidate)
 				}
 			}

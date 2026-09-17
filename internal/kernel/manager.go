@@ -18,6 +18,7 @@ import (
 	"github.com/google/uuid"
 
 	"synon-go/internal/assets"
+	"synon-go/internal/processsupervisor"
 )
 
 const (
@@ -45,7 +46,12 @@ type Config struct {
 	AssetRoot                string
 	ManifestPath             string
 	WorkerPath               string
+	WorkerResourceDirectory  string
 	ShutdownTimeout          time.Duration
+	// ManagedEnvironmentInstallerInactivityTimeout bounds only periods with no
+	// observed installer output, CPU work, process-tree changes, or I/O. It is
+	// deliberately separate from a wall-clock execution deadline.
+	ManagedEnvironmentInstallerInactivityTimeout time.Duration
 	// ExecutionTimeout is an optional active-cell wall-clock deadline. Zero
 	// leaves active cells running until completion, explicit cancellation, or
 	// worker shutdown; the separate worker idle policy owns unused lifetimes.
@@ -196,6 +202,9 @@ func NewManager(config Config) *Manager {
 	if config.ShutdownTimeout <= 0 {
 		config.ShutdownTimeout = defaultShutdownTimeout
 	}
+	if config.ManagedEnvironmentInstallerInactivityTimeout <= 0 {
+		config.ManagedEnvironmentInstallerInactivityTimeout = processsupervisor.DefaultInactivityTimeout
+	}
 	config.AssetRoot = cleanOptionalPath(config.AssetRoot)
 	config.ManifestPath = cleanOptionalPath(config.ManifestPath)
 	config.WorkerPath = cleanOptionalPath(config.WorkerPath)
@@ -285,19 +294,10 @@ func pythonWorkerArguments(workerPath string) []string {
 	workerPath = strings.TrimSpace(workerPath)
 	arguments := []string{workerPath}
 	directory := filepath.Dir(workerPath)
-	for _, name := range []string{
+	for _, name := range append([]string{
 		"synon_host_bridge.py",
 		"sitecustomize.py",
-		filepath.Join("synon_biomed_runtime", "__init__.py"),
-		filepath.Join("synon_biomed_runtime", "cheminfo_render.py"),
-		filepath.Join("synon_biomed_runtime", "matplotlib_runtime.py"),
-		filepath.Join("synon_biomed_runtime", "python_code_compatibility.py"),
-		filepath.Join("synon_biomed_runtime", "worker_transport.py"),
-		filepath.Join("synon_biomed_runtime", "worker_streams.py"),
-		filepath.Join("synon_biomed_runtime", "worker_compile.py"),
-		filepath.Join("synon_biomed_runtime", "worker_execution.py"),
-		filepath.Join("synon_biomed_runtime", "worker_safety.py"),
-	} {
+	}, pythonRuntimePackageAssets()...) {
 		path := filepath.Join(directory, name)
 		if info, err := os.Stat(path); err == nil && info.Mode().IsRegular() {
 			arguments = append(arguments, path)
@@ -397,7 +397,7 @@ func (m *Manager) startWorkerWithRuntime(
 		_ = stdin.Close()
 		return nil, fmt.Errorf("open kernel stderr: %w", err)
 	}
-	process, err := startWorkerProcess(command)
+	process, err := startWorkerProcess(command, m.config.WorkerResourceDirectory)
 	if err != nil {
 		_ = stdin.Close()
 		return nil, fmt.Errorf("start kernel worker: %w", err)
@@ -1093,6 +1093,12 @@ func (w *Worker) TerminalError() error {
 	default:
 		return nil
 	}
+}
+
+// Stopped closes only after the physical process has exited, diagnostics have
+// been captured and the manager has withdrawn its execution authority.
+func (w *Worker) Stopped() <-chan struct{} {
+	return w.done
 }
 
 func (w *Worker) ExecutionCount() int {

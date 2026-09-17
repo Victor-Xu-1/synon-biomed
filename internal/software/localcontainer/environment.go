@@ -1,7 +1,6 @@
 package localcontainer
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -23,6 +22,7 @@ import (
 	"unicode"
 
 	kernelruntime "synon-go/internal/kernel"
+	"synon-go/internal/processsupervisor"
 	"synon-go/internal/software"
 	"synon-go/internal/toolprogress"
 )
@@ -96,7 +96,9 @@ func New(host HostEnvironmentManager, condaHome string) (*Manager, error) {
 	if err != nil {
 		return nil, errors.New("Docker executable is unavailable")
 	}
-	return newManager(host, filepath.Join(strings.TrimSpace(condaHome), "container-environments"), execDockerRunner{executable: dockerPath})
+	return newManager(host, filepath.Join(strings.TrimSpace(condaHome), "container-environments"), execDockerRunner{
+		executable: dockerPath, inactivityTimeout: processsupervisor.DefaultInactivityTimeout,
+	})
 }
 
 func newManager(host HostEnvironmentManager, catalogRoot string, docker commandRunner) (*Manager, error) {
@@ -171,12 +173,12 @@ func (m *Manager) Preflight(ctx context.Context, input Spec) (Preflight, error) 
 	}
 	stdout, stderr, err := m.docker.Run(ctx, "version", "--format", "{{.Server.Version}}")
 	if err != nil {
-		return Preflight{}, fmt.Errorf("Docker daemon is unavailable: %s", boundedDiagnostic(stderr, err))
+		return Preflight{}, containerCommandError("Docker daemon is unavailable", stderr, err)
 	}
 	version := strings.TrimSpace(stdout)
 	runtimes, runtimeStderr, err := m.docker.Run(ctx, "info", "--format", "{{json .Runtimes}}")
 	if err != nil {
-		return Preflight{}, fmt.Errorf("Docker runtime inventory failed: %s", boundedDiagnostic(runtimeStderr, err))
+		return Preflight{}, containerCommandError("Docker runtime inventory failed", runtimeStderr, err)
 	}
 	nvidia := strings.Contains(strings.ToLower(runtimes), `"nvidia"`)
 	if spec.Accelerator == "required" && !nvidia {
@@ -351,7 +353,7 @@ func (m *Manager) inspectImage(ctx context.Context, reference string) (dockerIma
 		if strings.Contains(lower, "no such image") || strings.Contains(lower, "not found") {
 			return dockerImage{}, false, nil
 		}
-		return dockerImage{}, false, fmt.Errorf("inspect Docker image: %s", boundedDiagnostic(stderr, err))
+		return dockerImage{}, false, containerCommandError("inspect Docker image", stderr, err)
 	}
 	var images []dockerImage
 	if err := json.Unmarshal([]byte(stdout), &images); err != nil || len(images) != 1 {
@@ -414,7 +416,7 @@ func (m *Manager) pullImage(ctx context.Context, reference string) error {
 	}
 	stdout, stderr, err := m.docker.RunStreaming(ctx, []string{"pull", reference}, report)
 	if err != nil {
-		return fmt.Errorf("pull Docker image: %s", boundedDiagnostic(stderr+"\n"+stdout, err))
+		return containerCommandError("pull Docker image", stderr+"\n"+stdout, err)
 	}
 	return nil
 }
@@ -495,72 +497,61 @@ func (m *Manager) writeRecord(record Environment) error {
 	return os.Rename(temporaryPath, m.recordPath(record.Name))
 }
 
-type execDockerRunner struct{ executable string }
+type execDockerRunner struct {
+	executable        string
+	inactivityTimeout time.Duration
+}
+
+type dockerActivityWriter struct {
+	writer   io.Writer
+	watchdog *processsupervisor.InactivityWatchdog
+}
+
+func (w dockerActivityWriter) Write(value []byte) (int, error) {
+	written, err := w.writer.Write(value)
+	if written > 0 && w.watchdog != nil {
+		w.watchdog.MarkActivity()
+	}
+	return written, err
+}
+
+func (r execDockerRunner) watchdog() *processsupervisor.InactivityWatchdog {
+	return processsupervisor.NewInactivityWatchdog(r.inactivityTimeout)
+}
 
 func (r execDockerRunner) Run(ctx context.Context, arguments ...string) (string, string, error) {
 	command := exec.CommandContext(ctx, r.executable, arguments...)
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	command.Stdout, command.Stderr = &stdout, &stderr
-	err := command.Run()
+	var stdout boundedDockerOutput
+	var stderr boundedDockerOutput
+	watchdog := r.watchdog()
+	command.Stdout = dockerActivityWriter{writer: &stdout, watchdog: watchdog}
+	command.Stderr = dockerActivityWriter{writer: &stderr, watchdog: watchdog}
+	process, err := kernelruntime.StartManagedProcess(command)
+	if err != nil {
+		return "", "", err
+	}
+	defer process.Close()
+	done := make(chan error, 1)
+	go func() { done <- command.Wait() }()
+	err = watchdog.Wait(ctx, command.Process.Pid, done, process.Terminate)
 	return stdout.String(), stderr.String(), err
 }
 
 func (r execDockerRunner) RunStreaming(ctx context.Context, arguments []string, onLine func(string)) (string, string, error) {
 	command := exec.CommandContext(ctx, r.executable, arguments...)
-	stdoutPipe, err := command.StdoutPipe()
+	watchdog := r.watchdog()
+	streams := newDockerStreamCollector(watchdog, onLine)
+	command.Stdout, command.Stderr = streams.writer(false), streams.writer(true)
+	process, err := kernelruntime.StartManagedProcess(command)
 	if err != nil {
 		return "", "", err
 	}
-	stderrPipe, err := command.StderrPipe()
-	if err != nil {
-		return "", "", err
-	}
-	if err := command.Start(); err != nil {
-		return "", "", err
-	}
-	type streamLine struct {
-		stderr bool
-		text   string
-		err    error
-	}
-	lines := make(chan streamLine, 64)
-	var readers sync.WaitGroup
-	read := func(source io.Reader, stderr bool) {
-		defer readers.Done()
-		scanner := bufio.NewScanner(source)
-		scanner.Split(splitDockerProgressFrames)
-		scanner.Buffer(make([]byte, 32*1024), 1024*1024)
-		for scanner.Scan() {
-			lines <- streamLine{stderr: stderr, text: scanner.Text()}
-		}
-		if scanErr := scanner.Err(); scanErr != nil {
-			lines <- streamLine{stderr: stderr, err: scanErr}
-		}
-	}
-	readers.Add(2)
-	go read(stdoutPipe, false)
-	go read(stderrPipe, true)
-	go func() { readers.Wait(); close(lines) }()
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	var streamErr error
-	for line := range lines {
-		if line.err != nil {
-			streamErr = errors.Join(streamErr, line.err)
-			continue
-		}
-		if line.stderr {
-			stderr.WriteString(line.text + "\n")
-		} else {
-			stdout.WriteString(line.text + "\n")
-		}
-		if onLine != nil {
-			onLine(line.text)
-		}
-	}
-	waitErr := command.Wait()
-	return stdout.String(), stderr.String(), errors.Join(waitErr, streamErr)
+	defer process.Close()
+	done := make(chan error, 1)
+	go func() { done <- command.Wait() }()
+	waitErr := watchdog.Wait(ctx, command.Process.Pid, done, process.Terminate)
+	stdout, stderr := streams.result()
+	return stdout, stderr, waitErr
 }
 
 func hostMemoryBytes() int64 {
@@ -624,6 +615,20 @@ func boundedDiagnostic(output string, err error) string {
 		message = err.Error()
 	}
 	return boundedText(message, 600)
+}
+
+func containerCommandError(operation, output string, err error) error {
+	diagnostic := boundedDiagnostic(output, nil)
+	if err == nil {
+		if diagnostic == "" {
+			return errors.New(operation)
+		}
+		return fmt.Errorf("%s: %s", operation, diagnostic)
+	}
+	if diagnostic == "" {
+		return fmt.Errorf("%s: %w", operation, err)
+	}
+	return fmt.Errorf("%s: %w: %s", operation, err, diagnostic)
 }
 
 func boundedText(value string, limit int) string {

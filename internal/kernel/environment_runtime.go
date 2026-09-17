@@ -194,7 +194,14 @@ func (m *Manager) sessionRuntimeWithMounts(spec SessionSpec) (string, []string, 
 		prefix := ""
 		if !isSystemPythonEnvironment(spec.Environment) {
 			var err error
-			prefix, python, err = m.managedEnvironmentRuntime(spec.Environment, "python")
+			if spec.KernelKind == "bash" {
+				// Bash uses Python only for the trusted protocol supervisor. The
+				// selected scientific environment supplies PATH and native tools,
+				// not the supervisor's interpreter or dependencies.
+				prefix, err = m.managedEnvironmentPrefix(spec.Environment)
+			} else {
+				prefix, python, err = m.managedEnvironmentRuntime(spec.Environment, "python")
+			}
 			if err != nil {
 				return "", nil, nil, nil, fmt.Errorf("resolve Python environment %q: %w", spec.Environment, err)
 			}
@@ -331,27 +338,9 @@ func (m *Manager) managedEnvironmentExecutable(environment, executable string) (
 }
 
 func (m *Manager) managedEnvironmentRuntime(environment, executable string) (string, string, error) {
-	if !ValidEnvironmentName(environment) {
-		return "", "", errors.New("environment name must be a bounded path-free identifier")
-	}
-	root := strings.TrimSpace(m.config.CondaEnvsPath)
-	if root == "" {
-		return "", "", errors.New("managed environment root is not configured")
-	}
-	resolvedRoot, err := filepath.EvalSymlinks(root)
+	prefix, err := m.managedEnvironmentPrefix(environment)
 	if err != nil {
-		return "", "", errors.New("managed environment root is unavailable")
-	}
-	prefix, err := filepath.EvalSymlinks(filepath.Join(root, environment))
-	if err != nil {
-		return "", "", fmt.Errorf("managed environment %s is unavailable", environment)
-	}
-	relative, err := filepath.Rel(resolvedRoot, prefix)
-	if err != nil || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(os.PathSeparator)) {
-		return "", "", errors.New("managed environment resolves outside the configured root")
-	}
-	if marker, markerErr := readManagedEnvironmentMarker(prefix); markerErr == nil && marker.Kind == "path-venv" {
-		prefix = marker.RuntimePath
+		return "", "", err
 	}
 	for _, candidate := range environmentExecutableCandidates(prefix, executable) {
 		info, err := os.Stat(candidate)
@@ -364,6 +353,32 @@ func (m *Manager) managedEnvironmentRuntime(environment, executable string) (str
 		}
 	}
 	return "", "", fmt.Errorf("%s executable is not installed in managed environment %s", executable, environment)
+}
+
+func (m *Manager) managedEnvironmentPrefix(environment string) (string, error) {
+	if !ValidEnvironmentName(environment) {
+		return "", errors.New("environment name must be a bounded path-free identifier")
+	}
+	root := strings.TrimSpace(m.config.CondaEnvsPath)
+	if root == "" {
+		return "", errors.New("managed environment root is not configured")
+	}
+	resolvedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return "", errors.New("managed environment root is unavailable")
+	}
+	prefix, err := filepath.EvalSymlinks(filepath.Join(root, environment))
+	if err != nil {
+		return "", fmt.Errorf("managed environment %s is unavailable", environment)
+	}
+	relative, err := filepath.Rel(resolvedRoot, prefix)
+	if err != nil || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(os.PathSeparator)) {
+		return "", errors.New("managed environment resolves outside the configured root")
+	}
+	if marker, markerErr := readManagedEnvironmentMarker(prefix); markerErr == nil && marker.Kind == "path-venv" {
+		prefix = marker.RuntimePath
+	}
+	return prefix, nil
 }
 
 func environmentExecutableCandidates(prefix, executable string) []string {

@@ -94,6 +94,27 @@ func TestKernelSettlementOutboxDispatcherStartsAndStopsWithoutWork(t *testing.T)
 	}
 }
 
+func TestTaskOperationDispatcherStartsAndStopsWithoutWork(t *testing.T) {
+	store, err := workspace.Open(filepath.Join(t.TempDir(), "workspace.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	app := server.New(server.Options{Workspace: store, FileRoot: t.TempDir()})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- app.RunTaskOperationDispatcher(ctx) }()
+	cancel()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("task operation dispatcher did not stop")
+	}
+}
+
 func postCommandJSON(t *testing.T, target string, value any) {
 	t.Helper()
 	raw, err := json.Marshal(value)

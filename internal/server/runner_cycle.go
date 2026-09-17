@@ -65,6 +65,12 @@ func (s *Server) runSessionRunnerChatOnce(
 	if transcriptFrame {
 		session, err = s.loadTranscriptFrameSessionProjection(transcriptStream)
 		if err != nil {
+			if transcriptAuthority != nil {
+				owned := SessionRunnerCycleResult{RunnerID: options.RunnerID, SessionID: transcriptStream.SessionID, Claimed: true, Attempt: int(transcriptAuthority.Claim.Attempt)}
+				settleErr := s.interruptClaimedSessionRunner(options, &owned, &activeSessionRun{}, sessionstore.RunnerMutationClaim{}, transcriptAuthority,
+					sessionRunnerSupervisorInterruptedReasonCode, "runner preparation failed after durable admission; resume the same task from its retained state")
+				return owned, errors.Join(err, settleErr)
+			}
 			return SessionRunnerCycleResult{}, err
 		}
 	} else {
@@ -173,7 +179,9 @@ func (s *Server) runSessionRunnerChatOnce(
 		)
 		if stateErr != nil {
 			activeRun.settlement.Unlock()
-			return result, stateErr
+			settleErr := s.interruptClaimedSessionRunner(options, &result, activeRun, projectionClaim, transcriptAuthority,
+				sessionRunnerSupervisorInterruptedReasonCode, "runtime state could not be read after claim; preserve the durable attempt for recovery")
+			return result, errors.Join(stateErr, settleErr)
 		}
 		if state.Status != "running" {
 			activeRun.settled = true

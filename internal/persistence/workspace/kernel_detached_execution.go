@@ -36,6 +36,10 @@ const (
 	DetachedKernelExecutionStateCancelRequested   = "cancel_requested"
 	DetachedKernelExecutionStateTerminal          = "terminal"
 	DetachedKernelExecutionStateEvidenceLost      = "evidence_lost"
+
+	// Provider cancellation confirms the execution owner accepted cancellation,
+	// not that a particular operating-system signal was sent.
+	KernelExecutionCancelProvider = "provider_cancel"
 )
 
 var (
@@ -373,74 +377,6 @@ func (s *Store) RecreateKernelExecutionBackend(
 	return backend, nil
 }
 
-// RestartStartingKernelExecutionBackend replaces an executor that exited
-// before publishing any process identity. The logical backend row and session
-// specification remain immutable; only the executor generation advances. This
-// is distinct from terminal-row recreation because a never-ready starting row
-// cannot satisfy the table's process-identity requirement for terminal states.
-func (s *Store) RestartStartingKernelExecutionBackend(
-	ctx context.Context,
-	input RecreateKernelExecutionBackendInput,
-) (KernelExecutionBackend, error) {
-	input.BackendID = strings.TrimSpace(input.BackendID)
-	input.ExecutorInstanceID = strings.TrimSpace(input.ExecutorInstanceID)
-	input.MachineBootID = strings.TrimSpace(input.MachineBootID)
-	input.SocketPath = strings.TrimSpace(input.SocketPath)
-	input.KernelID = strings.TrimSpace(input.KernelID)
-	if s == nil || s.db == nil || ctx == nil || !validDetachedIdentity(input.BackendID) ||
-		!validDetachedIdentity(input.ExecutorInstanceID) || !validDetachedIdentity(input.MachineBootID) ||
-		!validDetachedIdentity(input.KernelID) || input.KernelGeneration <= 0 ||
-		input.SocketPath == "" || !filepath.IsAbs(input.SocketPath) || len(input.SocketPath) > 4096 ||
-		strings.ContainsAny(input.SocketPath, "\x00\r\n") {
-		return KernelExecutionBackend{}, errors.New("complete starting kernel backend restart identity is required")
-	}
-	current, found, err := s.GetKernelExecutionBackend(ctx, input.BackendID)
-	if err != nil || !found {
-		if err != nil {
-			return KernelExecutionBackend{}, err
-		}
-		return KernelExecutionBackend{}, ErrKernelExecutionBackendStale
-	}
-	if current.KernelID != input.KernelID || current.KernelGeneration != input.KernelGeneration {
-		return KernelExecutionBackend{}, ErrKernelExecutionBackendConflict
-	}
-	_, specJSON, specSHA, specErr := canonicalKernelExecutionSessionSpec(input.SessionSpec)
-	if specErr != nil || current.SessionSpecJSON != specJSON || current.SessionSpecSHA256 != specSHA {
-		return KernelExecutionBackend{}, ErrKernelExecutionBackendConflict
-	}
-	if current.State != KernelExecutionBackendStateStarting || current.ExecutorPID != 0 ||
-		current.ExecutorPIDStartTicks != 0 || current.WorkerPID != 0 || current.WorkerPIDStartTicks != 0 {
-		return KernelExecutionBackend{}, ErrKernelExecutionBackendStale
-	}
-	now := s.now().UTC()
-	result, err := s.db.ExecContext(ctx, `UPDATE kernel_execution_backends SET
-		executor_instance_id=?,machine_boot_id=?,socket_path=?,backend_generation=backend_generation+1,
-		state_version=state_version+1,heartbeat_sequence=0,heartbeat_at=NULL,
-		controller_epoch=0,controller_token_sha256=NULL,controller_lease_expires_at=NULL,updated_at=?
-		WHERE backend_id=? AND backend_generation=? AND executor_instance_id=? AND state='starting'
-			AND executor_pid IS NULL AND executor_pid_start_ticks IS NULL
-			AND worker_pid IS NULL AND worker_pid_start_ticks IS NULL`,
-		input.ExecutorInstanceID, input.MachineBootID, input.SocketPath, now.Format(time.RFC3339Nano),
-		input.BackendID, current.BackendGeneration, current.ExecutorInstanceID)
-	if err != nil {
-		return KernelExecutionBackend{}, err
-	}
-	if rows, rowsErr := result.RowsAffected(); rowsErr != nil || rows != 1 {
-		if rowsErr != nil {
-			return KernelExecutionBackend{}, rowsErr
-		}
-		return KernelExecutionBackend{}, ErrKernelExecutionBackendStale
-	}
-	backend, found, err := s.GetKernelExecutionBackend(ctx, input.BackendID)
-	if err != nil || !found {
-		if err != nil {
-			return KernelExecutionBackend{}, err
-		}
-		return KernelExecutionBackend{}, ErrKernelExecutionBackendStale
-	}
-	return backend, nil
-}
-
 func (s *Store) ActivateKernelExecutionBackend(
 	ctx context.Context,
 	input ActivateKernelExecutionBackendInput,
@@ -545,37 +481,51 @@ func (s *Store) AcquireKernelExecutionBackendControl(
 	input.BackendID = strings.TrimSpace(input.BackendID)
 	input.Token = strings.TrimSpace(input.Token)
 	input.LeaseExpiresAt = input.LeaseExpiresAt.UTC()
-	now := s.now().UTC()
 	if s == nil || s.db == nil || ctx == nil || !validDetachedIdentity(input.BackendID) ||
 		input.BackendGeneration <= 0 || len(input.Token) < 32 || len(input.Token) > 4096 ||
-		strings.ContainsAny(input.Token, "\x00\r\n") || !input.LeaseExpiresAt.After(now) {
+		strings.ContainsAny(input.Token, "\x00\r\n") || input.LeaseExpiresAt.IsZero() {
 		return KernelExecutionBackend{}, KernelExecutionControlLease{},
 			errors.New("complete kernel execution backend control lease is required")
 	}
 	digest := sha256.Sum256([]byte(input.Token))
-	result, err := s.db.ExecContext(ctx, `UPDATE kernel_execution_backends SET
+	repository, err := s.TranscriptRepository(ctx)
+	if err != nil {
+		return KernelExecutionBackend{}, KernelExecutionControlLease{}, err
+	}
+	var backend KernelExecutionBackend
+	err = repository.RunImmediate(ctx, func(tx *transcriptstore.ImmediateTransaction) error {
+		now := s.now().UTC()
+		if !input.LeaseExpiresAt.After(now) {
+			return ErrKernelExecutionBackendStale
+		}
+		result, err := tx.ExecContext(ctx, `UPDATE kernel_execution_backends SET
 		controller_epoch=controller_epoch+1,controller_token_sha256=?,controller_lease_expires_at=?,
 		state_version=state_version+1,updated_at=?
 		WHERE backend_id=? AND backend_generation=? AND state='ready'`, digest[:],
-		input.LeaseExpiresAt.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano),
-		input.BackendID, input.BackendGeneration)
-	if err != nil {
-		return KernelExecutionBackend{}, KernelExecutionControlLease{}, err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return KernelExecutionBackend{}, KernelExecutionControlLease{}, err
-	}
-	if rows != 1 {
-		return KernelExecutionBackend{}, KernelExecutionControlLease{}, ErrKernelExecutionBackendStale
-	}
-	backend, found, err := s.GetKernelExecutionBackend(ctx, input.BackendID)
-	if err != nil || !found || subtle.ConstantTimeCompare(backend.ControllerTokenSHA256, digest[:]) != 1 ||
-		backend.ControllerLeaseExpiresAt == nil || !backend.ControllerLeaseExpiresAt.Equal(input.LeaseExpiresAt) {
+			input.LeaseExpiresAt.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano),
+			input.BackendID, input.BackendGeneration)
 		if err != nil {
-			return KernelExecutionBackend{}, KernelExecutionControlLease{}, err
+			return err
 		}
-		return KernelExecutionBackend{}, KernelExecutionControlLease{}, ErrKernelExecutionBackendConflict
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows != 1 {
+			return ErrKernelExecutionBackendStale
+		}
+		var found bool
+		backend, found, err = getKernelExecutionBackendQuery(ctx, tx, input.BackendID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return ErrKernelExecutionBackendStale
+		}
+		return nil
+	})
+	if err != nil {
+		return KernelExecutionBackend{}, KernelExecutionControlLease{}, err
 	}
 	return backend, KernelExecutionControlLease{
 		BackendID: input.BackendID, BackendGeneration: input.BackendGeneration,

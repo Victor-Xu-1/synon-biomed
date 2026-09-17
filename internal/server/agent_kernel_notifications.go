@@ -389,6 +389,10 @@ func (s *Server) agentKernelPendingWork(ctx context.Context, access workspace.Ke
 	if err != nil {
 		return nil, false, err
 	}
+	pendingOperations, err := s.workspaceStore.CountPendingTaskOperations(ctx, access)
+	if err != nil {
+		return nil, false, err
+	}
 	jobs, err := s.workspaceStore.ListComputeJobs(access.UserID, access.Frame.ProjectID)
 	if err != nil {
 		return nil, false, err
@@ -411,10 +415,10 @@ func (s *Server) agentKernelPendingWork(ctx context.Context, access workspace.Ke
 		"executions":           projectAgentKernelPendingExecutions(executions, now),
 		"unread_notifications": unread, "active_compute_jobs": len(activeJobs),
 		"undelivered_rows": undelivered, "uncollected_landings": projectAgentKernelLandings(landings),
-		"pending_settlements": pendingSettlements,
+		"pending_settlements": pendingSettlements, "pending_operations": pendingOperations,
 	}
 	return pending, len(children) > 0 || len(executions) > 0 || unread > 0 || len(activeJobs) > 0 ||
-		undelivered > 0 || pendingSettlements > 0 || len(landings) > 0, nil
+		undelivered > 0 || pendingSettlements > 0 || pendingOperations > 0 || len(landings) > 0, nil
 }
 
 func projectAgentKernelLandings(landings []workspace.Notification) []any {
@@ -436,6 +440,7 @@ func agentKernelHasOnlyUncollectedLandings(pending map[string]any) bool {
 	return len(landings) > 0 && len(children) == 0 && len(executions) == 0 &&
 		int(numberValue(pending["unread_notifications"])) == 0 &&
 		int(numberValue(pending["active_compute_jobs"])) == 0 &&
+		int(numberValue(pending["pending_operations"])) == 0 &&
 		int(numberValue(pending["undelivered_rows"])) == 0 &&
 		int(numberValue(pending["pending_settlements"])) == 0
 }

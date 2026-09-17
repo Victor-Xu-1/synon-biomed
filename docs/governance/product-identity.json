@@ -4,7 +4,7 @@
   "authority_owner": "controller",
   "status": "authoritative-reference-external-release-authorization",
   "current_workspace_schema": {
-    "target": 67,
+    "target": 69,
     "authority_path": "internal/persistence/workspace/versioned_schema.go"
   },
   "planned_schema_integration": {

@@ -1,8 +1,17 @@
 package server
 
-import "testing"
+import (
+	"os/exec"
+	kernelruntime "synon-go/internal/kernel"
+	"testing"
+)
 
 func TestAgentKernelPackageManagerMutationPreflightRejectsBypassPaths(t *testing.T) {
+	python, err := exec.LookPath("python3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	preparer := kernelruntime.NewManager(kernelruntime.Config{Python: python})
 	tests := []struct {
 		name  string
 		tool  string
@@ -28,13 +37,15 @@ os.system("conda install -y rdkit")`},
 			input: map[string]any{"command": "micromamba install -n analysis package-name"},
 		},
 		{
-			name: "r install packages", tool: "r",
-			input: map[string]any{"code": `install.packages("Seurat")`},
+			name: "python embedded package interface", tool: "python",
+			input: map[string]any{"code": `from rpy2.robjects.packages import importr as load_package
+utils = load_package("utils")
+utils.install_packages("package-name")`},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := agentKernelPackageManagerMutationPreflight(test.tool, test.input)
+			result := agentExecutionPreparationPreflight(test.tool, test.input, nil, preparer)
 			if stringValue(result["status"]) != "managed_package_authority_required" ||
 				boolValue(result["executed"], true) {
 				t.Fatalf("package-manager bypass was not rejected: %#v", result)
@@ -54,7 +65,7 @@ subprocess.run(["vina", "--config", "dock.conf"], check=True)`}},
 		{"r", map[string]any{"code": `result <- read.csv("input.csv")`}},
 	}
 	for _, test := range allowed {
-		if result := agentKernelPackageManagerMutationPreflight(test.tool, test.input); result != nil {
+		if result := agentExecutionPreparationPreflight(test.tool, test.input, nil, nil); result != nil {
 			t.Fatalf("scientific execution was blocked for %s: %#v", test.tool, result)
 		}
 	}

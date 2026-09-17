@@ -33,7 +33,7 @@ func TestThirdPartyLicenseInventoryIsEmbeddedAndVerifiable(t *testing.T) {
 	if payload.Bytes != len(payload.Content) || payload.Bytes < 60_000 {
 		t.Fatalf("license bytes = %d content bytes = %d", payload.Bytes, len(payload.Content))
 	}
-	if payload.SHA256 != "a20ea383f5ccb559baea01120e886d9337371f7c4b0606156f3ba76d82156b4a" {
+	if payload.SHA256 != "d45b98042a90889e6059a5a2e628e26b4d20f27f8c1d9079303ffe715673222a" {
 		t.Fatalf("license sha256 = %q", payload.SHA256)
 	}
 	if !strings.Contains(payload.Content, "### Ketcher") ||

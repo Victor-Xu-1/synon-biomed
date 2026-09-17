@@ -61,7 +61,7 @@ func TestKernelSessionInventoryEnforcesOwnershipAndMatchesV11Shape(t *testing.T)
 		t.Fatalf("kernels = %#v", response["kernels"])
 	}
 	kernel := kernels[0].(map[string]any)
-	wantKeys := []string{"agent_name", "busy", "cell_count", "cpu_pct", "current_cell", "current_cell_tag", "delegate_name", "environment", "execution_count", "frame_id", "kernel_id", "kind", "language", "last_cell", "last_description", "last_used", "pid_visible", "project_id", "project_name", "root_frame_id", "rss_bytes", "starting"}
+	wantKeys := []string{"agent_name", "busy", "cell_count", "cpu_pct", "current_cell", "current_cell_tag", "delegate_name", "environment", "execution_count", "execution_observation", "frame_id", "kernel_id", "kind", "language", "last_cell", "last_description", "last_used", "pid_visible", "project_id", "project_name", "root_frame_id", "rss_bytes", "starting"}
 	gotKeys := make([]string, 0, len(kernel))
 	for key := range kernel {
 		gotKeys = append(gotKeys, key)

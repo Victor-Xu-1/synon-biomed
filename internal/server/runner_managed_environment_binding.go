@@ -183,7 +183,18 @@ func (run *sessionRunnerChatRun) bindManagedEnvironmentToolResult(
 	input map[string]any,
 	response any,
 ) {
+	if run == nil {
+		return
+	}
+	if strings.EqualFold(toolName, "wait_for_notification") {
+		run.bindManagedEnvironmentNotificationResponse(response)
+		return
+	}
 	result := mapValue(response)
+	if binding := mapValue(result["environment_binding"]); int(numberValue(binding["version"])) == 1 &&
+		strings.EqualFold(stringValue(binding["tool"]), toolName) {
+		input = mapValue(binding["input"])
+	}
 	environment := mapValue(result["environment"])
 	if !strings.EqualFold(strings.TrimSpace(stringValue(environment["status"])), "ready") {
 		// A preflight recommendation is already a verified immutable ready
@@ -251,16 +262,8 @@ func (run *sessionRunnerChatRun) bindManagedEnvironmentNotificationResponse(resp
 		if !strings.EqualFold(strings.TrimSpace(stringValue(payload["status"])), "completed") {
 			continue
 		}
-		environment := mapValue(payload["environment"])
-		if !strings.EqualFold(strings.TrimSpace(stringValue(environment["status"])), "ready") {
-			continue
-		}
-		run.bindManagedEnvironmentImplementation(
-			stringValue(environment["name"]), stringValue(payload["implementation"]),
-		)
-		run.clearManagedEnvironmentInvalidation(
-			stringValue(environment["name"]), stringValue(environment["generation"]),
-		)
+		run.bindManagedEnvironmentToolResult(stringValue(payload["tool"]),
+			map[string]any{"implementation": payload["implementation"]}, payload)
 	}
 }
 
@@ -278,7 +281,7 @@ func (run *sessionRunnerChatRun) bindManagedEnvironmentMessages(messages []agent
 			for _, call := range message.ToolCalls {
 				name := strings.ToLower(strings.TrimSpace(call.Name))
 				if name != manageEnvironmentsToolName && name != managePackagesToolName &&
-					name != "python" && name != "bash" && name != "r" {
+					name != "python" && name != "bash" && name != "r" && name != "powershell" {
 					continue
 				}
 				input := map[string]any{}
@@ -312,21 +315,57 @@ func (run *sessionRunnerChatRun) bindManagedEnvironmentMessages(messages []agent
 func (s *Server) hydrateSessionRunnerManagedEnvironmentBindings(
 	ctx context.Context,
 	run *sessionRunnerChatRun,
-) {
+) error {
 	if s == nil || run == nil {
-		return
+		return nil
+	}
+	return run.hydrateManagedEnvironmentBindings(ctx, func() ([]agentruntime.Message, error) {
+		return s.sessionRunnerDurableExplicitToolContractMessages(ctx, run)
+	})
+}
+
+type managedEnvironmentHydration struct {
+	done chan struct{}
+	err  error
+}
+
+// Publish readiness only after a complete read and application. Concurrent
+// callers share one attempt; failure leaves the next invocation free to retry.
+func (run *sessionRunnerChatRun) hydrateManagedEnvironmentBindings(ctx context.Context, load func() ([]agentruntime.Message, error)) error {
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	run.managedEnvironmentMu.Lock()
 	if run.managedEnvironmentBindingsHydrated {
 		run.managedEnvironmentMu.Unlock()
-		return
+		return nil
 	}
-	run.managedEnvironmentBindingsHydrated = true
+	if attempt := run.managedEnvironmentHydration; attempt != nil {
+		run.managedEnvironmentMu.Unlock()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-attempt.done:
+			return attempt.err
+		}
+	}
+	attempt := &managedEnvironmentHydration{done: make(chan struct{})}
+	run.managedEnvironmentHydration = attempt
 	run.managedEnvironmentMu.Unlock()
-	messages, err := s.sessionRunnerDurableExplicitToolContractMessages(ctx, run)
+	messages, err := load()
+	if err == nil {
+		err = ctx.Err()
+	}
 	if err == nil {
 		run.bindManagedEnvironmentMessages(messages)
 	}
+	run.managedEnvironmentMu.Lock()
+	attempt.err = err
+	run.managedEnvironmentBindingsHydrated = err == nil
+	run.managedEnvironmentHydration = nil
+	close(attempt.done)
+	run.managedEnvironmentMu.Unlock()
+	return err
 }
 
 func normalizeSelectedManagedEnvironment(
@@ -360,9 +399,6 @@ func (g serverAgentRuntimeToolGateway) bindTaskRunContext(ctx context.Context) (
 	}
 	if run != nil && g.taskRun == nil {
 		g.taskRun = run
-		if g.server != nil {
-			g.server.hydrateSessionRunnerManagedEnvironmentBindings(ctx, run)
-		}
 	}
 	return g, ctx
 }

@@ -38,7 +38,7 @@ func (m *Manager) VerifyManagedEnvironmentImports(ctx context.Context, environme
 	if len(validated) == 0 {
 		return nil
 	}
-	prefix, err := m.managedPythonWitnessPrefix(environment)
+	prefix, language, err := m.managedWitnessRuntime(environment)
 	if err != nil {
 		return err
 	}
@@ -50,34 +50,52 @@ func (m *Manager) VerifyManagedEnvironmentImports(ctx context.Context, environme
 		ctx, cancel = context.WithTimeout(ctx, managedEnvironmentHealthTimeout)
 		defer cancel()
 	}
-	return validateManagedEnvironmentImports(ctx, "python", prefix, validated)
+	return validateManagedEnvironmentImports(ctx, language, prefix, validated)
 }
 
 func (m *Manager) managedPythonWitnessPrefix(environment string) (string, error) {
-	if err := validateManagedEnvironmentName(environment); err != nil {
+	prefix, language, err := m.managedWitnessRuntime(environment)
+	if err != nil {
 		return "", err
+	}
+	if language != "python" {
+		return "", errors.New("managed Python environment generation marker is invalid")
+	}
+	return prefix, nil
+}
+
+func (m *Manager) managedWitnessRuntime(environment string) (string, string, error) {
+	if err := validateManagedEnvironmentName(environment); err != nil {
+		return "", "", err
 	}
 	// The service-owned bundled Python runtime is content-addressed and uses
 	// the stricter .synon-runtime.json marker contract. Do not route it through
 	// the generic Conda marker reader.
 	if strings.TrimSpace(environment) == m.ManagedPythonEnvironmentName() &&
 		strings.TrimSpace(m.config.CondaRuntimeCatalog) != "" {
-		return m.ManagedPythonActivePrefix()
+		prefix, err := m.ManagedPythonActivePrefix()
+		return prefix, "python", err
 	}
 	root, err := m.managedEnvironmentRoot()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	prefix, err := filepath.EvalSymlinks(filepath.Join(root, environment))
 	if err != nil {
-		return "", errors.New("managed environment generation is unavailable")
+		return "", "", errors.New("managed environment generation is unavailable")
+	}
+	if filepath.Dir(prefix) != filepath.Join(root, ".generations", environment) {
+		return "", "", errors.New("managed environment witness is outside its trusted generation root")
 	}
 	marker, err := readManagedEnvironmentMarker(prefix)
-	if err != nil || marker.Name != environment || marker.Generation != filepath.Base(prefix) || marker.Language != "python" {
-		return "", errors.New("managed Python environment generation marker is invalid")
+	if err != nil || marker.Name != environment || marker.Generation != filepath.Base(prefix) {
+		return "", "", errors.New("managed environment generation marker is invalid")
+	}
+	if needsRebuild, err := managedEnvironmentNeedsRebuild(prefix, marker); err != nil || needsRebuild {
+		return "", "", ErrManagedEnvironmentRebuildRequired
 	}
 	if marker.Kind == "path-venv" {
 		prefix = marker.RuntimePath
 	}
-	return prefix, nil
+	return prefix, marker.Language, nil
 }

@@ -59,8 +59,8 @@ jobs:
             --base '${{ github.event.pull_request.base.sha }}' --head '${{ github.sha }}')
           printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
 
-  pr-go-tests:
-    name: PR changed Go packages (${{ matrix.index }})
+  pr-go-shards:
+    name: PR affected Go partition (${{ matrix.index }})
     needs: pr-quality
     strategy:
       fail-fast: false
@@ -114,6 +114,16 @@ jobs:
           path: ${{ runner.temp }}/runtime-test-evidence/
           if-no-files-found: warn
           retention-days: 7
+
+  pr-go-tests:
+    name: PR changed Go packages
+    needs: pr-go-shards
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify every affected Go partition
+        run: test '${{ needs.pr-go-shards.result }}' = 'success'
 
   pr-frontend-tests:
     name: PR frontend scope

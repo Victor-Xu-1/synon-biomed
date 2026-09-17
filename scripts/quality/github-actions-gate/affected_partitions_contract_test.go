@@ -14,7 +14,15 @@ func TestAffectedWorkflowPartitionsRetainEveryRequiredResult(t *testing.T) {
 		if output == nil || output.Value != "$"+"{{ steps.go-scope.outputs.matrix }}" {
 			t.Fatal("affected partitions must use the reviewed scope planner")
 		}
-		job := mappingValue(jobs, prefix+"-go-tests")
+		aggregate := mappingValue(jobs, prefix+"-go-tests")
+		needs := mappingValue(aggregate, "needs")
+		condition := mappingValue(aggregate, "if")
+		if needs == nil || needs.Value != prefix+"-go-shards" || condition == nil || condition.Value != "always()" ||
+			namedRun(root, prefix+"-go-tests", "Verify every affected Go partition") !=
+				"test '$"+"{{ needs."+prefix+"-go-shards.result }}' = 'success'" {
+			t.Fatal("stable Go stage result must require all affected partitions to succeed")
+		}
+		job := mappingValue(jobs, prefix+"-go-shards")
 		strategy := mappingValue(job, "strategy")
 		matrix := mappingValue(strategy, "matrix")
 		limit := mappingValue(strategy, "max-parallel")

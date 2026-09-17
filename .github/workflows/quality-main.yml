@@ -61,8 +61,8 @@ jobs:
             --base '${{ github.event.before }}' --head '${{ github.sha }}')
           printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
 
-  main-go-tests:
-    name: Main changed Go packages (${{ matrix.index }})
+  main-go-shards:
+    name: Main affected Go partition (${{ matrix.index }})
     needs: main-quality
     strategy:
       fail-fast: false
@@ -116,6 +116,16 @@ jobs:
           path: ${{ runner.temp }}/runtime-test-evidence/
           if-no-files-found: warn
           retention-days: 7
+
+  main-go-tests:
+    name: Main changed Go packages
+    needs: main-go-shards
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify every affected Go partition
+        run: test '${{ needs.main-go-shards.result }}' = 'success'
 
   main-frontend-tests:
     name: Main frontend scope

@@ -92,18 +92,18 @@ func TestRepositoryWorkflowRoutingAndChangedScopeRuntimeEnvironment(t *testing.T
 		t.Fatal("main integration CI must run only for main pushes")
 	}
 	fullSetup := namedRun(full, "runtime-quality", "Set up runtime test dependencies")
-	if fullSetup == "" || namedRun(pr, "pr-go-tests", "Set up runtime test dependencies") != fullSetup {
+	if fullSetup == "" || namedRun(pr, "pr-go-shards", "Set up runtime test dependencies") != fullSetup {
 		t.Fatal("PR runtime tests must retain the full runtime environment")
 	}
-	if namedRun(main, "main-go-tests", "Set up runtime test dependencies") != fullSetup {
+	if namedRun(main, "main-go-shards", "Set up runtime test dependencies") != fullSetup {
 		t.Fatal("main affected runtime tests must retain the full runtime environment")
 	}
 	for _, workflow := range []struct {
 		root *yaml.Node
 		jobs []string
 	}{
-		{pr, []string{"pr-quality", "pr-go-tests", "pr-frontend-tests"}},
-		{main, []string{"main-quality", "main-go-tests", "main-frontend-tests"}},
+		{pr, []string{"pr-quality", "pr-go-shards", "pr-frontend-tests"}},
+		{main, []string{"main-quality", "main-go-shards", "main-frontend-tests"}},
 	} {
 		for _, job := range workflow.jobs {
 			steps := mappingValue(mappingValue(mappingValue(workflow.root, "jobs"), job), "steps")

@@ -34,6 +34,8 @@ type Deliverer interface {
 var ErrDeliverySettled = errors.New("outbox delivery was atomically settled")
 
 type Options struct {
+	// LongRunning uses renewable claims instead of a delivery wall-clock limit.
+	LongRunning   bool
 	WorkerID      string
 	Topics        []string
 	BatchSize     int
@@ -47,6 +49,7 @@ type Options struct {
 }
 
 type Dispatcher struct {
+	longRunning   bool
 	repository    Repository
 	deliverer     Deliverer
 	workerID      string
@@ -109,11 +112,17 @@ func NewDispatcher(repository Repository, deliverer Deliverer, options Options) 
 		options.RetryMax > maxDispatcherBackoff || options.DeliveryLimit > maxDispatcherLease {
 		return nil, errors.New("outbox dispatcher lease and retry backoff must not exceed 24 hours")
 	}
-	if options.DeliveryLimit >= options.Lease {
+	if !options.LongRunning && options.DeliveryLimit >= options.Lease {
 		return nil, errors.New("outbox delivery limit must be shorter than claim lease")
 	}
+	if options.LongRunning {
+		if _, ok := repository.(leaseRepository); !ok || options.Lease < time.Millisecond*3 {
+			return nil, errors.New("long-running outbox delivery requires renewable claims")
+		}
+	}
 	return &Dispatcher{
-		repository: repository, deliverer: deliverer, workerID: options.WorkerID,
+		longRunning: options.LongRunning,
+		repository:  repository, deliverer: deliverer, workerID: options.WorkerID,
 		topics: append([]string(nil), options.Topics...), batchSize: options.BatchSize,
 		lease: options.Lease, pollInterval: options.PollInterval, errorBackoff: options.ErrorBackoff,
 		retryBase: options.RetryBase, retryMax: options.RetryMax, deliveryLimit: options.DeliveryLimit,
@@ -282,9 +291,14 @@ func (d *Dispatcher) runDeliveryWorker(
 			}
 			event = next
 		}
-		deliveryCtx, cancel := context.WithTimeout(ctx, d.deliveryLimit)
-		err := d.deliverer.Deliver(deliveryCtx, event)
-		cancel()
+		var err error
+		if d.longRunning {
+			err = d.deliverWithLease(ctx, event)
+		} else {
+			deliveryCtx, cancel := context.WithTimeout(ctx, d.deliveryLimit)
+			err = d.deliverer.Deliver(deliveryCtx, event)
+			cancel()
+		}
 		if ctx.Err() != nil {
 			return
 		}

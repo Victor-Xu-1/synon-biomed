@@ -40,7 +40,8 @@ func TestSystemdUserExecutorLauncherUsesOneIndependentService(t *testing.T) {
 		"--user\n", "--collect\n", "--service-type=exec\n",
 		"--working-directory=" + root + "\n",
 		"--unit=synon-kernel-executor-01234567-89ab-cdef-0123-456789abcdef-g3.service\n",
-		"--property=KillMode=control-group\n", "--property=MemoryHigh=4745938862\n",
+		"--property=KillMode=control-group\n", "--property=MemoryHigh=5583457485\n",
+		"--property=Delegate=memory\n", "--property=DelegateSubgroup=control\n",
 		"--property=MemoryMax=5583457485\n", "--property=MemorySwapMax=536870912\n",
 		"--property=OOMPolicy=continue\n",
 		"--property=StandardOutput=append:" + logPath + "\n",
@@ -60,15 +61,15 @@ func TestExecutorMemoryLimitsPreserveControlPlane(t *testing.T) {
 	if err := os.WriteFile(meminfo, []byte("MemTotal: 8388608 kB\nMemAvailable: 6291456 kB\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	high, max, err := executorMemoryLimits(meminfo)
+	max, err := executorMemoryBudget(meminfo)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if max != 3006477108 || high != 2555505541 {
-		t.Fatalf("memory limits high=%d max=%d", high, max)
+	if max != 3006477108 {
+		t.Fatalf("memory budget=%d", max)
 	}
-	if high >= max || max >= 8388608*1024 {
-		t.Fatalf("unsafe memory limits high=%d max=%d", high, max)
+	if max >= 8388608*1024 {
+		t.Fatalf("unsafe memory budget=%d", max)
 	}
 }
 

@@ -64,7 +64,9 @@ func (s *Server) newAgentRuntimeEngineWithContext(
 		toolSchemaSnapshot = append(toolSchemaSnapshot, runtimeToolSchemas[0]...)
 	}
 	taskRun, _ := ctx.Value(transcriptRunnerChatRunContextKey{}).(*sessionRunnerChatRun)
-	s.hydrateSessionRunnerManagedEnvironmentBindings(ctx, taskRun)
+	if err := s.hydrateSessionRunnerManagedEnvironmentBindings(ctx, taskRun); err != nil {
+		model = serverErrorModelClient{err: fmt.Errorf("restore managed environment state: %w", err)}
+	}
 	largeToolResults := s.largeToolResultAuthorityForEngine(ctx, options.SessionID)
 	maxToolResultBytes := options.OutputLimitBytes
 	if largeToolResults != nil {

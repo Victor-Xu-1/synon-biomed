@@ -40,6 +40,7 @@ const (
 // SQLite remains the sole dispatch and terminal authority; the Unix socket is
 // only a fenced control plane and never carries executable payloads.
 type Executor struct {
+	cancellationMu     sync.Mutex
 	Store              *workspace.Store
 	Manager            *kernelruntime.Manager
 	CondaHome          string
@@ -65,6 +66,7 @@ type Executor struct {
 	fatalErr         chan error
 	lastActivity     time.Time
 	draining         bool
+	memoryDomain     *executorMemoryDomain
 	once             sync.Once
 }
 
@@ -73,7 +75,7 @@ type activeExecution struct {
 	cancelContainer context.CancelFunc
 }
 
-func (e *Executor) Run(ctx context.Context) error {
+func (e *Executor) Run(ctx context.Context) (runReturnErr error) {
 	if ctx == nil || e == nil || e.Store == nil || e.Manager == nil {
 		return errors.New("detached kernel executor configuration is incomplete")
 	}
@@ -107,14 +109,37 @@ func (e *Executor) Run(ctx context.Context) error {
 		backend.State != workspace.KernelExecutionBackendStateStarting {
 		return workspace.ErrKernelExecutionBackendStale
 	}
+	if err := e.ClaimStartup(ctx); err != nil {
+		return err
+	}
+	startupStage := "session_spec"
+	activated := false
+	defer func() {
+		if !activated && runReturnErr != nil {
+			runReturnErr = e.RecordStartupFailure(startupStage, runReturnErr)
+		}
+	}()
 	spec, err := workspace.DecodeKernelExecutionSessionSpecV1(backend.SessionSpecJSON)
 	if err != nil {
 		return err
 	}
+	startupStage = "resource_domain"
+	e.memoryDomain, err = prepareExecutorMemoryDomain(e.BackendID, e.BackendGeneration)
+	if err != nil {
+		return err
+	}
+	if e.memoryDomain != nil {
+		defer e.memoryDomain.root.Close()
+		if err = e.Manager.ConfigureWorkerResourceDomain(e.memoryDomain.directory); err != nil {
+			return err
+		}
+	}
+	startupStage = "worker_start"
 	session, err := e.Manager.EnsureSession(kernelSessionSpec(spec))
 	if err != nil {
 		return fmt.Errorf("ensure detached kernel session: %w", err)
 	}
+	startupStage = "worker_identity"
 	workerGeneration, err := detachedExecutorWorkerGeneration(
 		backend.KernelID, backend.KernelGeneration, session.ID, session.Worker.Generation(),
 	)
@@ -153,6 +178,7 @@ func (e *Executor) Run(ctx context.Context) error {
 	e.mu.Lock()
 	e.lifetimeDone = runCtx.Done()
 	e.mu.Unlock()
+	startupStage = "control_socket"
 	serverErr := make(chan error, 1)
 	go func() {
 		serverErr <- (Server{SocketPath: e.SocketPath, Handler: e, MaxConcurrent: 32, IdleTimeout: 30 * time.Second}).Serve(runCtx)
@@ -161,6 +187,7 @@ func (e *Executor) Run(ctx context.Context) error {
 		_ = e.Manager.CloseKernel(context.Background(), session.ID)
 		return fmt.Errorf("start detached kernel control server: %w", err)
 	}
+	startupStage = "activation"
 	backend, err = e.Store.ActivateKernelExecutionBackend(runCtx, workspace.ActivateKernelExecutionBackendInput{
 		BackendID: e.BackendID, BackendGeneration: e.BackendGeneration,
 		ExecutorInstanceID: e.ExecutorInstanceID, ExecutorPID: int64(os.Getpid()),
@@ -172,10 +199,13 @@ func (e *Executor) Run(ctx context.Context) error {
 		_ = e.Manager.CloseKernel(context.Background(), session.ID)
 		return err
 	}
+	activated = true
 	heartbeatErr := make(chan error, 1)
 	go func() { heartbeatErr <- e.runHeartbeat(runCtx, backend.HeartbeatSequence) }()
 	cancellationErr := make(chan error, 1)
 	go func() { cancellationErr <- e.runCancellationReconciler(runCtx) }()
+	pressureDone := make(chan struct{})
+	go func() { defer close(pressureDone); e.runMemoryPressureSupervisor(runCtx) }()
 	go func() {
 		if err := e.runIdleReconciler(runCtx); err != nil {
 			e.reportFatal(err)
@@ -189,6 +219,8 @@ func (e *Executor) Run(ctx context.Context) error {
 	case <-ctx.Done():
 		runErr = context.Cause(ctx)
 	case <-e.shutdown:
+	case <-session.Worker.Stopped():
+		runErr = session.Worker.TerminalError()
 	case err := <-serverErr:
 		runErr = err
 		serverFinished = true
@@ -200,7 +232,11 @@ func (e *Executor) Run(ctx context.Context) error {
 		runErr = err
 		settlementFailed = true
 	}
+	// Withdraw dispatch before draining outstanding receipts. A surviving
+	// control socket is not evidence that its physical worker is reusable.
+	e.beginDraining()
 	cancel()
+	<-pressureDone
 	if !serverFinished {
 		select {
 		case err := <-serverErr:
@@ -217,7 +253,7 @@ func (e *Executor) Run(ctx context.Context) error {
 		e.activeWG.Wait()
 		close(settled)
 	}()
-	evidenceLost := settlementFailed
+	evidenceLost := settlementFailed || closeErr != nil
 	select {
 	case <-settled:
 	case <-time.After(10 * time.Second):
@@ -244,7 +280,7 @@ func (e *Executor) HandleDetachedKernelCommand(ctx context.Context, request Comm
 	e.mu.Lock()
 	if e.draining {
 		e.mu.Unlock()
-		return commandResponseError(request.RequestID, "draining", "detached kernel executor is stopping after an idle timeout")
+		return commandResponseError(request.RequestID, "draining", "detached kernel executor is stopping")
 	}
 	e.lastActivity = time.Now().UTC()
 	e.mu.Unlock()
@@ -287,6 +323,13 @@ func (e *Executor) dispatch(ctx context.Context, request CommandRequest) Command
 		return commandResponseError(request.RequestID, "request_invalid", "detached kernel execution request is unavailable")
 	}
 	e.mu.Lock()
+	if e.draining {
+		e.mu.Unlock()
+		if err := e.commitSubmitFailure(durableRequest, errors.New("kernel executor is draining")); err != nil {
+			e.reportFatal(err)
+		}
+		return commandResponseError(request.RequestID, "draining", "detached kernel executor is stopping")
+	}
 	if _, exists := e.active[request.ExecutionID]; exists {
 		e.mu.Unlock()
 		return e.dispatchResponse(request, execution)
@@ -323,6 +366,7 @@ func (e *Executor) dispatch(ctx context.Context, request CommandRequest) Command
 		log.Printf("submit detached kernel execution %s: %v", durableRequest.ExecutionID, submitErr)
 		if workerErr := e.session.Worker.TerminalError(); workerErr != nil {
 			log.Printf("detached kernel worker stopped before execution %s: %v", durableRequest.ExecutionID, workerErr)
+			e.beginDraining()
 		}
 		if err := e.commitSubmitFailure(durableRequest, submitErr); err != nil {
 			e.reportFatal(err)
@@ -407,6 +451,12 @@ func (e *Executor) observeExecution(request workspace.KernelDetachedExecutionReq
 }
 
 func (e *Executor) dispatchContainerExecution(request workspace.KernelDetachedExecutionRequestV1) error {
+	e.mu.Lock()
+	draining := e.draining
+	e.mu.Unlock()
+	if draining {
+		return errors.New("kernel executor is draining")
+	}
 	if request.ToolName != kernelcontract.PythonTool && request.ToolName != kernelcontract.BashTool {
 		return errors.New("container-backed execution requires Python or Bash authority")
 	}
@@ -430,6 +480,11 @@ func (e *Executor) dispatchContainerExecution(request workspace.KernelDetachedEx
 	}
 	executionCtx, cancel := context.WithCancel(context.Background())
 	e.mu.Lock()
+	if e.draining {
+		e.mu.Unlock()
+		cancel()
+		return errors.New("kernel executor is draining")
+	}
 	if _, exists := e.active[request.ExecutionID]; exists {
 		e.mu.Unlock()
 		cancel()
@@ -488,6 +543,12 @@ func (e *Executor) observeContainerExecution(
 		// instead of manufacturing a terminal failure during service shutdown.
 		return
 	}
+	if errors.Is(err, localcontainer.ErrExecutionOutcomeUnconfirmed) {
+		// Keep the durable request/ack and original identity for the existing
+		// recovery owner. Neither cancellation nor process failure is proven.
+		e.reportFatal(err)
+		return
+	}
 	filesWritten, droppedRoots := tracker.Finish()
 	finishedAt := result.FinishedAt
 	if finishedAt.IsZero() || finishedAt.Before(startedAt) {
@@ -538,7 +599,12 @@ func (e *Executor) persistOutcome(
 ) error {
 	var lastErr error
 	for attempt := 1; attempt <= maxOutcomeCommitAttempts; attempt++ {
-		if err := e.commitOutcome(request, outcome, startedAt); err == nil {
+		// Completion cannot overtake an in-flight provider cancellation before
+		// its durable acknowledgement is visible to terminal classification.
+		e.cancellationMu.Lock()
+		err := e.commitOutcome(request, outcome, startedAt)
+		e.cancellationMu.Unlock()
+		if err == nil {
 			return nil
 		} else {
 			lastErr = err
@@ -599,7 +665,7 @@ func (e *Executor) commitOutcome(
 	result := ExecutionResultV1{
 		Version: 1, ExecutionID: request.ExecutionID, ToolCallID: request.ToolCallID,
 		KernelID: request.KernelID, KernelKind: request.KernelKind, Language: request.Language,
-		Environment: request.Environment, Reused: e.session.Reused, Response: outcome.Response,
+		Environment: request.Environment, Reused: e.session.Reused || outcome.CellIndex > 1, Response: outcome.Response,
 		TimedOut:  outcome.TimedOut,
 		CellIndex: outcome.CellIndex, StartedAt: startedAt.UTC(), FinishedAt: outcome.FinishedAt.UTC(),
 		Generation: outcome.Generation,
@@ -658,25 +724,6 @@ func detachedExecutionError(err error) string {
 		detail = string(runes[:512]) + "…"
 	}
 	return generic + ": " + detail
-}
-
-func detachedCancellationOutcome(execution workspace.DetachedKernelExecution) (bool, string) {
-	if execution.State != workspace.DetachedKernelExecutionStateCancelRequested ||
-		strings.TrimSpace(execution.CancelRequestID) == "" || execution.CancelAckAt == nil {
-		return false, ""
-	}
-	switch strings.TrimSpace(execution.CancelSignal) {
-	case "sigint":
-		return true, "SIGINT"
-	case "sigterm":
-		return true, "SIGTERM"
-	case "sigkill":
-		return true, "SIGKILL"
-	case "dequeue":
-		return true, ""
-	default:
-		return false, ""
-	}
 }
 
 func (e *Executor) materializeExecutorResult(result ExecutionResultV1) ([]byte, string, error) {
@@ -750,60 +797,6 @@ func (e *Executor) materializeExecutorResult(result ExecutionResultV1) ([]byte, 
 	return pointer, "kernel-spool-sha256:" + fullSHA, nil
 }
 
-func (e *Executor) cancelExecution(ctx context.Context, request CommandRequest) CommandResponse {
-	execution, found, err := e.Store.GetDetachedKernelExecution(ctx, request.ExecutionID)
-	if err != nil || !found || execution.CancelRequestID != request.CancelRequestID ||
-		execution.StateVersion != request.ExpectedVersion {
-		return commandResponseError(request.RequestID, "cancel_conflict", "detached kernel cancellation conflicts with durable state")
-	}
-	updated, err := e.applyDurableCancellation(ctx, execution)
-	if err != nil {
-		return commandResponseError(request.RequestID, "cancel_conflict", "detached kernel cancellation conflicts with durable state")
-	}
-	response := commandResponseOK(request.RequestID)
-	response.Cancel = &kernelruntime.BackendCancelReceipt{
-		ExecutionID: updated.ExecutionID, CancelRequestID: updated.CancelRequestID,
-		StateVersion: updated.StateVersion, Acknowledged: true,
-		AckSequence: updated.CancelAckSequence, Signal: updated.CancelSignal,
-	}
-	return response
-}
-
-func (e *Executor) runCancellationReconciler(ctx context.Context) error {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-ticker.C:
-		}
-		e.mu.Lock()
-		ids := make([]string, 0, len(e.active))
-		for id := range e.active {
-			ids = append(ids, id)
-		}
-		e.mu.Unlock()
-		for _, id := range ids {
-			execution, found, err := e.Store.GetDetachedKernelExecution(ctx, id)
-			if err != nil {
-				return err
-			}
-			if !found {
-				return errors.New("active detached kernel execution disappeared")
-			}
-			if execution.State != workspace.DetachedKernelExecutionStateCancelRequested ||
-				execution.CancelRequestID == "" || execution.CancelAckAt != nil {
-				continue
-			}
-			if _, err := e.applyDurableCancellation(ctx, execution); err != nil &&
-				!errors.Is(err, workspace.ErrDetachedKernelExecutionConflict) {
-				return err
-			}
-		}
-	}
-}
-
 func (e *Executor) runIdleReconciler(ctx context.Context) error {
 	interval := e.IdleTimeout / 4
 	if interval < time.Second {
@@ -836,68 +829,6 @@ func executorShouldReapIdle(lastActivity time.Time, activeCount int, now time.Ti
 		return false
 	}
 	return !now.Before(lastActivity) && now.Sub(lastActivity) >= timeout
-}
-
-func (e *Executor) applyDurableCancellation(
-	ctx context.Context,
-	execution workspace.DetachedKernelExecution,
-) (workspace.DetachedKernelExecution, error) {
-	durableRequest, err := workspace.DecodeKernelDetachedExecutionRequestV1(execution.RequestJSON)
-	if err != nil {
-		return workspace.DetachedKernelExecution{}, err
-	}
-	e.mu.Lock()
-	activeEntry, active := e.active[execution.ExecutionID]
-	e.mu.Unlock()
-	containerExecution := active && activeEntry != nil && activeEntry.cancelContainer != nil
-	signal := "container-stop"
-	if containerExecution {
-		activeEntry.cancelContainer()
-	} else {
-		interrupted := e.Manager.InterruptSessionWithReason(durableRequest.FrameID, durableRequest.FrameIncarnationID,
-			durableRequest.RootFrameIncarnationID, durableRequest.ExecutionID, execution.ReasonCode)
-		signal = "sigint"
-		if interrupted.Dequeued || !active {
-			signal = "dequeue"
-		} else if !interrupted.Interrupted {
-			signal = "sigterm"
-		}
-	}
-	updated, err := e.Store.AcknowledgeKernelExecutionCancel(ctx, workspace.AcknowledgeKernelExecutionCancelInput{
-		ExecutionID: execution.ExecutionID, BackendGeneration: e.BackendGeneration,
-		ExecutorInstanceID: e.ExecutorInstanceID, ExpectedVersion: execution.StateVersion,
-		CancelRequestID: execution.CancelRequestID, AckSequence: execution.LastObservationSequence + 1,
-		Signal: signal,
-	})
-	if err != nil {
-		return workspace.DetachedKernelExecution{}, err
-	}
-	// Cancellation is a lifecycle boundary for this task-owned executor, not
-	// merely a cell-level signal. Keeping the sandbox alive after acknowledging
-	// cancellation left bubblewrap supervisors (and potentially native child
-	// processes) resident until the idle timeout. Drain the exact backend after
-	// the durable acknowledgement so Run closes the kernel process tree and
-	// marks the backend stopped before it can be reused.
-	if !containerExecution {
-		e.beginDraining()
-	}
-	if !active {
-		now := time.Now().UTC()
-		if err := e.commitOutcome(durableRequest, kernelruntime.ExecutionOutcome{
-			Response: kernelruntime.Response{Interrupted: true}, StartedAt: now, FinishedAt: now,
-		}, now); err != nil {
-			return workspace.DetachedKernelExecution{}, err
-		}
-		var found bool
-		updated, found, err = e.Store.GetDetachedKernelExecution(ctx, execution.ExecutionID)
-		if err != nil {
-			return workspace.DetachedKernelExecution{}, err
-		}
-		if !found {
-			return workspace.DetachedKernelExecution{}, errors.New("cancelled detached kernel execution disappeared")
-		}
-	}
-	return updated, nil
 }
 
 func (e *Executor) beginDraining() {

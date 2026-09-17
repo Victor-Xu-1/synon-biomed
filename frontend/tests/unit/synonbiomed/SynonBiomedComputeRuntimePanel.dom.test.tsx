@@ -158,7 +158,12 @@ describe('SynonBiomedComputeRuntimePanel', () => {
     mocks.loadAll.mockResolvedValue(inventory);
     mocks.loadJobs.mockResolvedValue([]);
     mocks.loadJob.mockResolvedValue(null);
-    mocks.loadJobLog.mockResolvedValue({ exists: false, size: 0, content: '', truncated: false });
+    mocks.loadJobLog.mockResolvedValue({
+      exists: false,
+      size: 0,
+      content: '',
+      truncated: false,
+    });
     mocks.stopKernel.mockResolvedValue({
       ok: true,
       mode: 'clear',
@@ -199,6 +204,129 @@ describe('SynonBiomedComputeRuntimePanel', () => {
     expect(panel).toHaveTextContent('你好');
     expect(screen.getByTestId('compute-session-divider')).toHaveTextContent('1 个其他会话');
     expect(screen.getAllByTestId('kernel-row')).toHaveLength(2);
+  });
+
+  it('renders observed executables separately from their environment and preserves process changes', async () => {
+    const observedInventory = (name: string) => ({
+      ...inventory,
+      kernels: [
+        kernel({
+          busy: true,
+          kernelKind: 'bash',
+          environment: 'analysis-environment',
+          currentCell: {
+            tag: 'active-cell',
+            source: 'pipeline command',
+            startedAt: new Date().toISOString(),
+            humanDescription: 'Model guessed task label',
+          },
+          executionObservation: {
+            executionId: 'active-cell',
+            status: 'observed',
+            sampledAt: new Date().toISOString(),
+            processes: [
+              {
+                pid: 12,
+                parentPid: 1,
+                startIdentity: '123',
+                name,
+                nameSource: 'executable',
+                state: 'R',
+              },
+            ],
+          },
+        }),
+      ],
+    });
+    mocks.loadAll.mockResolvedValue(observedInventory('converter'));
+    await renderPanel(<SynonBiomedComputeRuntimePanel rootFrameId='root-1' projectId='project-1' />);
+    const row = await screen.findByTestId('kernel-row');
+    expect(row).toHaveTextContent('converter');
+    expect(row).toHaveTextContent('环境：analysis-environment');
+    expect(screen.getByLabelText('Bash')).toBeInTheDocument();
+    expect(row).not.toHaveTextContent('Model guessed task label');
+    expect(row).not.toHaveTextContent('Generating 2D');
+    mocks.loadAll.mockResolvedValue(observedInventory('solver'));
+    act(() => mocks.reconnect?.());
+    await waitFor(() => expect(row).toHaveTextContent('solver'));
+    expect(row).not.toHaveTextContent('converter');
+  });
+
+  it('marks expired observations instead of presenting the previous executable as current', async () => {
+    mocks.loadAll.mockResolvedValue({
+      ...inventory,
+      kernels: [
+        kernel({
+          busy: true,
+          currentCell: { tag: 'active-cell' },
+          executionObservation: {
+            executionId: 'active-cell',
+            status: 'observed',
+            sampledAt: new Date(Date.now() - 30_000).toISOString(),
+            processes: [
+              {
+                pid: 12,
+                parentPid: 1,
+                startIdentity: '123',
+                name: 'stale-program',
+                nameSource: 'process_name',
+                state: 'S',
+              },
+            ],
+          },
+        }),
+      ],
+    });
+    await renderPanel(<SynonBiomedComputeRuntimePanel rootFrameId='root-1' projectId='project-1' />);
+    const row = await screen.findByTestId('kernel-row');
+    expect(row).toHaveTextContent('进程观测已过期');
+    expect(row).not.toHaveTextContent('stale-program');
+  });
+
+  it('shows verified memory pressure and clears it when a fresh sample reports recovery', async () => {
+    const pressured = (status: 'pressured' | 'normal') => ({
+      ...inventory,
+      kernels: [
+        kernel({
+          busy: true,
+          currentCell: { tag: 'active-cell' },
+          executionObservation: {
+            executionId: 'active-cell',
+            status: 'observed',
+            sampledAt: new Date().toISOString(),
+            processes: [
+              {
+                pid: 12,
+                parentPid: 1,
+                startIdentity: '123',
+                name: 'worker',
+                nameSource: 'executable',
+                state: 'D',
+              },
+            ],
+            memoryPressure: {
+              status,
+              currentBytes: 90 * 1024 * 1024,
+              highBytes: 85 * 1024 * 1024,
+              limitBytes: 100 * 1024 * 1024,
+              swapBytes: 0,
+              fullStallPercent: status === 'pressured' ? 91 : 0,
+            },
+          },
+        }),
+      ],
+    });
+    mocks.loadAll.mockResolvedValue(pressured('pressured'));
+    await renderPanel(<SynonBiomedComputeRuntimePanel rootFrameId='root-1' projectId='project-1' />);
+    const row = await screen.findByTestId('kernel-row');
+    expect(row).toHaveTextContent('内存压力较高');
+    fireEvent.click(row.querySelector('[role="button"]')!);
+    expect(await screen.findByTestId('kernel-memory-pressure')).toHaveTextContent('90.0 MB / 预算 100.0 MB');
+    expect(screen.getByTestId('kernel-memory-pressure')).toHaveTextContent('91%');
+    mocks.loadAll.mockResolvedValue(pressured('normal'));
+    act(() => mocks.reconnect?.());
+    await waitFor(() => expect(row).not.toHaveTextContent('内存压力较高'));
+    expect(screen.getByTestId('kernel-memory-pressure')).toHaveTextContent('0%');
   });
 
   it('stops an idle kernel through the workspace clear contract', async () => {

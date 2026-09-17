@@ -155,6 +155,11 @@ func schemaMigrationIdentityHandlersKnown(identity schemaMigrationIdentityV2) bo
 	case transcriptWebProjectorV67CallbackID:
 		return identity.PreflightIdentity == transcriptWebProjectorV67PreflightIdentity &&
 			identity.RuleSpec == transcriptWebProjectorV67RuleSpec
+	case kernelProviderCancelV68CallbackID:
+		return identity.PreflightIdentity == kernelProviderCancelV68PreflightIdentity &&
+			identity.RuleSpec == kernelProviderCancelV68RuleSpec
+	case kernelStartupV69CallbackID:
+		return identity.PreflightIdentity == kernelStartupV69PreflightIdentity && identity.RuleSpec == kernelStartupV69RuleSpec
 	default:
 		return false
 	}
@@ -261,6 +266,10 @@ func runSchemaMigrationPreflight(ctx context.Context, executor schemaMigrationQu
 		return preflightTranscriptWebProjectorV66(ctx, executor)
 	case transcriptWebProjectorV67PreflightIdentity:
 		return preflightTranscriptWebProjectorV67(ctx, executor)
+	case kernelProviderCancelV68PreflightIdentity:
+		return preflightKernelProviderCancelV68(ctx, executor)
+	case kernelStartupV69PreflightIdentity:
+		return preflightKernelStartupV69(ctx, executor)
 	default:
 		return errors.New("schema migration preflight is not registered")
 	}
@@ -345,6 +354,10 @@ func runSchemaMigrationCallback(ctx context.Context, tx *sql.Tx, migration versi
 		return migrateTranscriptWebProjectorV66(ctx, tx)
 	case transcriptWebProjectorV67CallbackID:
 		return migrateTranscriptWebProjectorV67(ctx, tx)
+	case kernelProviderCancelV68CallbackID:
+		return migrateKernelProviderCancelV68(ctx, tx)
+	case kernelStartupV69CallbackID:
+		return migrateKernelStartupV69(ctx, tx)
 	default:
 		return errors.New("schema migration callback is not registered")
 	}

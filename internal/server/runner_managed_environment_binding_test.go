@@ -3,7 +3,10 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"synon-go/internal/agentruntime"
 	kernelruntime "synon-go/internal/kernel"
@@ -28,6 +31,45 @@ func TestManagedEnvironmentReuseBindsRequestedNameToSelectedEnvironment(t *testi
 	})
 	if got := stringValue(normalized["environment"]); got != "existing-analysis" {
 		t.Fatalf("normalized environment=%q", got)
+	}
+}
+
+func TestManagedEnvironmentHydrationFailureDoesNotPublishReady(t *testing.T) {
+	run := &sessionRunnerChatRun{Transcript: &transcriptRunnerAuthority{}}
+	server := &Server{}
+	server.hydrateSessionRunnerManagedEnvironmentBindings(context.Background(), run)
+	if run.managedEnvironmentBindingsHydrated {
+		t.Fatal("failed transcript read permanently published hydrated state")
+	}
+}
+
+func TestManagedEnvironmentHydrationRetriesFailureAndSerializesReaders(t *testing.T) {
+	run := &sessionRunnerChatRun{}
+	wantErr := errors.New("transcript temporarily unavailable")
+	if err := run.hydrateManagedEnvironmentBindings(context.Background(), func() ([]agentruntime.Message, error) { return nil, wantErr }); !errors.Is(err, wantErr) {
+		t.Fatalf("error=%v", err)
+	}
+	var loads atomic.Int32
+	started, release := make(chan struct{}), make(chan struct{})
+	done := make(chan error, 1)
+	go func() {
+		done <- run.hydrateManagedEnvironmentBindings(context.Background(), func() ([]agentruntime.Message, error) { loads.Add(1); close(started); <-release; return nil, nil })
+	}()
+	<-started
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+	defer cancel()
+	if err := run.hydrateManagedEnvironmentBindings(ctx, func() ([]agentruntime.Message, error) { loads.Add(1); return nil, nil }); !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("concurrent reader passed before hydration: %v", err)
+	}
+	close(release)
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if err := run.hydrateManagedEnvironmentBindings(context.Background(), func() ([]agentruntime.Message, error) { loads.Add(1); return nil, nil }); err != nil {
+		t.Fatal(err)
+	}
+	if loads.Load() != 1 || !run.managedEnvironmentBindingsHydrated {
+		t.Fatalf("loads=%d ready=%v", loads.Load(), run.managedEnvironmentBindingsHydrated)
 	}
 }
 

@@ -244,48 +244,6 @@ func StartShellCommandWithEnv(ctx context.Context, root string, shellName string
 	return &RunningCommand{cmd: cmd, process: process, stdout: &stdout, stderr: &stderr, command: executable, args: append([]string(nil), args...), workdir: filepath.ToSlash(relWorkdir), sandbox: sandbox}, nil
 }
 
-// CheckPackageManagerMutation rejects package/environment mutation from a
-// Bash cell. The model-visible Harness has one package authority
-// (manage_environments/manage_packages); allowing the same mutation through
-// a shell would recreate the competing path that the Harness contract removes.
-func CheckPackageManagerMutation(command string) error {
-	for _, segment := range splitShellSafetySegments(command) {
-		tool, arguments := unwrapShellSafetyCommand(segment)
-		tool = strings.ToLower(filepath.Base(strings.TrimSpace(tool)))
-		lowerArguments := make([]string, len(arguments))
-		for index, value := range arguments {
-			lowerArguments[index] = strings.ToLower(strings.TrimSpace(value))
-		}
-		mutating := false
-		switch tool {
-		case "pip", "pip3", "conda", "mamba", "micromamba", "uv", "poetry", "apt", "apt-get", "brew":
-			mutating = containsShellMutationVerb(lowerArguments)
-		case "python", "python3", "py":
-			mutating = len(lowerArguments) >= 3 && lowerArguments[0] == "-m" &&
-				(lowerArguments[1] == "pip" || lowerArguments[1] == "conda") &&
-				containsShellMutationVerb(lowerArguments[2:])
-		case "r", "rscript":
-			joined := strings.Join(lowerArguments, " ")
-			mutating = strings.Contains(joined, "install.packages(") || strings.Contains(joined, "remove.packages(") ||
-				strings.Contains(joined, "biocmanager::install(")
-		}
-		if mutating {
-			return SafetyError{Rule: "package-manager-authority", Message: "install, update, remove, and environment mutations must use manage_environments or manage_packages"}
-		}
-	}
-	return nil
-}
-
-func containsShellMutationVerb(arguments []string) bool {
-	for _, value := range arguments {
-		switch strings.TrimLeft(value, "-") {
-		case "install", "uninstall", "remove", "update", "upgrade", "create", "delete", "add", "sync":
-			return true
-		}
-	}
-	return false
-}
-
 func shellExecutor(shellName string, command string) (string, []string, error) {
 	if strings.TrimSpace(command) == "" {
 		return "", nil, errors.New("shell command is required")

@@ -155,40 +155,5 @@ func readLinuxDisk(path string) (*uint64, *uint64) {
 }
 
 func readLinuxProcessTree(pid int, expectedStartTicks uint64) processResourceCounter {
-	counter := processResourceCounter{pid: pid}
-	if pid <= 0 {
-		return counter
-	}
-	pids := append([]int{pid}, linuxProcessDescendants(pid)...)
-	pageSize := uint64(os.Getpagesize())
-	for _, current := range pids {
-		raw, err := os.ReadFile("/proc/" + strconv.Itoa(current) + "/stat")
-		if err != nil {
-			continue
-		}
-		closeParen := strings.LastIndexByte(string(raw), ')')
-		if closeParen < 0 || closeParen+2 >= len(raw) {
-			continue
-		}
-		fields := strings.Fields(string(raw[closeParen+2:]))
-		if len(fields) <= 21 {
-			continue
-		}
-		userTicks, userErr := strconv.ParseUint(fields[11], 10, 64)
-		systemTicks, systemErr := strconv.ParseUint(fields[12], 10, 64)
-		startTicks, startErr := strconv.ParseUint(fields[19], 10, 64)
-		rssPages, rssErr := strconv.ParseInt(fields[21], 10, 64)
-		if userErr != nil || systemErr != nil || startErr != nil || rssErr != nil {
-			continue
-		}
-		if current == pid && expectedStartTicks > 0 && startTicks != expectedStartTicks {
-			return processResourceCounter{pid: pid}
-		}
-		counter.visible = true
-		counter.cpuCounter += userTicks + systemTicks
-		if rssPages > 0 && uint64(rssPages) <= math.MaxUint64/pageSize {
-			counter.rssBytes += uint64(rssPages) * pageSize
-		}
-	}
-	return counter
+	return readLinuxProcessTreeAt("/proc", pid, expectedStartTicks)
 }

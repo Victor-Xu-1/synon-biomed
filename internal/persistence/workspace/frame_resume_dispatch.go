@@ -702,6 +702,17 @@ func (s *Store) WakeCompatibilityFrameResumeDispatch(eventID string) (FrameEvent
 		return FrameEvent{}, false, fmt.Errorf("begin resume dispatch wake: %w", err)
 	}
 	defer tx.Rollback()
+	event, changed, err := wakeCompatibilityFrameResumeDispatchTx(ctx, tx, eventID, s.now().UTC())
+	if err != nil || !changed {
+		return event, changed, err
+	}
+	if err := tx.Commit(); err != nil {
+		return FrameEvent{}, false, fmt.Errorf("commit resume dispatch wake: %w", err)
+	}
+	return event, true, nil
+}
+
+func wakeCompatibilityFrameResumeDispatchTx(ctx context.Context, tx workspaceTransaction, eventID string, now time.Time) (FrameEvent, bool, error) {
 	row, found, err := scanCompatibilityFrameResumeDispatch(tx.QueryRowContext(ctx, `
 		SELECT e.id, e.frame_id, e.sequence, e.payload, e.created_at,
 			f.root_frame_id, f.project_id, f.agent_name, f.status
@@ -716,7 +727,6 @@ func (s *Store) WakeCompatibilityFrameResumeDispatch(eventID string) (FrameEvent
 	if row.dispatch.Status != frameResumeDispatchRegistered {
 		return FrameEvent{}, false, nil
 	}
-	now := s.now().UTC()
 	payload := row.dispatch.ResumeEvent.Payload
 	dispatchPayload, ok := payload["dispatch"].(map[string]any)
 	if !ok {
@@ -761,9 +771,6 @@ func (s *Store) WakeCompatibilityFrameResumeDispatch(eventID string) (FrameEvent
 		}, now)
 	if err != nil {
 		return FrameEvent{}, false, err
-	}
-	if err := tx.Commit(); err != nil {
-		return FrameEvent{}, false, fmt.Errorf("commit resume dispatch wake: %w", err)
 	}
 	return auditEvent, true, nil
 }

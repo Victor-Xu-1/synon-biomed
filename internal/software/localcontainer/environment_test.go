@@ -5,12 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	kernelruntime "synon-go/internal/kernel"
+	"synon-go/internal/processsupervisor"
 	"synon-go/internal/software"
 )
 
@@ -162,5 +166,50 @@ func TestDockerProgressSplitsCarriageReturnAndNewlineFrames(t *testing.T) {
 	}
 	if !reflect.DeepEqual(frames, want) {
 		t.Fatalf("frames=%#v want=%#v", frames, want)
+	}
+}
+
+func TestExecDockerRunnerUsesObservableActivityWatchdog(t *testing.T) {
+	switch os.Getenv("SYNON_DOCKER_RUNNER_HELPER") {
+	case "stalled":
+		time.Sleep(10 * time.Second)
+		return
+	case "streaming":
+		for index := range 4 {
+			fmt.Printf("layer: Downloading %dMB/4MB\r", index+1)
+			time.Sleep(100 * time.Millisecond)
+		}
+		return
+	}
+	t.Setenv("GORACE", "atexit_sleep_ms=0")
+	runner := execDockerRunner{executable: os.Args[0], inactivityTimeout: 300 * time.Millisecond}
+	t.Setenv("SYNON_DOCKER_RUNNER_HELPER", "stalled")
+	_, _, err := runner.Run(context.Background(), "-test.run=^TestExecDockerRunnerUsesObservableActivityWatchdog$")
+	var inactivity *processsupervisor.InactivityError
+	if !errors.As(err, &inactivity) {
+		t.Fatalf("stalled command error=%v", err)
+	}
+
+	t.Setenv("SYNON_DOCKER_RUNNER_HELPER", "streaming")
+	var lines []string
+	_, _, err = runner.RunStreaming(
+		context.Background(), []string{"-test.run=^TestExecDockerRunnerUsesObservableActivityWatchdog$"},
+		func(line string) { lines = append(lines, line) },
+	)
+	if err != nil || len(lines) < 4 {
+		t.Fatalf("streaming command lines=%#v err=%v", lines, err)
+	}
+}
+
+func TestDockerCommandOutputIsBoundedWithoutSilentTruncation(t *testing.T) {
+	var output boundedDockerOutput
+	if n, err := output.Write([]byte("complete-json")); err != nil || n != 13 {
+		t.Fatalf("write=%d %v", n, err)
+	}
+	if _, err := output.Write(make([]byte, 8<<20)); err == nil {
+		t.Fatal("unbounded Docker output accepted")
+	}
+	if output.String() != "complete-json" {
+		t.Fatal("failed append corrupted previous output")
 	}
 }

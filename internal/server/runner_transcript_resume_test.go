@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -295,6 +296,21 @@ func TestTranscriptRunnerContextPressureInterruptsCompactsAndResumes(t *testing.
 }
 
 func TestGracefulRuntimeDrainResumesTranscriptRunnerWithoutBusinessCancellation(t *testing.T) {
+	testRunnerInfrastructureResume(t, false)
+}
+
+func TestSupervisorInterruptionResumesSameTranscriptAttempt(t *testing.T) {
+	testRunnerInfrastructureResume(t, true)
+}
+
+func testRunnerInfrastructureResume(t *testing.T, supervisor bool) {
+	t.Helper()
+	runCtx, cancelRun := context.WithCancelCause(context.Background())
+	defer cancelRun(nil)
+	reason := "runtime_draining"
+	if supervisor {
+		reason = sessionRunnerSupervisorInterruptedReasonCode
+	}
 	store, repo, _ := newTranscriptWebFixture(t)
 	seedTranscriptWebFrame(t, store, "local", "project-runtime-drain", "frame-runtime-drain")
 	requestStarted := make(chan struct{}, 1)
@@ -323,7 +339,7 @@ func TestGracefulRuntimeDrainResumesTranscriptRunnerWithoutBusinessCancellation(
 	resultCh := make(chan SessionRunnerCycleResult, 1)
 	errCh := make(chan error, 1)
 	go func() {
-		result, err := server.RunSessionRunnerChatOnce(context.Background(), SessionRunnerChatOptions{SessionID: "frame-runtime-drain", RunnerID: "runner-before-drain", Endpoint: provider.URL,
+		result, err := server.RunSessionRunnerChatOnce(runCtx, SessionRunnerChatOptions{SessionID: "frame-runtime-drain", RunnerID: "runner-before-drain", Endpoint: provider.URL,
 			APIKey: "test-key", Model: "test-model", LeaseTTL: time.Minute, MaxAttempts: 1,
 			DisableSkillDiscovery: true,
 		})
@@ -335,12 +351,16 @@ func TestGracefulRuntimeDrainResumesTranscriptRunnerWithoutBusinessCancellation(
 	case <-time.After(3 * time.Second):
 		t.Fatal("provider request did not start")
 	}
-	drainCtx, drainCancel := context.WithTimeout(context.Background(), 3*time.Second)
-	if err := server.Drain(drainCtx); err != nil {
+	if supervisor {
+		cancelRun(newSessionRunnerInfrastructureInterruption(reason, errors.New("injected sibling infrastructure failure")))
+	} else {
+		drainCtx, drainCancel := context.WithTimeout(context.Background(), 3*time.Second)
+		if err := server.Drain(drainCtx); err != nil {
+			drainCancel()
+			t.Fatalf("drain: %v", err)
+		}
 		drainCancel()
-		t.Fatalf("drain: %v", err)
 	}
-	drainCancel()
 	first := <-resultCh
 	close(releaseFirstRequest)
 	if err := <-errCh; err != nil || first.Status != "interrupted" || first.FinishEventID != 0 {
@@ -359,8 +379,10 @@ func TestGracefulRuntimeDrainResumesTranscriptRunnerWithoutBusinessCancellation(
 		firstState.LastCheckpointSequence <= 0 || firstState.ExpiresAt.After(time.Now().UTC()) {
 		t.Fatalf("first runtime state=%#v err=%v", firstState, err)
 	}
-	if oldRuntime, err := server.RunSessionRunnerChatOnce(context.Background(), SessionRunnerChatOptions{RunnerID: "old-runtime-must-not-reclaim", Endpoint: provider.URL, Model: "test-model"}); err != nil || oldRuntime.Claimed || requests.Load() != 1 {
-		t.Fatalf("drained runtime reclaimed work: result=%#v requests=%d err=%v", oldRuntime, requests.Load(), err)
+	if !supervisor {
+		if oldRuntime, err := server.RunSessionRunnerChatOnce(context.Background(), SessionRunnerChatOptions{RunnerID: "old-runtime-must-not-reclaim", Endpoint: provider.URL, Model: "test-model"}); err != nil || oldRuntime.Claimed || requests.Load() != 1 {
+			t.Fatalf("drained runtime reclaimed work: result=%#v requests=%d err=%v", oldRuntime, requests.Load(), err)
+		}
 	}
 
 	restarted := New(Options{Workspace: store, Transcript: repo, FileRoot: t.TempDir()})
@@ -391,7 +413,7 @@ func TestGracefulRuntimeDrainResumesTranscriptRunnerWithoutBusinessCancellation(
 			if err := json.Unmarshal(projected.ResolvedPayloadJSON, &payload); err != nil {
 				t.Fatal(err)
 			}
-			if payload["reason_code"] == "runtime_draining" && payload["status"] == "interrupted" {
+			if payload["reason_code"] == reason && payload["status"] == "interrupted" {
 				interruptions++
 			}
 		}

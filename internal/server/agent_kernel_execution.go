@@ -87,10 +87,7 @@ func (s *Server) executeAgentKernelToolInternal(
 	// runtime launcher generation).
 	authorityInput, input := agentKernelAuthorityAndExecutionInputs(publicName, input)
 	containerBacked := localcontainer.IsEnvironmentName(strings.TrimSpace(stringValue(input["environment"])))
-	if preflight := agentKernelPackageManagerMutationPreflight(publicName, input); preflight != nil {
-		return preflight, nil
-	}
-	if preflight := agentRuntimeBashDownloadPreflight(publicName, input); preflight != nil {
+	if preflight := agentExecutionPreparationPreflight(publicName, input, identity, s.kernelManager); preflight != nil {
 		return preflight, nil
 	}
 	if preflight := agentKernelOptionalFormatterPreflight(publicName, input); preflight != nil {

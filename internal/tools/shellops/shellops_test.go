@@ -100,33 +100,6 @@ func TestCheckSafetyAllowsProjectLocalShellCommands(t *testing.T) {
 	}
 }
 
-func TestCheckPackageManagerMutationKeepsOneEnvironmentAuthority(t *testing.T) {
-	blocked := []string{
-		"pip install scanpy",
-		"python -m pip uninstall numpy",
-		"micromamba create -n analysis python=3.11",
-		"conda update pandas",
-		"Rscript -e 'BiocManager::install(\"DESeq2\")'",
-	}
-	for _, command := range blocked {
-		err := CheckPackageManagerMutation(command)
-		var safetyErr SafetyError
-		if !errors.As(err, &safetyErr) || safetyErr.Rule != "package-manager-authority" {
-			t.Fatalf("CheckPackageManagerMutation(%q) error=%v", command, err)
-		}
-	}
-	for _, command := range []string{
-		"python analysis.py",
-		"pip list | grep scanpy",
-		"conda list numpy",
-		"printf 'pip install is forbidden\\n'",
-	} {
-		if err := CheckPackageManagerMutation(command); err != nil {
-			t.Fatalf("read-only command %q rejected: %v", command, err)
-		}
-	}
-}
-
 func TestShellExecOutputLimitHelperProcess(t *testing.T) {
 	index := -1
 	for i, arg := range os.Args {

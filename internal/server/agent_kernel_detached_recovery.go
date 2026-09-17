@@ -28,6 +28,16 @@ func (s *Server) RunDetachedKernelExecutionRecovery(ctx context.Context) error {
 	}
 	for {
 		wake := s.workspaceStore.KernelRetentionWake()
+		startupRetry := false
+		if reconciler, ok := s.kernelExecutionBackend.(interface{ ReconcileStartups(context.Context) error }); ok {
+			if err := reconciler.ReconcileStartups(ctx); err != nil {
+				if ctx.Err() != nil {
+					return nil
+				}
+				startupRetry = true
+				log.Printf("detached kernel startup recovery retained for retry: %v", err)
+			}
+		}
 		candidates, more, err := s.workspaceStore.ListDetachedKernelExecutionRecoveryCandidates(
 			ctx, s.kernelOperationBootID, detachedKernelRecoveryBatchSize,
 		)
@@ -37,7 +47,7 @@ func (s *Server) RunDetachedKernelExecutionRecovery(ctx context.Context) error {
 			}
 			return err
 		}
-		retry := more
+		retry := more || startupRetry
 		for _, candidate := range candidates {
 			if err := s.recoverDetachedKernelExecution(ctx, candidate); err != nil {
 				if ctx.Err() != nil {

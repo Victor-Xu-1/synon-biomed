@@ -1,4 +1,4 @@
-import type { SynonBiomedKernel } from '@/renderer/services/synonBiomedNotebook';
+import type { SynonBiomedExecutionObservation, SynonBiomedKernel } from '@/renderer/services/synonBiomedNotebook';
 
 export type ComputeRingPoint = {
   at: number;
@@ -48,6 +48,50 @@ export const formatAge = (value: string | null | undefined, now = Date.now()): s
 export const compactSource = (source: string): string => {
   const normalized = source.replace(/\s+/g, ' ').trim();
   return normalized.length > 160 ? `${normalized.slice(0, 157)}…` : normalized;
+};
+
+export const kernelExecutionKind = (kernel: SynonBiomedKernel): string => {
+  if (kernel.kernelKind === 'bash') return 'Bash';
+  if (kernel.kernelKind === 'repl') return 'REPL';
+  return kernel.language === 'r' ? 'R' : 'Python';
+};
+
+type KernelProcessPresentation = {
+  status: SynonBiomedExecutionObservation['status'] | 'stale';
+  names: string[];
+  processes: SynonBiomedExecutionObservation['processes'];
+  memoryPressure?: SynonBiomedExecutionObservation['memoryPressure'];
+};
+
+export const observedKernelProcesses = (kernel: SynonBiomedKernel, now: number): KernelProcessPresentation => {
+  const observation = kernel.executionObservation;
+  const timestamp = observation ? Date.parse(observation.sampledAt) : Number.NaN;
+  const currentId = kernel.currentCell?.tag ?? '';
+  if (
+    !currentId ||
+    (!kernel.busy && !kernel.starting) ||
+    !observation ||
+    observation.status === 'unavailable' ||
+    !Number.isFinite(timestamp) ||
+    observation.executionId !== currentId ||
+    observation.processes.length === 0
+  ) {
+    return { status: 'unavailable' as const, names: [], processes: [] };
+  }
+  if (now - timestamp > 15_000 || timestamp - now > 5_000) {
+    return { status: 'stale' as const, names: [], processes: [] };
+  }
+  // Show all observed leaf programs, not the first word of a submitted command
+  // or the hottest process. Retain the full tree in details for parallel work.
+  const parents = new Set(observation.processes.map((process) => process.parentPid));
+  const leaves = observation.processes.filter((process) => !parents.has(process.pid));
+  if (leaves.length === 0) return { status: 'unavailable', names: [], processes: [] };
+  return {
+    status: observation.status,
+    names: [...new Set(leaves.map((process) => process.name))],
+    processes: observation.processes,
+    memoryPressure: observation.memoryPressure,
+  };
 };
 
 export const formatKernelEnvironment = (environment: string, softwareRuntimeLabel: string): string =>

@@ -9,6 +9,28 @@ export type SynonBiomedKernelCell = {
   truncated: boolean;
 };
 
+export type SynonBiomedExecutionObservation = {
+  executionId: string;
+  sampledAt: string;
+  status: 'observed' | 'partial' | 'unavailable';
+  memoryPressure?: {
+    status: 'normal' | 'pressured' | 'unavailable';
+    currentBytes: number;
+    highBytes: number;
+    limitBytes: number;
+    swapBytes: number;
+    fullStallPercent: number;
+  } | null;
+  processes: Array<{
+    pid: number;
+    parentPid: number;
+    startIdentity: string;
+    name: string;
+    nameSource: 'executable' | 'process_name';
+    state: string;
+  }>;
+};
+
 export type SynonBiomedKernel = {
   frameId: string;
   rootFrameId: string;
@@ -32,6 +54,7 @@ export type SynonBiomedKernel = {
   lastDescription: string;
   rssBytes: number | null;
   cpuPct: number | null;
+  executionObservation?: SynonBiomedExecutionObservation | null;
 };
 
 export type SynonBiomedMachineMetrics = {
@@ -237,8 +260,74 @@ function normalizeKernel(value: unknown): SynonBiomedKernel[] {
       lastDescription: stringValue(value.last_description),
       rssBytes: nullableFiniteNumber(value.rss_bytes),
       cpuPct: nullableFiniteNumber(value.cpu_pct),
+      executionObservation: normalizeExecutionObservation(value.execution_observation),
     },
   ];
+}
+
+function normalizeExecutionObservation(value: unknown): SynonBiomedExecutionObservation | null {
+  if (!isRecord(value) || !['observed', 'partial', 'unavailable'].includes(stringValue(value.status))) return null;
+  const processes: SynonBiomedExecutionObservation['processes'] = [];
+  const seenPids = new Set<number>();
+  const input = Array.isArray(value.processes) ? value.processes : [];
+  for (const item of input.slice(0, 64)) {
+    if (
+      !isRecord(item) ||
+      !Number.isSafeInteger(item.pid) ||
+      (item.pid as number) <= 0 ||
+      !Number.isSafeInteger(item.parent_pid) ||
+      (item.parent_pid as number) < 0 ||
+      item.pid === item.parent_pid ||
+      seenPids.has(item.pid as number) ||
+      !/^[1-9]\d{0,19}$/.test(stringValue(item.start_identity)) ||
+      !['executable', 'process_name'].includes(stringValue(item.name_source))
+    )
+      continue;
+    const name = Array.from(stringValue(item.name).replace(/[\p{Cc}\p{Cf}]/gu, ''))
+      .slice(0, 255)
+      .join('');
+    if (!name) continue;
+    seenPids.add(item.pid as number);
+    processes.push({
+      pid: item.pid as number,
+      parentPid: item.parent_pid as number,
+      startIdentity: stringValue(item.start_identity),
+      name,
+      nameSource: item.name_source as 'executable' | 'process_name',
+      state: stringValue(item.state).slice(0, 16),
+    });
+  }
+  return {
+    executionId: stringValue(value.execution_id),
+    sampledAt: stringValue(value.sampled_at),
+    status:
+      input.length !== processes.length && value.status === 'observed'
+        ? 'partial'
+        : (value.status as SynonBiomedExecutionObservation['status']),
+    processes: value.status === 'unavailable' ? [] : processes,
+    memoryPressure: value.status === 'unavailable' ? null : normalizeMemoryPressure(value.memory_pressure),
+  };
+}
+
+function normalizeMemoryPressure(value: unknown): SynonBiomedExecutionObservation['memoryPressure'] {
+  if (!isRecord(value) || !['normal', 'pressured', 'unavailable'].includes(stringValue(value.status))) return null;
+  const counters = ['current_bytes', 'high_bytes', 'limit_bytes', 'swap_bytes'] as const;
+  if (
+    counters.some((key) => !Number.isSafeInteger(value[key]) || (value[key] as number) < 0) ||
+    typeof value.full_stall_percent !== 'number' ||
+    !Number.isFinite(value.full_stall_percent) ||
+    value.full_stall_percent < 0 ||
+    value.full_stall_percent > 100
+  )
+    return null;
+  return {
+    status: value.status as 'normal' | 'pressured' | 'unavailable',
+    currentBytes: value.current_bytes as number,
+    highBytes: value.high_bytes as number,
+    limitBytes: value.limit_bytes as number,
+    swapBytes: value.swap_bytes as number,
+    fullStallPercent: value.full_stall_percent,
+  };
 }
 
 function isRecord(value: unknown): value is RecordValue {

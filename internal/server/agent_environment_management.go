@@ -2,22 +2,18 @@ package server
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/google/uuid"
+	"time"
 
 	"synon-go/internal/agentruntime"
 	kernelruntime "synon-go/internal/kernel"
-	workspace "synon-go/internal/persistence/workspace"
+	"synon-go/internal/processsupervisor"
 	"synon-go/internal/sciencecapability"
 	"synon-go/internal/software"
 	"synon-go/internal/software/localcontainer"
@@ -128,11 +124,12 @@ func registeredExecutionPackEnvironmentContractResult(
 }
 
 type managedEnvironmentAuthority interface {
+	VerifyManagedEnvironmentImports(context.Context, string, []string) error
 	ListManagedEnvironments(context.Context, kernelruntime.ManagedEnvironmentQuery) ([]kernelruntime.ManagedEnvironment, error)
 	InspectManagedEnvironment(context.Context, string) (kernelruntime.ManagedEnvironment, bool, error)
 	CreateManagedEnvironment(context.Context, kernelruntime.CreateManagedEnvironmentInput) (kernelruntime.ManagedEnvironment, error)
 	RegisterManagedEnvironment(context.Context, kernelruntime.RegisterManagedEnvironmentInput) (kernelruntime.ManagedEnvironment, error)
-	DeleteManagedEnvironment(context.Context, string) error
+	DeleteManagedEnvironment(context.Context, kernelruntime.DeleteManagedEnvironmentInput) error
 	InstallManagedPackages(context.Context, kernelruntime.MutateManagedPackagesInput) (kernelruntime.ManagedEnvironment, error)
 	UninstallManagedPackages(context.Context, kernelruntime.MutateManagedPackagesInput) (kernelruntime.ManagedEnvironment, error)
 }
@@ -408,13 +405,16 @@ func (s *Server) executeAgentEnvironmentManagementToolWithAuthority(
 			if strings.TrimSpace(request.Name) == "" {
 				return nil, errors.New("manage_environments delete requires name")
 			}
-			operation := func(operationCtx context.Context) (kernelruntime.ManagedEnvironment, error) {
-				if err := authority.DeleteManagedEnvironment(operationCtx, request.Name); err != nil {
-					return kernelruntime.ManagedEnvironment{}, err
-				}
-				return kernelruntime.ManagedEnvironment{Name: strings.TrimSpace(request.Name), Status: "deactivated"}, nil
+			operationID, err := stableServerOperationID(
+				"environment",
+				access.UserID+"\x00"+access.Frame.RootFrameID+"\x00"+name,
+				map[string]any{"tool": name, "mode": request.Mode, "name": strings.TrimSpace(request.Name), "call_id": call.ID},
+			)
+			if err != nil {
+				return nil, err
 			}
-			return s.executeManagedEnvironmentOperation(ctx, access, call, name, request.Background, nil, operation)
+			operation := managedOperationRequest{Kind: "delete", DeleteName: strings.TrimSpace(request.Name)}
+			return s.executeManagedEnvironmentOperation(ctx, access, call, name, request.Background, map[string]any{"operation_id": operationID}, operation, authority)
 		}
 		if request.Mode == "register" {
 			if strings.TrimSpace(request.Name) == "" || strings.TrimSpace(request.SourcePath) == "" {
@@ -427,13 +427,23 @@ func (s *Server) executeAgentEnvironmentManagementToolWithAuthority(
 			if language == "" {
 				language = "python"
 			}
-			operation := func(operationCtx context.Context) (kernelruntime.ManagedEnvironment, error) {
-				return authority.RegisterManagedEnvironment(operationCtx, kernelruntime.RegisterManagedEnvironmentInput{
-					Name: request.Name, Language: language, SourcePath: request.SourcePath, VenvPath: request.VenvPath,
-					Create: request.Create, Extras: request.Extras, Force: request.Force, OperationID: call.ID,
-				})
+			operationID, err := stableServerOperationID(
+				"environment",
+				access.UserID+"\x00"+access.Frame.RootFrameID+"\x00"+name,
+				stableAuthorityInput(map[string]any{
+					"tool": name, "mode": request.Mode, "name": request.Name, "language": language,
+					"source_path": request.SourcePath, "venv_path": request.VenvPath,
+					"create": request.Create, "extras": request.Extras, "force": request.Force,
+				}),
+			)
+			if err != nil {
+				return nil, err
 			}
-			return s.executeManagedEnvironmentOperation(ctx, access, call, name, request.Background, nil, operation)
+			operation := managedOperationRequest{Kind: "register", Register: &kernelruntime.RegisterManagedEnvironmentInput{
+				Name: request.Name, Language: language, SourcePath: request.SourcePath, VenvPath: request.VenvPath,
+				Create: request.Create, Extras: request.Extras, Force: request.Force, OperationID: operationID,
+			}}
+			return s.executeManagedEnvironmentOperation(ctx, access, call, name, request.Background, map[string]any{"operation_id": operationID}, operation, authority)
 		}
 		if request.Mode != "create" || strings.TrimSpace(request.Name) == "" || len(request.Packages) == 0 {
 			return nil, errors.New("manage_environments create request is incomplete")
@@ -445,7 +455,11 @@ func (s *Server) executeAgentEnvironmentManagementToolWithAuthority(
 		if language != "python" && language != "r" {
 			return nil, errors.New("manage_environments language must be python or r")
 		}
-		if language == "r" && strings.TrimSpace(request.PythonVersion) != "" {
+		hasPipStages := len(request.PipPhases) != 0
+		for _, requirement := range request.Packages {
+			hasPipStages = hasPipStages || strings.HasPrefix(requirement, "pip::")
+		}
+		if language == "r" && !hasPipStages && strings.TrimSpace(request.PythonVersion) != "" {
 			return nil, errors.New("manage_environments python_version is valid only for Python environments")
 		}
 		request.Channels = canonicalManagedToolChannels(request.Channels)
@@ -486,6 +500,9 @@ func (s *Server) executeAgentEnvironmentManagementToolWithAuthority(
 			if !found || strings.TrimSpace(environment.Name) == "" || environment.Status != "ready" {
 				return nil, errors.New("compatible managed environment became unavailable during preflight")
 			}
+			if err := authority.VerifyManagedEnvironmentImports(ctx, environment.Name, request.ImportNames); err != nil {
+				return nil, err
+			}
 			return map[string]any{
 				"tool": manageEnvironmentsToolName, "status": "completed", "mode": "reuse",
 				"environment":    managedEnvironmentInventorySummary(environment),
@@ -506,20 +523,33 @@ func (s *Server) executeAgentEnvironmentManagementToolWithAuthority(
 			preflight["message"] = "The proposed environment does not fit the current machine snapshot. Select a lighter dependency set, an admitted remote route, or ask the user when the material tradeoff is unresolved."
 			return preflight, nil
 		}
-		operation := func(operationCtx context.Context) (kernelruntime.ManagedEnvironment, error) {
-			requiredAccelerator := managedEnvironmentPreflightRequiredAccelerator(preflight, request.ResourceRequirements.Accelerator)
-			return authority.CreateManagedEnvironment(operationCtx, kernelruntime.CreateManagedEnvironmentInput{
-				Name: request.Name, Language: language, PythonVersion: request.PythonVersion,
-				Packages: request.Packages, Channels: request.Channels, PipPhases: request.PipPhases,
-				PipArgs: request.PipArgs, PipFindLinks: request.PipFindLinks,
-				PipExtraIndexURLs: request.PipExtraIndexURLs, ImportNames: request.ImportNames,
-				RequiredAccelerator: requiredAccelerator, OperationID: call.ID,
-			})
+		operationID, err := stableServerOperationID(
+			"environment",
+			access.UserID+"\x00"+access.Frame.RootFrameID+"\x00"+name,
+			stableAuthorityInput(map[string]any{
+				"tool": name, "mode": request.Mode, "name": request.Name, "language": language,
+				"python_version": request.PythonVersion, "packages": request.Packages, "channels": request.Channels,
+				"pip_phases": request.PipPhases, "pip_args": request.PipArgs, "pip_find_links": request.PipFindLinks,
+				"pip_extra_index_urls": request.PipExtraIndexURLs, "import_names": request.ImportNames,
+				"resource_requirements": request.ResourceRequirements, "implementation": request.Implementation,
+			}),
+		)
+		if err != nil {
+			return nil, err
 		}
+		requiredAccelerator := managedEnvironmentPreflightRequiredAccelerator(preflight, request.ResourceRequirements.Accelerator)
+		operation := managedOperationRequest{Kind: "create", Create: &kernelruntime.CreateManagedEnvironmentInput{
+			Name: request.Name, Language: language, PythonVersion: request.PythonVersion,
+			Packages: request.Packages, Channels: request.Channels, PipPhases: request.PipPhases,
+			PipArgs: request.PipArgs, PipFindLinks: request.PipFindLinks,
+			PipExtraIndexURLs: request.PipExtraIndexURLs, ImportNames: request.ImportNames,
+			RequiredAccelerator: requiredAccelerator, OperationID: operationID,
+		}}
 		return s.executeManagedEnvironmentOperation(ctx, access, call, name, request.Background, map[string]any{
 			"mode": "create", "implementation": strings.TrimSpace(request.Implementation),
 			"requested_packages": append([]string(nil), request.Packages...), "preflight": preflight,
-		}, operation)
+			"operation_id": operationID,
+		}, operation, authority)
 	case managePackagesToolName:
 		var request managePackagesInput
 		if err := decodeStrictToolInput(input, &request); err != nil {
@@ -684,23 +714,32 @@ func (s *Server) executeAgentEnvironmentManagementToolWithAuthority(
 				return preflight, nil
 			}
 		}
-		operation := func(operationCtx context.Context) (kernelruntime.ManagedEnvironment, error) {
-			requiredAccelerator := managedEnvironmentPreflightRequiredAccelerator(preflight, request.ResourceRequirements.Accelerator)
-			mutation := kernelruntime.MutateManagedPackagesInput{
-				Environment: request.Environment, Packages: request.Packages, Channels: request.Channels,
-				UsePip: request.UsePip, ForkTo: request.ForkTo, PipArgs: request.PipArgs,
-				PipFindLinks: request.PipFindLinks, PipExtraIndexURLs: request.PipExtraIndexURLs,
-				RequiredAccelerator: requiredAccelerator, OperationID: call.ID,
-			}
-			if request.Mode == "uninstall" {
-				return authority.UninstallManagedPackages(operationCtx, mutation)
-			}
-			return authority.InstallManagedPackages(operationCtx, mutation)
+		operationID, err := stableServerOperationID(
+			"environment",
+			access.UserID+"\x00"+access.Frame.RootFrameID+"\x00"+name,
+			stableAuthorityInput(map[string]any{
+				"tool": name, "mode": request.Mode, "environment": request.Environment,
+				"packages": request.Packages, "channels": request.Channels, "use_pip": request.UsePip,
+				"fork_to": request.ForkTo, "pip_args": request.PipArgs, "pip_find_links": request.PipFindLinks,
+				"pip_extra_index_urls": request.PipExtraIndexURLs,
+				"required_accelerator": request.ResourceRequirements.Accelerator, "implementation": request.Implementation,
+			}),
+		)
+		if err != nil {
+			return nil, err
 		}
+		requiredAccelerator := managedEnvironmentPreflightRequiredAccelerator(preflight, request.ResourceRequirements.Accelerator)
+		operation := managedOperationRequest{Kind: request.Mode, Packages: &kernelruntime.MutateManagedPackagesInput{
+			Environment: request.Environment, Packages: request.Packages, Channels: request.Channels,
+			UsePip: request.UsePip, ForkTo: request.ForkTo, PipArgs: request.PipArgs,
+			PipFindLinks: request.PipFindLinks, PipExtraIndexURLs: request.PipExtraIndexURLs,
+			RequiredAccelerator: requiredAccelerator, OperationID: operationID,
+		}}
 		return s.executeManagedEnvironmentOperation(ctx, access, call, name, request.Background, map[string]any{
 			"mode": request.Mode, "implementation": strings.TrimSpace(request.Implementation),
 			"requested_packages": append([]string(nil), request.Packages...), "preflight": preflight,
-		}, operation)
+			"operation_id": operationID,
+		}, operation, authority)
 	default:
 		return nil, errors.New("unsupported managed environment tool")
 	}
@@ -777,7 +816,7 @@ func (s *Server) canonicalManagedPackageImplementation(ctx context.Context, requ
 	requestedIsDedicated := false
 	for _, skill := range s.skillCatalog.Skills() {
 		for _, identity := range skill.ImplementationIdentities {
-			if askUserImplementationIdentityMatches(identity, requested) {
+			if taskImplementationMatchesRegistered(requested, identity) {
 				requestedIsDedicated = true
 				break
 			}
@@ -1084,78 +1123,6 @@ func decodeStrictToolInput(input map[string]any, target any) error {
 	return ensureJSONEOF(decoder)
 }
 
-func (s *Server) executeManagedEnvironmentOperation(
-	ctx context.Context,
-	access workspace.KernelFrameAccess,
-	call agentruntime.ToolCall,
-	toolName string,
-	background bool,
-	metadata map[string]any,
-	operation func(context.Context) (kernelruntime.ManagedEnvironment, error),
-) (any, error) {
-	if !background {
-		environment, err := operation(ctx)
-		if err != nil {
-			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-				return nil, err
-			}
-			return managedEnvironmentFailureReceipt(toolName, err, metadata), nil
-		}
-		return managedEnvironmentOperationReceipt(toolName, "completed", environment, metadata), nil
-	}
-	if s.workspaceStore == nil {
-		return nil, errors.New("managed environment background notifications are unavailable")
-	}
-	digest := sha256.Sum256([]byte(access.Frame.ID + "\x00" + call.ID + "\x00" + toolName))
-	operationID := "environment-" + hex.EncodeToString(digest[:12])
-	// Use a deterministic notification id so a repeated exact operation cannot
-	// publish duplicate completion messages.
-	notificationID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("synon-environment:"+access.Frame.ID+":"+call.ID)).String()
-	observer, created, err := s.beginManagedEnvironmentObservation(ctx, call, toolName)
-	if err != nil {
-		return nil, err
-	}
-	if observer != nil {
-		operationID = observer.OperationID
-	}
-	if !created {
-		return supervisedEnvironmentAccepted(observer, operationID, notificationID, toolName), nil
-	}
-	operationCtx, cancel, registered := s.reserveDetachedKernelObserver(context.Background(), operationID)
-	if !registered {
-		err := errors.New("background operation observer is already owned or shutting down")
-		if observer != nil {
-			_, observeErr := s.transcriptStore.AppendToolOperationObservation(context.Background(), *observer, "failed", 1, map[string]any{"toolResult": managedEnvironmentFailureReceipt(toolName, err, metadata), "progress": map[string]any{"phase": "operation_failed", "indeterminate": false}})
-			if observeErr != nil {
-				log.Printf("settle unstarted background operation %s: %v", operationID, observeErr)
-			}
-			s.signalTranscriptWebDelivery()
-		}
-		return nil, err
-	}
-	go func() {
-		defer s.releaseDetachedKernelObserver(operationID, cancel)
-		// A background mutation is owned by the managed-environment supervisor,
-		// whose service lifetime and explicit cancellation are the execution
-		// authority. Do not add a wall-clock deadline here: dependency solving,
-		// downloads, and builds can remain healthy for an arbitrarily long time.
-		// The kernel manager still terminates the process tree when its supervisor
-		// stops, and the durable notification below records the terminal result.
-		environment, err := s.observeManagedEnvironmentOperation(operationCtx, observer, toolName, metadata, operation)
-		_, payload := managedEnvironmentTerminalObservation(toolName, environment, err, metadata)
-		payload["operation_id"] = operationID
-		_, _, notificationErr := s.workspaceStore.CreateNotification(context.Background(), workspace.CreateNotificationInput{
-			ID: notificationID, SenderFrameID: access.Frame.ID, RecipientFrameID: access.Frame.ID,
-			RootFrameID: access.Frame.RootFrameID, OwnerUserID: access.UserID,
-			NotificationType: "cell_result", Payload: payload,
-		})
-		if notificationErr != nil {
-			log.Printf("background environment notification %s: %v", operationID, notificationErr)
-		}
-	}()
-	return supervisedEnvironmentAccepted(observer, operationID, notificationID, toolName), nil
-}
-
 func managedEnvironmentInventorySummary(environment kernelruntime.ManagedEnvironment) map[string]any {
 	return map[string]any{
 		"name": environment.Name, "language": environment.Language, "status": environment.Status,
@@ -1299,6 +1266,8 @@ func managedEnvironmentFailureRecovery(category string) string {
 		return "Keep the selected implementation. Add the exact missing compiler or build executable through the managed environment authority, preserve completed downloads, then retry only the source-build package phase."
 	case "dependency_resolution_failed":
 		return "Keep the selected implementation and every compatibility condition already established by the observed machine and reviewed evidence. If the compatible build is absent from the chosen package authority, change only the verified installation authority or split the plan into a minimal base plus ordered managed pip phases. Do not lower the framework, accelerator, or compiled-extension family to a build already known not to support the observed device merely to satisfy the solver. Then retry only the affected immutable environment step."
+	case "installer_inactive":
+		return "Keep the selected implementation, immutable environment history, and completed package-cache evidence. Verify the selected source transport or local resource path, then retry only the affected environment step. If the same inactivity recurs, use a materially different verified source or execution provider; do not leave the old process running or start a competing installer."
 	default:
 		return "Keep the selected implementation. Inspect its verified source and environment contract, correct this causal condition, and retry only the affected immutable environment step."
 	}
@@ -1310,6 +1279,22 @@ func classifyManagedEnvironmentFailure(err error) (category, cause string, detai
 		message = strings.TrimSpace(err.Error())
 	}
 	details = map[string]any{}
+	var inactivity *kernelruntime.ManagedEnvironmentInstallerInactivityError
+	if errors.As(err, &inactivity) {
+		details["failure_stage"] = "installer_execution"
+		if inactivity.Duration > 0 {
+			details["inactivity_seconds"] = int64(inactivity.Duration / time.Second)
+		}
+		return "installer_inactive", "The local installer remained alive but produced no observable output, CPU work, process-tree change, or I/O within its bounded activity window.", details
+	}
+	var processInactivity *processsupervisor.InactivityError
+	if errors.As(err, &processInactivity) {
+		details["failure_stage"] = "installer_execution"
+		if processInactivity.Duration > 0 {
+			details["inactivity_seconds"] = int64(processInactivity.Duration / time.Second)
+		}
+		return "installer_inactive", "The local installer remained alive but produced no observable output, CPU work, process-tree change, or I/O within its bounded activity window.", details
+	}
 	lowerMessage := strings.ToLower(message)
 	packageSourceTransportFailed := strings.Contains(lowerMessage, "could not fetch url") &&
 		(strings.Contains(lowerMessage, "looking in links:") || strings.Contains(lowerMessage, "no matching distribution") ||

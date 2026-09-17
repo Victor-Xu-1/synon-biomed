@@ -18,6 +18,40 @@ const tool = (overrides: Partial<NormalizedToolCall> = {}): NormalizedToolCall =
 });
 
 describe('tool detail projection', () => {
+  it('retains redacted terminal installer diagnostics without stale progress', () => {
+    const detail = buildToolPublicDetailPresentation(
+      tool({
+        status: 'error',
+        progress: { phase: 'installing_packages', indeterminate: true },
+        output: JSON.stringify({
+          ok: false,
+          status: 'failed',
+          failure: {
+            diagnostic_tail: 'transfer failed: short body\n/tmp/private/build.log\napi_key=sk-fixture-secret123456',
+          },
+        }),
+      }),
+      'zh-CN',
+      null
+    );
+    const rendered = JSON.stringify(detail.outputBlocks);
+    expect(rendered).toContain('transfer failed: short body');
+    expect(rendered).not.toContain('/tmp/private');
+    expect(rendered).not.toContain('sk-fixture-secret123456');
+    expect(detail.resultRows).not.toContainEqual({ label: '当前阶段', value: '安装依赖包' });
+  });
+  it.each(['completed', 'error', 'canceled', 'interrupted', 'blocked', 'waiting', 'unknown'] as const)(
+    'does not project retained live progress after transition to %s',
+    (status) => {
+      const detail = buildToolPublicDetailPresentation(
+        tool({ status, progress: { phase: 'installing_packages', phasePercent: 72, elapsedMs: 5000 } }),
+        'en-US',
+        null
+      );
+      expect(JSON.stringify(detail.resultRows)).not.toContain('Installing packages');
+      expect(JSON.stringify(detail.resultRows)).not.toContain('72%');
+    }
+  );
   it('uses one private-field policy for summary rows and nested evidence', () => {
     const detail = buildToolPublicDetailPresentation(
       tool({

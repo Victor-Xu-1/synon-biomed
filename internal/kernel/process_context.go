@@ -3,6 +3,7 @@ package kernel
 import (
 	"context"
 	"os/exec"
+	"sync"
 	"time"
 )
 
@@ -25,4 +26,16 @@ func newWorkerProcessCommand(ctx context.Context, executable string, arguments .
 	}
 	command.WaitDelay = workerProcessWaitDelay
 	return command
+}
+
+// Bind before Start launches exec.Cmd's context watcher. The watcher must not
+// read a half-published process identity, and Cancel must never be rewritten
+// after Start. Non-context commands must retain a nil Cancel to remain valid.
+func bindWorkerProcessCancellation(command *exec.Cmd, cancel func() error) func() {
+	ready := make(chan struct{})
+	var once sync.Once
+	if command.Cancel != nil {
+		command.Cancel = func() error { <-ready; return cancel() }
+	}
+	return func() { once.Do(func() { close(ready) }) }
 }

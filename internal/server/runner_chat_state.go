@@ -76,6 +76,7 @@ type sessionRunnerChatRun struct {
 	managedEnvironmentImplementations  map[string][]string
 	managedEnvironmentInvalidations    map[string]managedEnvironmentInvalidation
 	managedEnvironmentBindingsHydrated bool
+	managedEnvironmentHydration        *managedEnvironmentHydration
 	readReuse                          *sessionRunnerReadReuseCache
 	scientificCapabilitiesMu           sync.Mutex
 	toolCapabilityCatalog              map[string][]string

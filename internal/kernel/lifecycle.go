@@ -86,32 +86,33 @@ type LastCell struct {
 // SessionKernel is the v1.1 live inventory projection. RootFrameID is exposed
 // for project-level grouping while incarnation fences remain internal.
 type SessionKernel struct {
-	FrameID                string       `json:"frame_id"`
-	FrameIncarnationID     string       `json:"-"`
-	RootFrameIncarnationID string       `json:"-"`
-	RootFrameID            string       `json:"root_frame_id"`
-	ProjectID              string       `json:"project_id"`
-	AgentName              string       `json:"agent_name"`
-	ProjectName            string       `json:"project_name,omitempty"`
-	SessionTitle           string       `json:"session_title,omitempty"`
-	LastDescription        string       `json:"last_description,omitempty"`
-	LastCell               *LastCell    `json:"last_cell"`
-	Environment            string       `json:"environment"`
-	RuntimeGeneration      string       `json:"runtime_generation,omitempty"`
-	Language               string       `json:"language"`
-	KernelID               string       `json:"kernel_id"`
-	Busy                   bool         `json:"busy"`
-	Starting               bool         `json:"starting"`
-	PIDVisible             bool         `json:"pid_visible"`
-	RSSBytes               *uint64      `json:"rss_bytes"`
-	CPUPct                 *float64     `json:"cpu_pct"`
-	KernelKind             string       `json:"kind"`
-	CurrentCellTag         *string      `json:"current_cell_tag"`
-	CurrentCell            *CurrentCell `json:"current_cell"`
-	ExecutionCount         int          `json:"execution_count"`
-	LastUsed               time.Time    `json:"last_used"`
-	DelegateName           *string      `json:"delegate_name"`
-	CellCount              int          `json:"cell_count"`
+	FrameID                string                `json:"frame_id"`
+	FrameIncarnationID     string                `json:"-"`
+	RootFrameIncarnationID string                `json:"-"`
+	RootFrameID            string                `json:"root_frame_id"`
+	ProjectID              string                `json:"project_id"`
+	AgentName              string                `json:"agent_name"`
+	ProjectName            string                `json:"project_name,omitempty"`
+	SessionTitle           string                `json:"session_title,omitempty"`
+	LastDescription        string                `json:"last_description,omitempty"`
+	LastCell               *LastCell             `json:"last_cell"`
+	Environment            string                `json:"environment"`
+	RuntimeGeneration      string                `json:"runtime_generation,omitempty"`
+	Language               string                `json:"language"`
+	KernelID               string                `json:"kernel_id"`
+	Busy                   bool                  `json:"busy"`
+	Starting               bool                  `json:"starting"`
+	PIDVisible             bool                  `json:"pid_visible"`
+	RSSBytes               *uint64               `json:"rss_bytes"`
+	CPUPct                 *float64              `json:"cpu_pct"`
+	KernelKind             string                `json:"kind"`
+	CurrentCellTag         *string               `json:"current_cell_tag"`
+	CurrentCell            *CurrentCell          `json:"current_cell"`
+	ExecutionObservation   *ExecutionObservation `json:"execution_observation,omitempty"`
+	ExecutionCount         int                   `json:"execution_count"`
+	LastUsed               time.Time             `json:"last_used"`
+	DelegateName           *string               `json:"delegate_name"`
+	CellCount              int                   `json:"cell_count"`
 }
 
 // IdleCandidate is an immutable observation used by the server-owned idle
@@ -265,23 +266,24 @@ type managedExecution struct {
 	generation     uint64
 	stdoutObserver func(ExecStdoutChunk)
 
-	mu          sync.Mutex
-	status      string
-	timedOut    bool
-	beforeFiles workspaceFilesSnapshot
-	workingDir  string
-	startedAt   time.Time
-	stdout      string
-	stdoutSeq   uint64
-	stdoutBytes uint64
-	stopReason  string
-	interrupt   chan struct{}
-	hostCancel  chan struct{}
-	started     chan ExecutionStarted
-	done        chan ExecutionOutcome
-	finished    chan struct{}
-	startedOnce sync.Once
-	finishOnce  sync.Once
+	mu              sync.Mutex
+	status          string
+	timedOut        bool
+	beforeFiles     workspaceFilesSnapshot
+	workingDir      string
+	startedAt       time.Time
+	stdout          string
+	stdoutSeq       uint64
+	stdoutBytes     uint64
+	stopReason      string
+	interrupt       chan struct{}
+	resourceFailure chan *ResourcePressureFailure
+	hostCancel      chan struct{}
+	started         chan ExecutionStarted
+	done            chan ExecutionOutcome
+	finished        chan struct{}
+	startedOnce     sync.Once
+	finishOnce      sync.Once
 }
 
 type executionKey struct {
@@ -860,7 +862,7 @@ func (m *Manager) Submit(input SubmitRequest) (*ExecutionHandle, error) {
 	execution := &managedExecution{
 		worker: worker, state: state, request: input, key: key, generation: generation,
 		stdoutObserver: m.currentStdoutObserver(),
-		status:         "queued", interrupt: make(chan struct{}, 1), hostCancel: make(chan struct{}, 1),
+		status:         "queued", interrupt: make(chan struct{}, 1), hostCancel: make(chan struct{}, 1), resourceFailure: make(chan *ResourcePressureFailure, 1),
 		started: make(chan ExecutionStarted, 1), done: make(chan ExecutionOutcome, 1), finished: make(chan struct{}),
 	}
 	lifecycleRegistry.mu.Lock()
@@ -1099,6 +1101,21 @@ func (execution *managedExecution) run() {
 	postStartSignalCount := 0
 	executionAcknowledged := false
 	preStartInterruptPending := false
+	var pressureFailure *ResourcePressureFailure
+	finish := func(outcome ExecutionOutcome) {
+		if pressureFailure != nil {
+			// A buffered response does not prove physical termination. Preserve
+			// ownership until the same worker owner has reaped the process.
+			<-worker.done
+			outcome.Err = pressureFailure
+			outcome.TimedOut, outcome.Response.Interrupted = false, false
+			if outcome.Response.Trace == nil {
+				outcome.Response.Trace = map[string]any{}
+			}
+			outcome.Response.Trace["resource_pressure"] = pressureFailure.Observation
+		}
+		execution.finish(outcome)
+	}
 	requestInterrupt := func() {
 		cancelHostCalls()
 		// A single pre-start signal preserves prompt cancellation for runtimes
@@ -1129,7 +1146,7 @@ func (execution *managedExecution) run() {
 			worker.setStopReason("was shut down")
 		}
 		_ = worker.process.kill()
-		execution.finish(ExecutionOutcome{
+		finish(ExecutionOutcome{
 			Err:      execution.withUserStopError(errors.New("kernel cell did not stop within interrupt grace period")),
 			TimedOut: execution.isTimedOut(), StartedAt: startedAt,
 		})
@@ -1263,11 +1280,32 @@ func (execution *managedExecution) run() {
 				continue
 			}
 			response = execution.withUserStopReason(response)
-			execution.finish(ExecutionOutcome{Response: response, TimedOut: execution.isTimedOut(), StartedAt: startedAt})
+			finish(ExecutionOutcome{Response: response, TimedOut: execution.isTimedOut(), StartedAt: startedAt})
 			return
 		case <-worker.done:
-			execution.finish(ExecutionOutcome{Err: execution.withUserStopError(worker.stoppedError()), TimedOut: execution.isTimedOut(), StartedAt: startedAt})
+			finish(ExecutionOutcome{Err: execution.withUserStopError(worker.stoppedError()), TimedOut: execution.isTimedOut(), StartedAt: startedAt})
 			return
+		case failure := <-execution.resourceFailure:
+			if failure == nil || grace != nil || pressureFailure != nil {
+				continue
+			}
+			// Let an already completed response win before requesting termination.
+			select {
+			case response := <-worker.responses:
+				if response.ID == execution.request.ExecID {
+					finish(ExecutionOutcome{Response: response, StartedAt: startedAt})
+					return
+				}
+			default:
+			}
+			pressureFailure = failure
+			cancelHostCalls()
+			worker.setStopReason(failure.Error())
+			// Release the exhausted in-memory state. The same process owner reaps
+			// the worker; only its terminal event can settle this failed execution.
+			if err := worker.process.kill(); err != nil {
+				_, _ = worker.diagnostics.Write([]byte("resource-pressure termination failed: " + err.Error() + "\n"))
+			}
 		case <-execution.interrupt:
 			requestInterrupt()
 		case <-execution.hostCancel:
@@ -1408,6 +1446,9 @@ func (execution *managedExecution) finish(outcome ExecutionOutcome) {
 			outcome.FilesWritten, outcome.DroppedRoots = changedWorkspaceFiles(execution.beforeFiles, afterFiles)
 		}
 		execution.mu.Lock()
+		if outcome.Err != nil && outcome.Response.Stdout == "" {
+			outcome.Response.Stdout = execution.stdout
+		}
 		execution.status = "done"
 		if execution.request.Background && !outcome.Dequeued {
 			execution.status = "persisting"

@@ -197,9 +197,10 @@ printf '{"jsonrpc":"2.0","id":1,"method":"tools/list"}\n' |
 test -f "$package_dir/assets/optional/kernel-compute.manifest.json"
 test -f "$package_dir/assets/optional/kernels/kernel_worker.py"
 test -f "$package_dir/assets/optional/micromamba/LICENSE"
-test "$("$package_dir/assets/optional/micromamba/linux-x86_64/micromamba" --version)" = "2.5.0"
-printf 'c04571cfb0750e5432d530a3068b8fcd232ebed3133358e056e59a90b9852b00  %s\n' \
-	"$package_dir/assets/optional/micromamba/linux-x86_64/micromamba" | sha256sum -c -
+test "$("$package_dir/assets/optional/micromamba/linux-x86_64/micromamba" --version)" = "2.9.0"
+# The existing assets-verify check above is the single checksum authority.
+test -f "$package_dir/assets/optional/micromamba/BUILD.md"
+test -f "$package_dir/assets/optional/micromamba/DEPENDENCY-NOTICES.txt"
 test -f "$package_dir/assets/synon-link/manifest.json"
 test -f "$package_dir/assets/synon-link/synon-link-extension-v0.6.10.zip"
 test -f "$package_dir/web/index.html"

@@ -58,7 +58,8 @@ export function buildToolPublicDetailPresentation(
     detailKind === 'method' ? [...detailBlocks.inputBlocks, ...detailBlocks.outputBlocks] : detailBlocks.inputBlocks;
   const outputBlocks = detailKind === 'method' ? [] : detailBlocks.outputBlocks;
   const outputProjection = buildToolDetailOutputProjection(outputSources, detailKind, chinese, outputBlocks.length > 0);
-  const progressRows = tool.progress ? buildToolProgressPublicPresentation(tool.progress, language).rows : [];
+  const progressRows =
+    tool.status === 'running' && tool.progress ? buildToolProgressPublicPresentation(tool.progress, language).rows : [];
   const resultCollections = dedupeCollections(outputProjection.collections);
   const resultRows = normalizeToolDetailResultRows(
     [...progressRows, ...outputProjection.rows],

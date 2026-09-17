@@ -13,6 +13,7 @@ from .worker_compile import prepare
 from .worker_streams import CellStreams
 from .worker_transport import Transport
 from .worker_safety import harden_process
+from .worker_reads import ExecutionReadWitness
 
 
 class Worker:
@@ -22,6 +23,7 @@ class Worker:
         self.index = 0
         self.executing = False
         self.source_names = []
+        self.execution_reads = ExecutionReadWitness()
         signal.signal(signal.SIGINT, self.interrupt)
 
     def interrupt(self, _signum, _frame):
@@ -55,6 +57,7 @@ class Worker:
                 os.chdir(request["working_dir"])
             compiled, result["preflight"] = prepare(source, self.namespace, filename)
             if compiled is not None:
+                self.execution_reads.begin(request.get("workspace_dir"), request.get("working_dir"))
                 self.executing = True
                 self.transport.send({"type": "execution_started", "id": cell_id})
                 exec(compiled, self.namespace, self.namespace)
@@ -66,6 +69,7 @@ class Worker:
                 result["trace"] = {"error_lineno": frames[-1].lineno, "error_call": frames[-1].line}
         finally:
             self.executing = False
+            result["trace"]["execution_reads"] = self.execution_reads.finish()
             synon_host_bridge.finish_cell()
             result["stdout"], result["stderr"] = streams.finish()
             result["usage"] = {"wall_s": time.monotonic() - started, "cpu_s": time.process_time() - cpu}

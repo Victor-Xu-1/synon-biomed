@@ -1,5 +1,6 @@
 import type { NormalizedToolCall } from '@/common/chat/normalizeToolCall';
 import { toolPublicDetailText } from '@/renderer/services/i18n/toolPublicDetailLocale';
+import { sanitizeToolFailureDetail } from './toolFailurePresentation';
 
 export type ToolPublicDetailBlock = {
   label: string;
@@ -196,6 +197,13 @@ function collectOutputBlocks(
   depth = 0
 ) {
   if (depth > 4) return;
+  if (tool.status === 'error') {
+    const failure = isRecord(value.failure) ? value.failure : null;
+    const diagnostic = failure?.diagnostic_tail ?? value.error;
+    if (typeof diagnostic === 'string') {
+      appendOutputBlock(blocks, sanitizeToolFailureDetail(diagnostic), 'STDERR', 'text', chinese);
+    }
+  }
   appendOutputBlock(blocks, value.stdout, 'STDOUT', inferOutputLanguage(tool.name), chinese);
   appendOutputBlock(blocks, value.stderr, 'STDERR', inferOutputLanguage(tool.name), chinese);
   if (isMemoryTool(tool.name)) {

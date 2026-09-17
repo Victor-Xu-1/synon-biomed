@@ -604,9 +604,9 @@ func (r *Repository) ClaimRunner(ctx context.Context, input ClaimRunnerInput) (C
 	if err := validateResumeRequest(input.ResumeSource, input.ResumeCheckpoint); err != nil {
 		return ClaimRunnerResult{}, err
 	}
-	now := r.now().UTC()
 	var result ClaimRunnerResult
 	err := r.withImmediate(ctx, func(conn *sql.Conn) error {
+		now := r.now().UTC()
 		stream, err := getStreamConn(ctx, conn, input.StreamUID, input.OwnerID)
 		if err != nil {
 			return err

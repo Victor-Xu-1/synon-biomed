@@ -12,7 +12,10 @@ const sessionRuntimeCleanupTimeout = 20 * time.Second
 
 // releaseSessionRunnerKernels is the terminal resource gate for a logical
 // task. Persistent Python/R/REPL workers are useful between tool calls, but
-// they must not outlive the completed or cancelled root task. One-shot
+// they must not outlive a terminal root task. Recoverable execution-unit
+// interruptions deliberately retain them. Detached executors consume the same
+// persisted task terminal state through their existing cancellation reconciler.
+// One-shot
 // software_runtime executors close at their own durable settlement boundary;
 // this closes the remaining in-process session workers without touching other
 // tasks.

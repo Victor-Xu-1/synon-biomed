@@ -12,6 +12,8 @@ import {
   formatCoresFromPercent,
   formatKernelEnvironment,
   formatMemory,
+  kernelExecutionKind,
+  observedKernelProcesses,
   type ComputeRingPoint,
   type ComputeSessionGroup,
 } from './computeRuntimeModel';
@@ -223,20 +225,28 @@ const KernelRow: React.FC<{
     pendingStop.cellToken === currentCellToken &&
     now - pendingStop.requestedAt >= 5_000;
   const source =
-    kernel.currentCell?.humanDescription ||
-    kernel.lastDescription ||
-    kernel.lastCell?.source ||
-    kernel.currentCell?.source ||
-    '';
+    kernel.busy || kernel.starting
+      ? kernel.currentCell?.source || ''
+      : kernel.lastCell?.source || kernel.lastDescription || '';
+  const executionKind = kernelExecutionKind(kernel);
+  const observation = observedKernelProcesses(kernel, now);
+  const observationLabel =
+    observation.status === 'stale'
+      ? t('conversation.synonRuntime.computeRuntime.observationStale')
+      : observation.status === 'unavailable'
+        ? t('conversation.synonRuntime.computeRuntime.processUnavailable')
+        : observation.names.join(' + ');
   const status = kernel.starting
     ? t('conversation.synonRuntime.computeRuntime.status.starting')
     : kernel.busy
-      ? t('conversation.synonRuntime.computeRuntime.status.busy')
+      ? observation.memoryPressure?.status === 'pressured'
+        ? t('conversation.synonRuntime.computeRuntime.memoryPressure')
+        : t('conversation.synonRuntime.computeRuntime.status.busy')
       : t('conversation.synonRuntime.computeRuntime.cellsRun', {
           age: formatAge(kernel.lastCell?.endedAt ?? kernel.lastUsed),
           count: kernel.executionCount || kernel.cellCount,
         });
-  const primaryLabel = kernel.busy ? source || status : status;
+  const primaryLabel = kernel.busy ? observationLabel : status;
   const runningAge = kernel.busy ? formatRunningDuration(kernel.currentCell?.startedAt) : '';
   const cpuHot = kernel.cpuPct != null && kernel.cpuPct >= 80;
   const environmentLabel = formatKernelEnvironment(
@@ -276,10 +286,10 @@ const KernelRow: React.FC<{
         />
         <span
           className='flex size-22px items-center justify-center rounded-6px bg-primary-1 text-primary-6'
-          aria-label={kernel.language === 'r' ? 'R' : 'Python'}
+          aria-label={executionKind}
         >
-          {kernel.language === 'r' ? (
-            <span className='font-mono text-10px font-600'>R</span>
+          {executionKind !== 'Python' ? (
+            <span className='font-mono text-9px font-600'>{executionKind}</span>
           ) : (
             <img src={pythonKernelIcon} alt='' className='size-14px' />
           )}
@@ -291,20 +301,26 @@ const KernelRow: React.FC<{
               idle ? 'font-normal italic text-t-tertiary' : 'font-500 text-t-primary'
             )}
           >
-            <span className='min-w-0 truncate'>{primaryLabel}</span>
-            {kernel.busy && environmentLabel && (
-              <span className='shrink-0 text-10px font-normal text-t-tertiary'>{environmentLabel}</span>
-            )}
+            <span className='min-w-0 truncate' title={primaryLabel}>
+              {primaryLabel}
+            </span>
+            {kernel.busy && <span className='shrink-0 text-10px font-normal text-t-tertiary'>{status}</span>}
             {kernel.busy && runningAge && (
               <span className='shrink-0 font-mono text-10px font-normal tabular-nums text-t-tertiary'>
                 {runningAge}
               </span>
             )}
           </div>
-          {!kernel.busy && (
-            <div className='truncate text-11px text-t-tertiary opacity-70'>
-              {source ? compactSource(source) : kernel.environment || kernel.language}
+          <div className='truncate text-11px text-t-tertiary' title={environmentLabel}>
+            {t('conversation.synonRuntime.computeRuntime.environmentLabel', { environment: environmentLabel || '—' })}
+          </div>
+          {observation.status === 'partial' && (
+            <div className='text-10px text-t-tertiary'>
+              {t('conversation.synonRuntime.computeRuntime.observationPartial')}
             </div>
+          )}
+          {!kernel.busy && source && (
+            <div className='truncate text-11px text-t-tertiary opacity-70'>{compactSource(source)}</div>
           )}
         </div>
         <ResourceColumn
@@ -364,8 +380,32 @@ const KernelRow: React.FC<{
         </div>
       ) : expanded ? (
         <div className='synon-compute-row-drawer text-11px text-t-tertiary'>
+          <div className='mb-4px'>{t('conversation.synonRuntime.computeRuntime.observedProcesses')}</div>
+          {observation.memoryPressure && observation.memoryPressure.status !== 'unavailable' && (
+            <div data-testid='kernel-memory-pressure' className='mb-8px'>
+              {t('conversation.synonRuntime.computeRuntime.memoryBudget', {
+                current: formatMemory(observation.memoryPressure.currentBytes),
+                limit:
+                  observation.memoryPressure.limitBytes > 0 ? formatMemory(observation.memoryPressure.limitBytes) : '—',
+                stall: Math.round(observation.memoryPressure.fullStallPercent),
+              })}
+            </div>
+          )}
+          {observation.processes.length === 0 ? (
+            <div>{observationLabel}</div>
+          ) : (
+            <ul className='mb-8px list-none p-0'>
+              {observation.processes.map((process) => (
+                <li key={`${process.pid}:${process.startIdentity}`} className='break-all font-mono'>
+                  {process.name} · PID {process.pid} · PPID {process.parentPid} · {process.state}
+                  {process.nameSource === 'process_name' &&
+                    ` · ${t('conversation.synonRuntime.computeRuntime.processNameOnly')}`}
+                </li>
+              ))}
+            </ul>
+          )}
           <div className='mb-4px flex items-center gap-8px uppercase tracking-wide'>
-            <span>{environmentLabel || kernel.language}</span>
+            <span>{t('conversation.synonRuntime.computeRuntime.submittedSource')}</span>
             <span>·</span>
             <span>
               {kernel.pidVisible
@@ -374,9 +414,7 @@ const KernelRow: React.FC<{
             </span>
           </div>
           <div className='max-h-96px overflow-auto whitespace-pre-wrap rounded-6px bg-fill-2 px-8px py-6px font-mono text-11px leading-18px text-t-secondary'>
-            {kernel.currentCell?.source ||
-              kernel.lastCell?.source ||
-              t('conversation.synonRuntime.computeRuntime.noCurrentCall')}
+            {source || t('conversation.synonRuntime.computeRuntime.noCurrentCall')}
           </div>
         </div>
       ) : null}

@@ -224,11 +224,11 @@ const SynonBiomedComputeRuntimePanel: React.FC<SynonBiomedComputeRuntimePanelPro
 
   useEffect(() => {
     const hasWaitingInterrupt = [...pendingStops.values()].some((pending) => pending.mode === 'interrupt');
-    if (!hasWaitingInterrupt) return;
+    if (!hasWaitingInterrupt && state.kernels.length === 0) return;
     setStopClock(Date.now());
     const timer = setInterval(() => setStopClock(Date.now()), 1_000);
     return () => clearInterval(timer);
-  }, [pendingStops]);
+  }, [pendingStops, state.kernels.length]);
 
   const groups = useMemo(
     () => groupKernels(state.kernels, rootFrameId, projectName, sessionTitle),

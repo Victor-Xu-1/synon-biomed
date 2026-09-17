@@ -5,6 +5,9 @@ package detached
 import (
 	"context"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +26,7 @@ func TestWaitForPredecessorKernelAuthorityReleaseLetsTheNextToolFollowDrain(t *t
 	}
 	stopped := active
 	stopped.State = workspace.KernelExecutionBackendStateStopped
+	stopped.ExecutorPID = 1 << 30
 	refreshes := 0
 	got, dead, err := waitForPredecessorKernelAuthorityRelease(
 		context.Background(), active,
@@ -112,7 +116,43 @@ func TestPredecessorBackendDefinitelyDeadRecognizesLiveProcess(t *testing.T) {
 	}
 }
 
-func TestPredecessorBackendDefinitelyDeadFallsBackToHeartbeatAge(t *testing.T) {
+func TestPredecessorBackendReleasesUnreapedExecutorDespiteFreshHeartbeat(t *testing.T) {
+	command := exec.Command("sh", "-c", "exit 0")
+	if err := command.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = command.Process.Kill(); _ = command.Wait() })
+	deadline := time.Now().Add(3 * time.Second)
+	var ticks int64
+	for time.Now().Before(deadline) {
+		raw, err := os.ReadFile("/proc/" + strconv.Itoa(command.Process.Pid) + "/stat")
+		if err != nil {
+			t.Fatal(err)
+		}
+		fields := strings.Fields(string(raw[strings.LastIndex(string(raw), ") ")+2:]))
+		if len(fields) > 19 && fields[0] == "Z" {
+			ticks, err = strconv.ParseInt(fields[19], 10, 64)
+			if err != nil {
+				t.Fatal(err)
+			}
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if ticks <= 0 {
+		t.Fatal("fixture did not reach unreaped exit")
+	}
+	now := time.Now().UTC()
+	dead, err := predecessorBackendDefinitelyDead(workspace.KernelExecutionBackend{
+		State: workspace.KernelExecutionBackendStateReady, HeartbeatAt: &now, UpdatedAt: now,
+		ExecutorPID: int64(command.Process.Pid), ExecutorPIDStartTicks: ticks,
+	}, now)
+	if err != nil || !dead {
+		t.Fatalf("dead executor still blocks takeover: dead=%t error=%v", dead, err)
+	}
+}
+
+func TestPredecessorBackendWithoutProcessIdentityCannotBeRetiredByAge(t *testing.T) {
 	now := time.Now().UTC()
 	staleAt := now.Add(-46 * time.Second)
 	recentAt := now.Add(-1 * time.Second)
@@ -123,8 +163,8 @@ func TestPredecessorBackendDefinitelyDeadFallsBackToHeartbeatAge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("stale predecessor liveness: %v", err)
 	}
-	if !stale {
-		t.Fatal("stale predecessor without PID must be considered dead")
+	if stale {
+		t.Fatal("an old timestamp cannot prove a process exited")
 	}
 
 	recent, err := predecessorBackendDefinitelyDead(workspace.KernelExecutionBackend{

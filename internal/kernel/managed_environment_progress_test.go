@@ -2,8 +2,10 @@ package kernel
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"synon-go/internal/toolprogress"
 )
@@ -35,6 +37,39 @@ func TestManagedEnvironmentProgressObserverReportsPhasesAndRealPercent(t *testin
 	}
 	if !foundPercent || !foundExtract || updates[len(updates)-1].Phase != "installer_process_completed" {
 		t.Fatalf("updates=%#v", updates)
+	}
+}
+
+func TestManagedEnvironmentProcessTerminatesAfterObservableInactivity(t *testing.T) {
+	manager := NewManager(Config{ManagedEnvironmentInstallerInactivityTimeout: 120 * time.Millisecond})
+	started := time.Now()
+	err := manager.runManagedEnvironmentProcessWithEnv(
+		context.Background(), "/bin/sh", os.Environ(), "-c", "while :; do sleep 10; done",
+	)
+	var inactivity *ManagedEnvironmentInstallerInactivityError
+	if !errors.As(err, &inactivity) || inactivity.Duration != 120*time.Millisecond {
+		t.Fatalf("error=%v inactivity=%#v", err, inactivity)
+	}
+	if elapsed := time.Since(started); elapsed > 2*time.Second {
+		t.Fatalf("inactive installer took %s to settle", elapsed)
+	}
+}
+
+func TestManagedEnvironmentProcessKeepsSilentCPUWorkAlive(t *testing.T) {
+	if os.Getenv("SYNON_BUSY_MANAGED_INSTALLER_HELPER") == "1" {
+		until := time.Now().Add(750 * time.Millisecond)
+		for time.Now().Before(until) {
+		}
+		return
+	}
+	manager := NewManager(Config{ManagedEnvironmentInstallerInactivityTimeout: 250 * time.Millisecond})
+	environment := append(os.Environ(), "SYNON_BUSY_MANAGED_INSTALLER_HELPER=1", "GORACE=atexit_sleep_ms=0")
+	err := manager.runManagedEnvironmentProcessWithEnv(
+		context.Background(), os.Args[0], environment,
+		"-test.run=^TestManagedEnvironmentProcessKeepsSilentCPUWorkAlive$",
+	)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 

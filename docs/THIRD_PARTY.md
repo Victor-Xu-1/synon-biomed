@@ -42,7 +42,7 @@ the corresponding Skill sources; external model and service terms are separate.
 | Biomolecular electrostatics runtime | Governed immutable `local-conda` generation | APBS 3.4.1, PDB2PQR 3.7.1, RDKit 2024.3.5, NumPy 2.4.6 | Server-side PQR preparation, aligned protein/ligand Poisson-Boltzmann OpenDX generation, and Mol* surface coloring | `docs/licenses/synon-scientific-runtime-warmups/NOTICE.md` |
 | Scientific runtime warmups | Governed immutable `local-conda` generations | Common structure toolkit; optional AutoDock Vina stack | Post-install background preparation selected during first-run setup | `docs/licenses/synon-scientific-runtime-warmups/NOTICE.md` |
 | P2Rank pocket prediction runtime | External governed download plus immutable `local-conda` generation | P2Rank 2.5.1 archive and OpenJDK 17 | Registered binding-pocket prediction execution pack | `docs/licenses/p2rank-runtime/NOTICE.md`; operations: `docs/engineering/p2rank-runtime.md` |
-| Micromamba 2.5.0 | `assets/optional/micromamba/` (Linux amd64 release only) | mamba-org 2.5.0, reused from v1.1 | Optional native environment manager | `assets/optional/micromamba/LICENSE` (BSD-3-Clause) |
+| Micromamba 2.9.0+synon.1 | `assets/optional/micromamba/` (Linux amd64 only) | Official source `2676ec2050f7dd5b8a524287526f50a8a4fb9652` with controlled link-script exit handling; `BUILD.md` and manifest record the build boundary | Single optional native environment manager | `assets/optional/micromamba/LICENSE` (BSD-3-Clause), `DEPENDENCY-NOTICES.txt` |
 | Synon Link extension | `assets/synon-link/` | Pinned v0.6.10 package | Chromium extension | Local manifest and upstream package notices |
 | AionCore provider/tool logos | `internal/logoassets/assets/` | iOfficeAI/AionCore commit `020a27a77aeb2b5be7a2b4380aab8ae2686311c4` | Embedded Go Web assets | Source: `internal/logoassets/{LICENSE,SOURCE.md}`; release: `docs/licenses/aioncore-logos/` (Apache-2.0; third-party trademarks remain with their owners) |
 | UCSC chromosome-size metadata | `frontend/public/genomes/ucsc/` | UCSC hg38, hg19, mm39, and mm10 assembly metadata | Offline IGV coordinate references | `frontend/public/genomes/ucsc/{NOTICE.txt,PROVENANCE.json}` and UCSC Conditions of Use |
@@ -50,6 +50,11 @@ the corresponding Skill sources; external model and service terms are separate.
 | Frontend source | `frontend/` | Source import and migration manifests in that directory | Web renderer | `frontend/LICENSE` and `frontend/THIRD_PARTY_LICENSES.json`; release copies: `docs/licenses/frontend/LICENSE` and `docs/frontend-third-party-licenses.json` |
 
 ## Retained Material With Unresolved Provenance
+
+The Shell grammar parser used by `internal/executionprep` is `mvdan.cc/sh/v3`
+v3.14.1 (BSD-3-Clause). It parses syntax only and does not introduce a second
+execution runtime. Its license is retained in the upstream module, generated
+release inventory, and embedded third-party license page.
 
 The original redistribution license has not been established for the complete
 retained contents of these legacy components:

@@ -18,7 +18,7 @@ import (
 )
 
 func TestExecutionObservationReportsRealDescendantsNotEnvironment(t *testing.T) {
-	command := exec.Command("sh", "-c", "sleep 30 & printf 'ready\\n'; wait")
+	command := exec.Command("sh", "-c", "sleep 30 & printf '%s\\n' $!; wait")
 	output, err := command.StdoutPipe()
 	if err != nil {
 		t.Fatal(err)
@@ -34,8 +34,26 @@ func TestExecutionObservationReportsRealDescendantsNotEnvironment(t *testing.T) 
 		_ = command.Process.Kill()
 		_ = command.Wait()
 	})
-	if line, err := bufio.NewReader(output).ReadString('\n'); err != nil || line != "ready\n" {
-		t.Fatalf("child readiness = %q, %v", line, err)
+	line, err := bufio.NewReader(output).ReadString('\n')
+	if err != nil {
+		t.Fatalf("child PID = %q, %v", line, err)
+	}
+	childPID, err := strconv.Atoi(strings.TrimSpace(line))
+	if err != nil || childPID <= 0 {
+		t.Fatalf("child PID = %q, %v", line, err)
+	}
+	// The shell reports fork completion, not exec completion. Establish the
+	// fixture's executable identity before taking the single observation.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		executable, err := os.Readlink(fmt.Sprintf("/proc/%d/exe", childPID))
+		if err == nil && filepath.Base(executable) == "sleep" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("child did not exec sleep: executable=%q error=%v", executable, err)
+		}
+		time.Sleep(time.Millisecond)
 	}
 	start, err := linuxProcessStartTicks(command.Process.Pid)
 	if err != nil {
@@ -72,7 +90,7 @@ func TestExecutionObservationReportsRealDescendantsNotEnvironment(t *testing.T) 
 	}
 	found := false
 	for _, process := range observation.Processes {
-		if process.Name == "sleep" && process.PID > 0 && process.Identity != "" {
+		if process.Name == "sleep" && process.PID == childPID && process.Identity != "" {
 			found = true
 		}
 		if process.Name == "named-for-an-unrelated-program" {

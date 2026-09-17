@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"strings"
 	"testing"
 )
@@ -17,9 +18,11 @@ func TestAffectedWorkflowPartitionsRetainEveryRequiredResult(t *testing.T) {
 		aggregate := mappingValue(jobs, prefix+"-go-tests")
 		needs := mappingValue(aggregate, "needs")
 		condition := mappingValue(aggregate, "if")
-		if needs == nil || needs.Value != prefix+"-go-shards" || condition == nil || condition.Value != "always()" ||
+		if needs == nil || len(needs.Content) != 2 || needs.Content[0].Value != prefix+"-quality" ||
+			needs.Content[1].Value != prefix+"-go-shards" || condition != nil ||
 			namedRun(root, prefix+"-go-tests", "Verify every affected Go partition") !=
-				"test '$"+"{{ needs."+prefix+"-go-shards.result }}' = 'success'" {
+				"test '$"+"{{ needs."+prefix+"-quality.result }}' = 'success'\n"+
+					"test '$"+"{{ needs."+prefix+"-go-shards.result }}' = 'success'" {
 			t.Fatal("stable Go stage result must require all affected partitions to succeed")
 		}
 		job := mappingValue(jobs, prefix+"-go-shards")
@@ -50,5 +53,13 @@ func TestAffectedWorkflowPartitionsRetainEveryRequiredResult(t *testing.T) {
 		if !testFound || !artifactFound {
 			t.Fatal("each partition must execute its exact test selection and retain distinct evidence")
 		}
+	}
+}
+
+func TestRepositoryWorkflowGraphPassesActualPolicyCommand(t *testing.T) {
+	command := exec.Command("go", "run", "-buildvcs=false", "./scripts/quality/github-actions-gate", "--repo", ".", "--policy", "docs/governance/github-actions-pins.json")
+	command.Dir = "../../.."
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("actual repository workflow policy failed: %v\n%s", err, output)
 	}
 }

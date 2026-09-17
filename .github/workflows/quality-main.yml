@@ -119,13 +119,14 @@ jobs:
 
   main-go-tests:
     name: Main changed Go packages
-    needs: main-go-shards
-    if: always()
+    needs: [main-quality, main-go-shards]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Verify every affected Go partition
-        run: test '${{ needs.main-go-shards.result }}' = 'success'
+        run: |
+          test '${{ needs.main-quality.result }}' = 'success'
+          test '${{ needs.main-go-shards.result }}' = 'success'
 
   main-frontend-tests:
     name: Main frontend scope

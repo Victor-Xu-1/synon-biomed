@@ -541,10 +541,12 @@ func kernelBubblewrapArguments(request confinedWorkerRequest, helper string, hos
 		arguments = append(arguments, "--dev-bind", device, device)
 	}
 	arguments = append(arguments, "--chmod", "0555", "/dev", "--proc", "/proc")
+	// /proc/mounts aliases self/mounts. Mask the setup process's target once:
+	// a second bind onto the alias is rejected by symlink-safe runtimes.
 	for _, path := range []string{
 		"/proc/1/environ", "/proc/1/mem", "/proc/1/cmdline", "/proc/1/maps",
 		"/proc/1/task/1/environ", "/proc/1/task/1/mem", "/proc/1/task/1/cmdline", "/proc/1/task/1/maps",
-		"/proc/self/mountinfo", "/proc/self/mounts", "/proc/mounts", "/proc/sys/kernel/random/boot_id",
+		"/proc/self/mountinfo", "/proc/self/mounts", "/proc/sys/kernel/random/boot_id",
 	} {
 		arguments = append(arguments, "--ro-bind-try", "/dev/null", path)
 	}

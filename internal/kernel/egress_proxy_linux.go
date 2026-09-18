@@ -54,15 +54,18 @@ type kernelEgressProxyOptions struct {
 }
 
 type kernelEgressProxy struct {
-	control   *net.UnixConn
-	child     *os.File
-	port      int
-	allowed   []string
-	denied    []string
-	options   kernelEgressProxyOptions
-	done      chan struct{}
-	closeOnce sync.Once
-	childMu   sync.Mutex
+	control      *net.UnixConn
+	child        *os.File
+	port         int
+	allowed      []string
+	denied       []string
+	options      kernelEgressProxyOptions
+	done         chan struct{}
+	closeOnce    sync.Once
+	childMu      sync.Mutex
+	connectionMu sync.Mutex
+	connections  map[net.Conn]struct{}
+	closed       bool
 }
 
 func startKernelEgressProxy(workspaceDir, kernelID string, allowed, denied []string, upstreamProxy ...string) (*kernelEgressProxy, error) {
@@ -176,6 +179,10 @@ func (p *kernelEgressProxy) serve() {
 
 func (p *kernelEgressProxy) serveConnection(client net.Conn) {
 	defer client.Close()
+	if !p.trackConnection(client) {
+		return
+	}
+	defer p.untrackConnection(client)
 	_ = client.SetDeadline(time.Now().Add(kernelEgressHandshakeTimeout))
 	reader := bufio.NewReader(io.LimitReader(client, kernelEgressHeaderLimit+1))
 	request, err := http.ReadRequest(reader)
@@ -223,6 +230,10 @@ func (p *kernelEgressProxy) serveConnection(client net.Conn) {
 		return
 	}
 	defer upstream.Close()
+	if !p.trackConnection(upstream) {
+		return
+	}
+	defer p.untrackConnection(upstream)
 	if _, err := io.WriteString(client, "HTTP/1.1 200 Connection Established\r\n\r\n"); err != nil {
 		return
 	}
@@ -341,6 +352,16 @@ func (p *kernelEgressProxy) Close() {
 		return
 	}
 	p.closeOnce.Do(func() {
+		p.connectionMu.Lock()
+		p.closed = true
+		connections := make([]net.Conn, 0, len(p.connections))
+		for connection := range p.connections {
+			connections = append(connections, connection)
+		}
+		p.connectionMu.Unlock()
+		for _, connection := range connections {
+			_ = connection.Close()
+		}
 		p.childMu.Lock()
 		if p.child != nil {
 			_ = p.child.Close()
@@ -350,6 +371,27 @@ func (p *kernelEgressProxy) Close() {
 		_ = p.control.Close()
 		<-p.done
 	})
+}
+
+// Both sides belong to the same proxy lifetime. Closing the session must also
+// release stalled transfers; closing only the control socket leaks tunnels.
+func (p *kernelEgressProxy) trackConnection(connection net.Conn) bool {
+	p.connectionMu.Lock()
+	defer p.connectionMu.Unlock()
+	if p.closed {
+		return false
+	}
+	if p.connections == nil {
+		p.connections = make(map[net.Conn]struct{})
+	}
+	p.connections[connection] = struct{}{}
+	return true
+}
+
+func (p *kernelEgressProxy) untrackConnection(connection net.Conn) {
+	p.connectionMu.Lock()
+	delete(p.connections, connection)
+	p.connectionMu.Unlock()
 }
 
 func (p *kernelEgressProxy) takeChild() *os.File {

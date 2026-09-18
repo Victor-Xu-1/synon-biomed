@@ -51,7 +51,7 @@ func (s *Server) handleAllowedDomains(w http.ResponseWriter, r *http.Request, co
 		}
 		payload := map[string]any{
 			"domains": domains, "configDomains": append([]string{}, s.configAllowedDomains...),
-			"deniedDomains": append([]string{}, s.configDeniedDomains...), "activeKernelCount": activeKernelCount,
+			"deniedDomains": networkpolicy.EffectiveDeniedPatterns(nil, s.configDeniedDomains), "activeKernelCount": activeKernelCount,
 		}
 		if !compatibility {
 			payload["ok"] = true
@@ -186,7 +186,7 @@ func (s *Server) validateGrantableDomain(domain string) (string, error) {
 	if networkpolicy.PrivateOrReserved(domain) {
 		return "", fmt.Errorf("private/reserved host not grantable: %s", domain)
 	}
-	if denied := networkpolicy.ConflictingPattern(domain, s.configDeniedDomains); denied != "" {
+	if denied := networkpolicy.ConflictingPattern(domain, networkpolicy.EffectiveDeniedPatterns([]string{domain}, s.configDeniedDomains)); denied != "" {
 		return "", fmt.Errorf("domain %s conflicts with denied domain %s", domain, denied)
 	}
 	return domain, nil

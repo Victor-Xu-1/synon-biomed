@@ -49,7 +49,7 @@ func (s *Server) agentKernelEgressPolicy(publicName, frameID string) ([]string, 
 	if len(allowed) == 0 {
 		return nil, nil, "", "", nil
 	}
-	denied := append([]string(nil), s.configDeniedDomains...)
+	denied := networkpolicy.EffectiveDeniedPatterns(allowed, s.configDeniedDomains)
 	caBundle := ""
 	proxy := s.configNetworkProxy
 	if s.mcpX509Posture != nil {

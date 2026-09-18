@@ -91,6 +91,25 @@ func TestClientLongLivedTransferFailsAfterTrueBodyIdle(t *testing.T) {
 	}
 }
 
+func TestTransferDeadlinePolicyRequiresIdleProtection(t *testing.T) {
+	policy := Policy{AllowedHosts: []string{"example.org"}, AcceptedMediaTypes: []string{"application/octet-stream"}, MaxBytes: 10 << 30}
+	if _, err := compilePolicy(policy); !IsCode(err, CodeInvalidPolicy) {
+		t.Fatal("ordinary request silently became unbounded")
+	}
+	policy.LongLivedTransfer = true
+	if _, err := compilePolicy(policy); !IsCode(err, CodeInvalidPolicy) {
+		t.Fatal("long transfer accepted without idle protection")
+	}
+	policy.TransferIdleTimeout = time.Second
+	if _, err := compilePolicy(policy); err != nil {
+		t.Fatalf("explicit zero total deadline rejected: %v", err)
+	}
+	policy.Timeout = -time.Second
+	if _, err := compilePolicy(policy); !IsCode(err, CodeInvalidPolicy) {
+		t.Fatal("negative timeout accepted")
+	}
+}
+
 func TestClientUsesOnlyExplicitValidatedProxyRoute(t *testing.T) {
 	client := New(Options{ProxyURL: "http://127.0.0.1:7890"})
 	request, err := http.NewRequest(http.MethodGet, "https://files.rcsb.org/download/4TZ4.pdb", nil)

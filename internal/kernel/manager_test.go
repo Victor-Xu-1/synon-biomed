@@ -36,6 +36,19 @@ func TestKernelEnvironmentExplicitValuesOverrideInheritedExactlyOnce(t *testing.
 	}
 }
 
+func TestKernelTransferDefaultsReachAllNativeChildRuntimes(t *testing.T) {
+	base := kernelEnvironment(nil)
+	if environmentValue(base, "R_DEFAULT_INTERNET_TIMEOUT") != "2147483647" ||
+		environmentValue(base, "MAMBA_NO_LOW_SPEED_LIMIT") != "1" ||
+		environmentValue(base, "PIP_TIMEOUT") != "300" {
+		t.Fatal("long-transfer defaults missing at process launch")
+	}
+	custom := kernelEnvironment(map[string]string{"PIP_TIMEOUT": "90", "R_DEFAULT_INTERNET_TIMEOUT": "120"})
+	if environmentValue(custom, "PIP_TIMEOUT") != "90" || environmentValue(custom, "R_DEFAULT_INTERNET_TIMEOUT") != "120" {
+		t.Fatal("explicit runtime timeout was overridden")
+	}
+}
+
 func TestManagerExecutesVerifiedWorkerAndClosesAll(t *testing.T) {
 	python, err := exec.LookPath("python3")
 	if err != nil {

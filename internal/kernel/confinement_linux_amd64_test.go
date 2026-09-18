@@ -94,6 +94,25 @@ func TestKernelConfinementSealsSyntheticEtcAfterPopulatingMountTargets(t *testin
 	}
 }
 
+func TestKernelConfinementSupportsProcMountAliasInIsolatedWorker(t *testing.T) {
+	manager := newLifecycleTestManager(t, Config{})
+	worker, err := manager.Start("mount-alias", t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	response, err := worker.Execute(ctx, `from pathlib import Path
+import os
+assert os.readlink("/proc/mounts") == "self/mounts"
+assert Path("/proc/mounts").read_text() == Path("/proc/self/mounts").read_text()
+assert os.getpid() < 10
+print("proc namespace ready")`, "user")
+	if err != nil || response.Error != "" || strings.TrimSpace(response.Stdout) != "proc namespace ready" {
+		t.Fatalf("proc alias isolation: response=%#v error=%v", response, err)
+	}
+}
+
 func TestManagerConfinesKernelFilesystemToWorkspaceAndRuntime(t *testing.T) {
 	outside := t.TempDir()
 	secret := filepath.Join(outside, "must-not-read.txt")

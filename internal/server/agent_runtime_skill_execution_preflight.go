@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"synon-go/internal/executionprep"
 	kernelruntime "synon-go/internal/kernel"
 	"synon-go/internal/skills"
 )
@@ -260,74 +261,9 @@ func agentRuntimeSingleMaterializedSkillExecution(
 	return tokens, scriptPath, scriptIndex, scriptIndex >= 0
 }
 
-// managedExecutionSingleShellCommandTokens accepts only the shell subset that
-// maps one-to-one onto a single argv vector. Raw newlines, control operators,
-// redirections, substitutions, and unquoted expansions are rejected before a
-// managed environment can be started or an old output mount can be excluded.
+// Admission and execution identity share the grammar-based preparation parser.
 func managedExecutionSingleShellCommandTokens(content string) ([]string, bool) {
-	content = strings.ReplaceAll(content, "\\\r\n", "")
-	content = strings.ReplaceAll(content, "\\\n", "")
-	if strings.TrimSpace(content) == "" || strings.ContainsAny(content, "\r\n\x00") {
-		return nil, false
-	}
-	var tokens []string
-	var token strings.Builder
-	tokenStarted := false
-	singleQuoted := false
-	doubleQuoted := false
-	flush := func() {
-		if !tokenStarted {
-			return
-		}
-		tokens = append(tokens, token.String())
-		token.Reset()
-		tokenStarted = false
-	}
-	for index := 0; index < len(content); index++ {
-		char := content[index]
-		if singleQuoted {
-			if char == '\'' {
-				singleQuoted = false
-				continue
-			}
-			token.WriteByte(char)
-			tokenStarted = true
-			continue
-		}
-		if char == '\\' {
-			if index+1 >= len(content) {
-				return nil, false
-			}
-			index++
-			token.WriteByte(content[index])
-			tokenStarted = true
-			continue
-		}
-		if char == '"' {
-			doubleQuoted = !doubleQuoted
-			tokenStarted = true
-			continue
-		}
-		if !doubleQuoted && char == '\'' {
-			singleQuoted = true
-			tokenStarted = true
-			continue
-		}
-		if !doubleQuoted && (char == ' ' || char == '\t') {
-			flush()
-			continue
-		}
-		if char == '$' || char == '`' || (!doubleQuoted && strings.ContainsRune(";&|<>(){}[]*?!#~", rune(char))) {
-			return nil, false
-		}
-		token.WriteByte(char)
-		tokenStarted = true
-	}
-	if singleQuoted || doubleQuoted {
-		return nil, false
-	}
-	flush()
-	return tokens, len(tokens) > 0
+	return executionprep.SingleShellCommand(content)
 }
 
 // agentRuntimeImplementationProvisioningSkillPreflight prevents a model from

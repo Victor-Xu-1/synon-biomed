@@ -53,9 +53,17 @@ func TestAgentKernelEgressPolicyFullAccessAllowsPublicHTTPSOnly(t *testing.T) {
 		defer cancel()
 		_ = server.Close(ctx)
 	})
-	allowed, _, _, _, err := server.agentKernelEgressPolicy("python", frameID)
+	allowed, denied, _, _, err := server.agentKernelEgressPolicy("python", frameID)
 	if err != nil || !slices.Contains(allowed, "*") {
 		t.Fatalf("full-access public egress=%#v err=%v", allowed, err)
+	}
+	if len(denied) != 0 {
+		t.Fatalf("full access retained hidden domain defaults: %#v", denied)
+	}
+	server.configDeniedDomains = []string{"operator-blocked.example.com"}
+	_, denied, _, _, err = server.agentKernelEgressPolicy("python", frameID)
+	if err != nil || len(denied) != 1 || denied[0] != "operator-blocked.example.com" {
+		t.Fatalf("explicit deny lost: %#v %v", denied, err)
 	}
 	if repl, _, _, _, err := server.agentKernelEgressPolicy("repl", frameID); err != nil || len(repl) != 0 {
 		t.Fatalf("repl public egress=%#v err=%v", repl, err)

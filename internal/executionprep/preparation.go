@@ -101,7 +101,7 @@ func (a *analyzer) source(ctx context.Context, language, source string, depth in
 	}
 	if err != nil {
 		a.unknown(language + "_unresolved")
-		return nil
+		// A partial parser failure cannot erase effects already witnessed.
 	}
 	if len(facts) >= MaxFacts {
 		a.unknown("analysis_budget")

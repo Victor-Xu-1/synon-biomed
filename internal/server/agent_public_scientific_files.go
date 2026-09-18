@@ -11,6 +11,7 @@ import (
 	"html"
 	"io"
 	"log"
+	"math"
 	"mime"
 	"net/netip"
 	"net/url"
@@ -25,14 +26,14 @@ import (
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
-	"synon-go/internal/runtimecontrol"
 	"synon-go/internal/toolcontract"
 	"synon-go/internal/tools/securefetch"
 )
 
 const (
-	agentPublicScientificFileLimit              = int64(512 << 20)
-	agentPublicScientificFileTimeout            = 45 * time.Minute
+	// No product-sized ceiling. Leave one byte of int64 headroom for the
+	// streaming overflow probe; disk capacity is enforced during transfer.
+	agentPublicScientificFileLimit              = int64(math.MaxInt64 - 1)
 	agentPublicScientificDownloadConcurrency    = 2
 	agentPublicScientificDiskReserve            = uint64(1 << 30)
 	agentPublicScientificSourceMaxNestedDepth   = 12
@@ -86,7 +87,7 @@ type agentPublicScientificFileRequest struct {
 
 func (request agentPublicScientificFileRequest) maximumBytes() int64 {
 	if request.RegisteredSize > 0 {
-		return request.RegisteredSize
+		return min(request.RegisteredSize, agentPublicScientificFileLimit)
 	}
 	return agentPublicScientificFileLimit
 }
@@ -1334,40 +1335,12 @@ func ensureAgentPublicScientificDiskSpace(
 	workspaceDir, fileRoot string,
 	contentLength, maximumBytes int64,
 ) error {
-	measurement := contentLength
-	if measurement <= 0 {
-		measurement = maximumBytes
-	}
-	if measurement <= 0 || maximumBytes <= 0 || measurement > maximumBytes {
+	if maximumBytes <= 0 || contentLength > maximumBytes {
 		return errAgentPublicScientificFileDiskSpace
 	}
-	paths := []string{workspaceDir}
-	if strings.TrimSpace(fileRoot) != "" {
-		paths = append(paths, fileRoot)
-	}
-	seen := map[string]struct{}{}
-	uniqueIndex := 0
-	for _, path := range paths {
-		path = filepath.Clean(path)
-		if _, duplicate := seen[path]; duplicate {
-			continue
-		}
-		seen[path] = struct{}{}
-		uniqueIndex++
-		copies := uint64(1)
-		if uniqueIndex == 1 {
-			// The workspace filesystem holds the network staging file and the
-			// user-visible workspace copy. Artifact blobs are measured separately
-			// when FileRoot is on another filesystem.
-			copies = 2
-		}
-		required := uint64(measurement)*copies + agentPublicScientificDiskReserve
-		available := runtimecontrol.AvailableBytes(path)
-		if available != nil && *available < required {
-			return errAgentPublicScientificFileDiskSpace
-		}
-	}
-	return nil
+	// Unknown length is admitted against the next bounded write, not against
+	// an invented maximum size. The writer rechecks capacity as bytes arrive.
+	return newAgentDownloadDiskGuard(workspaceDir, fileRoot).check(0, max(1, contentLength))
 }
 
 func (s *Server) acquirePublicScientificDownloadSlot(ctx context.Context) error {

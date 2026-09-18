@@ -100,9 +100,12 @@ allowed_root_entries=(
   .github
   .gitignore
   COMMERCIAL-LICENSE.md
+  CODE_OF_CONDUCT.md
+  CONTRIBUTING.md
   LICENSE
   Makefile
   README.md
+  SECURITY.md
   assets
   cmd
   docs
@@ -141,7 +144,10 @@ required_source_files=(
   .env.example
   .github/release.yml
   COMMERCIAL-LICENSE.md
+  CODE_OF_CONDUCT.md
+  CONTRIBUTING.md
   LICENSE
+  SECURITY.md
   identity.go
   identity_test.go
   product-identity.json

@@ -1,0 +1,27 @@
+name: Feature request
+description: Propose a focused, reviewable improvement
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and users
+      description: What user problem should this solve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest coherent behavior and its boundaries.
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Compatibility and trade-offs
+      description: Note API, data, security, performance, and operational effects.
+    validations:
+      required: true

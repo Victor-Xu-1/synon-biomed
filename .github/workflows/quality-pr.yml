@@ -44,6 +44,8 @@ jobs:
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/portable_paths.py --repo .
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/module_topology_gate.py --repo .
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/product_identity_gate.py --repo . --mode candidate
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_repository_governance
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/repository_governance.py --repo .
           bash scripts/audit/audit-source-clean.sh
 
       - name: Verify formatting and static analysis

@@ -70,6 +70,8 @@ jobs:
           go test -buildvcs=false . ./internal/buildinfo -run 'TestCurrentUsesRootProductIdentityAuthority|TestReleaseInfoUsesSynonBiomedIdentity' -count=1
           PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_product_identity_gate scripts.quality.test_release_candidate_manifest scripts.quality.test_release_receipt_gate
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/product_identity_gate.py --repo . --mode candidate
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.quality.test_repository_governance
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/repository_governance.py --repo .
 
       - name: Verify formatting and static analysis
         run: |

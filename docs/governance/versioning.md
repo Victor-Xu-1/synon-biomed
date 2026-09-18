@@ -48,7 +48,8 @@ Grant repository Contents, Pull requests and Issues read/write (Issues is needed
 for release lifecycle labels); Metadata read is automatic. No organization,
 administration or user-data permissions and no webhook are needed.
 Create a `release-automation` GitHub Environment restricted to the `main`
-branch, set repository variable `RELEASE_APP_ID`, and store
+branch, set repository variable `RELEASE_APP_ID` to the App's **Client ID**
+(the value expected by `client-id`), and store
 `RELEASE_APP_PRIVATE_KEY` as an **environment secret**, not a repository-wide
 secret. Never paste the private key into issues, PRs or chats.
 

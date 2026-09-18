@@ -18,7 +18,8 @@ try {
 
   . (Join-Path $PSScriptRoot 'release-identity-policy.ps1')
   $identity = Assert-SynonProductIdentity -TrustedIdentityPath $trusted -CandidateRoot $current
-  if ($identity.display_name -ne 'Synon Biomed' -or $identity.version -ne '0.1.1') {
+  $expectedIdentity = (Get-Content -LiteralPath $trusted -Raw) | ConvertFrom-Json
+  if ($identity.display_name -ne 'Synon Biomed' -or $identity.version -ne $expectedIdentity.version) {
     throw 'Trusted identity projection is incorrect'
   }
   $rejected = $false

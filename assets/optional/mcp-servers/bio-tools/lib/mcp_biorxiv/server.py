@@ -56,8 +56,12 @@ def _today() -> date:
 
 def _normalize_doi(doi: str) -> str:
     doi = doi.strip()
-    if "doi.org/" in doi:
-        doi = doi.split("doi.org/", 1)[1]
+    try:
+        parsed = urllib.parse.urlsplit(doi)
+    except ValueError:
+        parsed = None
+    if parsed and parsed.scheme in {"http", "https"} and (parsed.hostname or "").casefold().rstrip(".") == "doi.org":
+        doi = parsed.path.lstrip("/")
     return doi
 
 

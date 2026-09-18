@@ -4,6 +4,7 @@
 import argparse
 import base64
 import html
+from html.parser import HTMLParser
 import json
 import re
 import sys
@@ -127,11 +128,33 @@ def fetch_text(url: str, timeout: int = 10) -> str:
         return raw.decode(charset, errors="replace")
 
 
+class _VisibleTextParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._ignored_depth = 0
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.lower() in {"script", "style"}:
+            self._ignored_depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() in {"script", "style"} and self._ignored_depth:
+            self._ignored_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if not self._ignored_depth:
+            self.parts.append(data)
+
+
 def strip_tags(value: str) -> str:
-    value = re.sub(r"<script\b[^>]*>[\s\S]*?</script\s*>", " ", value, flags=re.I)
-    value = re.sub(r"<style\b[^>]*>[\s\S]*?</style\s*>", " ", value, flags=re.I)
-    value = re.sub(r"<[^>]+>", " ", value)
-    return re.sub(r"\s+", " ", html.unescape(value)).strip()
+    parser = _VisibleTextParser()
+    try:
+        parser.feed(value)
+        parser.close()
+    except (AssertionError, ValueError):
+        return ""
+    return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()
 
 
 def clean_url(url: str) -> str:
@@ -141,13 +164,23 @@ def clean_url(url: str) -> str:
     if url.startswith("/"):
         return ""
     url = unwrap_bing_redirect(url)
-    return url if url.startswith(("http://", "https://")) else ""
+    try:
+        parsed = urllib.parse.urlsplit(url)
+    except ValueError:
+        return ""
+    return url if parsed.scheme in {"http", "https"} and parsed.hostname else ""
+
+
+def _is_host_or_subdomain(hostname: str | None, domain: str) -> bool:
+    host = (hostname or "").rstrip(".").casefold()
+    domain = domain.casefold()
+    return host == domain or host.endswith(f".{domain}")
 
 
 def unwrap_bing_redirect(url: str) -> str:
     try:
         parsed = urllib.parse.urlsplit(url)
-        if not parsed.netloc.lower().endswith("bing.com") or not parsed.path.startswith("/ck/"):
+        if not _is_host_or_subdomain(parsed.hostname, "bing.com") or not parsed.path.startswith("/ck/"):
             return url
         encoded = urllib.parse.parse_qs(parsed.query).get("u", [""])[0]
         if encoded.startswith("a1"):

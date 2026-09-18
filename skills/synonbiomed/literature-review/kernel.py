@@ -18,7 +18,7 @@ import urllib.parse
 import urllib.request
 
 
-DOI_PATTERN = r"10\.\d{4,9}/[^\s\"'`\]\}—–&|]+"
+DOI_PREFIX_PATTERN = re.compile(r"10\.\d{4,9}/")
 
 
 def lr_sdk():
@@ -263,8 +263,11 @@ def extract_dois(text: str) -> list[str]:
     HTML-decoded, balanced-paren SICI, `</`-truncated, markdown/punct-stripped."""
     decoded = html_decode(text)
     out: set[str] = set()
-    for m in re.findall(DOI_PATTERN, decoded):
-        d = m.split("</")[0]
+    for match in DOI_PREFIX_PATTERN.finditer(decoded):
+        remainder = decoded[match.start() : match.start() + 512]
+        tail = remainder[match.end() - match.start() :]
+        delimiter = re.search(r"[\s\"'`\]\}—–&|<>]", tail)
+        d = remainder[: match.end() - match.start() + (delimiter.start() if delimiter else len(tail))]
         if d.count("<") != d.count(">"):
             d = d.split("<")[0]
         d = re.sub(r"(?:\*\*|__|[_\]\*>`,;:])+$", "", d)

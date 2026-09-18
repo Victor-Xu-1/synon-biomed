@@ -18,6 +18,7 @@ and ``records_truncated`` flags any cap.
 from __future__ import annotations
 
 from functools import lru_cache
+import urllib.parse
 
 from mcp_servers_common.mcp_compat import MCPServer
 from mcp_servers_common.criteria import blank, none_if_blank, reject_blank
@@ -266,7 +267,16 @@ def openalex_venue_info(venue: str, max_records: int = 10) -> dict:
         # name-searching a URL string returns a confident empty, defeating
         # the cure (finding 3406986052). Re-raise with guidance for a URL.
         v = venue.strip().lower()
-        if v.startswith("http") and "openalex.org/" in v:
+        try:
+            parsed = urllib.parse.urlsplit(v)
+            host = (parsed.hostname or "").casefold().rstrip(".")
+            is_openalex_url = parsed.scheme in {"http", "https"} and host in {
+                "openalex.org",
+                "api.openalex.org",
+            }
+        except ValueError:
+            is_openalex_url = False
+        if is_openalex_url:
             raise ValueError(
                 f"{venue!r} is an OpenAlex URL but not a source (S) id; "
                 "pass an S-id, an ISSN, or a journal name")

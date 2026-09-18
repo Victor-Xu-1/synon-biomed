@@ -33,7 +33,7 @@ func TestVersionBotOnlyProposesReviewedSingleRepositoryUpdates(t *testing.T) {
 	}
 	inputs := mappingValue(token, "with")
 	want := map[string]string{
-		"app-id":                   "$" + "{{ vars.RELEASE_APP_ID }}",
+		"client-id":               "$" + "{{ vars.RELEASE_APP_ID }}",
 		"private-key":              "$" + "{{ secrets.RELEASE_APP_PRIVATE_KEY }}",
 		"owner":                    "$" + "{{ github.repository_owner }}",
 		"repositories":             "synon-biomed",

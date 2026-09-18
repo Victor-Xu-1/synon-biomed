@@ -57,9 +57,17 @@ func TestAllowsHostRequiresExplicitAllowAndLetsDenyWin(t *testing.T) {
 	if !AllowsHost("public-data.example.org", []string{PublicWildcard}, nil) {
 		t.Fatal("full-access public hostname was rejected")
 	}
-	for _, host := range []string{"localhost", "service.local", "hooks.slack.com", "s3.amazonaws.com"} {
+	for _, host := range []string{"localhost", "service.local"} {
 		if AllowsHost(host, []string{PublicWildcard}, nil) {
 			t.Fatalf("public wildcard bypassed protected destination %q", host)
+		}
+	}
+	for _, host := range []string{"hooks.slack.com", "s3.amazonaws.com", "storage.googleapis.com"} {
+		if !AllowsHost(host, []string{PublicWildcard}, nil) {
+			t.Fatalf("explicit public grant restricted by hidden defaults: %s", host)
+		}
+		if AllowsHost(host, []string{PublicWildcard}, []string{host}) {
+			t.Fatalf("operator deny overridden: %s", host)
 		}
 	}
 }

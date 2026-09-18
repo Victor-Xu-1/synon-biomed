@@ -118,7 +118,7 @@ func selectedEvidenceResolverParameterValue(
 }
 
 func managedExecutionArgumentValues(content string) map[string]string {
-	tokens := managedExecutionCommandTokens(content)
+	tokens, _ := managedExecutionSingleShellCommandTokens(content)
 	result := map[string]string{}
 	for index := 0; index < len(tokens); index++ {
 		token := strings.TrimSpace(tokens[index])

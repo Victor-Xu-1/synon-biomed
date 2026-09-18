@@ -12,6 +12,7 @@ emit <- function(kind, name, args=character()) {
   cat(paste(c(kind, hex(name), vapply(args, hex, "")), collapse="\t"), "\n", sep="")
 }
 literal <- function(value) {
+  if (missing(value) || identical(value, quote(expr=))) return(NULL)
   if (is.character(value)) return(value)
   if (is.symbol(value) && exists(as.character(value), bindings, inherits=FALSE))
     return(get(as.character(value), bindings, inherits=FALSE))
@@ -32,6 +33,8 @@ target <- function(value) {
   ""
 }
 walk <- function(value, depth=0L) {
+  # Omitted indices and call arguments are valid syntax, not parser failures.
+  if (missing(value)) return(invisible(NULL))
   if (depth>64L || facts>=256L) return(invisible(NULL))
   if (is.expression(value)) { for (child in value) walk(child, depth+1L); return(invisible(NULL)) }
   if (!is.call(value)) return(invisible(NULL))

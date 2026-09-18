@@ -9,8 +9,8 @@ import (
 )
 
 // PublicWildcard grants any syntactically valid public hostname. Private,
-// reserved, link-local and built-in denied destinations are still rejected by
-// AllowsHost before this pattern is considered.
+// reserved and link-local destinations are still rejected. An explicit public
+// grant replaces restrictive domain defaults, never operator-supplied denies.
 const PublicWildcard = "*"
 
 var reservedDomainSuffixes = []string{
@@ -41,6 +41,17 @@ var reservedIPv4Prefixes = []netip.Prefix{
 
 func BuiltInDeniedPatterns() []string {
 	return append([]string{}, builtInDeniedPatterns...)
+}
+
+// EffectiveDeniedPatterns keeps default restrictions separate from explicit
+// operator policy. Persist this resolved policy with each execution authority.
+func EffectiveDeniedPatterns(allowed, denied []string) []string {
+	for _, pattern := range allowed {
+		if pattern == PublicWildcard {
+			return append([]string{}, denied...)
+		}
+	}
+	return append(BuiltInDeniedPatterns(), denied...)
 }
 
 func NormalizePattern(value string) (string, error) {
@@ -154,7 +165,7 @@ func AllowsHost(host string, allowed, denied []string) bool {
 	if err != nil || PrivateOrReserved(host) {
 		return false
 	}
-	for _, pattern := range append(BuiltInDeniedPatterns(), denied...) {
+	for _, pattern := range EffectiveDeniedPatterns(allowed, denied) {
 		if patternCovers(pattern, host) {
 			return false
 		}

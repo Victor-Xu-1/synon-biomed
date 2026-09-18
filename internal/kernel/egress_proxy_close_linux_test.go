@@ -3,10 +3,47 @@
 package kernel
 
 import (
+	"net"
 	"sync"
 	"testing"
 	"time"
 )
+
+func TestKernelEgressCloseReleasesBothTransferSockets(t *testing.T) {
+	proxy, err := startKernelEgressProxy(t.TempDir(), "close-transfer", []string{"*"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var readers []chan error
+	for range 2 {
+		local, remote := net.Pipe()
+		defer remote.Close()
+		if !proxy.trackConnection(local) {
+			t.Fatal("open proxy rejected connection")
+		}
+		t.Cleanup(func() { _ = local.Close() })
+		finished := make(chan error, 1)
+		go func() { var data [1]byte; _, err := remote.Read(data[:]); finished <- err }()
+		readers = append(readers, finished)
+	}
+	proxy.Close()
+	for _, finished := range readers {
+		select {
+		case err := <-finished:
+			if err == nil {
+				t.Error("closed tunnel returned success")
+			}
+		case <-time.After(time.Second):
+			t.Error("stalled tunnel survived proxy close")
+		}
+	}
+	local, remote := net.Pipe()
+	defer local.Close()
+	defer remote.Close()
+	if proxy.trackConnection(local) {
+		t.Fatal("closed proxy admitted a late dial")
+	}
+}
 
 func TestKernelEgressProxyConcurrentCloseWithTransferredChild(t *testing.T) {
 	for iteration := 0; iteration < 32; iteration++ {

@@ -39,3 +39,13 @@ func TestPreparationDoesNotRoutePrivateOrAuthenticatedURLsToPublicDownload(t *te
 		}
 	}
 }
+
+func TestPreparationPreservesWitnessedEffectsOnPartialParserFailure(t *testing.T) {
+	result, err := Analyze(context.Background(), Request{Language: "r", Source: "input"},
+		func(context.Context, string, string) ([]Fact, error) {
+			return []Fact{{Kind: "call", Name: "install.packages"}}, fmt.Errorf("parser interrupted")
+		})
+	if err != nil || len(result.Unresolved) != 1 || len(result.Requirements) != 1 || result.Requirements[0].Effect != PackageMutation {
+		t.Fatalf("partial evidence discarded: %#v %v", result, err)
+	}
+}

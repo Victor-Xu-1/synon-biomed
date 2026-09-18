@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-const defaultEnvironmentRepairTimeout = 30 * time.Minute
-
 var (
 	managedEnvironmentName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 	rVersionContract       = regexp.MustCompile(`(?m)^(Rscript \(R\)|R) version ([0-9]+)\.([0-9]+)\.[0-9]+( (Patched|alpha|beta|RC|Under development \(unstable\)))? \([0-9]{4}-[0-9]{2}-[0-9]{2}\)\r?$`)
@@ -629,11 +627,10 @@ func (m *Manager) RepairDefaultREnvironment(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, defaultEnvironmentRepairTimeout)
-		defer cancel()
-	}
+	// A default environment repair may resolve and download multi-gigabyte
+	// packages. Do not impose a wall-clock deadline here; the installer
+	// watchdog already terminates only genuine inactivity, while callers that
+	// own a shorter user-facing budget can still pass a deadline in ctx.
 	if rscript, err := m.managedEnvironmentExecutable(name, "Rscript"); err == nil {
 		return m.repairRSharedLibrary(ctx, rscript)
 	}
@@ -653,16 +650,8 @@ func (m *Manager) RepairDefaultREnvironment(ctx context.Context) error {
 		"-c", "conda-forge", "-c", "bioconda", "r-base", "r-jsonlite",
 	}
 	arguments = append(arguments, packages...)
-	command := newWorkerProcessCommand(ctx, m.config.Micromamba, arguments...)
-	command.Env = kernelEnvironment(map[string]string{
-		"HOME": m.config.CondaHome, "MAMBA_ROOT_PREFIX": m.config.CondaHome,
-		"CONDA_PKGS_DIRS": filepath.Join(m.config.CondaHome, "pkgs"),
-		"PATH":            filepath.Join(m.config.CondaHome, "bin") + string(os.PathListSeparator) + os.Getenv("PATH"),
-	})
-	output := newTailBuffer(maxDiagnosticBytes)
-	command.Stdout, command.Stderr = output, output
-	if err := runWorkerProcess(command); err != nil {
-		return fmt.Errorf("install managed R environment: %w: %s", err, strings.TrimSpace(output.String()))
+	if err := m.runManagedEnvironmentCommand(ctx, arguments...); err != nil {
+		return fmt.Errorf("install managed R environment: %w", err)
 	}
 	rscript, err := m.managedEnvironmentExecutable(name, "Rscript")
 	if err != nil {
@@ -687,7 +676,9 @@ func (m *Manager) repairRSharedLibrary(ctx context.Context, rscript string) erro
 		ctx = context.Background()
 	}
 	output := newTailBuffer(4096)
-	version := newWorkerProcessCommand(ctx, rscript, "--version")
+	probeCtx, cancelProbe := context.WithTimeout(ctx, 3*time.Second)
+	defer cancelProbe()
+	version := newWorkerProcessCommand(probeCtx, rscript, "--version")
 	version.Stdout, version.Stderr, version.Env = output, output, kernelEnvironment(nil)
 	if err := version.Run(); err != nil {
 		return fmt.Errorf("inspect shared R package version: %w", err)
@@ -717,7 +708,7 @@ func (m *Manager) repairRSharedLibrary(ctx context.Context, rscript string) erro
 	targetExists := false
 	if info, statErr := os.Stat(target); statErr == nil && info.IsDir() {
 		targetExists = true
-		if verifyRSharedPackages(ctx, rscript, target, packages) == nil {
+		if m.verifyRSharedPackages(ctx, rscript, target, packages) == nil {
 			return nil
 		}
 	} else if statErr == nil || !errors.Is(statErr, os.ErrNotExist) {
@@ -730,13 +721,10 @@ func (m *Manager) repairRSharedLibrary(ctx context.Context, rscript string) erro
 	defer os.RemoveAll(staging)
 	copyScript := `args <- commandArgs(trailingOnly=TRUE); target <- args[[1L]]; requested <- args[-1L]; installed <- utils::installed.packages(); dependencies <- tools::package_dependencies(requested, db=installed, recursive=TRUE); packages <- unique(c(requested, unlist(dependencies, use.names=FALSE))); packages <- packages[packages %in% rownames(installed)]; if (!all(requested %in% packages)) quit(status=2L); dir.create(target, recursive=TRUE, showWarnings=FALSE); for (package in packages) { source <- tryCatch(find.package(package, quiet=TRUE), error=function(condition) ""); if (!nzchar(source) || !isTRUE(file.copy(source, target, recursive=TRUE, copy.mode=TRUE))) quit(status=3L) }`
 	arguments := append([]string{"--vanilla", "-e", copyScript, "--args", staging}, packages...)
-	copyCommand := newWorkerProcessCommand(ctx, rscript, arguments...)
-	copyOutput := newTailBuffer(maxDiagnosticBytes)
-	copyCommand.Stdout, copyCommand.Stderr, copyCommand.Env = copyOutput, copyOutput, kernelEnvironment(nil)
-	if err := copyCommand.Run(); err != nil {
-		return fmt.Errorf("stage shared R packages: %w: %s", err, strings.TrimSpace(copyOutput.String()))
+	if err := m.runManagedEnvironmentProcessWithEnv(ctx, rscript, kernelEnvironment(nil), arguments...); err != nil {
+		return fmt.Errorf("stage shared R packages: %w", err)
 	}
-	if err := verifyRSharedPackages(ctx, rscript, staging, packages); err != nil {
+	if err := m.verifyRSharedPackages(ctx, rscript, staging, packages); err != nil {
 		return err
 	}
 	if err := replaceKernelDirectory(staging, target, targetExists); err != nil {
@@ -745,14 +733,11 @@ func (m *Manager) repairRSharedLibrary(ctx context.Context, rscript string) erro
 	return nil
 }
 
-func verifyRSharedPackages(ctx context.Context, rscript, library string, packages []string) error {
+func (m *Manager) verifyRSharedPackages(ctx context.Context, rscript, library string, packages []string) error {
 	verifyScript := `args <- commandArgs(trailingOnly=TRUE); library <- args[[1L]]; requested <- args[-1L]; installed <- utils::installed.packages(); dependencies <- tools::package_dependencies(requested, db=installed, recursive=TRUE); packages <- unique(c(requested, unlist(dependencies, use.names=FALSE))); packages <- packages[packages %in% rownames(installed)]; ok <- all(requested %in% packages) && all(vapply(packages, function(package) nzchar(tryCatch(find.package(package, lib.loc=library, quiet=TRUE), error=function(condition) "")), logical(1L))); quit(status=if (ok) 0L else 4L)`
 	arguments := append([]string{"--vanilla", "-e", verifyScript, "--args", library}, packages...)
-	command := newWorkerProcessCommand(ctx, rscript, arguments...)
-	output := newTailBuffer(maxDiagnosticBytes)
-	command.Stdout, command.Stderr, command.Env = output, output, kernelEnvironment(nil)
-	if err := command.Run(); err != nil {
-		return fmt.Errorf("verify shared R packages: %w: %s", err, strings.TrimSpace(output.String()))
+	if err := m.runManagedEnvironmentProcessWithEnv(ctx, rscript, kernelEnvironment(nil), arguments...); err != nil {
+		return fmt.Errorf("verify shared R packages: %w", err)
 	}
 	return nil
 }

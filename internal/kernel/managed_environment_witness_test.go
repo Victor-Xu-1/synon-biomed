@@ -63,3 +63,45 @@ value = m.sqrt(9)
 		t.Fatalf("available symbols reported missing=%#v", result.Missing)
 	}
 }
+
+func TestRunManagedPythonSourceImportProbeLoadsFromSubmodules(t *testing.T) {
+	python, err := exec.LookPath("python3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	result, err := runManagedPythonSourceImportProbe(ctx, python, "", `
+from urllib import request as client
+from xml.etree import ElementTree as tree
+client.Request("https://example.org")
+tree.Element("root")
+`)
+	if err != nil || len(result.Missing) != 0 {
+		t.Fatalf("valid submodule imports rejected: %#v %v", result, err)
+	}
+}
+
+func TestRunManagedPythonSourceImportProbeDoesNotInventScopedRequirements(t *testing.T) {
+	python, err := exec.LookPath("python3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	result, err := runManagedPythonSourceImportProbe(ctx, python, "", `
+try:
+    import missing_optional_accelerator
+except ImportError:
+    pass
+import math as m
+def function(m):
+    return m.custom_interface()
+callback = lambda m: m.custom_interface()
+m = object()
+m.custom_interface()
+`)
+	if err != nil || len(result.Missing) != 0 {
+		t.Fatalf("dynamic scope treated as missing API: %#v %v", result, err)
+	}
+}

@@ -207,7 +207,7 @@ export function CreatePersonalSkillModal({
     if (!normalizedName || !displayName.trim() || !description.trim()) return;
     setSaving(true);
     try {
-      const content = `---\nname: ${normalizedName}\ndescription: ${yamlScalar(description)}\nmetadata:\n  display-name: ${yamlScalar(displayName)}\n---\n\n# ${displayName.trim()}\n\n${description.trim()}\n`;
+      const content = `---\nname: ${normalizedName}\ndescription: >\n  ${yamlLine(description)}\nmetadata:\n  display-name: ${yamlScalar(displayName)}\n---\n\n# ${displayName.trim()}\n\n${description.trim()}\n`;
       await importSynonBiomedSkillFile(
         new File([content], `${normalizedName}.md`, { type: 'text/markdown' }),
         normalizedName
@@ -731,4 +731,8 @@ function normalizeSkillName(value: string): string {
 
 function yamlScalar(value: string): string {
   return JSON.stringify(value.trim());
+}
+
+function yamlLine(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').replace(/:/g, '\\:');
 }

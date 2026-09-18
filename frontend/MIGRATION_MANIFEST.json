@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "52a5f761a3edfd830a74b9e05aab16d1f07917178826fa8672e992a6d130660d",
+  "adaptationFingerprintSHA256": "0a600aaeaa0fd026a7892cc949280d87b7fd9b7f561b2b67ef5d1515f2535d64",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "6dfedc6f9ef07430547ddc8c8a79f5709dbd6cdadbbe759822fa83d3e8b141c2",
+  "additionFingerprintSHA256": "020b754d1fca050fe40de3fdbdcb13ccbc2d178605eddd3fb3d1f450ead56c53",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 406,
@@ -2327,8 +2327,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/skills/SynonBiomedSkillLibraryModals.tsx",
       "sourceSHA256": "9492e57942849493523265d620c77a96a1fae42069b838f6076c5293ef4e4b1e",
-      "targetSHA256": "05fbe37cf3dab95da3a10edf55e13dadaac3695108fb1f3a9bb51d89415de5e1",
-      "bytes": 29099,
+      "targetSHA256": "5010abe94ef7536bdd01b2453acd35136e127504b7170b97acd16bf0eddaa3cf",
+      "bytes": 28985,
       "reason": "Expose Go-owned agents, skills, MCP, models, compute, memory, permissions, credentials, storage, and governance settings."
     },
     {
@@ -7117,8 +7117,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Preview/components/PreviewPanel/PreviewArtifactActions.tsx",
-      "sha256": "adedca696ba52042bbf3d070e10f9c49c2277f46678744972b6d17449b0303f1",
-      "bytes": 24393,
+      "sha256": "e47e68a3d51220d785090d5f927ed6c06576cf1d2717134a25727d1eaa267d90",
+      "bytes": 24525,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7531,8 +7531,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/MessageChannelsSettings.tsx",
-      "sha256": "5a1fd04943b77e1ab25c3da06665779194b09c23b24b35ebdeac82ae27d7aa6e",
-      "bytes": 13517,
+      "sha256": "e7c548794285b438132fa8c575ffab93d62415d705c974bf8787915f2f95b944",
+      "bytes": 13786,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {

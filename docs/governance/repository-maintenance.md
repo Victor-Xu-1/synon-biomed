@@ -8,12 +8,21 @@ kept separate from product behavior and from external task evidence.
 - `main` is the protected integration branch.
 - Development happens on a topic branch and enters `main` through a pull
   request.
-- The required status is `Merge Gate / CI required`; conversations must be
-  resolved before merge.
+- Required checks include `Merge Gate / CI required`, `CodeQL`, and the
+  language analysis jobs for Actions, Go, JavaScript/TypeScript and Python.
+  Conversations must be resolved before merge.
+- This is a single-maintainer repository. A separate code-review pass and its
+  findings belong on the PR before merge, including maintainer-authored work.
+  Do not manufacture approval using another identity. A second GitHub approval
+  is required only after an independent maintainer is available; authors cannot
+  approve their own PRs.
+  CODEOWNERS is introduced only when it can represent real independent
+  ownership and review, not as a substitute for that review.
 - A pull request must describe its scope, compatibility impact, tests, and
   rollback or recovery path.
-- Close or delete obsolete topic branches only after confirming that their
-  pull requests are merged, closed, or superseded.
+- Delete obsolete topic branches only after confirming their changes are
+  merged or intentionally superseded and a recovery reference is retained.
+  A closed PR alone does not establish that unmerged work is disposable.
 
 ## Version and release line
 
@@ -26,8 +35,9 @@ authorization contract. No release is complete merely because a build passed.
 ## Automation and permissions
 
 Release automation must use a GitHub App installed only on this repository.
-The App ID is a repository environment variable and the private key is an
-environment secret. The environment is restricted to `main`. Personal tokens,
+Store the App's Client ID in repository variable `RELEASE_APP_ID` and its
+private key in the `release-automation` environment secret
+`RELEASE_APP_PRIVATE_KEY`. The environment is restricted to `main`. Personal tokens,
 private keys, and credentials must never appear in source, issues, pull
 requests, logs, or release assets.
 

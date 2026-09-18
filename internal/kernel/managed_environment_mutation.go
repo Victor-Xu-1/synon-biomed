@@ -67,8 +67,9 @@ func (m *Manager) CreateManagedEnvironment(ctx context.Context, input CreateMana
 	if lockedRequirementsPath != "" && len(pipPhases) > 0 {
 		return ManagedEnvironment{}, errors.New("locked requirements cannot be combined with pip phases")
 	}
+	pipPlan := planManagedPipInstall(pipPhases, pipArgs, pipFindLinks, pipExtraIndexURLs, lockedRequirementsPath)
 	arguments := []string{"--no-rc", "create", "-y"}
-	if language == "python" {
+	if language == "python" || len(pipPlan) != 0 {
 		if sourceEnvironment == "" {
 			version := strings.TrimSpace(input.PythonVersion)
 			if version == "" {
@@ -85,7 +86,8 @@ func (m *Manager) CreateManagedEnvironment(ctx context.Context, input CreateMana
 				packages = append(packages, "pip")
 			}
 		}
-	} else {
+	}
+	if language == "r" {
 		if !managedPackageSetContains(packages, "r-base") {
 			packages = append([]string{"r-base"}, packages...)
 		}
@@ -142,7 +144,7 @@ func (m *Manager) CreateManagedEnvironment(ctx context.Context, input CreateMana
 		validateResolved := func(resolved []string) error {
 			return validateManagedRequiredAccelerator(resolved, input.RequiredAccelerator)
 		}
-		return m.publishManagedEnvironment(operationContext, input.Name, language, "create", operationKey, channels, specDigest, importNames, validateResolved, func(staging string) error {
+		return m.publishManagedEnvironment(operationContext, input.Name, language, "create", operationKey, channels, specDigest, input.RequireAbsent, importNames, validateResolved, func(staging string) error {
 			commandArguments := []string{}
 			if sourcePrefix != "" {
 				commandArguments = []string{"--no-rc", "create", "-y", "-p", staging, "--clone", sourcePrefix}
@@ -159,27 +161,7 @@ func (m *Manager) CreateManagedEnvironment(ctx context.Context, input CreateMana
 					return err
 				}
 			}
-			python, err := managedPythonExecutableAtPrefix(staging)
-			if err != nil {
-				return err
-			}
-			for _, phase := range pipPhases {
-				phaseArguments := append([]string{"-I", "-m", "pip", "install", "--disable-pip-version-check", "--no-input"}, pipArgs...)
-				phaseArguments = append(phaseArguments, managedPipSourceArguments(pipFindLinks, pipExtraIndexURLs)...)
-				phaseArguments = append(phaseArguments, phase...)
-				if err := m.runManagedEnvironmentProcessWithEnv(operationContext, python, managedEnvironmentInstallerRuntimeEnv(staging), phaseArguments...); err != nil {
-					return err
-				}
-			}
-			if lockedRequirementsPath != "" {
-				lockedArguments := append([]string{"-I", "-m", "pip", "install", "--disable-pip-version-check", "--no-input"}, pipArgs...)
-				lockedArguments = append(lockedArguments, managedPipSourceArguments(pipFindLinks, pipExtraIndexURLs)...)
-				lockedArguments = append(lockedArguments, "--require-hashes", "-r", lockedRequirementsPath)
-				if err := m.runManagedEnvironmentProcessWithEnv(operationContext, python, managedEnvironmentInstallerRuntimeEnv(staging), lockedArguments...); err != nil {
-					return err
-				}
-			}
-			return nil
+			return m.runManagedPipInstallPlan(operationContext, staging, pipPlan)
 		})
 	})
 }
@@ -229,7 +211,13 @@ func (m *Manager) RegisterManagedEnvironment(ctx context.Context, input Register
 		venvPath = filepath.Join(sourcePath, ".venv")
 	}
 	if input.Create {
-		venvPath, err = m.createRegisteredEnvironment(ctx, sourcePath, venvPath, input.Extras, input.Force)
+		var parent string
+		parent, err = canonicalManagedRegistrationPath(filepath.Dir(venvPath))
+		if err == nil && filepath.IsAbs(venvPath) {
+			venvPath = filepath.Join(parent, filepath.Base(venvPath))
+		} else {
+			return ManagedEnvironment{}, errors.New("registered environment venv_path parent is invalid")
+		}
 		if err != nil {
 			return ManagedEnvironment{}, err
 		}
@@ -250,7 +238,14 @@ func (m *Manager) RegisterManagedEnvironment(ctx context.Context, input Register
 		input.Name, language, sourcePath, venvPath, input.Create, input.Force, append([]string(nil), input.Extras...),
 	})
 	return m.runManagedEnvironmentOperation(ctx, requestKey, func(operationContext context.Context) (ManagedEnvironment, error) {
-		return m.publishRegisteredManagedEnvironment(operationContext, input.Name, language, sourcePath, venvPath, requestKey)
+		var prepare func(context.Context) error
+		if input.Create {
+			prepare = func(ctx context.Context) error {
+				_, err := m.createRegisteredEnvironment(ctx, sourcePath, venvPath, input.Extras, input.Force)
+				return err
+			}
+		}
+		return m.publishRegisteredManagedEnvironment(operationContext, input.Name, language, sourcePath, venvPath, requestKey, prepare)
 	})
 }
 
@@ -360,17 +355,12 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 			if err := validateManagedEnvironmentName(targetName); err != nil {
 				return ManagedEnvironment{}, err
 			}
-			if _, err := os.Lstat(filepath.Join(m.config.CondaEnvsPath, targetName)); err == nil {
-				return ManagedEnvironment{}, errors.New("fork_to environment already exists")
-			} else if !errors.Is(err, os.ErrNotExist) {
-				return ManagedEnvironment{}, errors.New("fork_to environment cannot be inspected")
-			}
 		}
 		create := CreateManagedEnvironmentInput{
 			Name: targetName, Language: "python", SourceEnvironment: input.Environment,
 			Channels: channels, PipArgs: pipArgs, PipFindLinks: pipFindLinks,
 			PipExtraIndexURLs: pipExtraIndexURLs, RequiredAccelerator: input.RequiredAccelerator,
-			OperationID: input.OperationID,
+			OperationID: input.OperationID, RequireAbsent: strings.TrimSpace(input.ForkTo) != "",
 		}
 		if input.UsePip {
 			create.PipPhases = [][]string{packages}
@@ -385,11 +375,6 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 			return ManagedEnvironment{}, err
 		}
 		targetName = input.ForkTo
-		if _, err := os.Lstat(filepath.Join(m.config.CondaEnvsPath, targetName)); err == nil {
-			return ManagedEnvironment{}, errors.New("fork_to environment already exists")
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return ManagedEnvironment{}, errors.New("fork_to environment cannot be inspected")
-		}
 	}
 	source, err := m.readManagedEnvironment(input.Environment, true)
 	if err != nil {
@@ -416,7 +401,7 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 		if !input.UsePip {
 			return ManagedEnvironment{}, errors.New("registered Python environments require use_pip package mutation")
 		}
-		return m.publishRegisteredEnvironmentFork(ctx, source, targetName, operation, operationKey, channels, packages, pipArgs)
+		return m.publishRegisteredEnvironmentFork(ctx, source, targetName, operation, operationKey, strings.TrimSpace(input.ForkTo) != "", channels, packages, pipArgs, pipFindLinks, pipExtraIndexURLs)
 	}
 	sourcePrefix, err := filepath.EvalSymlinks(filepath.Join(m.config.CondaEnvsPath, input.Environment))
 	if err != nil {
@@ -441,47 +426,44 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 				return validateManagedRequiredAccelerator(resolved, input.RequiredAccelerator)
 			}
 		}
-		return m.publishManagedEnvironment(operationContext, targetName, source.Language, operation, operationKey, channels, "", nil, validateResolved, func(staging string) error {
+		return m.publishManagedEnvironment(operationContext, targetName, source.Language, operation, operationKey, channels, "", strings.TrimSpace(input.ForkTo) != "", nil, validateResolved, func(staging string) error {
 			if err := m.runManagedEnvironmentCommand(operationContext, "--no-rc", "create", "-y", "-p", staging, "--clone", sourcePrefix); err != nil {
 				return err
 			}
-			if len(authorityMigrations) != 0 {
-				python, err := managedPythonExecutableAtPrefix(staging)
-				if err != nil {
-					return err
+			if input.UsePip && operation == "install" {
+				if missing := managedPipBootstrapPackages(source.Packages); len(missing) != 0 {
+					if err := m.runManagedEnvironmentCommand(operationContext, managedCondaMutationArguments("install", staging, channels, missing)...); err != nil {
+						return err
+					}
 				}
+			}
+			if len(authorityMigrations) != 0 {
 				arguments := []string{"-I", "-m", "pip", "uninstall", "-y"}
 				for _, migration := range authorityMigrations {
 					arguments = append(arguments, migration.PipDistribution)
 				}
-				if err := m.runManagedEnvironmentProcess(operationContext, python, arguments...); err != nil {
+				if err := m.runManagedPipCommand(operationContext, staging, arguments); err != nil {
 					return err
 				}
 			}
 			if input.UsePip {
-				python, err := managedPythonExecutableAtPrefix(staging)
-				if err != nil {
-					return err
-				}
 				if operation == "uninstall" {
 					arguments := append([]string{"-I", "-m", "pip", "uninstall", "-y"}, packages...)
-					if err := m.runManagedEnvironmentProcess(operationContext, python, arguments...); err != nil {
+					if err := m.runManagedPipCommand(operationContext, staging, arguments); err != nil {
 						return err
 					}
 				}
 				if len(restorePipRequirements) > 0 {
-					arguments := append([]string{"-I", "-m", "pip", "install", "--no-deps"}, restorePipRequirements...)
-					if err := m.runManagedEnvironmentProcess(operationContext, python, arguments...); err != nil {
+					restore := planManagedPipInstall([][]string{restorePipRequirements}, []string{"--no-deps"}, pipFindLinks, pipExtraIndexURLs, "")
+					if err := m.runManagedPipInstallPlan(operationContext, staging, restore); err != nil {
 						return err
 					}
 				}
 				if operation == "uninstall" {
 					return nil
 				}
-				arguments := append([]string{"-I", "-m", "pip", "install", "--upgrade-strategy", "only-if-needed"}, pipArgs...)
-				arguments = append(arguments, managedPipSourceArguments(pipFindLinks, pipExtraIndexURLs)...)
-				arguments = append(arguments, packages...)
-				return m.runManagedEnvironmentProcess(operationContext, python, arguments...)
+				options := append([]string{"--upgrade-strategy", "only-if-needed"}, pipArgs...)
+				return m.runManagedPipInstallPlan(operationContext, staging, planManagedPipInstall([][]string{packages}, options, pipFindLinks, pipExtraIndexURLs, ""))
 			}
 			arguments := managedCondaMutationArguments(operation, staging, channels, packages)
 			if err := m.runManagedEnvironmentCommand(operationContext, arguments...); err != nil {
@@ -490,12 +472,7 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 			if len(restorePipRequirements) == 0 {
 				return nil
 			}
-			python, err := managedPythonExecutableAtPrefix(staging)
-			if err != nil {
-				return err
-			}
-			restoreArguments := append([]string{"-I", "-m", "pip", "install", "--no-deps"}, restorePipRequirements...)
-			return m.runManagedEnvironmentProcess(operationContext, python, restoreArguments...)
+			return m.runManagedPipInstallPlan(operationContext, staging, planManagedPipInstall([][]string{restorePipRequirements}, []string{"--no-deps"}, pipFindLinks, pipExtraIndexURLs, ""))
 		})
 	})
 }
@@ -518,7 +495,8 @@ func (m *Manager) publishRegisteredEnvironmentFork(
 	ctx context.Context,
 	source ManagedEnvironment,
 	targetName, operation, operationKey string,
-	channels, requested, pipArgs []string,
+	requireAbsent bool,
+	channels, requested, pipArgs, pipFindLinks, pipExtraIndexURLs []string,
 ) (ManagedEnvironment, error) {
 	marker, err := m.activeManagedEnvironmentMarker(source.Name)
 	if err != nil || marker.Kind != "path-venv" {
@@ -536,7 +514,7 @@ func (m *Manager) publishRegisteredEnvironmentFork(
 	return m.runManagedEnvironmentOperation(ctx, operationKey, func(operationContext context.Context) (ManagedEnvironment, error) {
 		return m.publishManagedEnvironment(
 			operationContext, targetName, "python", "registered-"+operation, operationKey,
-			channels, requestDigest, nil, nil,
+			channels, requestDigest, requireAbsent, nil, nil,
 			func(staging string) error {
 				arguments := []string{"--no-rc", "create", "-y", "-p", staging}
 				arguments = append(arguments, managedChannelArguments(channels)...)
@@ -547,13 +525,7 @@ func (m *Manager) publishRegisteredEnvironmentFork(
 				if len(requirements) == 0 {
 					return nil
 				}
-				python, err := managedPythonExecutableAtPrefix(staging)
-				if err != nil {
-					return err
-				}
-				pipArguments := append([]string{"-I", "-m", "pip", "install"}, pipArgs...)
-				pipArguments = append(pipArguments, requirements...)
-				return m.runManagedEnvironmentProcess(operationContext, python, pipArguments...)
+				return m.runManagedPipInstallPlan(operationContext, staging, planManagedPipInstall([][]string{requirements}, pipArgs, pipFindLinks, pipExtraIndexURLs, ""))
 			},
 		)
 	})

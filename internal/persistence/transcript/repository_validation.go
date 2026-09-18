@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"synon-go/internal/sqliteutil"
 )
 
 func (r *Repository) RunImmediate(ctx context.Context, fn func(*ImmediateTransaction) error) error {
@@ -208,7 +209,7 @@ func terminalStatus(status string) bool {
 }
 
 func schemaError(err error) error {
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || sqliteutil.IsTransientContention(err) {
 		return err
 	}
 	if err == nil || errors.Is(err, ErrOwnerMismatch) || errors.Is(err, ErrClaimStale) || errors.Is(err, ErrEventConflict) ||

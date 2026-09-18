@@ -24,6 +24,9 @@ type executionDockerRunner struct {
 	imageID       string
 	remainRunning bool
 	stopCount     int
+	onInspect     func()
+	stopNoEffect  bool
+	stopError     bool
 }
 
 func (r *executionDockerRunner) Run(_ context.Context, arguments ...string) (string, string, error) {
@@ -41,6 +44,9 @@ func (r *executionDockerRunner) Run(_ context.Context, arguments ...string) (str
 			return "", "Error: No such container", errors.New("exit status 1")
 		}
 		r.inspectCount++
+		if r.onInspect != nil {
+			r.onInspect()
+		}
 		status := "created"
 		running := false
 		exitCode := 0
@@ -49,6 +55,9 @@ func (r *executionDockerRunner) Run(_ context.Context, arguments ...string) (str
 			if !r.remainRunning && r.inspectCount >= 3 {
 				status, running, exitCode = "exited", false, 0
 			}
+		}
+		if r.stopCount > 0 && !r.stopNoEffect && !r.stopError {
+			status, running = "exited", false
 		}
 		container := dockerContainer{ID: "container-id", Name: "/managed", Image: r.imageID}
 		container.Config.Labels = map[string]string{
@@ -71,7 +80,12 @@ func (r *executionDockerRunner) Run(_ context.Context, arguments ...string) (str
 		return "scientific output\n", "diagnostic output\n", nil
 	case "stop":
 		r.stopCount++
-		r.started = false
+		if r.stopError {
+			return "", "control unavailable", errors.New("stop unavailable")
+		}
+		if !r.stopNoEffect {
+			r.started = false
+		}
 		return "managed\n", "", nil
 	default:
 		return "", "unexpected command", errors.New("unexpected command")
@@ -173,5 +187,36 @@ func TestRunExecutionDetachPreservesLiveContainer(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Fatal("container execution did not detach")
+	}
+}
+
+func TestRunExecutionCancellationWinsConcurrentDetach(t *testing.T) {
+	for i := 0; i < 16; i++ {
+		docker := &executionDockerRunner{created: true, started: true, remainRunning: true}
+		manager, environment := testContainerEnvironment(t, docker)
+		ctx, cancel := context.WithCancel(context.Background())
+		detach := make(chan struct{})
+		var once sync.Once
+		docker.onInspect = func() { once.Do(func() { cancel(); close(detach) }) }
+		work := t.TempDir()
+		result, err := manager.RunExecution(ctx, detach, environment, ExecutionRequest{ExecutionID: "execution-1", ToolName: "python", Code: "while True: pass", Workspace: work})
+		cancel()
+		if err != nil || !result.Interrupted || docker.stopCount != 1 {
+			t.Fatalf("cancellation lost to detach: %#v stops=%d err=%v", result, docker.stopCount, err)
+		}
+	}
+}
+
+func TestRunExecutionCancellationRequiresVerifiedPhysicalExit(t *testing.T) {
+	for _, stopError := range []bool{false, true} {
+		docker := &executionDockerRunner{created: true, started: true, remainRunning: true, stopNoEffect: !stopError, stopError: stopError}
+		manager, environment := testContainerEnvironment(t, docker)
+		ctx, cancel := context.WithCancel(context.Background())
+		docker.onInspect = cancel
+		result, err := manager.RunExecution(ctx, make(chan struct{}), environment, ExecutionRequest{ExecutionID: "execution-1", ToolName: "python", Code: "pass", Workspace: t.TempDir()})
+		cancel()
+		if !errors.Is(err, ErrExecutionOutcomeUnconfirmed) || result.Interrupted {
+			t.Fatalf("unverified cancellation reported success: %#v %v", result, err)
+		}
 	}
 }

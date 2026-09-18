@@ -164,10 +164,13 @@ func (s *Server) collectAuthorizedKernelInventory(
 				kernel.LastDescription = kernel.CurrentCell.Source
 			}
 		}
-		result.Kernels = append(result.Kernels, kernel)
 		if detached, ok := detachedCandidates[kernel.KernelID]; ok {
+			if err := s.fenceDetachedExecutionObservation(ctx, &kernel, detached); err != nil {
+				return authorizedKernelInventory{}, err
+			}
 			result.Detached[kernel.KernelID] = detached
 		}
+		result.Kernels = append(result.Kernels, kernel)
 	}
 	recomputeUserKernelMachine(&result.Machine, result.Kernels)
 	return result, nil

@@ -4,10 +4,7 @@ package kernel
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -24,15 +21,21 @@ func (w *Worker) ProcessIdentity() (ProcessIdentity, error) {
 		return ProcessIdentity{}, errors.New("kernel worker process identity is unavailable")
 	}
 	pid := w.process.command.Process.Pid
-	startTicks, err := linuxProcessStartTicks(pid)
+	current, err := readLinuxObservedCounter("/proc", pid)
 	if err != nil {
 		return ProcessIdentity{}, err
+	}
+	if !linuxProcessStateLive(current.process.State) || current.start > 1<<63-1 {
+		return ProcessIdentity{}, errors.New("kernel worker process is no longer live")
+	}
+	if w.process.startTicks != 0 && current.start != w.process.startTicks {
+		return ProcessIdentity{}, errors.New("kernel worker process identity no longer matches its launch")
 	}
 	pgid, err := syscall.Getpgid(pid)
 	if err != nil || pgid <= 0 {
 		return ProcessIdentity{}, errors.New("kernel worker process group identity is unavailable")
 	}
-	return ProcessIdentity{PID: pid, StartTicks: startTicks, PGID: pgid}, nil
+	return ProcessIdentity{PID: pid, StartTicks: int64(current.start), PGID: pgid}, nil
 }
 
 func CurrentProcessStartTicks() (int64, error) {
@@ -46,38 +49,26 @@ func ProcessIdentityAlive(pid int64, startTicks int64) (bool, error) {
 	if pid <= 0 || startTicks <= 0 || pid > int64(^uint(0)>>1) {
 		return false, errors.New("complete process identity is required")
 	}
-	current, err := linuxProcessStartTicks(int(pid))
+	current, err := readLinuxObservedCounter("/proc", int(pid))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return false, nil
 		}
 		return false, err
 	}
-	return current == startTicks, nil
+	return current.start == uint64(startTicks) && linuxProcessStateLive(current.process.State), nil
 }
 
 func linuxProcessStartTicks(pid int) (int64, error) {
 	if pid <= 0 {
 		return 0, errors.New("positive process id is required")
 	}
-	raw, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
+	current, err := readLinuxObservedCounter("/proc", pid)
 	if err != nil {
-		return 0, fmt.Errorf("read process identity: %w", err)
+		return 0, err
 	}
-	// comm is parenthesized and may itself contain spaces or parentheses. The
-	// last ') ' delimiter is the only stable boundary before field 3.
-	boundary := strings.LastIndex(string(raw), ") ")
-	if boundary < 0 {
-		return 0, errors.New("process identity is malformed")
-	}
-	fields := strings.Fields(string(raw[boundary+2:]))
-	// starttime is field 22; fields[0] is field 3 after removing pid and comm.
-	if len(fields) <= 19 {
-		return 0, errors.New("process identity is incomplete")
-	}
-	value, err := strconv.ParseInt(fields[19], 10, 64)
-	if err != nil || value <= 0 {
+	if current.start > 1<<63-1 {
 		return 0, errors.New("process start identity is invalid")
 	}
-	return value, nil
+	return int64(current.start), nil
 }

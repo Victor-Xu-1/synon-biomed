@@ -123,6 +123,9 @@ func (g serverAgentRuntimeToolGateway) executeGateway(ctx context.Context, call 
 		ctx = context.Background()
 	}
 	g, ctx = g.bindTaskRunContext(ctx)
+	if err := g.server.hydrateSessionRunnerManagedEnvironmentBindings(ctx, g.taskRun); err != nil {
+		return serverAgentRuntimeGatewayReceipt{Err: fmt.Errorf("restore managed environment state: %w", err)}
+	}
 	ctx, cancel := boundedAgentRuntimeToolContext(ctx)
 	defer cancel()
 	execution := &serverAgentRuntimeGatewayExecution{gateway: g, call: call}

@@ -113,8 +113,13 @@
     },
     {
       "path": "kernels/synon_biomed_runtime/worker_execution.py",
-      "sha256": "0767f460bc06c51415b5792e63678c0b2c5894078f8f6c37269e458ac1797729",
-      "bytes": 4148
+      "sha256": "6d71e81fa72b4619dc094f8d43b36e671c65485ca092cc66281449d651f1f446",
+      "bytes": 4429
+    },
+    {
+      "path": "kernels/synon_biomed_runtime/worker_reads.py",
+      "sha256": "723d6283cb1a366374c5fdc250df8fac22777a97b038bf6d368642141d7f4ccb",
+      "bytes": 1828
     },
     {
       "path": "kernels/synon_biomed_runtime/worker_safety.py",
@@ -123,8 +128,8 @@
     },
     {
       "path": "kernels/synon_biomed_runtime/worker_streams.py",
-      "sha256": "69aeaa2dfe2982c13911be4447867d2b6ef8cb2900cacaa32eef4ddc54863d94",
-      "bytes": 5087
+      "sha256": "c8dade2b928194c30a53cdbafc0fee0b31fd0bc135013366c487a5a4c968a345",
+      "bytes": 5483
     },
     {
       "path": "kernels/synon_biomed_runtime/worker_transport.py",

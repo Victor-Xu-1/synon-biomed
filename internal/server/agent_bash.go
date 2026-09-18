@@ -23,7 +23,7 @@ func validateAgentBashCommand(command string) error {
 	if err := shellops.CheckSafety("Bash", command, nil); err != nil {
 		return err
 	}
-	return shellops.CheckPackageManagerMutation(command)
+	return nil
 }
 
 // agentBashPythonWrapper uses the already confined, environment-bound kernel

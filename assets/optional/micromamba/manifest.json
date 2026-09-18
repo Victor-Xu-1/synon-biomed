@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "source": "synonbiomed-v1.1/runtime/assets/micromamba",
-  "version": "2.5.0",
-  "sourceUrl": "https://github.com/mamba-org/mamba/releases/tag/2.5.0",
+  "source": "mamba-org/mamba@2676ec2050f7dd5b8a524287526f50a8a4fb9652 with link-script-exit.patch",
+  "version": "2.9.0+synon.1",
+  "sourceUrl": "https://github.com/mamba-org/mamba/tree/2676ec2050f7dd5b8a524287526f50a8a4fb9652",
   "license": "BSD-3-Clause",
   "licenseFile": "LICENSE",
   "entrypoint": "linux-x86_64/micromamba",
   "runtime": {
-    "minimumVersion": "2",
+    "minimumVersion": "2.9",
     "optional": true,
     "kind": "native"
   },
@@ -17,13 +17,43 @@
   "files": [
     {
       "path": "linux-x86_64/micromamba",
-      "sha256": "c04571cfb0750e5432d530a3068b8fcd232ebed3133358e056e59a90b9852b00",
-      "bytes": 17546920
+      "sha256": "326df3f45694c1b2d165041beb2e56b31de9263bff2e8bfe645bdbdd9f27de3f",
+      "bytes": 17541984
     },
     {
       "path": "LICENSE",
       "sha256": "17404f97415839e32fc61ab467f4c0c2536e02c71dd0f854eb48fae96a9d3eda",
       "bytes": 1498
+    },
+    {
+      "path": "BUILD.md",
+      "sha256": "43f1ae448b99feb7a48e8a7c1f731dd3975e37917c7d35c5d22db6f229909216",
+      "bytes": 2976
+    },
+    {
+      "path": "build-linux-64.sh",
+      "sha256": "e677a9f4e441e1e8b2dca7a10bc4ee2773b6a0055ab6eba6cdcce2570c9a638f",
+      "bytes": 3433
+    },
+    {
+      "path": "build-linux-64.lock",
+      "sha256": "23ce033eb7dfc165499951bce419a925e5fc27ca48a11f0d63072adecded53aa",
+      "bytes": 12740
+    },
+    {
+      "path": "link-script-exit.patch",
+      "sha256": "8bb87db16bb39740e66c493e9d2a3f82591b1e6bccea4613e8e2a752bec676a2",
+      "bytes": 437
+    },
+    {
+      "path": "collect-build-notices.py",
+      "sha256": "db3a766cfffa4831c26fb943f66c24180b21059b67dfd2a5cc0b39f2420ea3f1",
+      "bytes": 2248
+    },
+    {
+      "path": "DEPENDENCY-NOTICES.txt",
+      "sha256": "5433bcc3f2078b5e2a92c828ff7979dc2fcecf72d591ed1c9531f0efcfb15a30",
+      "bytes": 381231
     }
   ]
 }

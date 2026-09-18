@@ -26,11 +26,43 @@
         "scripts/quality/pr_dependency_scope.py",
         "scripts/quality/test_pr_dependency_scope.py",
         "scripts/quality/pr_test_partition.py",
-        "scripts/quality/test_pr_test_partition.py"
+        "scripts/quality/test_pr_test_partition.py",
+        "scripts/quality/runtime_input_scope.py",
+        "scripts/quality/runtime_input_scope.json",
+        "scripts/quality/test_runtime_input_scope.py"
       ],
       "frontend": false,
       "checks": [
-        ["python3", "-B", "-m", "unittest", "scripts.quality.test_pr_fast_scope", "scripts.quality.test_pr_dependency_scope", "scripts.quality.test_pr_test_partition", "scripts.quality.test_verification_scope"]
+        ["python3", "-B", "-m", "unittest", "scripts.quality.test_pr_fast_scope", "scripts.quality.test_pr_dependency_scope", "scripts.quality.test_pr_test_partition", "scripts.quality.test_verification_scope", "scripts.quality.test_runtime_input_scope"]
+      ]
+    },
+    {
+      "name": "schema-and-package-contracts",
+      "paths": [
+        "docs/governance/product-identity.json",
+        "docs/governance/product-identity-consumer-matrix.json",
+        "scripts/quality/test_product_identity_gate.py",
+        "scripts/package-release-test.sh"
+      ],
+      "frontend": false,
+      "checks": [
+        ["python3", "-B", "-m", "unittest", "scripts.quality.test_product_identity_gate"],
+        ["bash", "-n", "scripts/package-release-test.sh"]
+      ]
+    },
+    {
+      "name": "kernel-worker-protocol",
+      "paths": [
+        "scripts/quality/test_kernel_worker_streams.py",
+        "scripts/quality/test_kernel_worker_protocol.py",
+        "scripts/quality/kernel_manifest.py",
+        "scripts/quality/test_kernel_manifest.py"
+      ],
+      "frontend": false,
+      "checks": [
+        ["python3", "-B", "-m", "unittest", "scripts.quality.test_kernel_worker_streams", "scripts.quality.test_kernel_worker_protocol"],
+        ["python3", "-B", "scripts/quality/test_kernel_manifest.py"],
+        ["python3", "-B", "scripts/quality/kernel_manifest.py"]
       ]
     },
     {

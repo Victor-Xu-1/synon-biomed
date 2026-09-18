@@ -236,45 +236,6 @@ func agentKernelOptionalFormatterPreflight(publicName string, input map[string]a
 }
 
 var (
-	agentKernelShellPackageMutationPattern  = regexp.MustCompile(`(?im)^\s*(?:sudo\s+)?(?:(?:python(?:[0-9.]*)?|py)\s+-m\s+pip|pip(?:[0-9.]*)?|uv\s+pip|conda|mamba|micromamba)\s+(?:install|uninstall|remove|update|upgrade|create|env\s+(?:create|update))\b`)
-	agentKernelPythonProcessPattern         = regexp.MustCompile(`(?i)\b(?:subprocess\s*\.|os\s*\.\s*system\s*\(|get_ipython\s*\(\s*\)\s*\.\s*system\s*\(|pip\s*\.\s*_internal\b)`)
-	agentKernelPythonPackageMutationPattern = regexp.MustCompile(`(?is)(?:["']-m["']\s*,\s*["']pip["']\s*,\s*["'](?:install|uninstall)["']|["'](?:pip(?:[0-9.]*)?|conda|mamba|micromamba|uv)["']\s*,\s*["'](?:install|uninstall|remove|update|upgrade|create)["']|\b(?:pip(?:[0-9.]*)?|conda|mamba|micromamba|uv\s+pip)\s+(?:install|uninstall|remove|update|upgrade|create)\b)`)
-	agentKernelRPackageMutationPattern      = regexp.MustCompile(`(?i)\b(?:install\.packages|remove\.packages|update\.packages|BiocManager\s*::\s*install|remotes\s*::\s*install_[A-Za-z_]+)\s*\(`)
-)
-
-// agentKernelPackageManagerMutationPreflight keeps every package change under
-// the managed environment authority. The rule is deliberately implementation-
-// neutral: it recognizes package-manager execution shapes, not scientific
-// package or task names. A source checkout may still be executed through Bash
-// or Python after its dependencies were published into a verified generation.
-func agentKernelPackageManagerMutationPreflight(publicName string, input map[string]any) map[string]any {
-	publicName = strings.ToLower(strings.TrimSpace(publicName))
-	code := stringValue(input["code"])
-	blocked := false
-	switch publicName {
-	case "bash":
-		blocked = agentKernelShellPackageMutationPattern.MatchString(stringValue(input["command"]))
-	case "python", "repl":
-		blocked = agentKernelPythonProcessPattern.MatchString(code) &&
-			agentKernelPythonPackageMutationPattern.MatchString(code)
-	case "r":
-		blocked = agentKernelRPackageMutationPattern.MatchString(code)
-	}
-	if !blocked {
-		return nil
-	}
-	return map[string]any{
-		"ok": false, "schema": "synon.package-management-preflight.v1",
-		"status": "managed_package_authority_required", "executed": false,
-		"message":  "Package mutation was not executed because it bypasses the managed environment authority.",
-		"recovery": "Keep the exact selected scientific implementation and preserve completed source, checkpoint, and environment evidence. Use manage_environments for a complete compatible immutable environment or manage_packages for one coherent additive package phase, with official channels or structured wheel sources and import witnesses. Inspect the prior terminal causal error before changing the dependency plan; do not invoke pip, conda, mamba, uv, or an R package installer from Python, R, REPL, or Bash.",
-		"diagnostics": []any{map[string]any{
-			"code": "package_mutation_requires_managed_environment",
-		}},
-	}
-}
-
-var (
 	agentKernelLargeResultLiteralPathPattern = regexp.MustCompile(`(?im)(?:^|[^A-Za-z0-9_])(?:open|Path)\(\s*["'](?:\./)?large-tool-result-[^"']*["']`)
 	agentKernelLargeResultAssignmentPattern  = regexp.MustCompile(`(?m)^\s*([A-Za-z_]\w*)\s*=\s*["'](?:\./)?large-tool-result-[^"']*["']\s*$`)
 )

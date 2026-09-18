@@ -38,8 +38,15 @@ func hostPathContains(root, target string) bool {
 }
 
 func managedEnvironmentGeneration(name, language string, packages []string, specDigest string) string {
+	return managedEnvironmentGenerationAtValidation(name, language, packages, specDigest, managedEnvironmentValidationRevision)
+}
+
+func managedEnvironmentGenerationAtValidation(name, language string, packages []string, specDigest string, revision int) string {
 	hash := sha256.New()
 	contract := "synon-managed-environment-v3-final-prefix\x00" + name + "\x00" + language + "\x00"
+	if revision > 0 {
+		contract = "synon-managed-environment-v4-verified-installation\x00" + name + "\x00" + language + "\x00"
+	}
 	if specDigest != "" {
 		contract += specDigest + "\x00"
 	}
@@ -128,8 +135,12 @@ func (m *Manager) validateManagedEnvironmentGeneration(
 	if m == nil || !validSHA256(generation) {
 		return errors.New("managed environment generation health identity is invalid")
 	}
+	key := managedEnvironmentOperationKey("health", struct {
+		Generation, Language, Prefix string
+		Packages, Imports            []string
+	}{generation, language, prefix, packages, imports})
 	m.managedEnvironmentHealthMu.Lock()
-	if existing := m.managedEnvironmentHealth[generation]; existing != nil {
+	if existing := m.managedEnvironmentHealth[key]; existing != nil {
 		done := existing.done
 		m.managedEnvironmentHealthMu.Unlock()
 		select {
@@ -140,14 +151,14 @@ func (m *Manager) validateManagedEnvironmentGeneration(
 		}
 	}
 	check := &managedEnvironmentHealthCheck{done: make(chan struct{})}
-	m.managedEnvironmentHealth[generation] = check
+	m.managedEnvironmentHealth[key] = check
 	m.managedEnvironmentHealthMu.Unlock()
 
 	check.err = validateManagedEnvironmentPublication(ctx, language, prefix, packages, imports)
 	m.managedEnvironmentHealthMu.Lock()
 	close(check.done)
 	if check.err != nil {
-		delete(m.managedEnvironmentHealth, generation)
+		delete(m.managedEnvironmentHealth, key)
 	}
 	m.managedEnvironmentHealthMu.Unlock()
 	return check.err
@@ -182,6 +193,9 @@ func (m *Manager) findManagedEnvironmentOperationGeneration(
 		if readErr != nil || marker.SchemaVersion != managedEnvironmentMarkerVersion || marker.OperationKey != operationKey {
 			continue
 		}
+		if needsRebuild, err := managedEnvironmentNeedsRebuild(path, marker); err != nil || needsRebuild {
+			continue
+		}
 		candidate := recoveredManagedEnvironment{path: path, environment: ManagedEnvironment{
 			Name: marker.Name, Language: marker.Language, Kind: marker.Kind,
 			Generation: marker.Generation, SpecDigest: marker.SpecDigest,
@@ -203,7 +217,7 @@ func (m *Manager) findManagedEnvironmentOperationGeneration(
 }
 
 func managedEnvironmentMarkerEquivalent(left, right managedEnvironmentMarker) bool {
-	return left.SchemaVersion == right.SchemaVersion && left.Name == right.Name && left.Language == right.Language &&
+	return left.ValidationRevision == right.ValidationRevision && left.SchemaVersion == right.SchemaVersion && left.Name == right.Name && left.Language == right.Language &&
 		left.Generation == right.Generation && left.Kind == right.Kind && left.SourcePath == right.SourcePath &&
 		left.RuntimePath == right.RuntimePath && left.OperationKey == right.OperationKey && left.SpecDigest == right.SpecDigest &&
 		strings.Join(left.ImportNames, "\x00") == strings.Join(right.ImportNames, "\x00") &&
@@ -216,7 +230,7 @@ func managedEnvironmentMarkerEquivalent(left, right managedEnvironmentMarker) bo
 // when every content and validation field matches; operation metadata is not
 // part of the generation payload.
 func managedEnvironmentGenerationEquivalent(left, right managedEnvironmentMarker) bool {
-	return left.SchemaVersion == right.SchemaVersion && left.Name == right.Name && left.Language == right.Language &&
+	return left.ValidationRevision == right.ValidationRevision && left.SchemaVersion == right.SchemaVersion && left.Name == right.Name && left.Language == right.Language &&
 		left.Generation == right.Generation && left.Kind == right.Kind && left.SourcePath == right.SourcePath &&
 		left.RuntimePath == right.RuntimePath && left.SpecDigest == right.SpecDigest &&
 		strings.Join(left.ImportNames, "\x00") == strings.Join(right.ImportNames, "\x00") &&

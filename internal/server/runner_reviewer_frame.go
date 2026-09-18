@@ -106,6 +106,7 @@ func (s *Server) bindSessionReviewerRun(
 	claim transcriptstore.RunnerClaim,
 ) (context.Context, error) {
 	if s == nil || s.transcriptStore == nil || strings.TrimSpace(frame.ID) == "" ||
+		strings.TrimSpace(frame.ParentFrameID) == "" || frame.ConversationType != "delegate" ||
 		strings.TrimSpace(claim.StreamUID) == "" || strings.TrimSpace(claim.OwnerID) == "" ||
 		strings.TrimSpace(claim.ClaimToken) == "" || claim.Attempt <= 0 {
 		return ctx, errors.New("completion reviewer runner authority is unavailable")
@@ -121,8 +122,9 @@ func (s *Server) bindSessionReviewerRun(
 	}
 	reviewerRun := &sessionRunnerChatRun{
 		SessionID: frame.ID, Attempt: int(claim.Attempt), ClaimToken: claim.ClaimToken,
-		AfterEventID: claim.ResumeCheckpoint,
-		Transcript:   &transcriptRunnerAuthority{Stream: stream, Claim: claim},
+		AfterEventID:  claim.ResumeCheckpoint,
+		Transcript:    &transcriptRunnerAuthority{Stream: stream, Claim: claim},
+		frameOwnedJob: true,
 	}
 	return withTranscriptRunnerChatRun(ctx, reviewerRun), nil
 }

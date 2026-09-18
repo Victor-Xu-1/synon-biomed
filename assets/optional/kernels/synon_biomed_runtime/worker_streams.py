@@ -80,14 +80,20 @@ class StreamCapture:
         decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
         try:
             while True:
-                ready, _, _ = select.select([self.reader], [], [], 0.05)
-                if not ready:
-                    if self.done.is_set():
-                        break
-                    continue
+                # Observe writer shutdown before the read, not after a poll
+                # timeout. A writer can publish its final bytes and close while
+                # this thread is descheduled after an empty poll. Shutdown is
+                # complete only after a subsequent nonblocking read is empty.
+                finishing = self.done.is_set()
+                if not finishing:
+                    ready, _, _ = select.select([self.reader], [], [], 0.05)
+                    if not ready:
+                        continue
                 try:
                     block = os.read(self.reader, 16 * 1024)
                 except BlockingIOError:
+                    if finishing:
+                        break
                     continue
                 if not block:
                     break

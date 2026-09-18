@@ -2,12 +2,8 @@ package server
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"strings"
-
-	"github.com/google/uuid"
 
 	"synon-go/internal/agentruntime"
 	workspace "synon-go/internal/persistence/workspace"
@@ -100,46 +96,19 @@ func (s *Server) executeAgentContainerEnvironmentTool(
 		requirement["container_preflight"] = preflightResult
 		return requirement, nil
 	}
-	operation := func(operationCtx context.Context) map[string]any {
-		environment, observed, prepareErr := manager.Prepare(operationCtx, spec, call.ID)
-		if prepareErr != nil {
-			return map[string]any{
-				"tool": manageEnvironmentsToolName, "provider": localcontainer.ProviderID,
-				"ok": false, "executed": true, "status": "container_prepare_failed",
-				"implementation": request.Implementation, "diagnostic": boundedManagedEnvironmentError(prepareErr),
-				"container_preflight": preflightResult,
-				"recovery":            "Keep the selected implementation and the successfully downloaded layers. Inspect the Docker diagnostic, repair registry, storage, accelerator, or command-host state, and resume this same image preparation. Do not discard a healthy pull cache or change scientific software after a routine setup failure.",
-			}
-		}
-		return map[string]any{
-			"tool": manageEnvironmentsToolName, "provider": localcontainer.ProviderID,
-			"ok": true, "executed": true, "status": "completed", "mode": environment.Disposition,
-			"implementation": request.Implementation, "environment": environment,
-			"container_preflight": observed,
-			"next":                "Use the returned immutable environment name for governed execution. Reuse it for later steps instead of pulling or configuring the selected image again.",
-		}
+	operationID, err := stableServerOperationID(
+		"container-environment",
+		access.UserID+"\x00"+access.Frame.RootFrameID+"\x00"+manageEnvironmentsToolName,
+		stableAuthorityInput(map[string]any{
+			"tool": manageEnvironmentsToolName, "provider": localcontainer.ProviderID, "mode": request.Mode,
+			"implementation": request.Implementation, "image": spec.Image, "accelerator": spec.Accelerator,
+			"network": spec.Network, "requirements": requirements,
+		}),
+	)
+	if err != nil {
+		return nil, err
 	}
-	if !request.Background {
-		return operation(ctx), nil
-	}
-	if s.workspaceStore == nil {
-		return nil, errors.New("container environment background notifications are unavailable")
-	}
-	digest := sha256.Sum256([]byte(call.ID + "\x00" + localcontainer.ProviderID))
-	operationID := "container-environment-" + hex.EncodeToString(digest[:12])
-	notificationID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("synon-container-environment:"+access.Frame.ID+":"+call.ID)).String()
-	go func() {
-		payload := operation(context.Background())
-		payload["operation_id"] = operationID
-		_, _, _ = s.workspaceStore.CreateNotification(context.Background(), workspace.CreateNotificationInput{
-			ID: notificationID, SenderFrameID: access.Frame.ID, RecipientFrameID: access.Frame.ID,
-			RootFrameID: access.Frame.RootFrameID, OwnerUserID: access.UserID,
-			NotificationType: "cell_result", Payload: payload,
-		})
-	}()
-	return map[string]any{
-		"status": "running", "tool": manageEnvironmentsToolName, "provider": localcontainer.ProviderID,
-		"operation_id": operationID, "notification_id": notificationID,
-		"recovery": "Use wait_for_notification for the durable result. Image preparation has no implicit wall-clock deadline.",
-	}, nil
+	return s.executeManagedEnvironmentOperation(ctx, access, call, manageEnvironmentsToolName, request.Background, map[string]any{
+		"operation_id": operationID, "provider": localcontainer.ProviderID, "implementation": request.Implementation, "container_preflight": preflightResult,
+	}, managedOperationRequest{Kind: "container", Container: &spec}, s.kernelManager)
 }

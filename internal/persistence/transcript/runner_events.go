@@ -334,7 +334,7 @@ func validateClaimConn(ctx context.Context, conn *sql.Conn, claim RunnerClaim, n
 		ResumeSource: claim.ResumeSource, ResumeCheckpoint: claim.ResumeCheckpoint,
 	}, now, requireLive)
 	if err != nil {
-		return Stream{}, ErrClaimStale
+		return Stream{}, err
 	}
 	if requireLive {
 		blocked, err := frameTerminalBlocksRunnerClaimConn(ctx, conn, stream)

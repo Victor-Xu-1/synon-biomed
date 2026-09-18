@@ -16,7 +16,8 @@ import (
 // DeleteManagedEnvironment atomically removes only the active pointer. The
 // immutable generation remains available to running or durable tasks and can
 // be garbage-collected only by a later reference-aware maintenance pass.
-func (m *Manager) DeleteManagedEnvironment(ctx context.Context, name string) error {
+func (m *Manager) DeleteManagedEnvironment(ctx context.Context, input DeleteManagedEnvironmentInput) error {
+	name := input.Name
 	if err := validateManagedEnvironmentName(name); err != nil {
 		return err
 	}
@@ -33,16 +34,49 @@ func (m *Manager) DeleteManagedEnvironment(ctx context.Context, name string) err
 		return errors.New("managed environment is busy")
 	}
 	defer release()
+	key := managedEnvironmentRequestKey(input.OperationID, "deactivate", struct{ Name, Generation string }{name, input.ExpectedGeneration})
+	if strings.TrimSpace(input.OperationID) == "" || !validSHA256(key) {
+		return errors.New("managed environment deactivation requires a durable operation identity")
+	}
+	// Moving the active symlink is both deactivation and its durable receipt.
+	// Replaying an old operation cannot deactivate a subsequently reactivated
+	// environment, even when its content-addressed generation is identical.
+	receipt := filepath.Join(root, ".generations", name, ".deactivated-"+key)
+	if info, err := os.Lstat(receipt); err == nil {
+		if info.Mode()&os.ModeSymlink == 0 {
+			return errors.New("managed environment deactivation receipt is invalid")
+		}
+		target, err := os.Readlink(receipt)
+		if err != nil || (target != "absent" && target != filepath.Join(root, ".generations", name, input.ExpectedGeneration)) {
+			return errors.New("managed environment deactivation receipt conflicts with its request")
+		}
+		return nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
 	active := filepath.Join(root, name)
 	info, err := os.Lstat(active)
 	if errors.Is(err, os.ErrNotExist) {
-		return nil
+		if err := os.Symlink("absent", receipt); err != nil {
+			return err
+		}
+		return syncDirectory(filepath.Dir(receipt))
 	}
 	if err != nil || info.Mode()&os.ModeSymlink == 0 {
 		return errors.New("managed environment active pointer is invalid")
 	}
-	if err := os.Remove(active); err != nil {
+	marker, err := m.activeManagedEnvironmentMarker(name)
+	if err != nil || marker.Generation != input.ExpectedGeneration {
+		return errors.New("managed environment generation changed before deactivation")
+	}
+	if err := os.Rename(active, receipt); err != nil {
 		return errors.New("managed environment could not be deactivated")
+	}
+	if err := syncDirectory(filepath.Dir(receipt)); err != nil {
+		return err
+	}
+	if err := syncDirectory(root); err != nil {
+		return err
 	}
 	m.notifyRuntimeChange()
 	return nil
@@ -53,6 +87,7 @@ func (m *Manager) publishManagedEnvironment(
 	name, language, operation, operationKey string,
 	channels []string,
 	specDigest string,
+	requireAbsent bool,
 	importNames []string,
 	validateResolved func([]string) error,
 	install func(string) error,
@@ -98,6 +133,13 @@ func (m *Manager) publishManagedEnvironment(
 		reportManagedEnvironmentMilestone(ctx, "environment_ready", totalMilestones, totalMilestones)
 		return recovered.environment, nil
 	}
+	if requireAbsent {
+		if _, err := os.Lstat(filepath.Join(root, name)); err == nil {
+			return ManagedEnvironment{}, errors.New("fork_to environment already exists")
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return ManagedEnvironment{}, errors.New("fork_to environment cannot be inspected")
+		}
+	}
 	staging, err := os.MkdirTemp(generationRoot, ".staging-")
 	if err != nil {
 		return ManagedEnvironment{}, errors.New("managed environment staging directory cannot be created")
@@ -132,7 +174,8 @@ func (m *Manager) publishManagedEnvironment(
 	reportManagedEnvironmentMilestone(ctx, "staging_environment_validated", 4, totalMilestones)
 	generation := managedEnvironmentGeneration(name, language, packages, specDigest)
 	marker := managedEnvironmentMarker{
-		SchemaVersion: managedEnvironmentMarkerVersion, Name: name, Language: language,
+		ValidationRevision: managedEnvironmentValidationRevision,
+		SchemaVersion:      managedEnvironmentMarkerVersion, Name: name, Language: language,
 		Generation: generation, Packages: packages, Channels: append([]string(nil), channels...),
 		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano), Operation: operation,
 		Kind: "conda", OperationKey: operationKey, SpecDigest: specDigest,
@@ -208,7 +251,7 @@ func (m *Manager) publishManagedEnvironment(
 	return ManagedEnvironment{Name: name, Language: language, Kind: "conda", Generation: generation, SpecDigest: specDigest, Packages: packages, Status: "ready"}, nil
 }
 
-func (m *Manager) publishRegisteredManagedEnvironment(ctx context.Context, name, language, sourcePath, venvPath, operationKey string) (ManagedEnvironment, error) {
+func (m *Manager) publishRegisteredManagedEnvironment(ctx context.Context, name, language, sourcePath, venvPath, operationKey string, prepare func(context.Context) error) (ManagedEnvironment, error) {
 	const totalMilestones int64 = 4
 	reportManagedEnvironmentMilestone(ctx, "inspecting_environment", 0, totalMilestones)
 	root, err := m.managedEnvironmentRoot()
@@ -234,6 +277,11 @@ func (m *Manager) publishRegisteredManagedEnvironment(ctx context.Context, name,
 		m.notifyRuntimeChange()
 		reportManagedEnvironmentMilestone(ctx, "environment_ready", totalMilestones, totalMilestones)
 		return recovered.environment, nil
+	}
+	if prepare != nil {
+		if err := prepare(ctx); err != nil {
+			return ManagedEnvironment{}, err
+		}
 	}
 	packages, err := inspectRegisteredPythonPackages(ctx, venvPath)
 	if err != nil {

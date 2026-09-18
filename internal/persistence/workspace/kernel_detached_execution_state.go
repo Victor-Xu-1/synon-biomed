@@ -207,9 +207,9 @@ func (s *Store) HeartbeatKernelExecutionBackend(
 	if err != nil {
 		return KernelExecutionBackend{}, err
 	}
-	now := s.now().UTC()
 	var backend KernelExecutionBackend
 	err = repository.RunImmediate(ctx, func(tx *transcriptstore.ImmediateTransaction) error {
+		now := s.now().UTC()
 		current, found, queryErr := getKernelExecutionBackendQuery(ctx, tx, input.BackendID)
 		if queryErr != nil {
 			return queryErr
@@ -254,8 +254,11 @@ func (s *Store) RenewKernelExecutionBackendControl(
 ) (KernelExecutionBackend, KernelExecutionControlLease, error) {
 	normalizeKernelExecutionControl(&input.BackendID, &input.ControllerToken)
 	input.LeaseExpiresAt = input.LeaseExpiresAt.UTC()
+	if s == nil || s.db == nil || ctx == nil {
+		return KernelExecutionBackend{}, KernelExecutionControlLease{}, errors.New("kernel execution backend control store is unavailable")
+	}
 	now := s.now().UTC()
-	if s == nil || s.db == nil || ctx == nil || !validDetachedIdentity(input.BackendID) ||
+	if !validDetachedIdentity(input.BackendID) ||
 		input.BackendGeneration <= 0 || input.ControllerEpoch <= 0 || !validKernelExecutionControlToken(input.ControllerToken) ||
 		!input.LeaseExpiresAt.After(now) {
 		return KernelExecutionBackend{}, KernelExecutionControlLease{},
@@ -267,6 +270,10 @@ func (s *Store) RenewKernelExecutionBackendControl(
 	}
 	var backend KernelExecutionBackend
 	err = repository.RunImmediate(ctx, func(tx *transcriptstore.ImmediateTransaction) error {
+		now := s.now().UTC()
+		if !input.LeaseExpiresAt.After(now) {
+			return ErrKernelExecutionBackendStale
+		}
 		current, found, queryErr := getKernelExecutionBackendQuery(ctx, tx, input.BackendID)
 		if queryErr != nil {
 			return queryErr
@@ -481,7 +488,7 @@ func (s *Store) AcknowledgeKernelExecutionCancel(
 	if s == nil || s.db == nil || ctx == nil || !validDetachedIdentity(input.ExecutionID) ||
 		input.BackendGeneration <= 0 || !validDetachedIdentity(input.ExecutorInstanceID) ||
 		input.ExpectedVersion <= 0 || !validDetachedIdentity(input.CancelRequestID) || input.AckSequence <= 0 ||
-		(input.Signal != "dequeue" && input.Signal != "sigint" && input.Signal != "sigterm" && input.Signal != "sigkill") {
+		(input.Signal != "dequeue" && input.Signal != "sigint" && input.Signal != "sigterm" && input.Signal != "sigkill" && input.Signal != KernelExecutionCancelProvider) {
 		return DetachedKernelExecution{}, errors.New("complete kernel execution cancel acknowledgement is required")
 	}
 	return s.transitionDetachedKernelExecutionWithExecutor(ctx, input.ExecutionID, input.BackendGeneration,

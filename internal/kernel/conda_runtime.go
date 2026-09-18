@@ -577,14 +577,14 @@ func (m *Manager) managedPythonHelperAssets() ([]string, error) {
 		return nil, errors.New("managed Python helper path is invalid")
 	}
 	root := filepath.Dir(helper)
-	return []string{
+	result := []string{
 		filepath.Join(root, "sitecustomize.py"),
 		filepath.Join(root, "cheminfo_render_helpers.py"),
-		filepath.Join(root, "synon_biomed_runtime", "__init__.py"),
-		filepath.Join(root, "synon_biomed_runtime", "cheminfo_render.py"),
-		filepath.Join(root, "synon_biomed_runtime", "matplotlib_runtime.py"),
-		filepath.Join(root, "synon_biomed_runtime", "python_code_compatibility.py"),
-	}, nil
+	}
+	for _, relative := range pythonRuntimePackageAssets() {
+		result = append(result, filepath.Join(root, relative))
+	}
+	return result, nil
 }
 
 func copyManagedPythonHelper(source, destination string) error {

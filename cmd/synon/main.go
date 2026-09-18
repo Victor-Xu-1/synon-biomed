@@ -376,6 +376,8 @@ func runServer(info buildinfo.Info, cfg config.Config, tlsResolver *networktls.R
 	fmt.Println("realtime outbox dispatcher enabled")
 	startSupervisor("kernel-result-settlement", kernelSettlementOutbox.Run)
 	fmt.Println("kernel result settlement dispatcher enabled")
+	startSupervisor("task-operation-dispatch", app.RunTaskOperationDispatcher)
+	fmt.Println("durable task operation dispatcher enabled")
 	if app.ManagedEnvironmentSupervisorEnabled() {
 		startSupervisor("managed-environment-runtime", app.RunManagedEnvironmentSupervisor)
 		fmt.Println("managed environment supervisor enabled")

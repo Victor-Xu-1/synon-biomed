@@ -49,14 +49,17 @@ type SessionRunnerChatOptions struct {
 }
 
 type sessionRunnerChatRun struct {
-	SessionID                          string
-	Attempt                            int
-	ClaimToken                         string
-	AfterEventID                       int64
-	Transcript                         *transcriptRunnerAuthority
-	TaskIntent                         string
-	TaskIntentID                       string
-	TaskIntentRevision                 int64
+	SessionID          string
+	Attempt            int
+	ClaimToken         string
+	AfterEventID       int64
+	Transcript         *transcriptRunnerAuthority
+	TaskIntent         string
+	TaskIntentID       string
+	TaskIntentRevision int64
+	// frameOwnedJob is set only by validated internal-job admission. Its
+	// dedicated frame, not a user-message task intent, bounds durable receipts.
+	frameOwnedJob                      bool
 	ResponseLanguage                   string
 	ToolSourceEventIDs                 map[string]int64
 	KernelOperationIDs                 map[string]string
@@ -76,6 +79,7 @@ type sessionRunnerChatRun struct {
 	managedEnvironmentImplementations  map[string][]string
 	managedEnvironmentInvalidations    map[string]managedEnvironmentInvalidation
 	managedEnvironmentBindingsHydrated bool
+	managedEnvironmentHydration        *managedEnvironmentHydration
 	readReuse                          *sessionRunnerReadReuseCache
 	scientificCapabilitiesMu           sync.Mutex
 	toolCapabilityCatalog              map[string][]string

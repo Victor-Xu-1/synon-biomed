@@ -1177,6 +1177,11 @@ func newKernelLocalOperationFixture(t *testing.T) (*Store, *transcriptstore.Repo
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = store.Close() })
+	return initializeKernelLocalOperationFixture(t, store)
+}
+
+func initializeKernelLocalOperationFixture(t *testing.T, store *Store) (*Store, *transcriptstore.Repository, transcriptstore.RunnerClaim) {
+	t.Helper()
 	if _, err := store.CreateProject(CreateProjectInput{ID: "project", UserID: "owner", Name: "Project"}); err != nil {
 		t.Fatal(err)
 	}

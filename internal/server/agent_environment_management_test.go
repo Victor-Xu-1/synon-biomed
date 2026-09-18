@@ -21,13 +21,18 @@ import (
 type recordingManagedEnvironmentAuthority struct {
 	mu sync.Mutex
 
-	listQuery      kernelruntime.ManagedEnvironmentQuery
-	createInput    kernelruntime.CreateManagedEnvironmentInput
-	installInput   kernelruntime.MutateManagedPackagesInput
-	uninstallInput kernelruntime.MutateManagedPackagesInput
-	registerInput  kernelruntime.RegisterManagedEnvironmentInput
-	inspectName    string
-	deleteName     string
+	listQuery          kernelruntime.ManagedEnvironmentQuery
+	createInput        kernelruntime.CreateManagedEnvironmentInput
+	installInput       kernelruntime.MutateManagedPackagesInput
+	uninstallInput     kernelruntime.MutateManagedPackagesInput
+	registerInput      kernelruntime.RegisterManagedEnvironmentInput
+	inspectName        string
+	witnessNames       []string
+	witnessEnvironment string
+	witnessErr         error
+	witnessCalls       int
+	witnessErrAfter    int
+	deleteName         string
 
 	listResult   []kernelruntime.ManagedEnvironment
 	mutateResult kernelruntime.ManagedEnvironment
@@ -36,6 +41,41 @@ type recordingManagedEnvironmentAuthority struct {
 	started      chan struct{}
 	release      chan struct{}
 	hadDeadline  bool
+	mutations    int
+}
+
+func (a *recordingManagedEnvironmentAuthority) VerifyManagedEnvironmentImports(_ context.Context, environment string, names []string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.witnessNames = append([]string(nil), names...)
+	a.witnessEnvironment = environment
+	a.witnessCalls++
+	if a.witnessCalls <= a.witnessErrAfter {
+		return nil
+	}
+	return a.witnessErr
+}
+
+func TestManagedEnvironmentReuseRequiresRequestedRuntimeWitness(t *testing.T) {
+	server, identity := managedEnvironmentToolFixture(t)
+	for _, language := range []string{"r", "python"} {
+		authority := &recordingManagedEnvironmentAuthority{
+			listResult:   []kernelruntime.ManagedEnvironment{{Name: "existing", Language: language, Status: "ready", Generation: "verified-generation", Packages: []string{"fixture=1.0=build=conda"}}},
+			mutateResult: kernelruntime.ManagedEnvironment{Name: "existing", Language: language, Status: "ready"},
+		}
+		input := map[string]any{"mode": "create", "name": "requested", "language": language, "packages": []any{"fixture"}, "import_names": []any{"FixtureNamespace"}, "human_description": "Prepare analysis"}
+		result, err := server.executeAgentEnvironmentManagementToolWithAuthority(context.Background(), identity, agentruntime.ToolCall{ID: "reuse-" + language}, manageEnvironmentsToolName, input, authority)
+		if err != nil || stringValue(mapValue(result)["mode"]) != "reuse" || authority.witnessEnvironment != "existing" || !reflect.DeepEqual(authority.witnessNames, []string{"FixtureNamespace"}) {
+			t.Fatalf("witness bypass: result=%v err=%v names=%v", result, err, authority.witnessNames)
+		}
+		authority.witnessErr = errors.New("runtime namespace unavailable")
+		// Preflight can succeed immediately before a payload becomes invalid.
+		// The reuse boundary must revalidate through the same authority.
+		authority.witnessErrAfter = authority.witnessCalls + 1
+		if _, err := server.executeAgentEnvironmentManagementToolWithAuthority(context.Background(), identity, agentruntime.ToolCall{ID: "reject-" + language}, manageEnvironmentsToolName, input, authority); err == nil {
+			t.Fatal("failed runtime witness reported reuse success")
+		}
+	}
 }
 
 func (a *recordingManagedEnvironmentAuthority) ListManagedEnvironments(
@@ -85,9 +125,9 @@ func (a *recordingManagedEnvironmentAuthority) RegisterManagedEnvironment(
 	return a.finishMutation(ctx)
 }
 
-func (a *recordingManagedEnvironmentAuthority) DeleteManagedEnvironment(_ context.Context, name string) error {
+func (a *recordingManagedEnvironmentAuthority) DeleteManagedEnvironment(_ context.Context, input kernelruntime.DeleteManagedEnvironmentInput) error {
 	a.mu.Lock()
-	a.deleteName = name
+	a.deleteName = input.Name
 	a.mu.Unlock()
 	return a.err
 }
@@ -114,6 +154,7 @@ func (a *recordingManagedEnvironmentAuthority) UninstallManagedPackages(
 
 func (a *recordingManagedEnvironmentAuthority) finishMutation(ctx context.Context) (kernelruntime.ManagedEnvironment, error) {
 	a.mu.Lock()
+	a.mutations++
 	_, a.hadDeadline = ctx.Deadline()
 	a.mu.Unlock()
 	if a.started != nil {
@@ -979,7 +1020,8 @@ func TestManagedEnvironmentToolsMapExactlyToTheKernelAuthority(t *testing.T) {
 	}
 	createdMap, _ := created.(map[string]any)
 	if createdMap["status"] != "completed" || authority.createInput.Name != "r-seurat" ||
-		authority.createInput.Language != "r" || authority.createInput.OperationID != "create-call" ||
+		authority.createInput.Language != "r" || !strings.HasPrefix(authority.createInput.OperationID, "environment-") ||
+		authority.createInput.OperationID == "create-call" ||
 		!reflect.DeepEqual(authority.createInput.Packages, []string{"r-seurat"}) {
 		t.Fatalf("create result=%#v input=%#v", created, authority.createInput)
 	}
@@ -1010,7 +1052,7 @@ func TestManagedEnvironmentToolsMapExactlyToTheKernelAuthority(t *testing.T) {
 	}
 	installedMap, _ := installed.(map[string]any)
 	if installedMap["status"] != "completed" || authority.installInput.Environment != "scanpy" ||
-		authority.installInput.OperationID != "install-call" || !authority.installInput.UsePip ||
+		!strings.HasPrefix(authority.installInput.OperationID, "environment-") || authority.installInput.OperationID == "install-call" || !authority.installInput.UsePip ||
 		!reflect.DeepEqual(authority.installInput.Packages, []string{"harmonypy"}) {
 		t.Fatalf("install result=%#v input=%#v", installed, authority.installInput)
 	}
@@ -1085,6 +1127,24 @@ func TestManagedEnvironmentBackgroundOperationPublishesOneTerminalNotification(t
 	if resultMap["status"] != "running" || resultMap["notification_id"] == "" || resultMap["operation_id"] == "" {
 		t.Fatalf("background result=%#v", result)
 	}
+	// Admission is durable and does not start an unowned goroutine. Start the
+	// same service dispatcher used after a restart to execute the saved request.
+	select {
+	case <-authority.started:
+		t.Fatal("background mutation ran before durable dispatch")
+	default:
+	}
+	dispatchCtx, stopDispatch := context.WithCancel(context.Background())
+	dispatchDone := make(chan error, 1)
+	go func() { dispatchDone <- server.runTaskOperationDispatcher(dispatchCtx, authority) }()
+	t.Cleanup(func() {
+		stopDispatch()
+		select {
+		case <-dispatchDone:
+		case <-time.After(3 * time.Second):
+			t.Error("task dispatcher did not stop")
+		}
+	})
 	select {
 	case <-authority.started:
 	case <-time.After(2 * time.Second):
@@ -1151,9 +1211,16 @@ func TestManagedEnvironmentFailuresAreBoundedAndDoNotRetry(t *testing.T) {
 }
 
 func TestManagedEnvironmentFailureClassificationUsesTerminalCauseNotWarnings(t *testing.T) {
+	inactivityErr := &kernelruntime.ManagedEnvironmentInstallerInactivityError{Duration: 5 * time.Minute}
+	category, cause, details := classifyManagedEnvironmentFailure(fmt.Errorf("wrapped: %w", inactivityErr))
+	if category != "installer_inactive" || stringValue(details["failure_stage"]) != "installer_execution" ||
+		numberValue(details["inactivity_seconds"]) != 300 || !strings.Contains(cause, "no observable output") ||
+		!strings.Contains(managedEnvironmentFailureRecovery(category), "do not leave the old process running") {
+		t.Fatalf("inactivity category=%q cause=%q details=%#v", category, cause, details)
+	}
 	err := errors.New("error: [Errno 2] No such file or directory: 'which'\n" +
 		"OMP: Warning #182: affinity ignored\nerror: [Errno 2] No such file or directory: 'g++'")
-	category, cause, details := classifyManagedEnvironmentFailure(err)
+	category, cause, details = classifyManagedEnvironmentFailure(err)
 	if category != "missing_build_tool" || stringValue(details["missing_executable"]) != "g++" ||
 		!strings.Contains(cause, "required executable") {
 		t.Fatalf("missing executable category=%q cause=%q details=%#v", category, cause, details)

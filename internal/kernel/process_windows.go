@@ -17,13 +17,19 @@ type workerProcess struct {
 	job     *processsupervisor.Job
 }
 
-func startWorkerProcess(command *exec.Cmd) (*workerProcess, error) {
+func startWorkerProcess(command *exec.Cmd, directories ...string) (*workerProcess, error) {
+	release, err := configureWorkerResourceDomain(command, directories)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	job, err := processsupervisor.Start(command)
 	if err != nil {
 		return nil, err
 	}
 	process := &workerProcess{command: command, job: job}
-	command.Cancel = process.kill
+	// The job supervisor already bound cancellation before starting the child.
+	// Keep that authority instead of racing exec.Cmd's context watcher here.
 	return process, nil
 }
 
@@ -37,7 +43,12 @@ func runWorkerProcess(command *exec.Cmd) error {
 }
 
 func killWorkerProcess(command *exec.Cmd) error {
-	return (&workerProcess{command: command}).kill()
+	// This callback also runs if cancellation precedes Job assignment. The
+	// supervisor owns descendant termination; stop the new root in that window.
+	if command == nil || command.Process == nil {
+		return nil
+	}
+	return command.Process.Kill()
 }
 
 func (process *workerProcess) signal(signal os.Signal) error {

@@ -210,6 +210,28 @@ func TestBindSessionReviewerRunUsesReviewerTranscriptClaim(t *testing.T) {
 		run.Transcript.Stream.FrameID != frame.ID || run.Transcript.Claim.StreamUID != claim.StreamUID {
 		t.Fatalf("reviewer run=%#v frame=%#v claim=%#v", run, frame, claim)
 	}
+	if err := server.hydrateSessionRunnerManagedEnvironmentBindings(bound, run); err != nil {
+		t.Fatalf("restore the internal job's own environment receipts: %v", err)
+	}
+	if !run.managedEnvironmentBindingsHydrated {
+		t.Fatal("the internal job did not finish its scoped history read")
+	}
+	// A frame claim alone does not waive the logical user-task boundary. Only
+	// the validated internal-job binding above supplies a whole-frame scope.
+	unbound := &sessionRunnerChatRun{Transcript: run.Transcript}
+	if err := server.hydrateSessionRunnerManagedEnvironmentBindings(bound, unbound); err == nil || unbound.managedEnvironmentBindingsHydrated {
+		t.Fatal("a run without admitted internal-job scope bypassed its task-intent boundary")
+	}
+	rootFrame := frame
+	rootFrame.ParentFrameID = ""
+	if _, err := server.bindSessionReviewerRun(context.Background(), rootFrame, claim); err == nil {
+		t.Fatal("a root frame acquired internal-job receipt scope")
+	}
+	ordinaryFrame := frame
+	ordinaryFrame.ConversationType = "agent"
+	if _, err := server.bindSessionReviewerRun(context.Background(), ordinaryFrame, claim); err == nil {
+		t.Fatal("an ordinary frame acquired internal-job receipt scope")
+	}
 }
 
 func TestSessionReviewerFrameFailureTerminalsUseTranscriptAuthority(t *testing.T) {

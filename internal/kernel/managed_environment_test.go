@@ -76,7 +76,7 @@ case "$*" in
 esac
 PY
     /bin/chmod 755 "$prefix/bin/python"
-    printf '%%s\n' '[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"},{"name":"pip","version":"25.0","build_string":"pyh","channel":"conda-forge"}]' >"$prefix/.inventory.json"
+    printf '%%s\n' '{"packages":[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"},{"name":"pip","version":"25.0","build_string":"pyh","channel":"conda-forge"}]}' >"$prefix/.inventory.json"
     ;;
   list) /bin/cat "$prefix/.inventory.json" ;;
   *) exit 31 ;;
@@ -214,14 +214,15 @@ func TestManagedEnvironmentFastInventorySkipsPerEnvironmentHealthProbe(t *testin
 		t.Fatal(err)
 	}
 	marker := managedEnvironmentMarker{
-		SchemaVersion: managedEnvironmentMarkerVersion,
-		Name:          name,
-		Language:      "python",
-		Generation:    generation,
-		Packages:      packages,
-		CreatedAt:     time.Now().UTC().Format(time.RFC3339Nano),
-		Operation:     "test",
-		Kind:          "conda",
+		SchemaVersion:      managedEnvironmentMarkerVersion,
+		ValidationRevision: managedEnvironmentValidationRevision,
+		Name:               name,
+		Language:           "python",
+		Generation:         generation,
+		Packages:           packages,
+		CreatedAt:          time.Now().UTC().Format(time.RFC3339Nano),
+		Operation:          "test",
+		Kind:               "conda",
 	}
 	if err := writeManagedEnvironmentMarker(filepath.Join(generationPath, managedEnvironmentMarkerName), marker); err != nil {
 		t.Fatal(err)
@@ -395,7 +396,7 @@ func TestManagedEnvironmentCreateListDeleteUsesImmutableGeneration(t *testing.T)
 printf '%s\n' '{"ok":true,"version":[3,11,9]}'
 PY
     /bin/chmod 755 "$prefix/bin/python"
-	    printf '%s\n' '[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"},{"name":"_openmp_mutex","version":"4.5","build_string":"20_gnu","channel":"conda-forge"},{"name":"rdkit","version":"2024.03.5","build_string":"py311","channel":"conda-forge"}]' >"$prefix/.inventory.json"
+	    printf '%s\n' '{"packages":[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"},{"name":"_openmp_mutex","version":"4.5","build_string":"20_gnu","channel":"conda-forge"},{"name":"rdkit","version":"2024.03.5","build_string":"py311","channel":"conda-forge"}]}' >"$prefix/.inventory.json"
     ;;
   list) /bin/cat "$prefix/.inventory.json" ;;
   *) exit 31 ;;
@@ -459,7 +460,7 @@ esac
 	if err != nil || len(listed) != 1 || listed[0].Generation != created.Generation || len(listed[0].Packages) != 3 {
 		t.Fatalf("unexpected list result: %#v err=%v", listed, err)
 	}
-	if err := manager.DeleteManagedEnvironment(context.Background(), "chemistry"); err != nil {
+	if err := manager.DeleteManagedEnvironment(context.Background(), DeleteManagedEnvironmentInput{Name: "chemistry", ExpectedGeneration: created.Generation, OperationID: "deactivate-chemistry"}); err != nil {
 		t.Fatalf("delete managed environment: %v", err)
 	}
 	if _, err := os.Lstat(active); !os.IsNotExist(err) {
@@ -479,6 +480,12 @@ esac
 	}
 	if recreated.Generation != created.Generation {
 		t.Fatalf("recreated generation = %q, want immutable generation %q", recreated.Generation, created.Generation)
+	}
+	if err := manager.DeleteManagedEnvironment(context.Background(), DeleteManagedEnvironmentInput{Name: "chemistry", ExpectedGeneration: created.Generation, OperationID: "deactivate-chemistry"}); err != nil {
+		t.Fatalf("recover prior deactivation: %v", err)
+	}
+	if _, err := os.Lstat(active); err != nil {
+		t.Fatalf("old delete removed the reactivated same generation: %v", err)
 	}
 	if generation, found, err := manager.ManagedEnvironmentActiveGeneration("chemistry"); err != nil || !found || generation != created.Generation {
 		t.Fatalf("reactivated generation = %q found=%t err=%v, want %q", generation, found, err, created.Generation)
@@ -540,7 +547,7 @@ PY
     ;;
   install) ;;
   list)
-    printf '%s\n' '[{"name":"python","version":"3.11.15","build_string":"h1","channel":"conda-forge"},{"name":"_openmp_mutex","version":"4.5","build_string":"20_gnu","channel":"conda-forge"},{"name":"scanpy","version":"1.10.4","build_string":"py311","channel":"conda-forge"},{"name":"biopython","version":"1.85","build_string":"py311","channel":"conda-forge"}]'
+    printf '%s\n' '{"packages":[{"name":"python","version":"3.11.15","build_string":"h1","channel":"conda-forge"},{"name":"_openmp_mutex","version":"4.5","build_string":"20_gnu","channel":"conda-forge"},{"name":"scanpy","version":"1.10.4","build_string":"py311","channel":"conda-forge"},{"name":"biopython","version":"1.85","build_string":"py311","channel":"conda-forge"}]}'
     ;;
   *) exit 31 ;;
 esac
@@ -860,6 +867,8 @@ set -eu
 prefix=$(/usr/bin/dirname "$(/usr/bin/dirname "$0")")
 case "$*" in
   *"-m pip install"*)
+    [ "${CONDA_PREFIX:-}" = "$prefix" ] || exit 72
+    case "$PATH" in "$prefix/bin":*) ;; *) exit 73 ;; esac
     for package in "$@"; do
       case "$package" in
         vina|vina==*) /usr/bin/touch "$prefix/.vina" ;;
@@ -883,12 +892,12 @@ PY
     /bin/chmod 755 "$prefix/bin/python"
     ;;
   list)
-    printf '%s' '[{"name":"python","version":"3.11.15","build_string":"h1","channel":"conda-forge"}'
+    printf '%s' '{"packages":[{"name":"python","version":"3.11.15","build_string":"h1","channel":"conda-forge"},{"name":"pip","version":"25.0","build_string":"h1","channel":"conda-forge"}'
     [ ! -f "$prefix/.vina" ] || printf '%s' ',{"name":"vina","version":"1.2.7","build_string":"pypi_0","channel":"pypi"}'
     [ ! -f "$prefix/.meeko" ] || printf '%s' ',{"name":"meeko","version":"0.7.1","build_string":"pypi_0","channel":"pypi"}'
     [ ! -f "$prefix/.gemmi" ] || printf '%s' ',{"name":"gemmi","version":"0.7.5","build_string":"pypi_0","channel":"pypi"}'
     [ ! -f "$prefix/.requests" ] || printf '%s' ',{"name":"requests","version":"2.32.5","build_string":"pyh1","channel":"conda-forge"}'
-    printf '%s\n' ']'
+    printf '%s\n' ']}'
     ;;
   install)
     /usr/bin/touch "$prefix/.requests"
@@ -987,7 +996,7 @@ case "$mode" in
 printf '%s\n' '{"ok":true,"version":[3,11,9]}'
 PY
     /bin/chmod 755 "$prefix/bin/python"
-    printf '%s\n' '[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"}]' >"$prefix/.inventory.json"
+    printf '%s\n' '{"packages":[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"}]}' >"$prefix/.inventory.json"
     ;;
   list) /bin/cat "$prefix/.inventory.json" ;;
   *) exit 31 ;;
@@ -1139,7 +1148,7 @@ case "$mode" in
 printf '%s\n' '{"ok":true,"version":[3,13,2]}'
 PY
     /bin/chmod 755 "$prefix/bin/python"
-    printf '%s\n' '[{"name":"python","version":"3.13.2","build_string":"h1","channel":"conda-forge"}]' >"$prefix/.inventory.json"
+    printf '%s\n' '{"packages":[{"name":"python","version":"3.13.2","build_string":"h1","channel":"conda-forge"}]}' >"$prefix/.inventory.json"
     ;;
   list) /bin/cat "$prefix/.inventory.json" ;;
   *) exit 31 ;;
@@ -1216,7 +1225,7 @@ case "$mode" in
 printf '%s\n' '{"ok":true,"version":[3,13,2]}'
 PY
     /bin/chmod 755 "$prefix/bin/python"
-    printf '%s\n' '[{"name":"python","version":"3.13.2","build_string":"h1","channel":"conda-forge"}]' >"$prefix/.inventory.json"
+    printf '%s\n' '{"packages":[{"name":"python","version":"3.13.2","build_string":"h1","channel":"conda-forge"}]}' >"$prefix/.inventory.json"
     ;;
   list) /bin/cat "$prefix/.inventory.json" ;;
   *) exit 31 ;;
@@ -1283,7 +1292,7 @@ printf '%s\n' '{"ok":true,"version":[3,11,9]}'
 PY
     /bin/chmod 755 "$prefix/bin/python"
     printf '%s\n' "$prefix" >"$prefix/installed-prefix.txt"
-    printf '%s\n' '[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"}]' >"$prefix/.inventory.json"
+    printf '%s\n' '{"packages":[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"}]}' >"$prefix/.inventory.json"
     ;;
   list) /bin/cat "$prefix/.inventory.json" ;;
   *) exit 31 ;;
@@ -1370,6 +1379,7 @@ func TestManagedCondaUninstallDoesNotReceiveChannelArguments(t *testing.T) {
 }
 
 func TestManagedEnvironmentInstallerInheritsProxyWithoutLeakingItToRuntime(t *testing.T) {
+	t.Setenv("PATH", "/usr/bin:/bin:relative:/usr/bin")
 	t.Setenv("HTTPS_PROXY", "http://proxy.example.test:8080")
 	t.Setenv("NO_PROXY", "127.0.0.1,localhost")
 	t.Setenv("ALL_PROXY", strings.Repeat("x", 4097))
@@ -1402,12 +1412,12 @@ func TestManagedEnvironmentInstallerInheritsProxyWithoutLeakingItToRuntime(t *te
 		t.Fatalf("runtime inherited installer proxy authority: %q", runtimeEnvironment)
 	}
 	installerRuntime := strings.Join(managedEnvironmentInstallerRuntimeEnv("/tmp/env"), "\n")
-	wantBuildPath := "PATH=" + filepath.Join("/tmp/env", "bin") + string(os.PathListSeparator) + os.Getenv("PATH")
+	wantBuildPath := "PATH=/tmp/env/bin:/usr/bin:/bin"
 	if !strings.Contains(installerRuntime, wantBuildPath) {
 		t.Fatalf("installer build PATH=%q want %q", installerRuntime, wantBuildPath)
 	}
-	if strings.Contains(runtimeEnvironment, wantBuildPath) {
-		t.Fatalf("scientific runtime inherited installer-only host PATH: %q", runtimeEnvironment)
+	if !strings.Contains(runtimeEnvironment, wantBuildPath) {
+		t.Fatalf("runtime validation lost required OS utilities: %q", runtimeEnvironment)
 	}
 	runtimeThreadLimit := managedEnvironmentRuntimeThreadLimit()
 	if runtimeThreadLimit < 1 || runtimeThreadLimit > 4 {
@@ -1454,13 +1464,14 @@ case "$mode" in
 printf '%s\n' "$*" >>'` + pythonCalls + `'
 case "$*" in
   *"-m pip install"*) exit 0 ;;
+  *"SYNON_IMPORT_WITNESS_OK"*) printf '%s\n' 'SYNON_IMPORT_WITNESS_OK' ;;
   *) printf '%s\n' '{"ok":true,"version":[3,11,9]}' ;;
 esac
 PY
     /bin/chmod 755 "$prefix/bin/python"
     ;;
   list)
-    printf '%s\n' '[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"},{"name":"torch","version":"2.3.1","build_string":"pip","channel":"pypi"},{"name":"chai-lab","version":"0.6.1","build_string":"pip","channel":"pypi"}]'
+    printf '%s\n' '{"packages":[{"name":"python","version":"3.11.9","build_string":"h1","channel":"conda-forge"},{"name":"torch","version":"2.3.1","build_string":"pip","channel":"pypi"},{"name":"chai-lab","version":"0.6.1","build_string":"pip","channel":"pypi"}]}'
     ;;
   *) exit 31 ;;
 esac
@@ -1567,7 +1578,8 @@ func TestManagedEnvironmentHealthAdmissionIsSingleFlightAndFailsClosed(t *testin
 	writeManagedEnvironmentHealthPython(t, generationPath, "2.1.0", "2.1.0", calls)
 	marker := managedEnvironmentMarker{
 		SchemaVersion: managedEnvironmentMarkerVersion, Name: name, Language: "python",
-		Generation: generation, Packages: packages, CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
+		ValidationRevision: managedEnvironmentValidationRevision,
+		Generation:         generation, Packages: packages, CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
 		Operation: "create", Kind: "conda",
 	}
 	if err := writeManagedEnvironmentMarker(filepath.Join(generationPath, managedEnvironmentMarkerName), marker); err != nil {
@@ -1634,7 +1646,8 @@ func TestManagedEnvironmentRecoveryIgnoresUnhealthyGenerationForSameOperation(t 
 		writeManagedEnvironmentHealthPython(t, path, built, runtime, "")
 		if err := writeManagedEnvironmentMarker(filepath.Join(path, managedEnvironmentMarkerName), managedEnvironmentMarker{
 			SchemaVersion: managedEnvironmentMarkerVersion, Name: name, Language: "python",
-			Generation: generation, Packages: packages, CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
+			ValidationRevision: managedEnvironmentValidationRevision,
+			Generation:         generation, Packages: packages, CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
 			Operation: "create", Kind: "conda", OperationKey: operationKey,
 		}); err != nil {
 			t.Fatal(err)
@@ -1734,7 +1747,7 @@ PY
     /bin/chmod 755 "$prefix/bin/python"
     ;;
   list)
-    printf '%s\n' '[{"name":"python","version":"3.13.2","build_string":"h1","channel":"conda-forge"},{"name":"rdkit","version":"2025.3.4","build_string":"pip","channel":"pypi"},{"name":"openbabel","version":"3.1.1","build_string":"pip","channel":"pypi"}]'
+    printf '%s\n' '{"packages":[{"name":"python","version":"3.13.2","build_string":"h1","channel":"conda-forge"},{"name":"rdkit","version":"2025.3.4","build_string":"pip","channel":"pypi"},{"name":"openbabel","version":"3.1.1","build_string":"pip","channel":"pypi"}]}'
     ;;
   *) exit 31 ;;
 esac
@@ -1753,12 +1766,18 @@ esac
 	if registered.Kind != "path-venv" || registered.Generation == "" || len(registered.Packages) != 2 {
 		t.Fatalf("registered environment = %#v", registered)
 	}
+	marker, err := readManagedEnvironmentMarker(filepath.Join(envs, ".generations", "analysis-dev", registered.Generation))
+	if err != nil || marker.ValidationRevision != 0 {
+		t.Fatalf("external venv incorrectly claims installer verification: %+v err=%v", marker, err)
+	}
 	prefix, executable, err := manager.managedEnvironmentRuntime("analysis-dev", "python")
 	if err != nil || prefix != venv || executable != python {
 		t.Fatalf("registered runtime prefix=%q executable=%q err=%v", prefix, executable, err)
 	}
 	forkInput := MutateManagedPackagesInput{
 		Environment: "analysis-dev", Packages: []string{"openbabel==3.1.1"}, UsePip: true, OperationID: "tool-call-fork-1",
+		PipFindLinks:      []string{"https://wheels.example.org/release.html"},
+		PipExtraIndexURLs: []string{"https://packages.example.org/simple"},
 	}
 	forked, err := manager.InstallManagedPackages(context.Background(), forkInput)
 	if err != nil {
@@ -1781,6 +1800,10 @@ esac
 	}
 	if !strings.Contains(string(calls), "rdkit==2025.3.4") || !strings.Contains(string(calls), "openbabel==3.1.1") {
 		t.Fatalf("fork package calls=%q", calls)
+	}
+	if !strings.Contains(string(calls), "--find-links https://wheels.example.org/release.html") ||
+		!strings.Contains(string(calls), "--extra-index-url https://packages.example.org/simple") {
+		t.Fatalf("registered fork lost reviewed installation sources: %q", calls)
 	}
 }
 func TestManagedEnvironmentSharedOperationHonorsEarliestWaiterDeadline(t *testing.T) {

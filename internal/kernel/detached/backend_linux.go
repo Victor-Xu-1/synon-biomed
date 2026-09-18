@@ -64,7 +64,9 @@ type Backend struct {
 	IdleTimeout   time.Duration
 	Launcher      ExecutorLauncher
 
-	mu sync.Mutex
+	mu                    sync.Mutex
+	startupRecoveryMu     sync.Mutex
+	startupRecoveryCursor string
 
 	sessionLocksMu sync.Mutex
 	sessionLocks   map[string]*backendSessionLock
@@ -100,14 +102,99 @@ func (b *Backend) EnsureSession(ctx context.Context, spec kernelruntime.SessionS
 	if existing, found, err := b.Store.FindKernelExecutionBackendForSession(ctx, durableSpec); err != nil {
 		return kernelruntime.BackendSessionRef{}, err
 	} else if found {
+		if existing.State == workspace.KernelExecutionBackendStateReady {
+			alive, liveErr := kernelruntime.ProcessIdentityAlive(existing.WorkerPID, existing.WorkerPIDStartTicks)
+			if liveErr != nil {
+				return kernelruntime.BackendSessionRef{}, liveErr
+			}
+			if !alive {
+				// The executor owns outstanding result settlement. Wait for that
+				// owner to drain instead of starting a competing worker generation.
+				var waitErr error
+				existing, _, waitErr = waitForPredecessorKernelAuthorityRelease(ctx, existing, func(refreshCtx context.Context) (workspace.KernelExecutionBackend, bool, error) {
+					return b.Store.GetKernelExecutionBackend(refreshCtx, existing.BackendID)
+				})
+				if waitErr != nil {
+					return kernelruntime.BackendSessionRef{}, waitErr
+				}
+			}
+		}
 		if existing.State == workspace.KernelExecutionBackendStateReady &&
 			existing.HeartbeatAt != nil && time.Since(*existing.HeartbeatAt) <= 3*defaultExecutorHeartbeatInterval &&
 			validateTrustedUnixSocket(existing.SocketPath) == nil {
-			return backendSessionRef(existing), nil
+			alive, err := kernelruntime.ProcessIdentityAlive(existing.ExecutorPID, existing.ExecutorPIDStartTicks)
+			if err != nil {
+				return kernelruntime.BackendSessionRef{}, err
+			}
+			if alive {
+				return backendSessionRef(existing), nil
+			}
 		}
 		if existing.State == workspace.KernelExecutionBackendStateStarting {
-			if ready, waitErr := b.waitForReady(ctx, existing.BackendID, existing.BackendGeneration, 2*time.Second); waitErr == nil {
+			if ready, waitErr := b.waitForReady(ctx, existing.BackendID, existing.BackendGeneration, b.StartTimeout); waitErr == nil {
 				return backendSessionRef(ready), nil
+			}
+			if err := ctx.Err(); err != nil {
+				return kernelruntime.BackendSessionRef{}, err
+			}
+			refreshed, found, readErr := b.Store.GetKernelExecutionBackend(ctx, existing.BackendID)
+			if readErr != nil {
+				return kernelruntime.BackendSessionRef{}, readErr
+			}
+			if !found || refreshed.BackendGeneration != existing.BackendGeneration {
+				return kernelruntime.BackendSessionRef{}, workspace.ErrKernelExecutionBackendStale
+			}
+			existing = refreshed
+			if existing.State == workspace.KernelExecutionBackendStateStarting {
+				if err := b.settleExitedStartup(ctx, existing); err != nil {
+					return kernelruntime.BackendSessionRef{}, err
+				}
+				existing, _, readErr = b.Store.GetKernelExecutionBackend(ctx, existing.BackendID)
+				if readErr != nil {
+					return kernelruntime.BackendSessionRef{}, readErr
+				}
+			}
+		}
+		// Readiness may have arrived at the deadline. Do not retire that live
+		// owner merely because the previous readiness wait expired.
+		if existing.State == workspace.KernelExecutionBackendStateReady && validateTrustedUnixSocket(existing.SocketPath) == nil {
+			alive, err := kernelruntime.ProcessIdentityAlive(existing.WorkerPID, existing.WorkerPIDStartTicks)
+			if err != nil {
+				return kernelruntime.BackendSessionRef{}, err
+			}
+			executorAlive, executorErr := kernelruntime.ProcessIdentityAlive(existing.ExecutorPID, existing.ExecutorPIDStartTicks)
+			if executorErr != nil {
+				return kernelruntime.BackendSessionRef{}, executorErr
+			}
+			if alive && executorAlive {
+				return backendSessionRef(existing), nil
+			}
+		}
+		if existing.State != workspace.KernelExecutionBackendStateStopped && existing.State != workspace.KernelExecutionBackendStateEvidenceLost {
+			dead, err := predecessorBackendDefinitelyDead(existing, time.Now().UTC())
+			if err != nil {
+				return kernelruntime.BackendSessionRef{}, err
+			}
+			if !dead {
+				return kernelruntime.BackendSessionRef{}, errors.New("existing detached executor still owns the session; replacement is deferred")
+			}
+		}
+		if existing.WorkerPID > 0 {
+			alive, err := kernelruntime.ProcessIdentityAlive(existing.WorkerPID, existing.WorkerPIDStartTicks)
+			if err != nil {
+				return kernelruntime.BackendSessionRef{}, err
+			}
+			if alive {
+				return kernelruntime.BackendSessionRef{}, errors.New("predecessor worker has not released its physical execution authority")
+			}
+		}
+		if existing.State == workspace.KernelExecutionBackendStateStopped || existing.State == workspace.KernelExecutionBackendStateEvidenceLost {
+			var waitErr error
+			existing, _, waitErr = waitForPredecessorKernelAuthorityRelease(ctx, existing, func(refreshCtx context.Context) (workspace.KernelExecutionBackend, bool, error) {
+				return b.Store.GetKernelExecutionBackend(refreshCtx, existing.BackendID)
+			})
+			if waitErr != nil {
+				return kernelruntime.BackendSessionRef{}, waitErr
 			}
 		}
 		machineBootID, bootErr := machineBootID()
@@ -124,9 +211,7 @@ func (b *Backend) EnsureSession(ctx context.Context, spec kernelruntime.SessionS
 		}
 		var backend workspace.KernelExecutionBackend
 		var recreateErr error
-		if existing.State == workspace.KernelExecutionBackendStateStarting && existing.ExecutorPID == 0 {
-			backend, recreateErr = b.Store.RestartStartingKernelExecutionBackend(ctx, recreate)
-		} else {
+		if existing.State != workspace.KernelExecutionBackendStateStopped && existing.State != workspace.KernelExecutionBackendStateEvidenceLost {
 			// The persisted executor is stale: the process died, its heartbeat
 			// expired, or it was killed by a service restart. Mark the evidence
 			// lost, then reuse the same backend identity with a new executor
@@ -138,8 +223,8 @@ func (b *Backend) EnsureSession(ctx context.Context, spec kernelruntime.SessionS
 			}); finishErr != nil && !errors.Is(finishErr, workspace.ErrKernelExecutionBackendStale) {
 				return kernelruntime.BackendSessionRef{}, finishErr
 			}
-			backend, recreateErr = b.Store.RecreateKernelExecutionBackend(ctx, recreate)
 		}
+		backend, recreateErr = b.Store.RecreateKernelExecutionBackend(ctx, recreate)
 		if recreateErr != nil {
 			return kernelruntime.BackendSessionRef{}, recreateErr
 		}
@@ -163,7 +248,11 @@ func (b *Backend) EnsureSession(ctx context.Context, spec kernelruntime.SessionS
 		predecessor, dead, waitErr := waitForPredecessorKernelAuthorityRelease(
 			ctx, predecessor,
 			func(refreshCtx context.Context) (workspace.KernelExecutionBackend, bool, error) {
-				return b.Store.FindLatestKernelExecutionBackendForIdentity(refreshCtx, durableSpec)
+				current, found, err := b.Store.FindLatestKernelExecutionBackendForIdentity(refreshCtx, durableSpec)
+				if err != nil || !found {
+					return current, found, err
+				}
+				return b.refreshStartingPredecessor(refreshCtx, current)
 			},
 		)
 		if waitErr != nil {
@@ -248,7 +337,24 @@ func waitForPredecessorKernelAuthorityRelease(
 	for {
 		if predecessor.State == workspace.KernelExecutionBackendStateStopped ||
 			predecessor.State == workspace.KernelExecutionBackendStateEvidenceLost {
-			return predecessor, false, nil
+			alive := false
+			if predecessor.WorkerPID > 0 {
+				var err error
+				alive, err = kernelruntime.ProcessIdentityAlive(predecessor.WorkerPID, predecessor.WorkerPIDStartTicks)
+				if err != nil {
+					return predecessor, false, err
+				}
+			}
+			if !alive && predecessor.ExecutorPID > 0 {
+				var err error
+				alive, err = kernelruntime.ProcessIdentityAlive(predecessor.ExecutorPID, predecessor.ExecutorPIDStartTicks)
+				if err != nil {
+					return predecessor, false, err
+				}
+			}
+			if !alive {
+				return predecessor, false, nil
+			}
 		}
 		dead, err := predecessorBackendDefinitelyDead(predecessor, time.Now().UTC())
 		if err != nil || dead {
@@ -274,8 +380,14 @@ func waitForPredecessorKernelAuthorityRelease(
 
 // predecessorBackendDefinitelyDead proves that a persisted predecessor no longer
 // owns a live executor before its authority is reclaimed. Exact process identity
-// is preferred; heartbeat age is only a fallback for records without a PID.
+// is required. A heartbeat age alone cannot prove a process has exited.
 func predecessorBackendDefinitelyDead(backend workspace.KernelExecutionBackend, now time.Time) (bool, error) {
+	if backend.WorkerPID > 0 && backend.WorkerPIDStartTicks > 0 {
+		alive, err := kernelruntime.ProcessIdentityAlive(backend.WorkerPID, backend.WorkerPIDStartTicks)
+		if err != nil || alive {
+			return false, err
+		}
+	}
 	if backend.ExecutorPID > 0 && backend.ExecutorPIDStartTicks > 0 {
 		alive, err := kernelruntime.ProcessIdentityAlive(backend.ExecutorPID, backend.ExecutorPIDStartTicks)
 		if err != nil {
@@ -283,11 +395,7 @@ func predecessorBackendDefinitelyDead(backend workspace.KernelExecutionBackend, 
 		}
 		return !alive, nil
 	}
-	lastLiveness := backend.UpdatedAt.UTC()
-	if backend.HeartbeatAt != nil {
-		lastLiveness = backend.HeartbeatAt.UTC()
-	}
-	return !lastLiveness.IsZero() && now.UTC().Sub(lastLiveness) >= 45*time.Second, nil
+	return false, nil
 }
 
 func (b *Backend) Start(
@@ -594,7 +702,20 @@ func (b *Backend) normalize() error {
 	return nil
 }
 
-func (b *Backend) launchExecutor(backend workspace.KernelExecutionBackend) error {
+func (b *Backend) launchExecutor(backend workspace.KernelExecutionBackend) (launchErr error) {
+	defer func() {
+		if launchErr == nil {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		state, observeErr := b.Launcher.Observe(ctx, backend.BackendID, backend.BackendGeneration)
+		if observeErr == nil && state == ExecutorLaunchExited {
+			launchErr = errors.Join(launchErr, b.Store.FailKernelExecutorStartup(ctx, workspace.KernelStartupFailure{
+				BackendID: backend.BackendID, BackendGeneration: backend.BackendGeneration, ExecutorInstanceID: backend.ExecutorInstanceID, Stage: "launch",
+			}))
+		}
+	}()
 	logPath := filepath.Join(b.LogDir, backend.BackendID+".log")
 	workingDirectory, err := os.Getwd()
 	if err != nil || !filepath.IsAbs(workingDirectory) {
@@ -641,13 +762,26 @@ func (b *Backend) waitForReady(
 		if err != nil {
 			return workspace.KernelExecutionBackend{}, err
 		}
+		if !found || backend.BackendGeneration != generation {
+			return workspace.KernelExecutionBackend{}, workspace.ErrKernelExecutionBackendStale
+		}
+		if backend.State == workspace.KernelExecutionBackendStateStopped || backend.State == workspace.KernelExecutionBackendStateEvidenceLost {
+			receipt, found, err := b.Store.GetKernelStartupFailure(waitCtx, backendID, generation)
+			if err != nil {
+				return workspace.KernelExecutionBackend{}, err
+			}
+			if found {
+				return workspace.KernelExecutionBackend{}, &StartupFailureError{Receipt: receipt}
+			}
+			return workspace.KernelExecutionBackend{}, errors.New("detached kernel executor terminated before readiness")
+		}
 		if found && backend.BackendGeneration == generation && backend.State == workspace.KernelExecutionBackendStateReady &&
 			validateTrustedUnixSocket(backend.SocketPath) == nil {
 			return backend, nil
 		}
 		select {
 		case <-waitCtx.Done():
-			return workspace.KernelExecutionBackend{}, errors.New("detached kernel executor did not become ready")
+			return workspace.KernelExecutionBackend{}, fmt.Errorf("detached kernel executor readiness is pending: %w", waitCtx.Err())
 		case <-ticker.C:
 		}
 	}

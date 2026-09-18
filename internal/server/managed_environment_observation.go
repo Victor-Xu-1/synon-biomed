@@ -3,32 +3,16 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
-	"synon-go/internal/agentruntime"
-	kernelruntime "synon-go/internal/kernel"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
 	"synon-go/internal/toolprogress"
 )
-
-func (s *Server) beginManagedEnvironmentObservation(ctx context.Context, call agentruntime.ToolCall, toolName string) (*transcriptstore.ToolOperationObserver, bool, error) {
-	run, _ := ctx.Value(transcriptRunnerChatRunContextKey{}).(*sessionRunnerChatRun)
-	if run == nil || run.Transcript == nil {
-		return nil, true, nil
-	}
-	observer, created, err := s.transcriptStore.BeginToolOperationObservation(ctx, run.Transcript.Claim, call.ID, toolName, s.kernelOperationBootID)
-	if err != nil {
-		return nil, false, err
-	}
-	s.signalTranscriptWebDelivery()
-	return &observer, created, nil
-}
 
 func (s *Server) recoverManagedEnvironmentObservations() {
 	if s.transcriptStore == nil || s.workspaceStore == nil {
@@ -61,44 +45,6 @@ func (s *Server) recoverManagedEnvironmentObservations() {
 			return
 		}
 	}
-}
-
-func (s *Server) observeManagedEnvironmentOperation(ctx context.Context, observer *transcriptstore.ToolOperationObserver, toolName string, metadata map[string]any, operation func(context.Context) (kernelruntime.ManagedEnvironment, error)) (kernelruntime.ManagedEnvironment, error) {
-	if observer == nil {
-		return operation(ctx)
-	}
-	ordinal := int64(0)
-	publish := func(status string, details map[string]any) {
-		_, err := s.transcriptStore.AppendToolOperationObservation(context.Background(), *observer, status, ordinal+1, details)
-		if err != nil {
-			log.Printf("background tool observation %s: %v", observer.OperationID, err)
-			return
-		}
-		ordinal++
-		s.signalTranscriptWebDelivery()
-	}
-	started := time.Now()
-	environment, err := toolprogress.Observe(ctx, 0, operation, func(progress *toolprogress.Update, elapsed time.Duration, _ int) {
-		if progress != nil {
-			publish("running", map[string]any{"progress": publicToolProgressPayload(*progress, elapsed)})
-		}
-	})
-	status, result := managedEnvironmentTerminalObservation(toolName, environment, err, metadata)
-	result["operation_id"] = observer.OperationID
-	publish(status, map[string]any{"toolResult": result, "progress": map[string]any{"phase": "operation_" + status, "indeterminate": false, "elapsedMs": time.Since(started).Milliseconds()}})
-	return environment, err
-}
-
-func managedEnvironmentTerminalObservation(toolName string, environment kernelruntime.ManagedEnvironment, err error, metadata map[string]any) (string, map[string]any) {
-	if err == nil {
-		return "completed", managedEnvironmentOperationReceipt(toolName, "completed", environment, metadata)
-	}
-	result := managedEnvironmentFailureReceipt(toolName, err, metadata)
-	if errors.Is(err, context.Canceled) {
-		result["status"] = "cancelled"
-		return "cancelled", result
-	}
-	return "failed", result
 }
 
 // Both ordinary and detached observations serialize through this whitelist.

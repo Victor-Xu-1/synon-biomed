@@ -51,17 +51,21 @@ func runKernelExecutorCLI(args []string) error {
 		return fmt.Errorf("open kernel executor workspace: %w", err)
 	}
 	defer store.Close()
-	manager, err := kernelruntime.DiscoverManagerWithPaths(strings.TrimSpace(*condaHome), strings.TrimSpace(*condaEnvsPath))
-	if err != nil {
-		return fmt.Errorf("discover kernel executor runtime: %w", err)
-	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	executor := &detached.Executor{
-		Store: store, Manager: manager, CondaHome: strings.TrimSpace(*condaHome), BackendID: *backendID,
+		Store: store, CondaHome: strings.TrimSpace(*condaHome), BackendID: *backendID,
 		BackendGeneration: *backendGeneration, ExecutorInstanceID: *executorInstanceID,
 		SocketPath: *socketPath, ResultSpoolDir: filepath.Join(*home, "workspace", "kernel-result-spool"),
 		HeartbeatInterval: *heartbeat, IdleTimeout: *idleTimeout,
 	}
+	if err := executor.ClaimStartup(ctx); err != nil {
+		return err
+	}
+	manager, err := kernelruntime.DiscoverManagerWithPaths(strings.TrimSpace(*condaHome), strings.TrimSpace(*condaEnvsPath))
+	if err != nil {
+		return executor.RecordStartupFailure("runtime_discovery", fmt.Errorf("discover kernel executor runtime: %w", err))
+	}
+	executor.Manager = manager
 	return executor.Run(ctx)
 }

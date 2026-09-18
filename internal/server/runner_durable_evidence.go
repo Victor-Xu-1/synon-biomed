@@ -182,6 +182,13 @@ func (s *Server) sessionRunnerDurableTaskBoundary(
 	if run == nil || run.Transcript == nil || run.Transcript.Stream.Kind != transcriptstore.StreamKindFrameRef {
 		return "", false, nil
 	}
+	// An admitted internal job owns a dedicated child frame and its complete
+	// transcript. Its generated admission input is not a user task intent.
+	// Ordinary runs still require the active logical-task boundary below; owner,
+	// branch projection and immutable receipt checks apply to both scopes.
+	if run.frameOwnedJob {
+		return "", false, nil
+	}
 	intent, found, err := s.transcriptStore.GetActiveFrameTaskIntent(
 		ctx, run.Transcript.Stream.UID, run.Transcript.Stream.OwnerID,
 	)

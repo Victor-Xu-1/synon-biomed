@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"synon-go/internal/buildinfo"
 	"synon-go/internal/compat/oracle"
 )
 
@@ -85,8 +86,8 @@ func TestGenerateAndVerifyRealReleaseTree(t *testing.T) {
 	if manifest.FileCount != 6 || manifest.TotalBytes == 0 {
 		t.Fatalf("manifest inventory = %#v", manifest)
 	}
-	if manifest.Name != "synon-biomed" || manifest.Version != "0.1.1" {
-		t.Fatalf("manifest identity = %q %q, want synon-biomed 0.1.1", manifest.Name, manifest.Version)
+	if manifest.Name != "synon-biomed" || manifest.Version != buildinfo.Release().Version {
+		t.Fatalf("manifest identity = %q %q, want root-authority version", manifest.Name, manifest.Version)
 	}
 	if manifest.SchemaVersion != 4 {
 		t.Fatalf("manifest schemaVersion = %d, want 4", manifest.SchemaVersion)

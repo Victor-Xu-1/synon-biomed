@@ -1,0 +1,61 @@
+name: Synon Biomed Release Package
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-package-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  package-policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out released source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify immutable GitHub Actions policy
+        run: |
+          go test -buildvcs=false ./scripts/quality/github-actions-gate
+          go run -buildvcs=false ./scripts/quality/github-actions-gate --repo . --policy docs/governance/github-actions-pins.json
+      - name: Verify release input contracts
+        run: python3 -B -m unittest scripts.packaging.test_release_package
+
+  publish-package:
+    needs: package-policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    steps:
+      - name: Check out released source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Set up OCI transport
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.4
+      - name: Verify real OCI roundtrip
+        run: python3 -B -m unittest scripts.packaging.test_release_package
+      - name: Verify release archives and publish package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B scripts/packaging/release_package.py

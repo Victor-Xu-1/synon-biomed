@@ -1,10 +1,14 @@
 package mcpstdio
 
-import "testing"
+import (
+	"testing"
+
+	"synon-go/internal/buildinfo"
+)
 
 func TestProductClientInfoUsesSynonBiomedIdentity(t *testing.T) {
 	info := productClientInfo()
-	if info["name"] != "synon-biomed" || info["version"] != "0.1.1" {
-		t.Fatalf("clientInfo = %#v, want synon-biomed 0.1.1", info)
+	if info["name"] != "synon-biomed" || info["version"] != buildinfo.Release().Version {
+		t.Fatalf("clientInfo = %#v, want root-authority identity", info)
 	}
 }

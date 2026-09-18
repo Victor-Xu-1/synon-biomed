@@ -7,6 +7,7 @@ if ! command -v powershell.exe >/dev/null 2>&1 || ! command -v wslpath >/dev/nul
 fi
 
 tmp="$(mktemp -d)"
+IFS=$'\t' read -r product_slug product_version < <("${GO:-go}" run -buildvcs=false ./scripts/product-identity)
 passed=false
 cleanup() {
 	local rc=$?
@@ -20,7 +21,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-archive="$tmp/synon-biomed-v0.1.1-linux-amd64.tar.gz"
+archive="$tmp/${product_slug}-v${product_version}-linux-amd64.tar.gz"
 SYNON_KEEP_FAILURE_ARTIFACTS=1 SYNON_RELEASE_TEST_ARCHIVE="$archive" \
 	bash scripts/package-release-test.sh 2>&1 | tee "$tmp/package-release-test.log"
 test -f "$archive"
@@ -37,7 +38,7 @@ test -f "$linux_package/web/index.html"
 SYNON_KEEP_FAILURE_ARTIFACTS=1 SYNON_WEB_ASSETS="$linux_package/web" \
 	bash scripts/package-windows-release-test.sh "$tmp/windows" \
 	2>&1 | tee "$tmp/package-windows-release-test.log"
-windows_archive="$(find "$tmp/windows" -maxdepth 1 -type f -name 'synon-biomed-v0.1.1-windows-amd64.tar.gz' -print -quit)"
+windows_archive="$(find "$tmp/windows" -maxdepth 1 -type f -name "${product_slug}-v${product_version}-windows-amd64.tar.gz" -print -quit)"
 test -f "$windows_archive"
 test -f "$windows_archive.sha256"
 

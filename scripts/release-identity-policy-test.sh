@@ -2,6 +2,7 @@
 set -euo pipefail
 
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+product_version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$root/product-identity.json")"
 tmp="$(mktemp -d)"
 cleanup() {
 	case "$tmp" in
@@ -15,7 +16,7 @@ mkdir -p "$tmp/trusted/scripts" "$tmp/current" "$tmp/legacy" "$tmp/symlink"
 cp "$root/scripts/release-path-policy.sh" "$tmp/trusted/scripts/release-path-policy.sh"
 cp "$root/product-identity.json" "$tmp/trusted/product-identity.json"
 cp "$root/product-identity.json" "$tmp/current/product-identity.json"
-sed 's/"version": "0.1.1"/"version": "4.0.2"/' "$root/product-identity.json" >"$tmp/legacy/product-identity.json"
+sed "s/\"version\": \"${product_version}\"/\"version\": \"4.0.2\"/" "$root/product-identity.json" >"$tmp/legacy/product-identity.json"
 ln -s "$tmp/trusted/product-identity.json" "$tmp/symlink/product-identity.json"
 
 source "$tmp/trusted/scripts/release-path-policy.sh"

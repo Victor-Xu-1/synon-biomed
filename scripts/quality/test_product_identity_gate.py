@@ -181,12 +181,12 @@ class ProductIdentityGateTests(unittest.TestCase):
         self.assertEqual(result["drifts"], [])
         self.assertEqual(result["schema_facts"]["current_workspace_schema"], 69)
         self.assertIn(
-            {"path": ".env.example", "kind": "line-prefix", "value_template": "# {full_display} safe local defaults."},
+            {"path": ".env.example", "kind": "line-prefix", "value_template": "# {display_name} safe local defaults."},
             load("docs/governance/product-identity-consumer-matrix.json")["user_visible_name_projections"],
         )
         self.assertEqual(
             (ROOT / ".env.example").read_text(encoding="utf-8").splitlines()[0],
-            f"# {gate.derive_identity(authority)['full_display']} safe local defaults.",
+            f"# {authority['display_name']} safe local defaults.",
         )
         projections = load("docs/governance/product-identity-consumer-matrix.json")["product_version_projections"]
         self.assertIn(
@@ -324,8 +324,15 @@ class ProductIdentityGateTests(unittest.TestCase):
             downgraded = identity(); downgraded["version"] = "4.0.2"
             write_json(repo / "product-identity.json", downgraded)
             write_json(repo / "package.json", {"version": "4.0.2", "description": "Synon Biomed workbench"})
-            with self.assertRaisesRegex(gate.IdentityError, "identity_authority_legacy_version"):
+            with self.assertRaisesRegex(gate.IdentityError, "identity_authority_version_line_invalid"):
                 gate.audit(repo, downgraded, reference(), release_policy(), matrix())
+
+    def test_active_release_line_rejects_unapproved_minor_bump(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory); seed(repo)
+            future = identity(); future["version"] = "0.2.0"
+            with self.assertRaisesRegex(gate.IdentityError, "identity_authority_version_line_invalid"):
+                gate.audit(repo, future, reference(), release_policy(), matrix())
 
     def test_dead_embed_and_hardcoded_buildinfo_are_ineligible(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -345,6 +352,19 @@ class ProductIdentityGateTests(unittest.TestCase):
             )
             result, code = gate.evaluate(repo, identity(), reference(), release_policy(), matrix(), "candidate")
             self.assertEqual(code, 3)
+            self.assertIn("internal/buildinfo/buildinfo.go", {item["path"] for item in result["drifts"]})
+
+    def test_derived_consumer_distinguishes_version_tokens_from_network_addresses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory); seed(repo)
+            path = repo / "internal/buildinfo/buildinfo.go"
+            original = path.read_text()
+            path.write_text(original + '\nvar network = "192.0.1.0/24"\n')
+            result = gate.audit(repo, identity(), reference(), release_policy(), matrix())
+            self.assertTrue(result["aligned"], result["drifts"])
+            path.write_text(original + '\nvar frozen = "agent/v0.1.0"\n')
+            result = gate.audit(repo, identity(), reference(), release_policy(), matrix())
+            self.assertFalse(result["aligned"])
             self.assertIn("internal/buildinfo/buildinfo.go", {item["path"] for item in result["drifts"]})
 
     def test_same_tree_binding_rejects_tamper_and_path_escape(self):

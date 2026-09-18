@@ -37,7 +37,7 @@ def load(repo: Path) -> list[dict]:
             raise ValueError("invalid verification scope group")
         names.add(group["name"])
         for item in group["paths"]:
-            if (not isinstance(item, str) or not item.startswith(("scripts/", ".github/workflows/", "docs/governance/"))
+            if (not isinstance(item, str) or not item.startswith(("scripts/", ".github/", "docs/governance/"))
                     or PurePosixPath(item).as_posix() != item
                     or any(part in {".", ".."} for part in item.split("/"))
                     or any(char in item for char in "\\*?[]\x00\r\n")

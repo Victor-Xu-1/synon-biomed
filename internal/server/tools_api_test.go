@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"synon-go/internal/buildinfo"
 	"testing"
 	"time"
 
@@ -1717,7 +1718,7 @@ func TestToolsAPIExecutesAgentRuntimeDoctorParityAudit(t *testing.T) {
 	}
 	contract, ok := result["contract"].(map[string]any)
 	if !ok || contract["source"] != "synon-harness" || contract["target"] != "synon-biomed" ||
-		contract["productName"] != "Synon Biomed" || contract["productVersion"] != "0.1.1" {
+		contract["productName"] != "Synon Biomed" || contract["productVersion"] != buildinfo.Release().Version {
 		t.Fatalf("AgentRuntimeDoctor product contract = %#v", result["contract"])
 	}
 	contractJSON, err := json.Marshal(contract)

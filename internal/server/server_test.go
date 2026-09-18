@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"synon-go/internal/buildinfo"
 	"synon-go/internal/capabilities"
 )
 
@@ -29,7 +30,7 @@ func TestHTTPServerHealthAndCapabilities(t *testing.T) {
 	if err := json.NewDecoder(healthResp.Body).Decode(&health); err != nil {
 		t.Fatalf("decode health: %v", err)
 	}
-	if health["status"] != "healthy" || health["name"] != "Synon Biomed" || health["version"] != "0.1.1" || health["agents_registered"] != float64(14) {
+	if health["status"] != "healthy" || health["name"] != "Synon Biomed" || health["version"] != buildinfo.Release().Version || health["agents_registered"] != float64(14) {
 		t.Fatalf("health = %#v", health)
 	}
 

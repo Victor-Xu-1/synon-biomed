@@ -124,6 +124,14 @@ class VerificationOwnershipTests(unittest.TestCase):
                 else:
                     self.assertTrue((repo / command[-1]).is_file())
 
+    def test_version_proposals_have_exact_verification_ownership(self):
+        repo = Path(__file__).resolve().parents[2]
+        groups = contract.matched(repo, [".github/release-please-config.json"])
+        self.assertEqual([group["name"] for group in groups], ["version-proposal"])
+        self.assertEqual(contract.checks(groups), [
+            ["python3", "-B", "-m", "unittest", "scripts.packaging.test_version_config"],
+        ])
+
     def test_ci_guide_is_verified_without_selecting_unrelated_runtime_packages(self):
         repo = Path(__file__).resolve().parents[2]
         paths = ["scripts/quality/README.md"]

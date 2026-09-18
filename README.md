@@ -1,4 +1,4 @@
-# Synon Biomed v0.1.1
+# Synon Biomed
 
 ## The intelligent workspace for biomedical discovery
 
@@ -59,6 +59,18 @@ investigate, compare, and act — without losing the trail from question to resu
 
 Synon Biomed 面向需要可靠研究环境的团队：从问题、调查、比较到结果，
 每一步都保留清晰的研究脉络。
+
+## Releases and packages / 发布与分发包
+
+Versioned downloads are published on [GitHub Releases](https://github.com/Victor-Xu-1/synon-biomed/releases).
+Each release includes Linux/Windows archives and SHA-256 checksums. The same
+files are published as an OCI bundle to [GitHub Packages](https://github.com/Victor-Xu-1/synon-biomed/pkgs/container/synon-biomed).
+This bundle is for automated download with ORAS, not `docker run`. If a version is absent,
+it has not been published; source downloads are not prebuilt installers.
+
+版本化安装包和 SHA-256 校验文件在 Releases 提供；Packages 通过 OCI 格式分发同一批
+文件，可用 ORAS 自动拉取，不是可直接运行的容器。未显示的版本尚未发布。
+See [installation, package downloads and upgrade guidance](docs/operations-runbook.md).
 
 ## Run from source / 从源码运行
 

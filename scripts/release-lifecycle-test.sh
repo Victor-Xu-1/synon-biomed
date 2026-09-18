@@ -2,6 +2,7 @@
 set -euo pipefail
 
 tmp="$(mktemp -d)"
+IFS=$'\t' read -r product_slug product_version < <("${GO:-go}" run -buildvcs=false ./scripts/product-identity)
 passed=false
 cleanup() {
 	local rc=$?
@@ -38,7 +39,7 @@ original_sha="$(sha256sum "$install/synon-go" | cut -d' ' -f1)"
 # Rollback authority is the trusted manager tree, never the backup candidate.
 # A legacy identity must fail before its binary runs or the installation moves.
 cp -a "$backup" "$tmp/legacy-backup"
-sed -i 's/"version": "0.1.1"/"version": "4.0.2"/' "$tmp/legacy-backup/product-identity.json"
+sed -i "s/\"version\": \"${product_version}\"/\"version\": \"4.0.2\"/" "$tmp/legacy-backup/product-identity.json"
 cat >"$tmp/legacy-backup/synon-go" <<'EOF'
 #!/usr/bin/env bash
 : >"${SYNON_TEST_MARKER:?}"
@@ -148,7 +149,7 @@ test "$original_sha" = "$(sha256sum "$install/synon-go" | cut -d' ' -f1)"
 
 # A normal upgrade can replace an existing release atomically.
 ./scripts/install-release.sh "$archive" "$install" >/dev/null
-"$install/synon-go" --health-json | grep -q '"version":"0.1.1"'
+"$install/synon-go" --health-json | grep -Fq "\"version\":\"${product_version}\""
 
 # Corrupt releases require an explicit override and never remove external data.
 printf 'corrupt\n' >>"$install/README.md"

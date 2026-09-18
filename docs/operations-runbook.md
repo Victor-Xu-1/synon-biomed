@@ -192,6 +192,33 @@ must additionally verify the full workflow conclusion, main SHA, unused receipt,
 absent tag, isolated release credentials, and enabled GitHub Release
 immutability. Promotion attaches these exact files without rebuilding.
 
+## Download from GitHub Packages
+
+GHCR carries the same Linux and Windows installation archives, checksums and
+candidate manifest as the corresponding GitHub Release. It uses the OCI
+artifact type `application/vnd.synon-biomed.release.v1`. This is an installation
+bundle, **not a runnable Docker image**: the Linux execution runtime requires
+a systemd user manager and host sandbox support. The existing native install
+and upgrade procedures below remain authoritative.
+
+Install [ORAS](https://oras.land/docs/installation) and select an actually
+published version. For example, after `v0.1.1` has been published:
+
+```bash
+mkdir -p /tmp/synon-download
+oras pull ghcr.io/victor-xu-1/synon-biomed:v0.1.1 --output /tmp/synon-download
+cd /tmp/synon-download
+sha256sum --check synon-biomed-v0.1.1-linux-amd64.tar.gz.sha256
+sha256sum --check synon-biomed-v0.1.1-windows-amd64.tar.gz.sha256
+```
+
+For automated deployment, pin `ghcr.io/victor-xu-1/synon-biomed@sha256:DIGEST`
+from the package's publication result. Public downloads do not require a token.
+GitHub may display a generic Docker pull command for this registry; use ORAS
+for this artifact type. Do not extract or execute an archive before checking
+its checksum and release manifest. The package transport never contains user
+databases, runtime credentials or scientific-task output.
+
 ## Verify an archive
 
 The installer verifies the package manifest before replacing an installation. For an extracted package:

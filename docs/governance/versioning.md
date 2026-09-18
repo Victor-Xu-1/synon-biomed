@@ -39,8 +39,10 @@ Register a private GitHub App and install it on **this repository only**.
 Grant repository Contents, Pull requests and Issues read/write (Issues is needed
 for release lifecycle labels); Metadata read is automatic. No organization,
 administration or user-data permissions and no webhook are needed.
-Set repository variable `RELEASE_APP_ID` and Actions secret
-`RELEASE_APP_PRIVATE_KEY`. Never paste the private key into issues, PRs or chats.
+Create a `release-automation` GitHub Environment restricted to the `main`
+branch, set repository variable `RELEASE_APP_ID`, and store
+`RELEASE_APP_PRIVATE_KEY` as an **environment secret**, not a repository-wide
+secret. Never paste the private key into issues, PRs or chats.
 
 The workflow creates a short-lived token restricted to this repository and
 these permissions. Using an App ensures the generated PR triggers normal CI;

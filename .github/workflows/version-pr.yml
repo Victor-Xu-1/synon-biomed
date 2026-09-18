@@ -29,9 +29,12 @@ jobs:
           go run -buildvcs=false ./scripts/quality/github-actions-gate --repo . --policy docs/governance/github-actions-pins.json
       - name: Verify version automation configuration
         run: python3 -B -m unittest scripts.packaging.test_version_config
+      - name: Require the protected main ref
+        run: test "$GITHUB_REF" = refs/heads/main
 
   propose-version:
     needs: version-policy
+    environment: release-automation
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

@@ -14,6 +14,11 @@ func TestVersionBotOnlyProposesReviewedSingleRepositoryUpdates(t *testing.T) {
 	}
 	jobs := mappingValue(root, "jobs")
 	job := mappingValue(jobs, "propose-version")
+	environment := mappingValue(job, "environment")
+	if environment == nil || environment.Value != "release-automation" ||
+		namedRun(root, "version-policy", "Require the protected main ref") != `test "$GITHUB_REF" = refs/heads/main` {
+		t.Fatal("release credentials require the main-only automation environment")
+	}
 	if !jobNeeds(job, "version-policy") || mappingValue(job, "permissions") != nil {
 		t.Fatal("version bot must depend on the read-only policy gate")
 	}

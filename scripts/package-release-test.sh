@@ -239,23 +239,24 @@ if ! grep -R -Fq '"get_admet"' "$package_dir/assets/optional/mcp-servers/bio-too
 	exit 1
 fi
 
-grep -q '"inScope": 328' "$package_dir/RELEASE_MANIFEST.json"
-grep -q '"implemented": 328' "$package_dir/RELEASE_MANIFEST.json"
-grep -q '"missing": 0' "$package_dir/RELEASE_MANIFEST.json"
-grep -q '"scope": "historical-non-web-compatibility"' "$package_dir/RELEASE_MANIFEST.json"
-grep -q '"baseline": "synonbiomed-v1.1"' "$package_dir/RELEASE_MANIFEST.json"
-grep -q '"authority": "strict-behavior-evidence"' "$package_dir/RELEASE_MANIFEST.json"
-grep -q '"compatibilityBaselineEligible": true' "$package_dir/RELEASE_MANIFEST.json"
-if grep -q '"releaseEligible"' "$package_dir/RELEASE_MANIFEST.json"; then
-	echo "release manifest exposes historical compatibility as product release eligibility" >&2
-	exit 1
-fi
+python3 - "$package_dir/RELEASE_MANIFEST.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+manifest = json.loads(Path(sys.argv[1]).read_text())
+assert manifest["schemaVersion"] == 4, "new packages must use the current manifest schema"
+assert manifest["integrity"] == "sha256", "package integrity must remain explicit"
+assert manifest["fileCount"] == len(manifest["files"]) > 0, "file inventory must be complete"
+assert "coverage" not in manifest, "new packages must not embed historical engineering scores"
+assert "releaseEligible" not in manifest, "a package cannot grant its own release authorization"
+PY
 grep -q '"bun": false' "$package_dir/RELEASE_MANIFEST.json"
 grep -q '"node": false' "$package_dir/RELEASE_MANIFEST.json"
 grep -q '"go": false' "$package_dir/RELEASE_MANIFEST.json"
 grep -q '"python": false' "$package_dir/RELEASE_MANIFEST.json"
 
-if find "$package_dir" -type d \( -name .git -o -name node_modules -o -name desktop -o -name frontend -o -name webapp -o -name web-ui -o -name dist -o -name models -o -name vendor -o -name users -o -name workspace -o -name runtime -o -name uploads -o -name mcp-output -o -name test-results \) -print | grep -q .; then
+if find "$package_dir" -type d ! -path "$package_dir/docs/licenses/frontend" \( -name .git -o -name node_modules -o -name desktop -o -name frontend -o -name webapp -o -name web-ui -o -name dist -o -name models -o -name vendor -o -name users -o -name workspace -o -name runtime -o -name uploads -o -name mcp-output -o -name test-results \) -print | grep -q .; then
 	echo "release package contains banned directory" >&2
 	exit 1
 fi

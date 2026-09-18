@@ -111,10 +111,12 @@ APBS/PDB2PQR 生物分子电性、AutoDock Vina、药物化学、QSAR/ADMET、�
 ## Learn more / 了解更多
 
 - [Versioning and releases / 版本与发布](docs/governance/versioning.md)
+- [Repository maintenance](docs/governance/repository-maintenance.md)
 - [Operations and setup / 运维与配置](docs/operations-runbook.md)
 - [Research Harness / 科学 Harness](docs/engineering/synon-harness-conformance.md)
 - [Runtime data lifecycle / 运行时数据生命周期](docs/engineering/runtime-data-lifecycle.md)
 - [Release acceptance / 发布验收](docs/release-acceptance-contract.md)
+- [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## Project status / 项目状态
 

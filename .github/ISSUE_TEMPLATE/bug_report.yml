@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a reproducible defect
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, personal data, unpublished research, or security-sensitive details.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How can we reproduce it?
+      description: Include the smallest safe reproduction and relevant version or commit.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Provide operating system, runtime versions, and configuration details that are safe to share.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or evidence
+      description: Redact secrets and personal data before attaching output.
+    validations:
+      required: false

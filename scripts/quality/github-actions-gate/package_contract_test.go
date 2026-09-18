@@ -20,6 +20,7 @@ func TestPackagePublishingDoesNotGrantWritesToQualityJobs(t *testing.T) {
 		name, source, want string
 	}{
 		{"valid", source, ""},
+		{"missing-publisher", strings.Split(source, "  publish-package:")[0], "actions_package_job_missing"},
 		{"pull-request", strings.Replace(source, "release:\n    types: [published]", "pull_request:", 1), "actions_package_trigger_invalid"},
 		{"extra-event", strings.Replace(source, "types: [published]", "types: [published]\n  push:", 1), "actions_package_trigger_invalid"},
 		{"draft-event", strings.Replace(source, "types: [published]", "types: [created]", 1), "actions_package_trigger_invalid"},
@@ -28,7 +29,7 @@ func TestPackagePublishingDoesNotGrantWritesToQualityJobs(t *testing.T) {
 		{"extra-permission", strings.Replace(source, "packages: write", "packages: write\n      issues: write", 1), "actions_package_permissions_invalid"},
 		{"missing-permission", strings.Replace(source, "      packages: write\n", "", 1), "actions_package_permissions_invalid"},
 		{"bootstrap-writes", strings.Replace(source, "    timeout-minutes: 10", "    permissions:\n      packages: write\n    timeout-minutes: 10", 1), "actions_job_permissions_forbidden"},
-		{"unscoped-token", strings.Replace(source, "python3 -B scripts/packaging/release_container.py", "echo unsafe", 1), "actions_environment_override_forbidden"},
+		{"unscoped-token", strings.Replace(source, "python3 -B scripts/packaging/release_package.py", "echo unsafe", 1), "actions_environment_override_forbidden"},
 		{"long-lived-token", strings.Replace(source, "$"+"{{ github.token }}", "$"+"{{ secrets.PAT }}", 1), "actions_environment_override_forbidden"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

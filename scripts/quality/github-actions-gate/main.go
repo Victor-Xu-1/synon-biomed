@@ -366,6 +366,10 @@ func validateWorkflow(relative string, root *yaml.Node, state *workflowState) er
 	if jobs == nil || jobs.Kind != yaml.MappingNode || len(jobs.Content) == 0 {
 		return errors.New("actions_workflow_invalid")
 	}
+	if contract, publishing := state.policy.PackagePublishing[relative]; publishing &&
+		mappingValue(jobs, contract.Job) == nil {
+		return errors.New("actions_package_job_missing")
+	}
 	bootstrapJob := workflowBootstrapJob(state.policy, relative)
 	if bootstrapJob == "" {
 		return errors.New("actions_bootstrap_workflow_invalid")

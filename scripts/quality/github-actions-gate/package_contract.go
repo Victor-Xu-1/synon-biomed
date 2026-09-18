@@ -52,5 +52,5 @@ func packageTokenStep(step *yaml.Node, state *workflowState) bool {
 	token := mappingValue(env, "GH_TOKEN")
 	return env != nil && env.Kind == yaml.MappingNode && len(env.Content) == 2 &&
 		token != nil && token.Kind == yaml.ScalarNode && token.Value == "$"+"{{ github.token }}" &&
-		run != nil && run.Value == "python3 -B scripts/packaging/release_container.py"
+		run != nil && run.Value == "python3 -B scripts/packaging/release_package.py"
 }

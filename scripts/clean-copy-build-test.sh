@@ -3,6 +3,7 @@ set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 go_bin="${GO:-go}"
+IFS=$'\t' read -r product_slug product_version < <("$go_bin" run -buildvcs=false ./scripts/product-identity)
 tmp=$(mktemp -d)
 cleanup() {
   case "$tmp" in
@@ -66,7 +67,7 @@ copy_digest=$(filesystem_digest "$copy")
   env GOWORK=off GOCACHE="$cache" "$go_bin" build -mod=readonly -trimpath -buildvcs=false -o "$output/synon-go-live-im-smoke" ./scripts/smoke-live-im
 )
 
-"$output/synon-go" --health-json | grep -Fq '"version":"0.1.1"'
+"$output/synon-go" --health-json | grep -Fq "\"version\":\"${product_version}\""
 "$output/synon-go-live-im-smoke" --plan --json | grep -Fq '"secretsRedacted":true'
 
 after_digest=$(filesystem_digest "$copy")

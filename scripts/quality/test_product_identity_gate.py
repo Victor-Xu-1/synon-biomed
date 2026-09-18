@@ -181,12 +181,12 @@ class ProductIdentityGateTests(unittest.TestCase):
         self.assertEqual(result["drifts"], [])
         self.assertEqual(result["schema_facts"]["current_workspace_schema"], 69)
         self.assertIn(
-            {"path": ".env.example", "kind": "line-prefix", "value_template": "# {full_display} safe local defaults."},
+            {"path": ".env.example", "kind": "line-prefix", "value_template": "# {display_name} safe local defaults."},
             load("docs/governance/product-identity-consumer-matrix.json")["user_visible_name_projections"],
         )
         self.assertEqual(
             (ROOT / ".env.example").read_text(encoding="utf-8").splitlines()[0],
-            f"# {gate.derive_identity(authority)['full_display']} safe local defaults.",
+            f"# {authority['display_name']} safe local defaults.",
         )
         projections = load("docs/governance/product-identity-consumer-matrix.json")["product_version_projections"]
         self.assertIn(

@@ -6,6 +6,7 @@ if [[ "${SYNON_CLEAN_SOURCE_TEST:-}" != "1" ]]; then
 fi
 
 tmp="$(mktemp -d /tmp/i.XXXXXX)"
+IFS=$'\t' read -r product_slug product_version < <("${GO:-go}" run -buildvcs=false ./scripts/product-identity)
 runtime_pid=""
 passed=false
 cleanup() {
@@ -41,7 +42,7 @@ install_dir="$tmp/install"
 mkdir -p "$tmp/legacy-package"
 tar -xzf "$archive" -C "$tmp/legacy-package"
 legacy_root="$(find "$tmp/legacy-package" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
-sed -i 's/"version": "0.1.1"/"version": "4.0.2"/' "$legacy_root/product-identity.json"
+sed -i "s/\"version\": \"${product_version}\"/\"version\": \"4.0.2\"/" "$legacy_root/product-identity.json"
 cat >"$legacy_root/synon-go" <<'EOF'
 #!/usr/bin/env bash
 : >"${SYNON_TEST_MARKER:?}"
@@ -84,7 +85,7 @@ fi
 
 ./scripts/install-release.sh "$archive" "$install_dir"
 
-"$install_dir/synon-go" --health-json | grep -q '"version":"0.1.1"'
+"$install_dir/synon-go" --health-json | grep -Fq "\"version\":\"${product_version}\""
 "$install_dir/synon-go" release-manifest verify --root "$install_dir" | grep -q '"valid": true'
 if "$install_dir/synon-go" tui --help >/dev/null 2>&1; then
   echo "retired TUI command is still available" >&2

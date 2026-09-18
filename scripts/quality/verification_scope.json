@@ -2,17 +2,29 @@
   "schema": "synon.verification-scope.v1",
   "groups": [
     {
-      "name": "release-container",
+      "name": "release-package",
       "paths": [
         ".github/workflows/packages.yml",
-        "scripts/packaging/Dockerfile",
-        "scripts/packaging/release_container.py",
-        "scripts/packaging/container_smoke.py",
-        "scripts/packaging/test_release_container.py"
+        "scripts/packaging/release_package.py",
+        "scripts/packaging/oci_bundle.py",
+        "scripts/packaging/test_release_package.py"
       ],
       "frontend": false,
       "checks": [
-        ["python3", "-B", "-m", "unittest", "scripts.packaging.test_release_container"]
+        ["python3", "-B", "-m", "unittest", "scripts.packaging.test_release_package"]
+      ]
+    },
+    {
+      "name": "version-proposal",
+      "paths": [
+        ".github/workflows/version-pr.yml",
+        ".github/release-please-config.json",
+        ".github/release-please-manifest.json",
+        "scripts/packaging/test_version_config.py"
+      ],
+      "frontend": false,
+      "checks": [
+        ["python3", "-B", "-m", "unittest", "scripts.packaging.test_version_config"]
       ]
     },
     {

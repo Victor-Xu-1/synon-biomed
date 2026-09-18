@@ -1,4 +1,4 @@
-name: Synon Biomed Release Container
+name: Synon Biomed Release Package
 
 on:
   release:
@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-container-${{ github.event.release.tag_name }}
+  group: release-package-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
@@ -27,9 +27,9 @@ jobs:
           go test -buildvcs=false ./scripts/quality/github-actions-gate
           go run -buildvcs=false ./scripts/quality/github-actions-gate --repo . --policy docs/governance/github-actions-pins.json
       - name: Verify release input contracts
-        run: python3 -B -m unittest scripts.packaging.test_release_container
+        run: python3 -B -m unittest scripts.packaging.test_release_package
 
-  publish-container:
+  publish-package:
     needs: package-policy
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -49,7 +49,13 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
-      - name: Verify release archives and publish container
+      - name: Set up OCI transport
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.4
+      - name: Verify real OCI roundtrip
+        run: python3 -B -m unittest scripts.packaging.test_release_package
+      - name: Verify release archives and publish package
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B scripts/packaging/release_container.py
+        run: python3 -B scripts/packaging/release_package.py

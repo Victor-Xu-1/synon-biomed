@@ -10,22 +10,25 @@
     ".github/workflows/packages.yml",
     ".github/workflows/quality-main.yml",
     ".github/workflows/quality-pr.yml",
-    ".github/workflows/quality.yml"
+    ".github/workflows/quality.yml",
+    ".github/workflows/version-pr.yml"
   ],
   "workflow_bootstrap_jobs": {
     ".github/workflows/packages.yml": "package-policy",
     ".github/workflows/quality-main.yml": "main-quality",
     ".github/workflows/quality-pr.yml": "pr-quality",
-    ".github/workflows/quality.yml": "p0-quality"
+    ".github/workflows/quality.yml": "p0-quality",
+    ".github/workflows/version-pr.yml": "version-policy"
   },
   "workflow_checkout_contracts": {
     ".github/workflows/packages.yml": {"ref": "${{ github.sha }}", "fetch_depth": 1},
     ".github/workflows/quality-main.yml": {"ref": "${{ github.sha }}", "fetch_depth": 2},
     ".github/workflows/quality-pr.yml": {"ref": "${{ github.sha }}", "fetch_depth": 2},
-    ".github/workflows/quality.yml": {"ref": "${{ github.sha }}", "fetch_depth": 1}
+    ".github/workflows/quality.yml": {"ref": "${{ github.sha }}", "fetch_depth": 1},
+    ".github/workflows/version-pr.yml": {"ref": "${{ github.sha }}", "fetch_depth": 1}
   },
   "package_publishing": {
-    ".github/workflows/packages.yml": {"job": "publish-container"}
+    ".github/workflows/packages.yml": {"job": "publish-package"}
   },
   "required_aggregate_jobs": {
     ".github/workflows/quality-main.yml": {
@@ -40,6 +43,9 @@
     }
   },
   "actions": {
+    "actions/create-github-app-token": {"sha": "bcd2ba49218906704ab6c1aa796996da409d3eb1", "version": "v3.2.0"},
+    "googleapis/release-please-action": {"sha": "45996ed1f6d02564a971a2fa1b5860e934307cf7", "version": "v5.0.0"},
+    "oras-project/setup-oras": {"sha": "1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d", "version": "v2.0.1"},
     "actions/checkout": {"sha": "3d3c42e5aac5ba805825da76410c181273ba90b1", "version": "v7.0.1"},
     "actions/setup-go": {"sha": "b7ad1dad31e06c5925ef5d2fc7ad053ef454303e", "version": "v7.0.0"},
     "actions/setup-node": {"sha": "820762786026740c76f36085b0efc47a31fe5020", "version": "v7.0.0"},

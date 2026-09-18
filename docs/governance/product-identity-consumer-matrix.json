@@ -18,6 +18,8 @@
   },
   "legacy_version_terms": ["4.0.2", "5.0.0"],
   "legacy_version_path_rules": [
+    {"glob": ".github/workflows/version-pr.yml", "class": "dependency-name-or-version", "disposition": "pinned release automation action versions, independent of the product version"},
+    {"glob": "docs/governance/github-actions-pins.json", "class": "dependency-name-or-version", "disposition": "immutable upstream action dependency pins, independent of the product version"},
     {"glob": "*_test.go", "class": "test-fixture", "disposition": "root-package test input only"},
     {"glob": "**/*_test.go", "class": "test-fixture", "disposition": "Go test input or assertion only"},
     {"glob": "test_*.py", "class": "test-fixture", "disposition": "root Python test input only"},
@@ -77,8 +79,8 @@
     {"path": "scripts/package-release.sh", "kind": "text-derived-consumer", "required_markers": ["./scripts/product-identity", "package_name=\"${product_slug}-v${version}-${goos}-${goarch}\"", "source_uri=\"${SYNON_SOURCE_URI:-pkg:generic/${product_slug}@${version}}\""]}
   ],
   "user_visible_name_projections": [
-    {"path": "README.md", "kind": "line-prefix", "value_template": "# {full_display}"},
-    {"path": ".env.example", "kind": "line-prefix", "value_template": "# {full_display} safe local defaults."},
+    {"path": "README.md", "kind": "line-prefix", "value_template": "# {display_name}"},
+    {"path": ".env.example", "kind": "line-prefix", "value_template": "# {display_name} safe local defaults."},
     {"path": "frontend/package.json", "kind": "json-prefix", "pointer": "/description", "value_field": "display_name"},
     {"path": "frontend/package.json", "kind": "json-prefix", "pointer": "/productName", "value_field": "display_name"},
     {"path": "frontend/packages/desktop/package.json", "kind": "json-prefix", "pointer": "/description", "value_field": "display_name"},

@@ -11,6 +11,7 @@ if [[ "${1:-}" != "--readme-contract-only" && "${SYNON_CLEAN_SOURCE_TEST:-}" != 
 fi
 
 tmp="$(mktemp -d)"
+IFS=$'\t' read -r product_slug product_version < <("${GO:-go}" run -buildvcs=false ./scripts/product-identity)
 passed=false
 cleanup() {
 	local rc=$?
@@ -53,7 +54,7 @@ PY
 
 verify_packaged_readme_contract() {
 	test -f "$1"
-	grep -Fxq '# Synon Biomed v0.1.1' "$1"
+	grep -Fxq '# Synon Biomed' "$1"
 	if ! cmp -s README.md "$1"; then
 		echo "packaged README differs from the current source README" >&2
 		exit 1
@@ -86,7 +87,7 @@ fi
 
 ./scripts/package-release.sh "$tmp/out"
 
-archive="$(find "$tmp/out" -maxdepth 1 -type f -name 'synon-biomed-v0.1.1-*.tar.gz' | head -n 1)"
+archive="$(find "$tmp/out" -maxdepth 1 -type f -name "${product_slug}-v${product_version}-*.tar.gz" | head -n 1)"
 if [[ -z "$archive" ]]; then
 	echo "release archive missing" >&2
 	exit 1
@@ -103,7 +104,7 @@ if [[ -z "$package_dir" ]]; then
 fi
 
 SYNON_WEB_ASSETS="$package_dir/web" ./scripts/package-release.sh "$tmp/out-repeated" >/dev/null
-repeated_archive="$(find "$tmp/out-repeated" -maxdepth 1 -type f -name 'synon-biomed-v0.1.1-*.tar.gz' | head -n 1)"
+repeated_archive="$(find "$tmp/out-repeated" -maxdepth 1 -type f -name "${product_slug}-v${product_version}-*.tar.gz" | head -n 1)"
 if ! cmp -s "$archive" "$repeated_archive"; then
 	echo "release archive is not reproducible" >&2
 	exit 1
@@ -113,8 +114,8 @@ if ! cmp -s "$archive.sha256" "$repeated_archive.sha256"; then
 	exit 1
 fi
 
-"$package_dir/synon-go" --health-json | grep -q '"version":"0.1.1"'
-"$package_dir/synon-go" serve --health-json | grep -q '"version":"0.1.1"'
+"$package_dir/synon-go" --health-json | grep -Fq "\"version\":\"${product_version}\""
+"$package_dir/synon-go" serve --health-json | grep -Fq "\"version\":\"${product_version}\""
 model_smoke_plan="$(env -i PATH="$PATH" HOME="$tmp/home" "$package_dir/synon-go" model-smoke --plan --require-all --json)"
 printf '%s' "$model_smoke_plan" | grep -q '"secretsRedacted": true'
 printf '%s' "$model_smoke_plan" | grep -q '"name": "runner"'
@@ -156,14 +157,14 @@ cmp LICENSE "$package_dir/LICENSE"
 cmp COMMERCIAL-LICENSE.md "$package_dir/COMMERCIAL-LICENSE.md"
 cmp frontend/LICENSE "$package_dir/docs/licenses/frontend/LICENSE"
 test -f "$package_dir/product-identity.json"
-grep -Fq '"version": "0.1.1"' "$package_dir/product-identity.json"
+cmp product-identity.json "$package_dir/product-identity.json"
 test -f "$package_dir/.env.example"
 test -f "$package_dir/docs/THIRD_PARTY.md"
 test -f "$package_dir/docs/operations-runbook.md"
 test -f "$package_dir/docs/release-acceptance-contract.md"
-grep -Fxq '# Synon Biomed v0.1.1 Release Acceptance Contract' \
+grep -Fxq '# Synon Biomed Release Acceptance Contract' \
 	"$package_dir/docs/release-acceptance-contract.md"
-grep -Fq 'never represents current product release authorization' \
+grep -Fq 'never represents current release authorization' \
 	"$package_dir/docs/release-acceptance-contract.md"
 test -f "$package_dir/docs/frontend-third-party-licenses.json"
 test -f "$package_dir/docs/non-web-asset-boundary.json"
@@ -176,7 +177,7 @@ test -f "$package_dir/RELEASE_MANIFEST.json"
 test -f "$package_dir/SBOM.spdx.json"
 test -f "$package_dir/THIRD_PARTY_LICENSES.json"
 test -f "$package_dir/PROVENANCE.intoto.json"
-grep -Fq 'pkg:generic/synon-biomed@0.1.1' "$package_dir/PROVENANCE.intoto.json"
+grep -Fq "pkg:generic/${product_slug}@${product_version}" "$package_dir/PROVENANCE.intoto.json"
 "$package_dir/synon-go" release-supply-chain verify --root "$package_dir" | grep -q '"valid": true'
 test ! -e "$package_dir/docs/compatibility"
 test ! -e "$package_dir/docs/full-product"

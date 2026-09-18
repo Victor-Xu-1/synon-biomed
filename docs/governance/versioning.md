@@ -9,7 +9,49 @@ Do not add a second `VERSION` file or hard-coded product version.
 [`product-identity.json`](../../product-identity.json) 是唯一的产品版本权威源。
 代码、安装包、健康接口和界面版本必须由它派生，不再增加第二份 `VERSION` 文件或硬编码版本。
 
-## GitHub release model / GitHub 发布方式
+## Automatic version proposals / 自动版本提案
+
+The pinned Release Please action opens or updates one version PR after changes
+land on `main`. It never merges that PR or publishes a release by itself.
+Use Conventional Commit titles when squash-merging ordinary PRs:
+
+- `fix:` advances the patch version.
+- `feat:` advances the minor version.
+- `feat!:` or a `BREAKING CHANGE:` footer marks an incompatible change.
+  Before 1.0, this advances the minor version; from 1.0 onward it advances major.
+- Documentation and maintenance commits do not automatically force a release.
+
+The version PR updates `product-identity.json`, its frontend projections and
+`docs/CHANGELOG.md`. The file `.github/release-please-manifest.json` is bot
+bookkeeping only; no runtime reads it. The identity gate prevents projection
+drift. `initial-version` applies only to the first release, not every release.
+Published versions are never moved; fixes are delivered in a new version.
+
+After reviewing and merging a version PR, run the existing full quality
+workflow once for that exact revision, then promote its verified artifacts to
+the matching immutable Release. Its publication triggers the Packages workflow.
+PR/main affected checks and the release quality matrix have different purposes;
+ordinary changes do not trigger a full release matrix.
+
+### One-time bot setup
+
+Register a private GitHub App and install it on **this repository only**.
+Grant repository Contents, Pull requests and Issues read/write (Issues is needed
+for release lifecycle labels); Metadata read is automatic. No organization,
+administration or user-data permissions and no webhook are needed.
+Set repository variable `RELEASE_APP_ID` and Actions secret
+`RELEASE_APP_PRIVATE_KEY`. Never paste the private key into issues, PRs or chats.
+
+The workflow creates a short-lived token restricted to this repository and
+these permissions. Using an App ensures the generated PR triggers normal CI;
+the default `GITHUB_TOKEN` would suppress those follow-on workflow events.
+Do not substitute a broad personal token. Missing bot configuration is a setup
+error, not a reason to skip PR review or the required checks.
+
+See the upstream [Release Please action](https://github.com/googleapis/release-please-action)
+and [GitHub App token action](https://github.com/actions/create-github-app-token).
+
+## Release promotion / 正式发布
 
 - Use Semantic Versioning: `MAJOR.MINOR.PATCH`.
 - Tracked source defines only the static [release policy](release-policy.json);
@@ -40,20 +82,20 @@ Do not add a second `VERSION` file or hard-coded product version.
 - Installers impose no fixed archive-size ceiling. Archives must still pass safe-path, regular-file, checksum, release-manifest, and product-identity checks; operators must provide sufficient disk space.
 - 安装器不设置固定包体积上限；包仍必须通过安全路径、普通文件类型、校验和、发布清单与产品身份验证，并由操作者保证目标磁盘空间充足。
 
-## Container publication / 容器发布
+## Package publication / 分发包发布
 
 The `release: published` event triggers
 [`.github/workflows/packages.yml`](../../.github/workflows/packages.yml).
 It checks the immutable release, exact source revision, successful full-quality
-run and every candidate digest before wrapping the Linux archive. Application
-binaries and Web assets are not rebuilt. The image adds a digest-pinned OS base
-and runtime prerequisites, then passes real startup, authentication, persistence
-and restart smoke checks before pushing to GHCR.
+run and every candidate digest before packaging the exact Linux/Windows archives
+as an OCI distribution bundle. Binaries and Web assets are not rebuilt.
+ORAS performs a local push/pull roundtrip and a digest-bound remote pull after
+publication; every filename and checksum must match the original release.
 
 Only the publishing job receives `packages: write`; normal PR/main CI stays
 read-only. Publication uses the short-lived `GITHUB_TOKEN`, not a personal token.
-The OCI source label links the image to this repository. Dependabot proposes
-base-image digest updates as ordinary PRs.
+The OCI source annotation links the package to this repository. The transport
+action is pinned to a reviewed commit and the ORAS CLI has an explicit version.
 
 Use `ghcr.io/victor-xu-1/synon-biomed:vMAJOR.MINOR.PATCH` or a digest, not a
 moving `latest` tag. An existing version is never overwritten. A failed job
@@ -64,8 +106,8 @@ operator therefore publishes through an explicitly authorized maintainer session
 
 For the first package, check its visibility and repository linkage in GitHub
 Packages settings. GitHub may initially create it as private even for a public
-source repository. A release and a container are separate delivery results:
-verify an anonymous pull before announcing a public container.
+source repository. A release and a package are separate delivery results:
+verify an anonymous pull before announcing a public package.
 
 ## Paths and compatibility / 路径与兼容
 

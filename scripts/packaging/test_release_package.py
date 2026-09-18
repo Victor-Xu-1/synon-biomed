@@ -1,16 +1,17 @@
-"""Regression contracts for published-release container inputs."""
+"""Regression contracts for published-release package inputs."""
 
 import copy
-import io
-import tarfile
+import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.packaging import release_container as packaging
+from scripts.packaging import release_package as packaging
+from scripts.packaging import oci_bundle
 
 
-class ReleaseContainerTest(unittest.TestCase):
+class ReleasePackageTest(unittest.TestCase):
     def setUp(self):
         self.identity = {"machine_slug": "synon-biomed", "version": "0.1.1"}
         self.revision = "a" * 40
@@ -59,36 +60,30 @@ class ReleaseContainerTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     packaging.validate_run(bad, manifest)
 
-    def test_archive_rejects_traversal_links_and_special_files(self):
-        for name, kind in [
-            ("../escape", tarfile.REGTYPE), ("/absolute", tarfile.REGTYPE),
-            ("synon-biomed-v0.1.1-linux-amd64/../../escape", tarfile.REGTYPE),
-            ("other/file", tarfile.REGTYPE),
-            ("synon-biomed-v0.1.1-linux-amd64/link", tarfile.SYMTYPE),
-            ("synon-biomed-v0.1.1-linux-amd64/hard", tarfile.LNKTYPE),
-            ("synon-biomed-v0.1.1-linux-amd64/fifo", tarfile.FIFOTYPE),
-        ]:
-            with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
-                archive = Path(temp) / "test.tar.gz"
-                with tarfile.open(archive, "w:gz") as tar:
-                    entry = tarfile.TarInfo(name)
-                    entry.type = kind
-                    entry.linkname = "/etc/passwd" if kind in (tarfile.SYMTYPE, tarfile.LNKTYPE) else ""
-                    tar.addfile(entry)
-                with self.assertRaises(ValueError):
-                    packaging.extract_archive(archive, Path(temp) / "output", self.identity)
-
-    def test_real_archive_extraction_keeps_binary_and_modes(self):
+    def test_bundle_rejects_directories_and_links(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            archive = root / "test.tar.gz"
-            with tarfile.open(archive, "w:gz") as tar:
-                entry = tarfile.TarInfo("synon-biomed-v0.1.1-linux-amd64/synon-go")
-                entry.size, entry.mode = 5, 0o755
-                tar.addfile(entry, io.BytesIO(b"hello"))
-            result = packaging.extract_archive(archive, root / "output", self.identity)
-            self.assertEqual((result / "synon-go").read_bytes(), b"hello")
-            self.assertEqual((result / "synon-go").stat().st_mode & 0o777, 0o755)
+            (root / "directory").mkdir()
+            with self.assertRaises(ValueError):
+                oci_bundle.files(root)
+            (root / "directory").rmdir()
+            (root / "link").symlink_to(root / "absent")
+            with self.assertRaises(ValueError):
+                oci_bundle.files(root)
+
+    @unittest.skipUnless(shutil.which("oras"), "ORAS is required for the real OCI roundtrip")
+    def test_real_oci_roundtrip_preserves_exact_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            artifacts = root / "artifacts"
+            artifacts.mkdir()
+            (artifacts / "binary.tar.gz").write_bytes(os.urandom(1024))
+            (artifacts / "manifest.json").write_text('{"test": true}\n')
+            value = oci_bundle.build_layout(artifacts, root / "layout", "v0.1.1", self.revision, packaging.REPOSITORY)
+            oci_bundle.verify_roundtrip(artifacts, root / "restored", f"{root / 'layout'}@{value}", local=True)
+            (artifacts / "binary.tar.gz").write_bytes(b"changed")
+            with self.assertRaisesRegex(ValueError, "changed"):
+                oci_bundle.verify_roundtrip(artifacts, root / "tampered", f"{root / 'layout'}@{value}", local=True)
 
 
 if __name__ == "__main__":

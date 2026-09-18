@@ -1,7 +1,7 @@
-# Synon Biomed v0.1.1 Release Acceptance Contract
+# Synon Biomed Release Acceptance Contract
 
 This document is the release-safe operator subset of the source repository's
-authoritative Synon Biomed v0.1.1 Goal. It deliberately contains no workstation
+authoritative Synon Biomed release requirements. It deliberately contains no workstation
 paths, credentials, owner identifiers, raw model payloads, or external-service
 secrets.
 

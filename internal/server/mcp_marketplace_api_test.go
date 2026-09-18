@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"synon-go/internal/buildinfo"
 )
 
 func TestMCPMarketplaceProxyFetchesBoundedRegistryResponse(t *testing.T) {
@@ -21,7 +23,7 @@ func TestMCPMarketplaceProxyFetchesBoundedRegistryResponse(t *testing.T) {
 		if query.Get("search") != "pubmed" || query.Get("version") != "latest" || query.Get("limit") != "12" {
 			t.Fatalf("registry query = %s", request.URL.RawQuery)
 		}
-		if request.Header.Get("Accept") != "application/json" || request.Header.Get("User-Agent") != "synon-biomed/0.1.1" {
+		if request.Header.Get("Accept") != "application/json" || request.Header.Get("User-Agent") != buildinfo.UserAgent() {
 			t.Fatalf("registry headers = %#v", request.Header)
 		}
 		return &http.Response{

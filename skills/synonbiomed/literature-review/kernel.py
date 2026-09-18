@@ -258,6 +258,17 @@ def html_decode(s: str) -> str:
     return s
 
 
+_DOI_TRAILING_MARKUP = frozenset("*_]>`,;:")
+
+
+def _strip_doi_trailing_markup(value: str) -> str:
+    """Remove trailing markdown/punctuation without a quantified regex."""
+    end = len(value)
+    while end and value[end - 1] in _DOI_TRAILING_MARKUP:
+        end -= 1
+    return value[:end]
+
+
 def extract_dois(text: str) -> list[str]:
     """Pull every DOI-looking string from `text` (for feeding to verify_dois).
     HTML-decoded, balanced-paren SICI, `</`-truncated, markdown/punct-stripped."""
@@ -270,7 +281,7 @@ def extract_dois(text: str) -> list[str]:
         d = remainder[: match.end() - match.start() + (delimiter.start() if delimiter else len(tail))]
         if d.count("<") != d.count(">"):
             d = d.split("<")[0]
-        d = re.sub(r"(?:\*\*|__|[_\]\*>`,;:])+$", "", d)
+        d = _strip_doi_trailing_markup(d)
         if d.endswith("."):
             d = d[:-1]
         while d.endswith(")") and d.count("(") < d.count(")"):

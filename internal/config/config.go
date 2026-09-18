@@ -337,8 +337,10 @@ func applyNetworkPolicy(cfg *Config, configPath string) error {
 		if networkpolicy.PrivateOrReserved(domain) {
 			return fmt.Errorf("network.allowed_domains: private/reserved host not grantable: %s", domain)
 		}
-		deniedPatterns := append(networkpolicy.BuiltInDeniedPatterns(), cfg.Network.DeniedDomains...)
-		if denied := networkpolicy.ConflictingPattern(domain, deniedPatterns); denied != "" {
+		deniedPatterns := networkpolicy.EffectiveDeniedPatterns(cfg.Network.AllowedDomains, cfg.Network.DeniedDomains)
+		// A public grant can coexist with explicit denied destinations: the
+		// runtime evaluates denies first for each concrete connection.
+		if denied := networkpolicy.ConflictingPattern(domain, deniedPatterns); domain != networkpolicy.PublicWildcard && denied != "" {
 			return fmt.Errorf("network.allowed_domains: %s conflicts with denied domain %s", domain, denied)
 		}
 	}

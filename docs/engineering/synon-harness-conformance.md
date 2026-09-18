@@ -451,6 +451,34 @@ tools are absent from new model snapshots.
 - Explicit network grants reach analysis kernels only through the host CONNECT
   policy relay. The same configured upstream proxy is reused by server, MCP,
   and kernel egress; direct kernel sockets remain confined.
+  Full-access tasks grant public HTTPS destinations without the restricted-mode
+  built-in domain deny defaults. Explicit operator denies, destination address
+  validation, TLS verification and process isolation still apply. Closing the
+  proxy releases both sides of active transfers, including stalled connections.
+  Public file transfers have no fixed product-sized byte ceiling or total
+  wall-clock deadline. Streaming disk checks retain a safety reserve and
+  account for staging and publication copies; unknown content length is not
+  treated as an infinite storage request. Atomic staging, validator-bound
+  Range/If-Range resume, finite retries and SHA-256 verification remain in the
+  same transfer path. Waiting for another writer is cancellable.
+  Default R environment repair uses the existing installer supervisor instead
+  of a separate wall-clock-limited process path. Native subprocesses inherit
+  slow-network defaults: pip uses a socket-idle timeout, mamba's minimum-rate
+  rejection is disabled, and R uses its maximum representable positive timeout
+  (R does not accept zero or infinity). Explicit runtime configuration still
+  takes precedence. These defaults do not rewrite task-authored timeouts or
+  claim resumability for third-party code that does not implement it.
+
+Execution effect preparation and registered-entrypoint admission use the same
+Shell grammar. A static single-command argv may contain comments, continued
+lines and trailing newlines; substitutions, redirections, pipelines and extra
+commands cannot inherit that entrypoint's authority. Runtime-owned arguments
+are appended to the parsed argv and quoted as data, not concatenated after a
+comment. Native R parsing accepts omitted call arguments and array indices;
+partial parse failures retain witnessed effects and explicit uncertainty.
+Python API witnesses use native from-import semantics for submodules and do
+not treat scoped/optional imports or rebound names as proven missing APIs.
+Import initialization failures remain unresolved, distinct from absence.
 
 ## Streaming and user visibility
 

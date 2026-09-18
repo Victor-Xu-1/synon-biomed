@@ -20,6 +20,7 @@ except SyntaxError:
 
 bindings = {}
 probes = {}
+from_bindings = {}
 
 def add_probe(module, attrs):
     if not module or module.startswith("."):
@@ -28,7 +29,23 @@ def add_probe(module, attrs):
     if len(probes) < 64:
         probes[target] = (module, tuple(attrs))
 
-for node in ast.walk(tree):
+def probe_attributes(statement):
+    for node in ast.walk(statement):
+        if not isinstance(node, ast.Attribute) or not isinstance(node.ctx, ast.Load):
+            continue
+        attrs = []
+        current = node
+        while isinstance(current, ast.Attribute):
+            attrs.append(current.attr)
+            current = current.value
+        if isinstance(current, ast.Name) and current.id in bindings:
+            module, prefix = bindings[current.id]
+            add_probe(module, tuple(prefix) + tuple(reversed(attrs)))
+
+# Only unconditional module-level imports can establish a static witness.
+# Optional imports, function parameters and rebound locals are not evidence
+# that an installed environment lacks an interface.
+for node in tree.body:
     if isinstance(node, ast.Import):
         for alias in node.names:
             parts = alias.name.split(".")
@@ -44,32 +61,51 @@ for node in ast.walk(tree):
                 continue
             local = alias.asname or alias.name
             bindings[local] = (node.module, (alias.name,))
+            from_bindings[(node.module, alias.name)] = True
             add_probe(node.module, (alias.name,))
-
-for node in ast.walk(tree):
-    if not isinstance(node, ast.Attribute):
-        continue
-    attrs = []
-    current = node
-    while isinstance(current, ast.Attribute):
-        attrs.append(current.attr)
-        current = current.value
-    if not isinstance(current, ast.Name) or current.id not in bindings:
-        continue
-    module, prefix = bindings[current.id]
-    add_probe(module, tuple(prefix) + tuple(reversed(attrs)))
+    elif isinstance(node, (ast.Expr, ast.Assign, ast.AnnAssign, ast.AugAssign, ast.Delete)):
+        # Lambda/comprehension scopes may shadow imported identifiers.
+        if not any(isinstance(child, (ast.Lambda, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)) for child in ast.walk(node)):
+            probe_attributes(node)
+        for child in ast.walk(node):
+            if isinstance(child, ast.Name) and isinstance(child.ctx, (ast.Store, ast.Del)):
+                bindings.pop(child.id, None)
+    else:
+        # Conditional writes and definitions make later alias identity unknown.
+        for child in ast.walk(node):
+            if isinstance(child, ast.Name) and isinstance(child.ctx, (ast.Store, ast.Del)):
+                bindings.pop(child.id, None)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            bindings.pop(node.name, None)
 
 missing = []
-sink = io.StringIO()
+unresolved = []
+class DiscardOutput(io.TextIOBase):
+    def write(self, value):
+        return len(value)
+
+sink = DiscardOutput()
 for target, (module, attrs) in probes.items():
     try:
         with contextlib.redirect_stdout(sink), contextlib.redirect_stderr(sink):
-            value = importlib.import_module(module)
+            if attrs and (module, attrs[0]) in from_bindings:
+                # Native from-import semantics load package submodules before
+                # looking up the exported attribute; getattr alone cannot.
+                value = __import__(module, fromlist=[attrs[0]])
+            else:
+                value = importlib.import_module(module)
             for attr in attrs:
                 value = getattr(value, attr)
-    except BaseException:
+    except ModuleNotFoundError as error:
+        if error.name and (target == error.name or target.startswith(error.name + ".")):
+            missing.append(target)
+        else:
+            unresolved.append(target)
+    except AttributeError:
         missing.append(target)
-print(json.dumps({"ok": True, "missing": sorted(set(missing))}, sort_keys=True))
+    except Exception:
+        unresolved.append(target)
+print(json.dumps({"ok": True, "missing": sorted(set(missing)), "unresolved": sorted(set(unresolved))}, sort_keys=True))
 `
 
 // ManagedPythonSourcePreflight is the bounded API-availability witness for one
@@ -77,7 +113,8 @@ print(json.dumps({"ok": True, "missing": sorted(set(missing))}, sort_keys=True))
 // It contains identifiers only; code and interpreter paths never leave the
 // kernel boundary.
 type ManagedPythonSourcePreflight struct {
-	Missing []string `json:"missing,omitempty"`
+	Missing    []string `json:"missing,omitempty"`
+	Unresolved []string `json:"unresolved,omitempty"`
 }
 
 // PreflightManagedPythonSource parses imports and imported attribute access in
@@ -131,9 +168,10 @@ func runManagedPythonSourceImportProbe(
 		)
 	}
 	var envelope struct {
-		OK      bool     `json:"ok"`
-		Error   string   `json:"error"`
-		Missing []string `json:"missing"`
+		OK         bool     `json:"ok"`
+		Error      string   `json:"error"`
+		Missing    []string `json:"missing"`
+		Unresolved []string `json:"unresolved"`
 	}
 	if err := json.Unmarshal(bytes.TrimSpace(stdout.Bytes()), &envelope); err != nil {
 		return ManagedPythonSourcePreflight{}, errors.New("managed Python source preflight returned an invalid result")
@@ -141,7 +179,7 @@ func runManagedPythonSourceImportProbe(
 	if !envelope.OK {
 		return ManagedPythonSourcePreflight{}, errors.New("managed Python source preflight could not parse the cell")
 	}
-	if len(envelope.Missing) > 64 {
+	if len(envelope.Missing)+len(envelope.Unresolved) > 64 {
 		return ManagedPythonSourcePreflight{}, errors.New("managed Python source preflight returned too many identifiers")
 	}
 	missing := make([]string, 0, len(envelope.Missing))
@@ -159,5 +197,10 @@ func runManagedPythonSourceImportProbe(
 			unique = append(unique, target)
 		}
 	}
-	return ManagedPythonSourcePreflight{Missing: unique}, nil
+	for _, target := range envelope.Unresolved {
+		if !managedImportName.MatchString(target) {
+			return ManagedPythonSourcePreflight{}, errors.New("managed Python source preflight returned an invalid identifier")
+		}
+	}
+	return ManagedPythonSourcePreflight{Missing: unique, Unresolved: envelope.Unresolved}, nil
 }

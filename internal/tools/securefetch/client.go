@@ -311,7 +311,7 @@ type compiledPolicy struct {
 }
 
 func compilePolicy(policy Policy) (compiledPolicy, error) {
-	if policy.MaxBytes <= 0 || policy.Timeout <= 0 || policy.MaxRedirects < 0 || len(policy.AllowedHosts) == 0 || len(policy.AcceptedMediaTypes) == 0 {
+	if policy.MaxBytes <= 0 || policy.Timeout < 0 || (!policy.LongLivedTransfer && policy.Timeout == 0) || policy.MaxRedirects < 0 || len(policy.AllowedHosts) == 0 || len(policy.AcceptedMediaTypes) == 0 {
 		return compiledPolicy{}, fetchError(CodeInvalidPolicy)
 	}
 	if policy.LongLivedTransfer {

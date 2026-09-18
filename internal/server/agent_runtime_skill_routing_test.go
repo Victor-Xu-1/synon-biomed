@@ -195,6 +195,11 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 		})
 	}
 	canonicalCommand := `python "` + script + `" --engine example-cli`
+	for _, command := range []string{canonicalCommand + "\n", "# reviewed entry\n" + canonicalCommand + "\n", canonicalCommand + " # execution\n"} {
+		if !commandExecutesManagedExecutionPack("managed-workflow", scienceCatalog.Capabilities[0].AcceptedEngines[0].ExecutionPack, command) {
+			t.Fatalf("single command formatting lost entrypoint identity: %q", command)
+		}
+	}
 	if tokens, ok := managedExecutionSingleShellCommandTokens(canonicalCommand); !ok {
 		t.Fatalf("canonical command did not parse as one argv vector: %q", canonicalCommand)
 	} else if len(tokens) != 4 || !agentRuntimeCommandIsSingleMaterializedSkillExecution("bash", canonicalCommand) ||
@@ -352,6 +357,12 @@ func TestManagedExecutionPackReceivesCanonicalTaskResponseLanguage(t *testing.T)
 		taskRun: run, kernel: &agentKernelContext{workspaceDir: workspace},
 	}
 	baseCommand := `python "` + script + `"`
+	for _, command := range []string{baseCommand + "\n", baseCommand + " # end\n"} {
+		input := gateway.normalizeAdmittedToolArguments("bash", map[string]any{"command": command})
+		if got := managedExecutionArgumentValues(stringValue(input["command"]))["--report-language"]; got != "zh" {
+			t.Fatalf("formatting swallowed runtime argument: %#v", input)
+		}
+	}
 	normalized := gateway.normalizeAdmittedToolArguments("bash", map[string]any{"command": baseCommand})
 	if got := stringValue(normalized["command"]); !strings.HasSuffix(got, "--report-language zh") {
 		t.Fatalf("canonical response language was not injected: %q", got)

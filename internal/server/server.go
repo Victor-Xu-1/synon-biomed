@@ -26,7 +26,6 @@ import (
 	kernelruntime "synon-go/internal/kernel"
 	"synon-go/internal/mcpdirectory"
 	"synon-go/internal/memoryconfig"
-	"synon-go/internal/networkpolicy"
 	"synon-go/internal/observability"
 	eventjournal "synon-go/internal/persistence/journal"
 	pairingstore "synon-go/internal/persistence/pairing"
@@ -580,7 +579,7 @@ func New(options Options) *Server {
 		condaHome:                        options.CondaHome,
 		condaEnvsPath:                    options.CondaEnvsPath,
 		configAllowedDomains:             append([]string(nil), options.ConfigAllowedDomains...),
-		configDeniedDomains:              append(networkpolicy.BuiltInDeniedPatterns(), options.ConfigDeniedDomains...),
+		configDeniedDomains:              append([]string(nil), options.ConfigDeniedDomains...),
 		configNetworkProxy:               strings.TrimSpace(options.ConfigNetworkProxy),
 		mcpX509Posture:                   options.MCPX509Posture,
 		hostGrantKernelFences:            map[string]bool{},

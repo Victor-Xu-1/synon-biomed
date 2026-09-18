@@ -84,7 +84,7 @@ func (staged *agentPublicScientificStagedFile) discard() {
 }
 
 type agentPublicScientificStageLock struct {
-	mu   sync.Mutex
+	gate chan struct{}
 	refs int
 }
 
@@ -93,24 +93,34 @@ var agentPublicScientificStageLocks = struct {
 	locks map[string]*agentPublicScientificStageLock
 }{locks: map[string]*agentPublicScientificStageLock{}}
 
-func acquireAgentPublicScientificStageLock(key string) func() {
+func acquireAgentPublicScientificStageLock(ctx context.Context, key string) (func(), error) {
 	agentPublicScientificStageLocks.mu.Lock()
 	lock := agentPublicScientificStageLocks.locks[key]
 	if lock == nil {
-		lock = &agentPublicScientificStageLock{}
+		lock = &agentPublicScientificStageLock{gate: make(chan struct{}, 1)}
 		agentPublicScientificStageLocks.locks[key] = lock
 	}
 	lock.refs++
 	agentPublicScientificStageLocks.mu.Unlock()
-	lock.mu.Lock()
-	return func() {
-		lock.mu.Unlock()
+	releaseRef := func() {
 		agentPublicScientificStageLocks.mu.Lock()
 		lock.refs--
 		if lock.refs == 0 {
 			delete(agentPublicScientificStageLocks.locks, key)
 		}
 		agentPublicScientificStageLocks.mu.Unlock()
+	}
+	select {
+	case lock.gate <- struct{}{}:
+		if err := ctx.Err(); err != nil {
+			<-lock.gate
+			releaseRef()
+			return nil, err
+		}
+		return func() { <-lock.gate; releaseRef() }, nil
+	case <-ctx.Done():
+		releaseRef()
+		return nil, ctx.Err()
 	}
 }
 
@@ -124,7 +134,10 @@ func (s *Server) fetchAndStageAgentPublicScientificFile(
 	if err != nil {
 		return nil, "", errAgentPublicScientificFileAuthority
 	}
-	unlock := acquireAgentPublicScientificStageLock(stageKey)
+	unlock, err := acquireAgentPublicScientificStageLock(ctx, stageKey)
+	if err != nil {
+		return nil, "", err
+	}
 	transferredLock := false
 	defer func() {
 		if !transferredLock {
@@ -230,7 +243,8 @@ func (s *Server) adoptExistingAgentPublicScientificPartial(
 		AllowedHosts: agentPublicScientificAllowedHosts(request), AllowedPorts: []string{"443"},
 		AcceptedMediaTypes: request.AcceptedTypes, MaxRedirects: 3,
 		AllowMissingContentType: true, IdentityEncoding: true,
-		MaxBytes: maximumBytes, Timeout: agentPublicScientificFileTimeout,
+		MaxBytes:          maximumBytes,
+		LongLivedTransfer: true, TransferIdleTimeout: agentPublicScientificTransferIdleTimeout,
 		UserAgent: "Synon-Biomed-scientific-data/1.0", PrefixBytes: info.Size(),
 	})
 	if err != nil {
@@ -318,7 +332,7 @@ func (s *Server) continueAgentPublicScientificDownload(
 			AllowedHosts: agentPublicScientificAllowedHosts(request), AllowedPorts: []string{"443"},
 			AcceptedMediaTypes: request.AcceptedTypes, MaxRedirects: 3,
 			AllowMissingContentType: true, IdentityEncoding: true,
-			MaxBytes: maximumBytes, Timeout: agentPublicScientificFileTimeout,
+			MaxBytes:          maximumBytes,
 			LongLivedTransfer: true, TransferIdleTimeout: agentPublicScientificTransferIdleTimeout,
 			UserAgent: "Synon-Biomed-scientific-data/1.0", RangeStart: *offset,
 			IfRange: stage.state.Validator,
@@ -381,7 +395,8 @@ func (s *Server) continueAgentPublicScientificDownload(
 		if diskMeasurement <= 0 {
 			diskMeasurement = response.ContentLength
 		}
-		if err := ensureAgentPublicScientificDiskSpace(workspaceDir, s.fileRoot, diskMeasurement, maximumBytes); err != nil {
+		guard := newAgentDownloadDiskGuard(workspaceDir, s.fileRoot)
+		if err := guard.check(*offset, max(1, diskMeasurement-*offset)); err != nil {
 			_ = response.Body.Close()
 			return err
 		}
@@ -398,7 +413,7 @@ func (s *Server) continueAgentPublicScientificDownload(
 			ctx, response.Body, *offset, stage.state.ExpectedTotal,
 		)
 		written, copyErr := io.Copy(
-			stage.file,
+			&agentDownloadDiskWriter{writer: stage.file, guard: guard, written: *offset},
 			io.LimitReader(&contextReader{ctx: ctx, reader: progressReader}, remaining+1),
 		)
 		progressReader.Complete()

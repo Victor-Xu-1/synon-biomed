@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -1130,6 +1131,15 @@ func kernelEnvironment(extra map[string]string) []string {
 			remember(key, value)
 		}
 	}
+	// Native R accepts only a positive integer timeout (zero/Inf are ignored).
+	// Use its representable ceiling, not an hours-long product cutoff. Setting
+	// this at the launch boundary also covers Rscript started by Bash/Python.
+	remember("R_DEFAULT_INTERNET_TIMEOUT", strconv.FormatInt(math.MaxInt32, 10))
+	// Pip's timeout is per socket read, not a transfer deadline. Mamba's
+	// minimum-rate heuristic must not reject a slow but progressing transfer;
+	// the existing process supervisor owns observable inactivity and cancel.
+	remember("PIP_TIMEOUT", strconv.Itoa(int(processsupervisor.DefaultInactivityTimeout/time.Second)))
+	remember("MAMBA_NO_LOW_SPEED_LIMIT", "1")
 	for key, value := range extra {
 		if key == "" || strings.ContainsAny(key, "=\x00\r\n") || strings.ContainsAny(value, "\x00") {
 			continue

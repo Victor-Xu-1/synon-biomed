@@ -96,3 +96,16 @@ func TestManagedEnvironmentProcessStreamsObservedProgress(t *testing.T) {
 		}
 	}
 }
+
+func TestManagedEnvironmentProcessKeepsSlowObservableWorkAlive(t *testing.T) {
+	manager := NewManager(Config{ManagedEnvironmentInstallerInactivityTimeout: 400 * time.Millisecond})
+	started := time.Now()
+	err := manager.runManagedEnvironmentProcessWithEnv(context.Background(), "/bin/sh", os.Environ(),
+		"-c", "for i in 1 2 3 4 5 6 7 8; do printf '.'; sleep 0.12; done")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if time.Since(started) < 800*time.Millisecond {
+		t.Fatal("slow operation did not run past multiple inactivity windows")
+	}
+}

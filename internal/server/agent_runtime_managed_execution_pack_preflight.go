@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"synon-go/internal/executionprep"
 	"synon-go/internal/sciencecapability"
 )
 
@@ -204,12 +205,12 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 				continue
 			}
 			values := managedExecutionArgumentValues(command)
-			normalizedCommand := command
+			var extra []string
 			for _, parameter := range pack.Parameters {
 				switch parameter.Evidence {
 				case "runtime-response-language":
 					if _, present := values[parameter.Argument]; !present {
-						normalizedCommand += " " + parameter.Argument + " " + managedExecutionResponseLanguage(g.taskRun)
+						extra = append(extra, parameter.Argument, managedExecutionResponseLanguage(g.taskRun))
 					}
 				case "selected-evidence-resolver":
 					if _, present := values[parameter.Argument]; present {
@@ -218,11 +219,15 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 					if selected, found := selectedEvidenceResolverParameterValue(
 						pack, g.taskRun.selectedEvidenceResolversSnapshot(),
 					); found {
-						normalizedCommand += " " + parameter.Argument + " " + selected
+						extra = append(extra, parameter.Argument, selected)
 					}
 				}
 			}
-			if normalizedCommand == command {
+			if len(extra) == 0 {
+				return input
+			}
+			normalizedCommand, ok := executionprep.AppendShellArguments(command, extra)
+			if !ok {
 				return input
 			}
 			normalized := copyMapAny(input)

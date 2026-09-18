@@ -39,9 +39,11 @@ func (m *Manager) PrepareExecutionSource(ctx context.Context, request executionp
 		command.Stdin = strings.NewReader(source)
 		stdout, stderr := newTailBuffer(4*executionprep.MaxSourceBytes), newTailBuffer(maxDiagnosticBytes)
 		command.Stdout, command.Stderr = stdout, stderr
-		if err := runWorkerProcess(command); err != nil {
-			return nil, errors.New("native source parser did not complete")
+		runErr := runWorkerProcess(command)
+		facts, decodeErr := executionprep.DecodeNative(language, []byte(stdout.String()))
+		if runErr != nil {
+			return facts, errors.New("native source parser did not complete")
 		}
-		return executionprep.DecodeNative(language, []byte(stdout.String()))
+		return facts, decodeErr
 	})
 }

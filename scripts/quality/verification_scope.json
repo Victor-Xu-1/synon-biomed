@@ -2,6 +2,26 @@
   "schema": "synon.verification-scope.v1",
   "groups": [
     {
+      "name": "source-hygiene",
+      "paths": [
+        "scripts/audit/audit-source-clean.sh",
+        "scripts/audit/audit-source-clean-test.sh",
+        "scripts/quality/repository_governance.py",
+        "scripts/quality/test_repository_governance.py",
+        "docs/governance/repository-maintenance.md",
+        ".github/ISSUE_TEMPLATE/bug_report.yml",
+        ".github/ISSUE_TEMPLATE/feature_request.yml",
+        ".github/ISSUE_TEMPLATE/config.yml"
+      ],
+      "frontend": false,
+      "checks": [
+        ["python3", "-B", "-m", "unittest", "scripts.quality.test_repository_governance"],
+        ["python3", "-B", "scripts/quality/repository_governance.py"],
+        ["bash", "scripts/audit/audit-source-clean-test.sh"],
+        ["bash", "scripts/audit/audit-source-clean.sh"]
+      ]
+    },
+    {
       "name": "release-package",
       "paths": [
         ".github/workflows/packages.yml",

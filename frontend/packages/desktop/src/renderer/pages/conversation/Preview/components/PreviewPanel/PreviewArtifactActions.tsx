@@ -632,7 +632,13 @@ export const PreviewArtifactActions: React.FC<PreviewArtifactActionsProps> = ({
 
 const currentConversationId = (): string | null => {
   const match = window.location.hash.match(/^#\/conversation\/([^/?#]+)/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
+  if (!match?.[1]) return null;
+  try {
+    const decoded = decodeURIComponent(match[1]);
+    return /^[A-Za-z0-9_-]{1,256}$/.test(decoded) ? decoded : null;
+  } catch {
+    return null;
+  }
 };
 
 type ActionMenuItemProps = {

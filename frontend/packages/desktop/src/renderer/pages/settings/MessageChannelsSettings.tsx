@@ -361,8 +361,12 @@ const MessageChannelCard: React.FC<{
 };
 
 function createSessionKey(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-  return `message-channel-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  if (typeof crypto === 'undefined') throw new Error('Secure randomness is unavailable');
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  if (typeof crypto.getRandomValues !== 'function') throw new Error('Secure randomness is unavailable');
+  const values = new Uint32Array(2);
+  crypto.getRandomValues(values);
+  return `message-channel-${Date.now()}-${Array.from(values, (value) => value.toString(16).padStart(8, '0')).join('')}`;
 }
 
 export default MessageChannelsSettings;

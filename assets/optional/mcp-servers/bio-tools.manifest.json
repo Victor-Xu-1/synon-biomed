@@ -855,8 +855,8 @@
         },
         {
             "path": "lib/mcp_biorxiv/server.py",
-            "sha256": "5836986e20124b432f7021ca0c2be41886abbc9d3cb9d5cec9e284cd98435a8a",
-            "bytes": 10961
+            "sha256": "d6871ec6565e27907a4b4c068da84891cdd6fa511a6b6a4bd0efe0c8a239b80d",
+            "bytes": 11147
         },
         {
             "path": "lib/mcp_cancer_models/__init__.py",
@@ -1035,8 +1035,8 @@
         },
         {
             "path": "lib/mcp_literature/server.py",
-            "sha256": "90a15d1b02f01bc7b7d774d0794b7a104ca8849c9358cb23a711bbf09d95fb13",
-            "bytes": 17077
+            "sha256": "9578affd60226e8599bc239ee2134b990067c2c5fd992827ef57252e1ae39f09",
+            "bytes": 17416
         },
         {
             "path": "lib/mcp_omics_archives/__init__.py",

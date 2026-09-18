@@ -13,18 +13,26 @@ Do not add a second `VERSION` file or hard-coded product version.
 
 The pinned Release Please action opens or updates one version PR after changes
 land on `main`. It never merges that PR or publishes a release by itself.
-Use Conventional Commit titles when squash-merging ordinary PRs:
+The current release line is deliberately limited to `v0.1.x`: every automated
+proposal advances only the patch component, regardless of whether the change
+is a fix, feature, or marked incompatible. Use Conventional Commit titles when
+squash-merging ordinary PRs:
 
-- `fix:` advances the patch version.
-- `feat:` advances the minor version.
-- `feat!:` or a `BREAKING CHANGE:` footer marks an incompatible change.
-  Before 1.0, this advances the minor version; from 1.0 onward it advances major.
+- `fix:`, `feat:`, `feat!:` and a `BREAKING CHANGE:` footer are all recorded
+  in the changelog and advance the `v0.1.x` patch version.
+- `feat!:` or a `BREAKING CHANGE:` footer still requires maintainer review for
+  compatibility, but does not silently move the project to `v0.2.0`.
 - Documentation and maintenance commits do not automatically force a release.
+
+Moving to a new minor line (for example `v0.2.0`) is a deliberate release
+policy change and requires an explicit maintainer decision followed by a
+reviewed configuration PR; it is not inferred from a commit type.
 
 The version PR updates `product-identity.json`, its frontend projections and
 `docs/CHANGELOG.md`. The file `.github/release-please-manifest.json` is bot
 bookkeeping only; no runtime reads it. The identity gate prevents projection
-drift. `initial-version` applies only to the first release, not every release.
+drift. The version configuration and identity gate reject versions outside
+`0.1.x`. `initial-version` applies only to the first release, not every release.
 Published versions are never moved; fixes are delivered in a new version.
 
 After reviewing and merging a version PR, run the existing full quality
@@ -55,7 +63,8 @@ and [GitHub App token action](https://github.com/actions/create-github-app-token
 
 ## Release promotion / 正式发布
 
-- Use Semantic Versioning: `MAJOR.MINOR.PATCH`.
+- Use Semantic Versioning: `MAJOR.MINOR.PATCH`; the active policy currently
+  permits only `0.1.PATCH` releases.
 - Tracked source defines only the static [release policy](release-policy.json);
   it can never grant current release or tag authorization.
 - Build release candidates once in the full quality workflow. Bind the exact
@@ -71,7 +80,7 @@ and [GitHub App token action](https://github.com/actions/create-github-app-token
 - Bind development evidence to a commit SHA. A branch, workflow artifact,
   candidate manifest, or build output is not a release.
 
-- 使用语义化版本 `MAJOR.MINOR.PATCH`。
+- 使用语义化版本 `MAJOR.MINOR.PATCH`；当前活动策略只允许 `0.1.PATCH` 发布。
 - 源码只保存静态 [发布策略](release-policy.json)，不能授予当前发布或 Tag 权限。
 - 完整质量工作流只构建一次候选制品，并由 `RELEASE_CANDIDATE.json`
   绑定源码提交/tree 及每个文件的名称、大小和 SHA-256。

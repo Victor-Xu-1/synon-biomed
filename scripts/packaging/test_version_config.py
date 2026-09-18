@@ -13,14 +13,16 @@ class VersionConfigTest(unittest.TestCase):
         self.assertEqual(set(config["packages"]), {"."})
         product = config["packages"]["."]
         self.assertEqual(product["release-type"], "go")
+        self.assertEqual(product["versioning"], "always-bump-patch")
+        self.assertRegex(product["initial-version"], r"^0\.1\.(?:0|[1-9][0-9]*)$")
         self.assertTrue(product["skip-github-release"])
         self.assertFalse(product["include-component-in-tag"])
         self.assertTrue(product["include-v-in-tag"])
         self.assertNotIn("release-as", product)
         self.assertNotIn("version-file", product)
         self.assertEqual(product["changelog-path"], "docs/CHANGELOG.md")
-        self.assertTrue(product["bump-minor-pre-major"])
-        self.assertFalse(product["bump-patch-for-minor-pre-major"])
+        self.assertNotIn("bump-minor-pre-major", product)
+        self.assertNotIn("bump-patch-for-minor-pre-major", product)
 
     def test_all_json_version_projections_are_updated_and_dependencies_are_not(self):
         config = json.loads((ROOT / ".github/release-please-config.json").read_text())
@@ -40,6 +42,7 @@ class VersionConfigTest(unittest.TestCase):
     def test_bot_bookkeeping_is_not_a_runtime_dependency(self):
         manifest = json.loads((ROOT / ".github/release-please-manifest.json").read_text())
         authority = json.loads((ROOT / "product-identity.json").read_text())
+        self.assertRegex(authority["version"], r"^0\.1\.(?:0|[1-9][0-9]*)$")
         self.assertEqual(manifest, {".": authority["version"]})
         self.assertNotIn("release-please", (ROOT / "identity.go").read_text())
 

@@ -324,8 +324,15 @@ class ProductIdentityGateTests(unittest.TestCase):
             downgraded = identity(); downgraded["version"] = "4.0.2"
             write_json(repo / "product-identity.json", downgraded)
             write_json(repo / "package.json", {"version": "4.0.2", "description": "Synon Biomed workbench"})
-            with self.assertRaisesRegex(gate.IdentityError, "identity_authority_legacy_version"):
+            with self.assertRaisesRegex(gate.IdentityError, "identity_authority_version_line_invalid"):
                 gate.audit(repo, downgraded, reference(), release_policy(), matrix())
+
+    def test_active_release_line_rejects_unapproved_minor_bump(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory); seed(repo)
+            future = identity(); future["version"] = "0.2.0"
+            with self.assertRaisesRegex(gate.IdentityError, "identity_authority_version_line_invalid"):
+                gate.audit(repo, future, reference(), release_policy(), matrix())
 
     def test_dead_embed_and_hardcoded_buildinfo_are_ineligible(self):
         with tempfile.TemporaryDirectory() as directory:

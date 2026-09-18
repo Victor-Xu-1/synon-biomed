@@ -19,6 +19,7 @@ REFERENCE_SCHEMA = "synon.governance.product-identity-reference.v1"
 RELEASE_POLICY_SCHEMA = "synon.governance.release-policy.v1"
 MATRIX_SCHEMA = "synon.governance.product-identity-consumers.v4"
 SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
+ACTIVE_RELEASE_LINE = re.compile(r"^0\.1\.(0|[1-9][0-9]*)$")
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SCHEMA_CONST = re.compile(r"(?m)^\s*const\s+workspaceSchemaVersion\s*=\s*([0-9]+)\s*$")
 RETIRED_VERSIONED_RUNTIME_PREFIXES = (
@@ -248,6 +249,8 @@ def validate_authority(authority: dict[str, Any]) -> None:
         raise IdentityError("identity_authority_value_invalid")
     if type(version) is not str or not SEMVER.fullmatch(version):
         raise IdentityError("identity_authority_value_invalid")
+    if not ACTIVE_RELEASE_LINE.fullmatch(version):
+        raise IdentityError("identity_authority_version_line_invalid")
     if type(slug) is not str or not SLUG.fullmatch(slug):
         raise IdentityError("identity_authority_value_invalid")
 

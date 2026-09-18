@@ -27,6 +27,14 @@ exposing sensitive report contents.
 
 ## Safe development
 
+File-tool mutations resolve paths within their configured workspace and perform
+I/O through an opened directory handle. Relative and absolute symbolic links
+are supported only when their targets remain inside that workspace. A path
+component changed after validation must not redirect a mutation outside it.
+Root-directory aliases and overlapping destructive directory transfers are
+rejected. This file-tool boundary is not an operating-system sandbox for shell
+commands, scientific kernels, or other explicitly authorized host processes.
+
 Never commit tokens, private keys, local databases, runtime caches, or user
 files. Changes to authentication, sandboxing, external network access, file
 handling, or release automation require focused tests and an explicit security

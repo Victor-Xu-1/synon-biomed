@@ -2,6 +2,20 @@
   "schema": "synon.verification-scope.v1",
   "groups": [
     {
+      "name": "release-container",
+      "paths": [
+        ".github/workflows/packages.yml",
+        "scripts/packaging/Dockerfile",
+        "scripts/packaging/release_container.py",
+        "scripts/packaging/container_smoke.py",
+        "scripts/packaging/test_release_container.py"
+      ],
+      "frontend": false,
+      "checks": [
+        ["python3", "-B", "-m", "unittest", "scripts.packaging.test_release_container"]
+      ]
+    },
+    {
       "name": "frontend-provenance",
       "paths": [
         "scripts/audit/audit_frontend_migration.py",

@@ -60,6 +60,18 @@ investigate, compare, and act — without losing the trail from question to resu
 Synon Biomed 面向需要可靠研究环境的团队：从问题、调查、比较到结果，
 每一步都保留清晰的研究脉络。
 
+## Releases and containers / 发布与容器
+
+Versioned downloads are published on [GitHub Releases](https://github.com/Victor-Xu-1/synon-biomed/releases).
+Each release includes Linux/Windows archives and SHA-256 checksums. The matching
+Linux container is published to [GitHub Packages](https://github.com/Victor-Xu-1/synon-biomed/pkgs/container/synon-biomed)
+after the release archive passes container smoke checks. If a version is absent,
+it has not been published; source downloads are not prebuilt installers.
+
+版本化安装包和 SHA-256 校验文件在 Releases 提供；同版本 Linux 容器在通过烟测后
+发布到 Packages。未显示的版本尚未发布，源码下载不等于预编译安装包。
+See [installation, container requirements and upgrade guidance](docs/operations-runbook.md).
+
 ## Run from source / 从源码运行
 
 The community source is publicly available. Use Ubuntu or WSL with Git,

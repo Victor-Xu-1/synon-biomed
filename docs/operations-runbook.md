@@ -192,6 +192,52 @@ must additionally verify the full workflow conclusion, main SHA, unused receipt,
 absent tag, isolated release credentials, and enabled GitHub Release
 immutability. Promotion attaches these exact files without rebuilding.
 
+## Container installation
+
+The GHCR image is a Linux/amd64 distribution of the same verified release
+archive, with system prerequisites added. It is not a preinstalled collection
+of all scientific tools or model weights. Install optional environments through
+the application's existing environment management after startup.
+
+Select an actually published version from GitHub Packages. Prefer its digest
+for deployment. For example, after `v0.1.1` has been published:
+
+```bash
+docker pull ghcr.io/victor-xu-1/synon-biomed:v0.1.1
+docker volume create synon-biomed-data
+read -rsp 'Operator password: ' SYNON_LINK_AUTH_PASSWORD
+export SYNON_LINK_AUTH_PASSWORD
+docker run --detach --name synon-biomed \
+  --publish 127.0.0.1:8765:8765 \
+  --mount type=volume,source=synon-biomed-data,target=/var/lib/synon-biomed \
+  --env SYNON_LINK_AUTH_USERNAME=operator \
+  --env SYNON_LINK_AUTH_PASSWORD \
+  ghcr.io/victor-xu-1/synon-biomed:v0.1.1
+unset SYNON_LINK_AUTH_PASSWORD
+docker logs synon-biomed
+curl --fail http://127.0.0.1:8765/api/health
+```
+
+If 8765 is already occupied, select a different host port. The image runs as UID
+10001, requires authentication for its internal non-loopback listener, and
+stores all persistent state in the volume. Docker administrators can inspect
+container environment variables; use a protected `SYNON_CONFIG` file mounted
+read-only for unattended installations. Never bake credentials into an image.
+
+Local scientific execution still requires the host's kernel/sandbox support.
+Nested user namespaces, GPU devices and external compute access are not granted
+by installing the image. Do not use `--privileged`, mount the host Docker socket,
+or disable application confinement to make an execution check pass. Use the
+native Linux/WSL installation when the container host cannot provide the
+required isolation. Container smoke checks cover service startup, packaged Web
+assets, authentication and persistent state; they are not full scientific-task
+or GPU acceptance.
+
+Before an upgrade, stop the container and back up its volume. Start the new
+version against a restored copy first. Keep the previous image digest and
+matching data backup: changing image versions does not reverse database
+migrations. Removing a container is not permission to remove its data volume.
+
 ## Verify an archive
 
 The installer verifies the package manifest before replacing an installation. For an extracted package:

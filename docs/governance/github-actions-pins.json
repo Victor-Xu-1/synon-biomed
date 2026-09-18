@@ -7,19 +7,25 @@
   "bootstrap_runner": "ubuntu-24.04",
   "gate_step_name": "Verify immutable GitHub Actions policy",
   "allowed_workflows": [
+    ".github/workflows/packages.yml",
     ".github/workflows/quality-main.yml",
     ".github/workflows/quality-pr.yml",
     ".github/workflows/quality.yml"
   ],
   "workflow_bootstrap_jobs": {
+    ".github/workflows/packages.yml": "package-policy",
     ".github/workflows/quality-main.yml": "main-quality",
     ".github/workflows/quality-pr.yml": "pr-quality",
     ".github/workflows/quality.yml": "p0-quality"
   },
   "workflow_checkout_contracts": {
+    ".github/workflows/packages.yml": {"ref": "${{ github.sha }}", "fetch_depth": 1},
     ".github/workflows/quality-main.yml": {"ref": "${{ github.sha }}", "fetch_depth": 2},
     ".github/workflows/quality-pr.yml": {"ref": "${{ github.sha }}", "fetch_depth": 2},
     ".github/workflows/quality.yml": {"ref": "${{ github.sha }}", "fetch_depth": 1}
+  },
+  "package_publishing": {
+    ".github/workflows/packages.yml": {"job": "publish-container"}
   },
   "required_aggregate_jobs": {
     ".github/workflows/quality-main.yml": {

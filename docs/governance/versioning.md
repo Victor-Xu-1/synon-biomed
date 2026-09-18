@@ -40,6 +40,33 @@ Do not add a second `VERSION` file or hard-coded product version.
 - Installers impose no fixed archive-size ceiling. Archives must still pass safe-path, regular-file, checksum, release-manifest, and product-identity checks; operators must provide sufficient disk space.
 - 安装器不设置固定包体积上限；包仍必须通过安全路径、普通文件类型、校验和、发布清单与产品身份验证，并由操作者保证目标磁盘空间充足。
 
+## Container publication / 容器发布
+
+The `release: published` event triggers
+[`.github/workflows/packages.yml`](../../.github/workflows/packages.yml).
+It checks the immutable release, exact source revision, successful full-quality
+run and every candidate digest before wrapping the Linux archive. Application
+binaries and Web assets are not rebuilt. The image adds a digest-pinned OS base
+and runtime prerequisites, then passes real startup, authentication, persistence
+and restart smoke checks before pushing to GHCR.
+
+Only the publishing job receives `packages: write`; normal PR/main CI stays
+read-only. Publication uses the short-lived `GITHUB_TOKEN`, not a personal token.
+The OCI source label links the image to this repository. Dependabot proposes
+base-image digest updates as ordinary PRs.
+
+Use `ghcr.io/victor-xu-1/synon-biomed:vMAJOR.MINOR.PATCH` or a digest, not a
+moving `latest` tag. An existing version is never overwritten. A failed job
+before push can be rerun; after any partial push, inspect the package first.
+Publishing a release through automation must account for GitHub's rule that
+events created using `GITHUB_TOKEN` do not trigger another workflow. The release
+operator therefore publishes through an explicitly authorized maintainer session.
+
+For the first package, check its visibility and repository linkage in GitHub
+Packages settings. GitHub may initially create it as private even for a public
+source repository. A release and a container are separate delivery results:
+verify an anonymous pull before announcing a public container.
+
 ## Paths and compatibility / 路径与兼容
 
 Current source and documentation paths use stable responsibility-based names without a product-version suffix.

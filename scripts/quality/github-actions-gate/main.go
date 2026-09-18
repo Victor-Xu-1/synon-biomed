@@ -68,6 +68,7 @@ type actionsPolicy struct {
 	WorkflowBootstrapJobs map[string]string            `json:"workflow_bootstrap_jobs,omitempty"`
 	WorkflowCheckouts     map[string]checkoutContract  `json:"workflow_checkout_contracts,omitempty"`
 	RequiredAggregates    map[string]aggregateContract `json:"required_aggregate_jobs,omitempty"`
+	PackagePublishing     map[string]packageContract   `json:"package_publishing,omitempty"`
 	Actions               map[string]actionPin         `json:"actions"`
 	Requirements          policyRequirements           `json:"requirements"`
 	RequiredRunCommands   []string                     `json:"required_run_commands"`
@@ -86,6 +87,7 @@ type workflowState struct {
 	bootstrapJobs   int
 	aggregateJobs   int
 	currentWorkflow string
+	currentJob      string
 }
 
 func loadPolicy(path string) (actionsPolicy, error) {
@@ -166,6 +168,13 @@ func validatePolicy(policy actionsPolicy) error {
 		return errors.New("actions_policy_workflow_invalid")
 	}
 	requirements := policy.Requirements
+	for workflow, contract := range policy.PackagePublishing {
+		if !containsString(policy.AllowedWorkflows, workflow) ||
+			!regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_-]*$`).MatchString(contract.Job) ||
+			contract.Job == policy.WorkflowBootstrapJobs[workflow] {
+			return errors.New("actions_package_policy_invalid")
+		}
+	}
 	if !requirements.RemoteActionsFullSHA || !requirements.VersionCommentRequired ||
 		!requirements.UnlistedRemoteActionForbidden || !requirements.ContinueOnErrorMustBeFalse ||
 		!requirements.ShellOrListForbidden || !requirements.PersistCredentialsFalseRequired ||
@@ -348,6 +357,11 @@ func validateWorkflow(relative string, root *yaml.Node, state *workflowState) er
 	if !exactRootPermissions(root) {
 		return errors.New("actions_root_permissions_invalid")
 	}
+	if _, publishing := state.policy.PackagePublishing[relative]; publishing {
+		if err := validatePackageTrigger(root); err != nil {
+			return err
+		}
+	}
 	jobs := mappingValue(root, "jobs")
 	if jobs == nil || jobs.Kind != yaml.MappingNode || len(jobs.Content) == 0 {
 		return errors.New("actions_workflow_invalid")
@@ -360,6 +374,7 @@ func validateWorkflow(relative string, root *yaml.Node, state *workflowState) er
 	aggregateFound := false
 	for index := 0; index < len(jobs.Content); index += 2 {
 		jobID := jobs.Content[index].Value
+		state.currentJob = jobID
 		bootstrap := jobID == bootstrapJob
 		job := jobs.Content[index+1]
 		if requiresAggregate && jobID == aggregate.JobID {
@@ -434,7 +449,11 @@ func validateJob(job *yaml.Node, state *workflowState, bootstrap bool) error {
 	if mappingValue(job, "services") != nil {
 		return errors.New("actions_services_forbidden")
 	}
-	if mappingValue(job, "permissions") != nil {
+	if packagePublisher(state) {
+		if !exactPackagePermissions(mappingValue(job, "permissions")) {
+			return errors.New("actions_package_permissions_invalid")
+		}
+	} else if mappingValue(job, "permissions") != nil {
 		return errors.New("actions_job_permissions_forbidden")
 	}
 	runsOn := mappingValue(job, "runs-on")
@@ -478,7 +497,7 @@ func validateStep(step *yaml.Node, state *workflowState, bootstrapJob, requireCh
 		(!state.policy.Requirements.UnconditionalTestEvidenceAllowed || requireCheckout || requireGate || !unconditionalTestEvidenceStep(step)) {
 		return errors.New("actions_conditional_forbidden")
 	}
-	if mappingValue(step, "env") != nil {
+	if mappingValue(step, "env") != nil && !packageTokenStep(step, state) {
 		return errors.New("actions_environment_override_forbidden")
 	}
 	if err := validateContinueOnError(step); err != nil {

@@ -481,6 +481,16 @@ def _template(value: str, derived: dict[str, str]) -> str:
     return result
 
 
+def _identity_literal_present(text: str, derived: dict[str, str], versions: list[str]) -> bool:
+    # A complete version token must not match a component of an IPv4/CIDR value
+    # or a longer dependency version when the product advances to that number.
+    return (
+        any(derived[key] in text for key in ("display_name", "machine_slug"))
+        or any(re.search(r"(?<![0-9.])" + re.escape(version) + r"(?![0-9.])", text)
+               for version in [derived["version"], *versions])
+    )
+
+
 def audit(
     repo: pathlib.Path,
     authority: dict[str, Any],
@@ -529,9 +539,7 @@ def audit(
                 and '_ "embed"' in code
                 and re.search(r"(?m)^\s*var\s+embeddedAuthority\s+\[\]byte\s*$", code) is not None
                 and re.search(r"(?m)^\s*var\s+current\s*=\s*mustDecode\(embeddedAuthority\)\s*$", code) is not None
-                and all(value not in code for value in (
-                    derived["display_name"], derived["version"], derived["machine_slug"],
-                ))
+                and not _identity_literal_present(code, derived, [])
             )
         elif kind == "go-derived-consumer" and set(projection) == {"path", "kind", "required_markers"}:
             markers = projection.get("required_markers")
@@ -546,9 +554,9 @@ def audit(
             except (OSError, UnicodeDecodeError) as exc:
                 raise IdentityError("identity_projection_read_invalid") from exc
             code, _ = _go_source_without_comments(text)
-            aligned = all(marker in code for marker in markers) and all(value not in code for value in (
-                derived["display_name"], derived["version"], derived["machine_slug"], *matrix["legacy_version_terms"],
-            ))
+            aligned = all(marker in code for marker in markers) and not _identity_literal_present(
+                code, derived, matrix["legacy_version_terms"],
+            )
         elif kind == "text-derived-consumer" and set(projection) == {"path", "kind", "required_markers"}:
             markers = projection.get("required_markers")
             if (
@@ -561,9 +569,9 @@ def audit(
                 text = _safe(repo, path, "identity_projection_path_invalid").read_text(encoding="utf-8")
             except (OSError, UnicodeDecodeError) as exc:
                 raise IdentityError("identity_projection_read_invalid") from exc
-            aligned = all(marker in text for marker in markers) and all(value not in text for value in (
-                derived["display_name"], derived["version"], derived["machine_slug"], *matrix["legacy_version_terms"],
-            ))
+            aligned = all(marker in text for marker in markers) and not _identity_literal_present(
+                text, derived, matrix["legacy_version_terms"],
+            )
         else:
             raise IdentityError("identity_projection_shape_invalid")
         if key in checked:

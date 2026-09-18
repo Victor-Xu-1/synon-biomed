@@ -347,6 +347,19 @@ class ProductIdentityGateTests(unittest.TestCase):
             self.assertEqual(code, 3)
             self.assertIn("internal/buildinfo/buildinfo.go", {item["path"] for item in result["drifts"]})
 
+    def test_derived_consumer_distinguishes_version_tokens_from_network_addresses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory); seed(repo)
+            path = repo / "internal/buildinfo/buildinfo.go"
+            original = path.read_text()
+            path.write_text(original + '\nvar network = "192.0.1.0/24"\n')
+            result = gate.audit(repo, identity(), reference(), release_policy(), matrix())
+            self.assertTrue(result["aligned"], result["drifts"])
+            path.write_text(original + '\nvar frozen = "agent/v0.1.0"\n')
+            result = gate.audit(repo, identity(), reference(), release_policy(), matrix())
+            self.assertFalse(result["aligned"])
+            self.assertIn("internal/buildinfo/buildinfo.go", {item["path"] for item in result["drifts"]})
+
     def test_same_tree_binding_rejects_tamper_and_path_escape(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = pathlib.Path(directory); seed(repo, commit=True)

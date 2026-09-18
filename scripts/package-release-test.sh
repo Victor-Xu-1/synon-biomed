@@ -286,6 +286,7 @@ package_web_files=$(find "$package_dir" -type f ! -path "$package_dir/web/*" \( 
   -o -iname '*.vue' -o -iname '*.svelte' -o -iname '*.astro' \
 \) -printf '%P\n' | sort)
 expected_package_web_files=$(printf '%s\n' \
+  'docs/licenses/frontend-dependencies/jszip@3.10.1/lib/license_header.js' \
   'skills/synonbiomed/skill-creator/assets/eval_review.html' \
   'skills/synonbiomed/skill-creator/eval-viewer/viewer.html' | sort)
 if [[ "$package_web_files" != "$expected_package_web_files" ]]; then

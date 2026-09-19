@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "2362069d2695a682ba41097033a67b3825f3a09a5a945343a69417bba42b0e0c",
+  "adaptationFingerprintSHA256": "665d213e2a02dffcc04565e0cd3007db04c48edb99bbbb28bb9051849a5b60f0",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "35dd0d6730faa6eba8c7936b201263d22f7e1091afbda780a5025bb2c1345b0c",
+  "additionFingerprintSHA256": "089bce7f78158947d8c33213d323a3edb296473d1f69b3eae05ba452e01bfc1d",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 406,
@@ -80,8 +80,8 @@
     {
       "path": "packages/desktop/src/common/chat/normalizeToolCall.ts",
       "sourceSHA256": "f29b817f1c1a91fdfca53d54fa6d00ce9e0e92d2fcafc0a5b34221e03eb5e41e",
-      "targetSHA256": "41f243c56fbf724fc524d5575ea3d5cddb5dcf43bd3a0469cf66e06e2d232e34",
-      "bytes": 16511,
+      "targetSHA256": "ca2f8de84dc07c3a0592e6fe83f32c5fb1160af418966b9fa9abaac10946a9c5",
+      "bytes": 16702,
       "reason": "Normalize the canonical cancelled tool-call status without guessing terminal state."
     },
     {
@@ -2362,8 +2362,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts",
       "sourceSHA256": "d46e67e7ae9b1a4c53252446bb8e2c6d12141deaac2d253b8c1922afa35ab5d9",
-      "targetSHA256": "85a540b8998d7d197c991e198ddd55f3dfbfbf399c919df59b5128c1982e5213",
-      "bytes": 235812,
+      "targetSHA256": "677a0c655e4b3d583775fad1971ea8f89e06917ef3db7e5fdfad10d4f44b0010",
+      "bytes": 235860,
       "reason": "Regenerate typed locale keys for the unified structure controls and first-run scientific-runtime catalog."
     },
     {
@@ -2432,8 +2432,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/messages.json",
       "sourceSHA256": "979d2f26c0896cfa1633a6123c5053deeb72741747136c25f461498dbe910986",
-      "targetSHA256": "aef5d33c1495fd4bd957b735edba0eb65e5170fef3186dd723ac285a09aaef6a",
-      "bytes": 20445,
+      "targetSHA256": "7372ef49fb15753562f50bea9b42bb6dbaeac212231416a54d6d5580d5b1907a",
+      "bytes": 20487,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2523,8 +2523,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/messages.json",
       "sourceSHA256": "899c3e67af597e892606fac249fcaabb066316bc3190ee4d6f16a3947222d4bf",
-      "targetSHA256": "fa5dfd721a819c3431eb63ceff45070ed0d1838761ed5acccfb43296ccf8f2ce",
-      "bytes": 20092,
+      "targetSHA256": "aa3182be96396f216a189d6567b197269553934321ad1752eec0311edd2eece6",
+      "bytes": 20131,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -3244,8 +3244,8 @@
     {
       "path": "tests/unit/chat/toolStepSummaryModel.test.ts",
       "sourceSHA256": "7387d2f52551a06e1f305db5e01930b6721c6c1d0a51b39730db1db13127875b",
-      "targetSHA256": "e98d7b44b367e77b5c4f987f43e11c87856f98e39d95087ec8d71d3648249a76",
-      "bytes": 17606,
+      "targetSHA256": "5c3fe7d68fd4b12ac3d1a8dd577cf89ba57f163ed496b1b44e26d3147a406130",
+      "bytes": 18669,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -6949,8 +6949,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/toolProgressPresentation.ts",
-      "sha256": "9c4cf3848b8636911084aa0f00bcf2e9c21516e8b40f4298b839b54e57e871a6",
-      "bytes": 8639,
+      "sha256": "3873b91e9cda7a038efc504cdb1343655e5e3c0b95acb8940ef3afd88fcbfee2",
+      "bytes": 8938,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {

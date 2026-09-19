@@ -124,7 +124,9 @@ export function buildToolProgressPublicPresentation(
       ? byteCountLabel(progress.bytesCompleted)
       : null;
   const remaining = hasByteProgress ? byteCountLabel(progress.bytesTotal! - progress.bytesCompleted!) : null;
+  const processLabel = typeof progress.process === 'string' && progress.process ? progress.process : null;
   const detailParts = [phaseLabel];
+  if (processLabel) detailParts.push(processLabel);
   if (phasePercent !== null)
     detailParts.push(
       toolPublicDetailText(
@@ -146,6 +148,12 @@ export function buildToolProgressPublicPresentation(
       value: phaseLabel,
     },
   ];
+  if (processLabel) {
+    rows.push({
+      label: toolPublicDetailText(chinese, 'progressProcess'),
+      value: processLabel,
+    });
+  }
   if (overallPercent !== null) {
     rows.push({
       label: toolPublicDetailText(chinese, 'progressOverall'),

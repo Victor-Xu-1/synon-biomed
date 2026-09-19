@@ -377,6 +377,7 @@
     "progressDownloadResult": "Download {{percent}}%",
     "progressPhaseResult": "Phase {{percent}}%",
     "progressCurrentPhase": "Current phase",
+    "progressProcess": "Running process",
     "progressOverall": "Milestones completed",
     "progressPhase": "Phase progress",
     "progressDownload": "Download progress",

@@ -2194,6 +2194,7 @@ export type I18nKey =
   | 'messages.toolPublicDetail.progressPhaseResult'
   | 'messages.toolPublicDetail.progressPreparingEnvironment'
   | 'messages.toolPublicDetail.progressPreparingTransaction'
+  | 'messages.toolPublicDetail.progressProcess'
   | 'messages.toolPublicDetail.progressProcessing'
   | 'messages.toolPublicDetail.progressPublishingDownload'
   | 'messages.toolPublicDetail.progressPublishingEnvironment'

@@ -55,6 +55,9 @@ func publicToolProgressPayload(update toolprogress.Update, elapsed time.Duration
 	if update.Phase == "" {
 		result["phase"] = "processing"
 	}
+	if update.Process != "" {
+		result["process"] = update.Process
+	}
 	if update.Message != "" {
 		result["message"] = strings.TrimSpace(truncateUTF8ByBytes(update.Message, 240))
 	}

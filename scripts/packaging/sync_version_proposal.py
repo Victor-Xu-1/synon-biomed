@@ -17,7 +17,8 @@ else:
 
 
 def api(repo: str, path: str, method: str = "GET", body: dict | None = None):
-    command = ["gh", "api", "--method", method, f"repos/{repo}/{path}"]
+    endpoint = f"repos/{repo}" + (f"/{path}" if path else "")
+    command = ["gh", "api", "--method", method, endpoint]
     if body is not None:
         command += ["--input", "-"]
     result = subprocess.run(command, input=json.dumps(body) if body is not None else None,

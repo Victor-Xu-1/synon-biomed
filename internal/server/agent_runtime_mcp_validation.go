@@ -1276,6 +1276,16 @@ func agentRuntimeToolErrorValue(err error) map[string]any {
 	if err.Error() == "edit_file old_string was not found" || err.Error() == "edit_file old_string must occur exactly once" {
 		return agentRuntimeEditConflictValue()
 	}
+	if errors.Is(err, errAgentFileContentTypeMismatch) || errors.Is(err, errAgentFileStructureInvalid) {
+		value["code"] = "file_content_type_mismatch"
+		if errors.Is(err, errAgentFileStructureInvalid) {
+			value["code"] = "invalid_file_structure"
+		}
+		value["executed"] = false
+		value["retryable"] = true
+		value["recovery"] = "The invalid content was not written. Read the existing file; if it already contains the requested data, save it directly. Otherwise supply valid content for the declared format or use the correct format extension."
+		return value
+	}
 	if strings.Contains(strings.ToLower(err.Error()), "requires a contact email address") {
 		value["code"] = "contact_email_required"
 		value["message"] = "A contact email must be configured before this source can be queried."

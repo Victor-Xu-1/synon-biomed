@@ -288,6 +288,12 @@ func (s *Server) executeAgentWorkspaceEditFile(
 		originalSHA256 = hex.EncodeToString(originalDigest[:])
 	}
 	finalDigest := hex.EncodeToString(finalHasher.Sum(nil))
+	if err := validateAgentFileContentType(target.displayPath, staging.file); err != nil {
+		return nil, err
+	}
+	if err := validateAgentSavedArtifactStructure(target.displayPath, staging.file); err != nil {
+		return nil, fmt.Errorf("%w: %v", errAgentFileStructureInvalid, err)
+	}
 	receipt := workspace.AgentFileEditReceipt{
 		ExecutionID: executionID, FrameID: access.Frame.ID, DisplayPath: target.displayPath,
 		OriginalSHA256: originalSHA256, FinalSHA256: finalDigest,

@@ -353,7 +353,8 @@ func agentPublicScientificSourceUnavailable(
 	err error,
 ) (map[string]any, bool) {
 	statusFailure := securefetch.IsCode(err, securefetch.CodeStatus)
-	contentMismatch := securefetch.IsCode(err, securefetch.CodeContentType) || err.Error() == string(securefetch.CodeContentType)
+	contentMismatch := securefetch.IsCode(err, securefetch.CodeContentType) || err.Error() == string(securefetch.CodeContentType) ||
+		errors.Is(err, errAgentFileContentTypeMismatch)
 	if !statusFailure && !contentMismatch {
 		return nil, false
 	}
@@ -579,6 +580,9 @@ func verifyAgentPublicScientificStagedContent(
 ) (string, error) {
 	if file == nil {
 		return "", errAgentPublicScientificFileAuthority
+	}
+	if err := validateAgentFileContentType(filename, file); err != nil {
+		return "", err
 	}
 	rawReported := strings.TrimSpace(reportedContentType)
 	lower := strings.ToLower(filename)

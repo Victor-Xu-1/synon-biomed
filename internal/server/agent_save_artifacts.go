@@ -237,6 +237,12 @@ func (s *Server) executeAgentSaveArtifacts(
 			continue
 		}
 		snapshotPath := snapshot.Name()
+		if validationErr := validateAgentFileContentType(relativePath, snapshot); validationErr != nil {
+			_ = snapshot.Close()
+			_ = os.Remove(snapshotPath)
+			failures = append(failures, agentSaveArtifactFailure(relativePath, validationErr))
+			continue
+		}
 		normalizedReferences, normalizationErr := s.normalizeAgentSavedArtifactReferences(snapshot, relativePath, stream.ProjectID)
 		if normalizationErr != nil {
 			_ = snapshot.Close()
@@ -1376,6 +1382,10 @@ func agentSaveArtifactFailure(path string, err error) map[string]any {
 		code = "path_ambiguous"
 	} else if errors.Is(err, errAgentSavedArtifactVersionInvalid) {
 		code = "invalid_version_reference"
+	} else if errors.Is(err, errAgentFileContentTypeMismatch) {
+		code = "file_content_type_mismatch"
+	} else if errors.Is(err, errAgentFileStructureInvalid) {
+		code = "invalid_file_structure"
 	} else if errors.Is(err, errAgentSavedArtifactJSONInvalid) {
 		code = "invalid_json_artifact"
 	} else if errors.Is(err, errAgentSavedArtifactDelimitedInvalid) {
@@ -1418,6 +1428,9 @@ func agentSaveArtifactFailure(path string, err error) map[string]any {
 		code = "path_must_be_relative"
 	}
 	failure := agentSaveArtifactFailurePayload(path, code, nil, 0)
+	if code == "file_content_type_mismatch" || code == "invalid_file_structure" {
+		failure["validation_detail"] = err.Error()
+	}
 	if code == "invalid_delimited_artifact" || code == "invalid_json_artifact" {
 		failure["validation_detail"] = strings.TrimSpace(err.Error())
 	}
@@ -1437,6 +1450,9 @@ func agentSaveArtifactFailurePayload(path, code string, unsupported []string, un
 	case "invalid_version_reference":
 		recovery["action"] = "save_same_relative_path_without_version_of"
 		recovery["version_of"] = "omit_for_same_path"
+	case "file_content_type_mismatch", "invalid_file_structure":
+		retryable = true
+		recovery["action"] = "read_the_file_and_restore_valid_content_before_saving"
 	case "unsupported_evidence_references":
 		recovery["action"] = "review_claim_source_binding_if_material_to_output_quality"
 		recovery["evidence"] = "retain_real_source_identities_and_distinguish_source_existence_from_claim_support"

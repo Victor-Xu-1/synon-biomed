@@ -623,6 +623,7 @@ func TestAgentPublicScientificFileDownloadUsesAttestedLargeMCPResultAndReplays(t
 	if len(artifacts) != 1 || artifacts[0]["input_path"] != filename {
 		t.Fatalf("result=%#v", first)
 	}
+	assertAgentArtifactResultLinks(t, artifacts[0])
 	stored, err := os.ReadFile(filepath.Join(fixture.projectPath, filename))
 	if err != nil || string(stored) != content {
 		t.Fatalf("workspace content=%q err=%v", stored, err)

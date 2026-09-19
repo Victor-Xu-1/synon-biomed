@@ -1548,16 +1548,19 @@ func (s *Server) agentPublicScientificFileResult(
 			log.Printf("download_public_scientific_file compatibility projection failed for artifact %s", artifact.ID)
 		}
 	}
+	artifactResult := map[string]any{
+		"artifact_id": artifact.ID, "version_id": version.ID, "version_number": version.VersionNumber,
+		"filename": artifact.Name, "content_type": artifact.Kind, "size_bytes": version.SizeBytes,
+		"checksum": version.ContentSHA256, "storage_path": version.StoragePath,
+		"input_path": request.Filename, "is_checkpoint": false,
+		"root_frame_id": stream.RootFrameID, "environment": "",
+	}
+	for key, value := range agentArtifactURLs(artifact.ID, version.ID) {
+		artifactResult[key] = value
+	}
 	return map[string]any{
-		"ok": true,
-		"artifacts": []any{map[string]any{
-			"artifact_id": artifact.ID, "version_id": version.ID, "version_number": version.VersionNumber,
-			"filename": artifact.Name, "content_type": artifact.Kind, "size_bytes": version.SizeBytes,
-			"checksum": version.ContentSHA256, "storage_path": version.StoragePath,
-			"input_path": request.Filename, "is_checkpoint": false,
-			"uri": "/artifacts/" + artifact.ID, "root_frame_id": stream.RootFrameID,
-			"environment": "",
-		}},
-		"download": download,
+		"ok":        true,
+		"artifacts": []any{artifactResult},
+		"download":  download,
 	}
 }

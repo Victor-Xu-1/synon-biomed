@@ -531,14 +531,17 @@ func agentSavedArtifactResult(
 		"filename": artifact.Name, "content_type": contentType, "size_bytes": version.SizeBytes,
 		"checksum": version.ContentSHA256, "storage_path": version.StoragePath,
 		"input_path": relativePath, "is_checkpoint": isCheckpoint,
-		"uri": "/artifacts/" + artifact.ID, "root_frame_id": rootFrameID,
-		"environment": environment, "retention": retention,
+		"root_frame_id": rootFrameID,
+		"environment":   environment, "retention": retention,
+	}
+	for key, value := range agentArtifactURLs(artifact.ID, version.ID) {
+		result[key] = value
 	}
 	if retention == "snapshot" && isIntermediate {
 		result["publication_state"] = "draft"
 		result["message"] = "durable draft saved; the Harness will publish the validated terminal version"
 	} else if retention == "snapshot" {
-		artifactRef := "{{artifact:" + version.ID + "}}"
+		artifactRef := agentArtifactReference(version.ID)
 		result["publication_state"] = "published"
 		result["artifact_ref"] = artifactRef
 		result["markdown_link"] = "[" + artifact.Name + "](" + artifactRef + ")"

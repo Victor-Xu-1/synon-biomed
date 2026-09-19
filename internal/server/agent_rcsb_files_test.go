@@ -98,6 +98,7 @@ func TestAgentRCSBDownloadPublishesOneAuthoritativeArtifactAndReplaysIdempotentl
 	if len(artifacts) != 1 || artifacts[0]["input_path"] != "4TZ4.pdb" {
 		t.Fatalf("first result = %#v", first)
 	}
+	assertAgentArtifactResultLinks(t, artifacts[0])
 	stored, err := os.ReadFile(filepath.Join(fixture.projectPath, "4TZ4.pdb"))
 	if err != nil || string(stored) != content {
 		t.Fatalf("workspace content=%q err=%v", stored, err)

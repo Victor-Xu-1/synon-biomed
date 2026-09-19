@@ -395,7 +395,9 @@ func TestAgentSaveArtifactsMatchesObservedClaudeContract(t *testing.T) {
 		versionID := stringValue(artifact["version_id"])
 		if artifact["input_path"] != input["files"].([]any)[index] || artifact["content_type"] != expectedTypes[index] ||
 			artifact["environment"] != "scanpy" || artifact["root_frame_id"] != "frame-save" ||
-			artifact["uri"] != "/artifacts/"+stringValue(artifact["artifact_id"]) ||
+			artifact["preview_url"] != "/#/artifacts/"+stringValue(artifact["artifact_id"])+"?version="+versionID ||
+			artifact["content_url"] != "/api/artifacts/"+stringValue(artifact["artifact_id"])+"/versions/"+versionID ||
+			artifact["uri"] != nil ||
 			artifact["publication_state"] != "draft" || artifact["artifact_ref"] != nil || artifact["markdown_link"] != nil ||
 			len(stringValue(artifact["checksum"])) != 64 || stringValue(artifact["storage_path"]) == "" {
 			t.Fatalf("artifact[%d]=%#v", index, artifact)

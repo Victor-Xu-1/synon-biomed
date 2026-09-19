@@ -28,7 +28,7 @@ jobs:
           go test -buildvcs=false ./scripts/quality/github-actions-gate
           go run -buildvcs=false ./scripts/quality/github-actions-gate --repo . --policy docs/governance/github-actions-pins.json
       - name: Verify version automation configuration
-        run: python3 -B -m unittest scripts.packaging.test_version_config
+        run: python3 -B -m unittest scripts.packaging.test_version_config scripts.packaging.test_version_provenance
       - name: Require the protected main ref
         run: test "$GITHUB_REF" = refs/heads/main
 
@@ -38,6 +38,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Check out trusted proposal tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
       - name: Create single-repository bot token
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -50,6 +56,7 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
       - name: Propose version and changelog
+        id: version
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ steps.app-token.outputs.token }}
@@ -57,3 +64,8 @@ jobs:
           config-file: .github/release-please-config.json
           manifest-file: .github/release-please-manifest.json
           skip-github-release: true
+      - name: Synchronize version proposal provenance
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION_PRS: ${{ steps.version.outputs.prs }}
+        run: python3 -B scripts/packaging/sync_version_proposal.py

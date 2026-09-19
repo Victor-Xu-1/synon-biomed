@@ -239,7 +239,9 @@ describe('ProjectHistorySection', () => {
     expect(screen.queryByTestId('project-batch-manage')).not.toBeInTheDocument();
 
     fireEvent.click(createProjectAction);
-    const createDialog = await screen.findByRole('dialog', { name: '新建项目' });
+    const createDialog = await screen.findByRole('dialog', {
+      name: '新建项目',
+    });
     expect(createDialog).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('textbox', { name: '名称' }), {
@@ -529,6 +531,30 @@ describe('ProjectHistorySection', () => {
         'project-row-proj_second',
       ]);
     });
+  });
+
+  it('accepts a keyboard move as soon as the loaded project handles enter the DOM', async () => {
+    let resolveProjects!: (projects: (typeof projectFixture)[]) => void;
+    loadProjectsMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveProjects = resolve;
+      })
+    );
+    loadProjectOrderMock.mockResolvedValue(['proj_example', 'proj_second']);
+    await renderWithI18n(<ProjectHistorySection collapsed={false} activeProjectId='proj_example' />);
+    const observer = new MutationObserver(() => {
+      const handle = document.querySelector('[data-testid="project-drag-handle-proj_second"]');
+      if (!handle) return;
+      observer.disconnect();
+      handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    try {
+      resolveProjects([projectFixture, secondProjectFixture]);
+      await waitFor(() => expect(saveProjectOrderMock).toHaveBeenCalledWith(['proj_second', 'proj_example']));
+    } finally {
+      observer.disconnect();
+    }
   });
 
   it('reads the durable order again after a remount and appends a newly discovered project', async () => {

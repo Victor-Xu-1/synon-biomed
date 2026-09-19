@@ -9,7 +9,7 @@ import {
 } from '../toolActivityPresentationRegistry';
 import { extractResearchSourcePresentation, isResearchActivityTool } from './researchSourcePresentation';
 import { buildToolFailurePresentation } from './toolFailurePresentation';
-import { buildToolProgressPublicPresentation } from './toolProgressPresentation';
+import { buildToolProgressPublicPresentation, hasDeterminateByteTransfer } from './toolProgressPresentation';
 import { toolOperationAction, toolOperationSubject } from './toolOperationSubject';
 import { retrievalReceiptPresentation } from '../toolDetails/retrievalReceiptPresentation';
 import { toolExecutionDisposition, toolExecutionRecoveryFamily, toolWasNotExecuted } from './toolExecutionDisposition';
@@ -328,7 +328,13 @@ function localizedHumanDescription(tool: NormalizedToolCall, chinese: boolean): 
 
 function buildToolStepDetail(tool: NormalizedToolCall, chinese: boolean): string | null {
   const subject = toolOperationSubject(tool, chinese, !localizedHumanDescription(tool, chinese));
-  if (isActiveToolStatus(tool.status) && tool.progress) {
+  // A completed transfer keeps its last observed byte snapshot so the history
+  // row remains auditable after the live heartbeat stops. Error/cancelled rows
+  // intentionally keep their failure state instead of showing stale progress.
+  if (
+    tool.progress &&
+    (isActiveToolStatus(tool.status) || (tool.status === 'completed' && hasDeterminateByteTransfer(tool.progress)))
+  ) {
     const progress = buildToolProgressPublicPresentation(tool.progress, chinese ? 'zh-CN' : 'en-US').compactDetail;
     return [subject && truncate(subject, 48), progress].filter(Boolean).join(' · ');
   }

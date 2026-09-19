@@ -116,7 +116,7 @@ func (authority *agentWorkspaceEditAuthority) createStaging(mode os.FileMode) (*
 		fd, err := unix.Openat(
 			authority.parentFD,
 			name,
-			unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_CLOEXEC|unix.O_NOFOLLOW,
+			unix.O_RDWR|unix.O_CREAT|unix.O_EXCL|unix.O_CLOEXEC|unix.O_NOFOLLOW,
 			uint32(mode.Perm()),
 		)
 		if errors.Is(err, syscall.EEXIST) {

@@ -391,6 +391,9 @@ func (r *validatingReadCloser) observeCIFToken(token cifToken) {
 	if !token.quoted && strings.HasPrefix(value, "data_") {
 		r.finishCIFLoop()
 		r.currentData = strings.TrimPrefix(value, "data_")
+		if r.identifier == "" && r.kind == "" {
+			r.identifier = r.currentData
+		}
 		if r.currentData == r.identifier {
 			if r.seenData {
 				r.invalid = true
@@ -579,6 +582,9 @@ func (r *validatingReadCloser) valid() bool {
 	}
 	if r.kind == EntryCoordinates {
 		return r.seenData && r.seenAtomSite
+	}
+	if r.kind == "" {
+		return r.seenData && (r.seenAtomSite || r.seenChemComp && r.seenChemAtom)
 	}
 	return r.kind == LigandDefinition && r.seenData && r.seenChemComp && r.seenChemAtom
 }

@@ -9,17 +9,31 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"synon-go/internal/tools/rcsbfiles"
 )
 
 var errAgentSavedArtifactStructureEmpty = errors.New("saved PDB/PDBQT artifact contains no atom records")
 
 // validateAgentSavedArtifactStructure prevents a header-only fragment from
-// being published as a molecular structure. This is intentionally a narrow
-// exchange-format boundary check: it confirms at least one finite fixed-column
-// atom coordinate while leaving chemistry-specific interpretation to the
-// governed scientific workflow that produced the file.
+// being published as a molecular structure. PDB/PDBQT require finite atom
+// coordinates; CIF/mmCIF reuse the streaming source parser for complete atom
+// tables. Chemistry-specific interpretation belongs to the producing workflow.
 func validateAgentSavedArtifactStructure(relativePath string, snapshot *os.File) error {
 	extension := strings.ToLower(filepath.Ext(strings.TrimSpace(relativePath)))
+	if extension == ".cif" || extension == ".mmcif" {
+		if snapshot == nil {
+			return rcsbfiles.ErrInvalidStructure
+		}
+		if _, err := snapshot.Seek(0, 0); err != nil {
+			return err
+		}
+		defer func() { _, _ = snapshot.Seek(0, 0) }()
+		if err := rcsbfiles.ValidateCIF(snapshot); err != nil {
+			return fmt.Errorf("%w: %v", errAgentFileStructureInvalid, err)
+		}
+		return nil
+	}
 	if extension != ".pdb" && extension != ".pdbqt" {
 		return nil
 	}

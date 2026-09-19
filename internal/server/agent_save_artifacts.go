@@ -237,6 +237,12 @@ func (s *Server) executeAgentSaveArtifacts(
 			continue
 		}
 		snapshotPath := snapshot.Name()
+		if validationErr := validateAgentFileContentType(relativePath, snapshot); validationErr != nil {
+			_ = snapshot.Close()
+			_ = os.Remove(snapshotPath)
+			failures = append(failures, agentSaveArtifactFailure(relativePath, validationErr))
+			continue
+		}
 		normalizedReferences, normalizationErr := s.normalizeAgentSavedArtifactReferences(snapshot, relativePath, stream.ProjectID)
 		if normalizationErr != nil {
 			_ = snapshot.Close()
@@ -357,47 +363,6 @@ func (s *Server) executeAgentSaveArtifacts(
 			_ = os.Remove(snapshotPath)
 			return nil, errors.New("save_artifacts current publication could not be read")
 		}
-		if found && currentArtifact.ProjectID == stream.ProjectID &&
-			strings.EqualFold(strings.TrimSpace(currentVersion.ContentSHA256), strings.TrimSpace(contentSHA)) {
-			_ = snapshot.Close()
-			_ = os.Remove(snapshotPath)
-			retention := strings.TrimSpace(request.Destination[relativePath])
-			if retention != "" {
-				if modeErr := s.workspaceStore.SetArtifactRetentionMode(
-					ctx, currentArtifact.ID, stream.ProjectID, stream.OwnerID, retention,
-				); modeErr != nil {
-					return nil, modeErr
-				}
-			} else if storedMode, modeFound, modeErr := s.workspaceStore.ArtifactRetentionMode(currentArtifact.ID); modeErr != nil {
-				return nil, modeErr
-			} else if modeFound {
-				retention = storedMode
-			}
-			if retention == "" {
-				retention = "snapshot"
-			}
-			intermediate, intermediateFound, intermediateErr := s.workspaceStore.ArtifactVersionIntermediate(currentVersion.ID)
-			if intermediateErr != nil {
-				return nil, intermediateErr
-			}
-			if !intermediateFound {
-				// Legacy versions without provenance were already published by the
-				// pre-draft path; do not hide them during an unchanged replay.
-				intermediate = false
-			}
-			// Artifact publication is content-addressed across model calls. A new
-			// call identity must not create another immutable version when the
-			// current bytes are unchanged; doing so turns context recovery into a
-			// read/save/version loop. Return the canonical current version and let
-			// semantic completion validation decide whether more work is needed.
-			artifacts = append(artifacts, agentSavedArtifactResult(
-				currentArtifact, currentVersion, relativePath, contentType,
-				request.Checkpoints[relativePath], stream.RootFrameID,
-				request.Environment, retention, intermediate, true,
-			))
-			continue
-		}
-		batchBytes += sizeBytes
 		retention := strings.TrimSpace(request.Destination[relativePath])
 		if retention == "" && found && currentArtifact.ProjectID == stream.ProjectID {
 			if storedMode, modeFound, modeErr := s.workspaceStore.ArtifactRetentionMode(currentArtifact.ID); modeErr != nil {
@@ -412,31 +377,88 @@ func (s *Server) executeAgentSaveArtifacts(
 			retention = "snapshot"
 		}
 
-		parentVersionID := ""
-		if priorVersion, found := priorVersions[relativePath]; found {
-			parentVersionID = priorVersion.ID
-		}
 		mutationDigest := sha256.Sum256([]byte(fmt.Sprintf(
 			"save-artifacts:%s:%d:%s:%d:%s", stream.UID, run.SourceEventID, toolCallID, index, relativePath,
 		)))
 		mutationID := "save-artifacts-" + hex.EncodeToString(mutationDigest[:])
-		artifact, version, writeErr := s.workspaceStore.WriteArtifactVersionRealtime(
-			workspace.WithMutationIdempotencyKey(ctx, mutationID),
-			workspace.WriteArtifactVersionInput{
-				ArtifactID: artifactID, ProjectID: stream.ProjectID, Name: filepath.Base(relativePath),
-				ContentType: contentType, Content: snapshot, MaxBytes: fileLimit,
-				CreatedBy: claim.RunnerID, ParentVersionID: parentVersionID,
-				RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
-				TranscriptAssociation: &workspace.ArtifactTranscriptAssociation{
-					StreamUID: stream.UID, RunnerID: claim.RunnerID, ClaimToken: claim.ClaimToken,
-					Attempt: claim.Attempt, SourceEventID: run.SourceEventID, Relation: "produced",
+		writeArtifactVersion := func(parentVersionID string) (workspace.Artifact, workspace.ArtifactVersion, error) {
+			return s.workspaceStore.WriteArtifactVersionRealtime(
+				workspace.WithMutationIdempotencyKey(ctx, mutationID),
+				workspace.WriteArtifactVersionInput{
+					ArtifactID: artifactID, ProjectID: stream.ProjectID, Name: filepath.Base(relativePath),
+					ContentType: contentType, Content: snapshot, MaxBytes: fileLimit,
+					CreatedBy: claim.RunnerID, ParentVersionID: parentVersionID,
+					RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
+					TranscriptAssociation: &workspace.ArtifactTranscriptAssociation{
+						StreamUID: stream.UID, RunnerID: claim.RunnerID, ClaimToken: claim.ClaimToken,
+						Attempt: claim.Attempt, SourceEventID: run.SourceEventID, Relation: "produced",
+					},
+					Language: request.Language, Environment: request.Environment,
+					IsIntermediate: retention == "snapshot",
+					IsCheckpoint:   request.Checkpoints[relativePath], ExecutionLogIDs: executionIDs,
 				},
-				Language: request.Language, Environment: request.Environment,
-				IsIntermediate: retention == "snapshot",
-				IsCheckpoint:   request.Checkpoints[relativePath], ExecutionLogIDs: executionIDs,
-			},
-			stream.OwnerID,
-		)
+				stream.OwnerID,
+			)
+		}
+		// Reuse the existing immutable version without staging a second blob, but
+		// still append a produced transcript association in the same authoritative
+		// realtime transaction. Without that association a consumed download
+		// remained absent from the final file collection after an explicit save.
+		sameCurrentVersion := found && currentArtifact.ProjectID == stream.ProjectID &&
+			strings.EqualFold(strings.TrimSpace(currentVersion.ContentSHA256), strings.TrimSpace(contentSHA)) &&
+			currentVersion.SizeBytes == sizeBytes
+		if sameCurrentVersion {
+			closeErr := snapshot.Close()
+			_ = os.Remove(snapshotPath)
+			if closeErr != nil {
+				failures = append(failures, agentSaveArtifactFailure(relativePath, closeErr))
+				continue
+			}
+			association := &workspace.ArtifactTranscriptAssociation{
+				StreamUID: stream.UID, RunnerID: claim.RunnerID, ClaimToken: claim.ClaimToken,
+				Attempt: claim.Attempt, SourceEventID: run.SourceEventID, Relation: "produced",
+			}
+			artifact, version, associationErr := s.workspaceStore.AssociateArtifactVersionRealtime(
+				workspace.WithMutationIdempotencyKey(ctx, mutationID),
+				workspace.AssociateArtifactVersionInput{
+					ArtifactID: artifactID, ProjectID: stream.ProjectID, VersionID: currentVersion.ID,
+					RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
+					TranscriptAssociation: association,
+				},
+				stream.OwnerID,
+			)
+			if associationErr != nil {
+				failures = append(failures, agentSaveArtifactFailure(relativePath, associationErr))
+				continue
+			}
+			if explicit := strings.TrimSpace(request.Destination[relativePath]); explicit != "" {
+				if modeErr := s.workspaceStore.SetArtifactRetentionMode(ctx, artifact.ID, stream.ProjectID, stream.OwnerID, explicit); modeErr != nil {
+					return nil, modeErr
+				}
+			}
+			intermediate, intermediateFound, intermediateErr := s.workspaceStore.ArtifactVersionIntermediate(version.ID)
+			if intermediateErr != nil {
+				return nil, intermediateErr
+			}
+			if !intermediateFound {
+				// Legacy versions without provenance were already published by the
+				// pre-draft path; do not hide them during an unchanged replay.
+				intermediate = false
+			}
+			artifacts = append(artifacts, agentSavedArtifactResult(
+				artifact, version, relativePath, contentType,
+				request.Checkpoints[relativePath], stream.RootFrameID,
+				request.Environment, retention, intermediate, true,
+			))
+			continue
+		}
+
+		batchBytes += sizeBytes
+		parentVersionID := ""
+		if priorVersion, found := priorVersions[relativePath]; found {
+			parentVersionID = priorVersion.ID
+		}
+		artifact, version, writeErr := writeArtifactVersion(parentVersionID)
 		closeErr := snapshot.Close()
 		_ = os.Remove(snapshotPath)
 		if writeErr != nil || closeErr != nil {
@@ -515,14 +537,17 @@ func agentSavedArtifactResult(
 		"filename": artifact.Name, "content_type": contentType, "size_bytes": version.SizeBytes,
 		"checksum": version.ContentSHA256, "storage_path": version.StoragePath,
 		"input_path": relativePath, "is_checkpoint": isCheckpoint,
-		"uri": "/artifacts/" + artifact.ID, "root_frame_id": rootFrameID,
-		"environment": environment, "retention": retention,
+		"root_frame_id": rootFrameID,
+		"environment":   environment, "retention": retention,
+	}
+	for key, value := range agentArtifactURLs(artifact.ID, version.ID) {
+		result[key] = value
 	}
 	if retention == "snapshot" && isIntermediate {
 		result["publication_state"] = "draft"
 		result["message"] = "durable draft saved; the Harness will publish the validated terminal version"
 	} else if retention == "snapshot" {
-		artifactRef := "{{artifact:" + version.ID + "}}"
+		artifactRef := agentArtifactReference(version.ID)
 		result["publication_state"] = "published"
 		result["artifact_ref"] = artifactRef
 		result["markdown_link"] = "[" + artifact.Name + "](" + artifactRef + ")"
@@ -1357,6 +1382,10 @@ func agentSaveArtifactFailure(path string, err error) map[string]any {
 		code = "path_ambiguous"
 	} else if errors.Is(err, errAgentSavedArtifactVersionInvalid) {
 		code = "invalid_version_reference"
+	} else if errors.Is(err, errAgentFileContentTypeMismatch) {
+		code = "file_content_type_mismatch"
+	} else if errors.Is(err, errAgentFileStructureInvalid) {
+		code = "invalid_file_structure"
 	} else if errors.Is(err, errAgentSavedArtifactJSONInvalid) {
 		code = "invalid_json_artifact"
 	} else if errors.Is(err, errAgentSavedArtifactDelimitedInvalid) {
@@ -1399,6 +1428,9 @@ func agentSaveArtifactFailure(path string, err error) map[string]any {
 		code = "path_must_be_relative"
 	}
 	failure := agentSaveArtifactFailurePayload(path, code, nil, 0)
+	if code == "file_content_type_mismatch" || code == "invalid_file_structure" {
+		failure["validation_detail"] = err.Error()
+	}
 	if code == "invalid_delimited_artifact" || code == "invalid_json_artifact" {
 		failure["validation_detail"] = strings.TrimSpace(err.Error())
 	}
@@ -1418,6 +1450,9 @@ func agentSaveArtifactFailurePayload(path, code string, unsupported []string, un
 	case "invalid_version_reference":
 		recovery["action"] = "save_same_relative_path_without_version_of"
 		recovery["version_of"] = "omit_for_same_path"
+	case "file_content_type_mismatch", "invalid_file_structure":
+		retryable = true
+		recovery["action"] = "read_the_file_and_restore_valid_content_before_saving"
 	case "unsupported_evidence_references":
 		recovery["action"] = "review_claim_source_binding_if_material_to_output_quality"
 		recovery["evidence"] = "retain_real_source_identities_and_distinguish_source_existence_from_claim_support"

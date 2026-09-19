@@ -1,4 +1,5 @@
 import React from 'react';
+import productIdentity from '../../../../product-identity.json';
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import SynonBiomedMcpAppViewer from '@/renderer/pages/conversation/Preview/components/viewers/SynonBiomedMcpAppViewer';
@@ -146,7 +147,7 @@ describe('Synon Biomed MCP App viewer', () => {
       expect.objectContaining({
         id: 3,
         result: expect.objectContaining({
-          hostInfo: { name: 'Synon Biomed', version: '0.1.1' },
+          hostInfo: { name: productIdentity.display_name, version: productIdentity.version },
         }),
       }),
       'http://mcp-app.localhost:38180'

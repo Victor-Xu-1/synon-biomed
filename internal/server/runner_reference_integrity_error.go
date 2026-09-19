@@ -57,3 +57,12 @@ func (err *sessionRunnerReferenceIntegrityError) Error() string {
 	return fmt.Sprintf("runner completion reference integrity failed (unresolved_artifacts=%d malformed_artifact_references=%d unsupported_citations=%d invalid_reference_artifacts=%d invalid_scientific_artifacts=%d cross_artifact_failures=%d invalid_research_artifacts=%d missing_local_artifacts=%d missing_required_deliverables=%d)%s",
 		err.UnresolvedArtifacts, len(err.MalformedArtifactReferences), len(err.UnsupportedCitations), len(err.InvalidReferenceArtifacts), len(err.InvalidScientificArtifacts), len(err.CrossArtifactFailures), len(err.InvalidResearchArtifacts), len(err.MissingLocalArtifacts), len(err.MissingRequiredDeliverables), detail)
 }
+
+// runnerCorrection keeps completion-integrity failures on the same durable
+// correction path as every other bounded recovery. Relying on string parsing
+// at settlement loses the machine-readable failure boundary and can cause a
+// resumed task to regenerate the same final candidate without retaining the
+// correction obligation.
+func (err *sessionRunnerReferenceIntegrityError) runnerCorrection() (string, string) {
+	return "artifact_reference_correction_required", err.Error()
+}

@@ -150,6 +150,9 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 ) (map[string]any, error) {
 	if s == nil || s.publicScientificFiles == nil || s.workspaceStore == nil ||
 		s.transcriptStore == nil || identity == nil {
+		log.Printf("download_public_scientific_file authority unavailable before execution: service=%t downloader=%t workspace=%t transcript=%t identity=%t",
+			s != nil, s != nil && s.publicScientificFiles != nil, s != nil && s.workspaceStore != nil,
+			s != nil && s.transcriptStore != nil, identity != nil)
 		return nil, errAgentPublicScientificFileAuthority
 	}
 	toolCallID = strings.TrimSpace(toolCallID)
@@ -162,10 +165,14 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	}
 	access, err := s.validateKernelHostIdentity(ctx, identity.access)
 	if err != nil {
+		log.Printf("download_public_scientific_file authority rejected frame=%q stage=kernel_identity err=%v",
+			identity.access.Frame.ID, err)
 		return nil, errAgentPublicScientificFileAuthority
 	}
 	run, ok := transcriptArtifactRunFromContext(ctx)
 	if !ok || run.Authority == nil || run.SourceEventID <= 0 {
+		log.Printf("download_public_scientific_file authority rejected frame=%q call=%q stage=tool_source present=%t source_event_id=%d",
+			access.Frame.ID, toolCallID, ok && run.Authority != nil, run.SourceEventID)
 		return nil, errAgentPublicScientificFileAuthority
 	}
 	stream, claim := run.Authority.Stream, run.Authority.Claim
@@ -179,6 +186,8 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	if err != nil || validated.UID != stream.UID || validated.OwnerID != stream.OwnerID ||
 		validated.ProjectID != stream.ProjectID || validated.RootFrameID != stream.RootFrameID ||
 		validated.FrameID != stream.FrameID {
+		log.Printf("download_public_scientific_file authority rejected frame=%q call=%q stage=transcript_source source_event_id=%d err=%v",
+			access.Frame.ID, toolCallID, run.SourceEventID, err)
 		return nil, errAgentPublicScientificFileAuthority
 	}
 	if chatRun, _ := transcriptRunnerChatRunFromContext(ctx); chatRun != nil {
@@ -192,9 +201,15 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 		return nil, err
 	}
 	request.SourceToolCallID = resolvedSourceCallID
+	workspaceDir, err := s.ensureAgentWorkspaceRoot(identity)
+	if err != nil {
+		log.Printf("download_public_scientific_file authority rejected frame=%q call=%q stage=workspace_root err=%v",
+			access.Frame.ID, toolCallID, err)
+		return nil, errAgentPublicScientificFileAuthority
+	}
 	artifactID := streamArtifactIDFor(stream.UID, request.Filename)
 	if replayed, found, replayErr := s.replayAgentPublicScientificFileDownload(
-		ctx, identity.workspaceDir, stream, run.SourceEventID, artifactID, request,
+		ctx, workspaceDir, stream, run.SourceEventID, artifactID, request,
 	); replayErr != nil || found {
 		return replayed, replayErr
 	}
@@ -204,12 +219,12 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 		return unavailable, unavailableErr
 	}
 	if reused, found, reuseErr := s.reuseCompletedAgentPublicScientificFileDownload(
-		ctx, identity.workspaceDir, stream, claim, run.SourceEventID, toolCallID, artifactID, request,
+		ctx, workspaceDir, stream, claim, run.SourceEventID, toolCallID, artifactID, request,
 	); reuseErr != nil || found {
 		return reused, reuseErr
 	}
 	if err := ensureAgentWorkspaceDownloadTarget(
-		ctx, identity.workspaceDir, request.Filename, 0, "", request.maximumBytes(),
+		ctx, workspaceDir, request.Filename, 0, "", request.maximumBytes(),
 	); err != nil {
 		return nil, agentPublicScientificWorkspaceDownloadError(err)
 	}
@@ -218,7 +233,7 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	}
 	defer s.releasePublicScientificDownloadSlot()
 	staged, responseContentType, err := s.fetchAndStageAgentPublicScientificFile(
-		ctx, identity.workspaceDir, request,
+		ctx, workspaceDir, request,
 	)
 	if err != nil {
 		if unavailable, handled := agentPublicScientificSourceUnavailable(request, err); handled {
@@ -246,7 +261,7 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 		return nil, errAgentPublicScientificFileSize
 	}
 	if err := ensureAgentWorkspaceDownloadTarget(
-		ctx, identity.workspaceDir, request.Filename, staged.sizeBytes, staged.contentSHA,
+		ctx, workspaceDir, request.Filename, staged.sizeBytes, staged.contentSHA,
 		request.maximumBytes(),
 	); err != nil {
 		return nil, agentPublicScientificWorkspaceDownloadError(err)
@@ -254,7 +269,7 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	if _, err := staged.file.Seek(0, io.SeekStart); err != nil {
 		return nil, errAgentPublicScientificFileAuthority
 	}
-	reportAgentPublicScientificDownloadProgress(ctx, "publishing_download", staged.sizeBytes, staged.sizeBytes, nil)
+	reportAgentPublicScientificDownloadProgress(ctx, "publishing_download", staged.sizeBytes, staged.sizeBytes, staged.bytesPerSecond)
 	mutationDigest := sha256.Sum256([]byte(fmt.Sprintf(
 		"download-public-scientific-file-v1:%s:%d:%s:%s:%s",
 		stream.UID, run.SourceEventID, toolCallID, request.Filename, request.SourceURL,
@@ -286,12 +301,12 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 		return nil, err
 	}
 	if err := publishAgentWorkspaceDownloadFile(
-		ctx, identity.workspaceDir, request.Filename, staged.file, version.SizeBytes, version.ContentSHA256,
+		ctx, workspaceDir, request.Filename, staged.file, version.SizeBytes, version.ContentSHA256,
 		request.maximumBytes(),
 	); err != nil {
 		return nil, agentPublicScientificWorkspaceDownloadError(err)
 	}
-	reportAgentPublicScientificDownloadProgress(ctx, "download_ready", staged.sizeBytes, staged.sizeBytes, nil)
+	reportAgentPublicScientificDownloadProgress(ctx, "download_ready", staged.sizeBytes, staged.sizeBytes, staged.bytesPerSecond)
 	staged.discard()
 	return s.agentPublicScientificFileResult(stream, artifact, version, request), nil
 }
@@ -338,7 +353,8 @@ func agentPublicScientificSourceUnavailable(
 	err error,
 ) (map[string]any, bool) {
 	statusFailure := securefetch.IsCode(err, securefetch.CodeStatus)
-	contentMismatch := securefetch.IsCode(err, securefetch.CodeContentType) || err.Error() == string(securefetch.CodeContentType)
+	contentMismatch := securefetch.IsCode(err, securefetch.CodeContentType) || err.Error() == string(securefetch.CodeContentType) ||
+		errors.Is(err, errAgentFileContentTypeMismatch)
 	if !statusFailure && !contentMismatch {
 		return nil, false
 	}
@@ -564,6 +580,9 @@ func verifyAgentPublicScientificStagedContent(
 ) (string, error) {
 	if file == nil {
 		return "", errAgentPublicScientificFileAuthority
+	}
+	if err := validateAgentFileContentType(filename, file); err != nil {
+		return "", err
 	}
 	rawReported := strings.TrimSpace(reportedContentType)
 	lower := strings.ToLower(filename)
@@ -1533,16 +1552,19 @@ func (s *Server) agentPublicScientificFileResult(
 			log.Printf("download_public_scientific_file compatibility projection failed for artifact %s", artifact.ID)
 		}
 	}
+	artifactResult := map[string]any{
+		"artifact_id": artifact.ID, "version_id": version.ID, "version_number": version.VersionNumber,
+		"filename": artifact.Name, "content_type": artifact.Kind, "size_bytes": version.SizeBytes,
+		"checksum": version.ContentSHA256, "storage_path": version.StoragePath,
+		"input_path": request.Filename, "is_checkpoint": false,
+		"root_frame_id": stream.RootFrameID, "environment": "",
+	}
+	for key, value := range agentArtifactURLs(artifact.ID, version.ID) {
+		artifactResult[key] = value
+	}
 	return map[string]any{
-		"ok": true,
-		"artifacts": []any{map[string]any{
-			"artifact_id": artifact.ID, "version_id": version.ID, "version_number": version.VersionNumber,
-			"filename": artifact.Name, "content_type": artifact.Kind, "size_bytes": version.SizeBytes,
-			"checksum": version.ContentSHA256, "storage_path": version.StoragePath,
-			"input_path": request.Filename, "is_checkpoint": false,
-			"uri": "/artifacts/" + artifact.ID, "root_frame_id": stream.RootFrameID,
-			"environment": "",
-		}},
-		"download": download,
+		"ok":        true,
+		"artifacts": []any{artifactResult},
+		"download":  download,
 	}
 }

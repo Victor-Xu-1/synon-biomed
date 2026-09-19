@@ -480,6 +480,7 @@ func bindCommittedArtifactReferencesConn(
 		latestCommits = append(latestCommits, commit)
 	}
 	commits = latestCommits
+	commits = coalesceCommittedArtifactHeads(commits)
 	existing, err := listArtifactReferencesForEventConn(ctx, conn, stream.UID, attempt, targetEventID)
 	if err != nil {
 		return nil, err
@@ -870,9 +871,9 @@ func validateArtifactVersionAuthority(
 }
 
 func normalizeArtifactReferenceInputs(values []ArtifactReferenceInput) ([]ArtifactReferenceInput, error) {
-	refs := make([]ArtifactReferenceInput, len(values))
-	seen := make(map[string]struct{}, len(values))
-	for index, value := range values {
+	refs := make([]ArtifactReferenceInput, 0, len(values))
+	seen := make(map[string]int, len(values))
+	for _, value := range values {
 		value.ArtifactID = strings.TrimSpace(value.ArtifactID)
 		value.VersionID = strings.TrimSpace(value.VersionID)
 		if value.ArtifactID == "" || value.VersionID == "" || len(value.ArtifactID) > 512 || len(value.VersionID) > 512 ||
@@ -880,13 +881,56 @@ func normalizeArtifactReferenceInputs(values []ArtifactReferenceInput) ([]Artifa
 			return nil, errors.New("artifact id, version id, and relation are required")
 		}
 		key := value.ArtifactID + "\x00" + value.VersionID
-		if _, duplicate := seen[key]; duplicate {
-			return nil, ErrEventConflict
+		if prior, duplicate := seen[key]; duplicate {
+			if refs[prior].Relation == value.Relation {
+				return nil, ErrEventConflict
+			}
+			if artifactReferenceRelationPriority(value.Relation) > artifactReferenceRelationPriority(refs[prior].Relation) {
+				refs[prior] = value
+			}
+			continue
 		}
-		seen[key] = struct{}{}
-		refs[index] = value
+		seen[key] = len(refs)
+		refs = append(refs, value)
 	}
 	return refs, nil
+}
+
+// One public event can expose a version through only one relation because the
+// transcript reference key is (stream, attempt, event, artifact, version).
+// A downloaded version that is later explicitly saved is therefore represented
+// as produced in the public event, while the commit ledger still retains both
+// source relations for audit and completion validation.
+func artifactReferenceRelationPriority(relation ArtifactRelation) int {
+	switch relation {
+	case ArtifactRelationProduced:
+		return 4
+	case ArtifactRelationAttached:
+		return 3
+	case ArtifactRelationCited:
+		return 2
+	case ArtifactRelationConsumed:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func coalesceCommittedArtifactHeads(values []committedArtifactReference) []committedArtifactReference {
+	result := make([]committedArtifactReference, 0, len(values))
+	positions := make(map[string]int, len(values))
+	for _, value := range values {
+		key := value.artifactID + "\x00" + value.versionID
+		if prior, found := positions[key]; found {
+			if artifactReferenceRelationPriority(value.relation) > artifactReferenceRelationPriority(result[prior].relation) {
+				result[prior] = value
+			}
+			continue
+		}
+		positions[key] = len(result)
+		result = append(result, value)
+	}
+	return result
 }
 
 func artifactReferencesMatch(existing []ArtifactReference, sourceEventID int64, expected []ArtifactReferenceInput) bool {

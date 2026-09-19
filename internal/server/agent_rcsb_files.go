@@ -339,15 +339,18 @@ func (s *Server) agentRCSBFileResult(
 			log.Printf("download_rcsb_file compatibility projection failed for artifact %s; canonical artifact remains authoritative", artifact.ID)
 		}
 	}
+	artifactResult := map[string]any{
+		"artifact_id": artifact.ID, "version_id": version.ID, "version_number": version.VersionNumber,
+		"filename": artifact.Name, "content_type": artifact.Kind, "size_bytes": version.SizeBytes,
+		"checksum": version.ContentSHA256, "storage_path": version.StoragePath,
+		"input_path": prepared.Filename, "is_checkpoint": false,
+		"root_frame_id": stream.RootFrameID, "environment": "",
+	}
+	for key, value := range agentArtifactURLs(artifact.ID, version.ID) {
+		artifactResult[key] = value
+	}
 	return map[string]any{
-		"artifacts": []any{map[string]any{
-			"artifact_id": artifact.ID, "version_id": version.ID, "version_number": version.VersionNumber,
-			"filename": artifact.Name, "content_type": artifact.Kind, "size_bytes": version.SizeBytes,
-			"checksum": version.ContentSHA256, "storage_path": version.StoragePath,
-			"input_path": prepared.Filename, "is_checkpoint": false,
-			"uri": "/artifacts/" + artifact.ID, "root_frame_id": stream.RootFrameID,
-			"environment": "",
-		}},
+		"artifacts": []any{artifactResult},
 		"download": map[string]any{
 			"resource_kind": string(prepared.ResourceKind), "identifier": prepared.Identifier,
 			"format": string(prepared.Format), "filename": prepared.Filename, "content_type": artifact.Kind,

@@ -83,6 +83,12 @@ class VersionProvenanceTest(unittest.TestCase):
             sync.main()
             update.assert_not_called()
 
+    def test_repository_identity_request_has_no_trailing_path_separator(self):
+        result = subprocess.CompletedProcess([], 0, '{"id":123}', '')
+        with patch.object(sync.subprocess, 'run', return_value=result) as command:
+            self.assertEqual(sync.api('owner/product', ''), {'id': 123})
+            self.assertEqual(command.call_args.args[0], ['gh', 'api', '--method', 'GET', 'repos/owner/product'])
+
     def test_publisher_never_forces_or_writes_main(self):
         calls = []
         repo, repo_id, head = "owner/product", 123, "b" * 40

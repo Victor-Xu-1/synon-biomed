@@ -222,6 +222,46 @@ describe('message merging', () => {
     expect((reconciled[0] as IMessageText).content.content).toBe('完整结论已经显示，且包含全部文件说明。');
   });
 
+  it('keeps older conversation rows before a refreshed tail page', () => {
+    const first = createTextMessage('first', '原始用户问题');
+    const second = createTextMessage('second', '中间上下文');
+    const third = createTextMessage('third', '当前运行内容');
+    const refreshedSecond = {
+      ...second,
+      content: { ...second.content, content: '中间上下文（已持久化）' },
+    };
+
+    const reconciled = mergeLoadedPageWithCurrent(
+      CONVERSATION_ID,
+      [refreshedSecond, third],
+      [first, second, third],
+      true,
+      true
+    );
+
+    expect(reconciled.map((message) => message.msg_id)).toEqual(['first', 'second', 'third']);
+    expect((reconciled[1] as IMessageText).content.content).toBe('中间上下文（已持久化）');
+  });
+
+  it('retains an incompatible live segment sharing a merge key during refresh', () => {
+    const live = {
+      ...createTextMessage('attempt-1', 'live segment continues'),
+      content: { ...createTextMessage('attempt-1', 'live segment continues').content, assistantAttemptId: 'attempt-1' },
+    };
+    const persisted = {
+      ...createTextMessage('attempt-1', 'different durable segment'),
+      id: 'durable-segment-2',
+      content: {
+        ...createTextMessage('attempt-1', 'different durable segment').content,
+        assistantAttemptId: 'attempt-1',
+      },
+    };
+
+    const reconciled = mergeLoadedPageWithCurrent(CONVERSATION_ID, [persisted], [live], true, true);
+
+    expect(reconciled.map((message) => message.id)).toEqual([live.id, persisted.id]);
+  });
+
   it('keeps a durable terminal answer when a stale live attempt reset is empty', () => {
     const durable = {
       ...createTextMessage('answer-terminal', '完整结论已经持久化，并绑定最终产物。'),
@@ -1142,7 +1182,7 @@ describe('message merging', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(result.current.messages.map((message) => message.msg_id)).toEqual(['after-reset']);
+    expect(result.current.messages.map((message) => message.msg_id)).toEqual(['before-reset', 'after-reset']);
     expect(invoke).toHaveBeenCalledTimes(2);
     unmount();
   });

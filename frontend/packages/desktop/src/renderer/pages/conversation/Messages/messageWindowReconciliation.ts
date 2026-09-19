@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isTextPublicationCovered, preferTextMessageVersion, type TMessage } from '@/common/chat/chatLib';
+import {
+  isTextPublicationCovered,
+  preferTextMessageVersion,
+  type IMessageAcpToolCall,
+  type IMessageToolCall,
+  type TMessage,
+} from '@/common/chat/chatLib';
 
 const getMessageMergeKey = (message: TMessage): string => {
   if (message.msg_id) return `${message.type}:${message.msg_id}`;
@@ -41,7 +47,62 @@ const preferPersistedOrLiveMessage = (persisted: TMessage, live: TMessage): TMes
   if (persisted.type === 'text' && live.type === 'text') {
     return preserveMessageIdentityWhenEquivalent(preferTextMessageVersion(persisted, live), live);
   }
+  if (isToolMessage(persisted) && isToolMessage(live) && persisted.type === live.type) {
+    return preserveMessageIdentityWhenEquivalent(preferToolMessageVersion(persisted, live), live);
+  }
   return preserveMessageIdentityWhenEquivalent(persisted, live);
+};
+
+type ToolMessage = IMessageToolCall | IMessageAcpToolCall;
+
+const isToolMessage = (message: TMessage): message is ToolMessage =>
+  message.type === 'tool_call' || message.type === 'acp_tool_call';
+
+const recordValue = (value: unknown): Record<string, unknown> | undefined =>
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+
+const contentByteSize = (value: unknown): number => {
+  if (typeof value === 'string') return new TextEncoder().encode(value).byteLength;
+  if (value === undefined) return -1;
+  try {
+    return new TextEncoder().encode(JSON.stringify(value)).byteLength;
+  } catch {
+    return -1;
+  }
+};
+
+const toolContentIsCompact = (message: ToolMessage): boolean => {
+  const content = recordValue(message.content);
+  return recordValue(content?._compact)?.truncated === true;
+};
+
+const mergeToolContentPreservingFullLiveData = (persisted: ToolMessage, live: ToolMessage): ToolMessage['content'] => {
+  const persistedContent = recordValue(persisted.content) ?? {};
+  const liveContent = recordValue(live.content) ?? {};
+  const merged = { ...persistedContent };
+
+  // Compact history is a transport optimization, not a second authority. If
+  // a live row has the same identity, retain its larger exact fields while
+  // keeping the durable lifecycle fields from history.
+  for (const key of ['args', 'input', 'output', 'error', 'description', 'progress', 'subagent', 'subagentEvents']) {
+    const liveValue = liveContent[key];
+    if (liveValue === undefined) continue;
+    if (persistedContent[key] === undefined || contentByteSize(liveValue) > contentByteSize(persistedContent[key])) {
+      merged[key] = liveValue;
+    }
+  }
+  if (toolContentIsCompact(persisted) && !toolContentIsCompact(live)) delete merged._compact;
+  return merged as ToolMessage['content'];
+};
+
+const preferToolMessageVersion = (persisted: ToolMessage, live: ToolMessage): ToolMessage => {
+  const persistedStatus = String(recordValue(persisted.content)?.status ?? '');
+  const persistedTerminal = ['completed', 'error', 'canceled', 'interrupted'].includes(persistedStatus);
+  const base = persistedTerminal || !toolContentIsCompact(persisted) ? persisted : live;
+  const content = toolContentIsCompact(persisted)
+    ? mergeToolContentPreservingFullLiveData(persisted, live)
+    : base.content;
+  return { ...base, content } as ToolMessage;
 };
 
 const canFallbackMergeByKey = (persisted: TMessage, live: TMessage): boolean => {
@@ -76,7 +137,8 @@ export function mergeLoadedPageWithCurrent(
   conversationId: string,
   messages: TMessage[],
   currentList: TMessage[],
-  preserveUnmatchedLiveKeys = false
+  preserveUnmatchedLiveKeys = false,
+  preserveExistingOrder = false
 ): TMessage[] {
   if (!currentList.length) return messages;
 
@@ -100,6 +162,7 @@ export function mergeLoadedPageWithCurrent(
   };
   const loadedIds = new Set(messages.map((message) => message.id));
   const loadedKeys = new Set(messages.map(getMessageMergeKey));
+  const resolvedForLiveIds = new Map<string, TMessage>();
 
   const mergedMessages = messages.map((message) => {
     const exactLive = takeLiveMessage(currentById.get(message.id));
@@ -109,8 +172,49 @@ export function mergeLoadedPageWithCurrent(
         .get(getMessageMergeKey(message))
         ?.map((candidate) => (canFallbackMergeByKey(message, candidate) ? takeLiveMessage(candidate) : undefined))
         .find(Boolean);
-    return live ? preferPersistedOrLiveMessage(message, live) : message;
+    const merged = live ? preferPersistedOrLiveMessage(message, live) : message;
+    if (live) resolvedForLiveIds.set(live.id, merged);
+    return merged;
   });
+
+  if (preserveUnmatchedLiveKeys && preserveExistingOrder) {
+    // A refresh page is a bounded tail, not a replacement for the whole
+    // mounted transcript. Rebuilding from the page first moves older live
+    // messages behind the tail and makes the original conversation appear to
+    // disappear during long tasks. Keep the current chronological order,
+    // replace rows in place, and append only genuinely new durable rows.
+    const retained = new Set<string>();
+    const ordered: TMessage[] = [];
+    for (const current of sameConversation) {
+      const resolved = resolvedForLiveIds.get(current.id);
+      if (resolved) {
+        if (!retained.has(resolved.id)) {
+          retained.add(resolved.id);
+          ordered.push(resolved);
+        }
+        continue;
+      }
+      const key = getMessageMergeKey(current);
+      const hasCompatibleLoadedMessage = messages.some(
+        (candidate) => getMessageMergeKey(candidate) === key && canFallbackMergeByKey(candidate, current)
+      );
+      if (loadedKeys.has(key) && hasCompatibleLoadedMessage) continue;
+      ordered.push(current);
+      retained.add(current.id);
+    }
+    for (const message of mergedMessages) {
+      if (retained.has(message.id)) continue;
+      retained.add(message.id);
+      ordered.push(message);
+    }
+    if (ordered.length) {
+      if (ordered.length === currentList.length && ordered.every((message, index) => message === currentList[index])) {
+        return currentList;
+      }
+      return ordered;
+    }
+  }
+
   const mergedByKey = new Map(mergedMessages.map((message) => [getMessageMergeKey(message), message]));
   const liveOnly = sameConversation.filter((message) => {
     const key = getMessageMergeKey(message);

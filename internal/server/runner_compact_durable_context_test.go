@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -75,5 +76,35 @@ func TestDeterministicCompactSummaryPreservesDurableFailureAndPendingRepair(t *t
 	if !strings.Contains(prompt, "## Durable Runtime State") ||
 		!strings.Contains(prompt, "comparison_contract_missing:output/results.csv:Cmax_Cmin_ratio") {
 		t.Fatalf("model compact prompt lost durable runtime state:\n%s", prompt)
+	}
+}
+
+func TestDeterministicCompactSummaryRetainsRootTaskIntentBeyondRecentWindow(t *testing.T) {
+	entries := []eventjournal.Entry{
+		{EventID: 1, Message: eventjournal.Message{
+			"type": "message", "role": "user", "text": "原始任务：完成完整的分子对接并保留可核验证据链",
+		}},
+	}
+	for eventID := int64(2); eventID <= 60; eventID++ {
+		role := "assistant"
+		if eventID%2 == 0 {
+			role = "user"
+		}
+		entries = append(entries, eventjournal.Entry{
+			EventID: eventID,
+			Message: eventjournal.Message{
+				"type": "message", "role": role, "text": fmt.Sprintf("later turn %d", eventID),
+			},
+		})
+	}
+
+	summary, err := buildCompactModelContextSummary(
+		sessionstore.Session{ID: "frame-root-intent", Title: "long task"}, entries, "", "auto",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(summary, "原始任务：完成完整的分子对接并保留可核验证据链") {
+		t.Fatalf("root task intent was dropped from compact summary:\n%s", summary)
 	}
 }

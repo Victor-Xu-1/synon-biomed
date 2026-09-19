@@ -173,6 +173,8 @@ func (s *Server) resolveSessionRunnerModelAuthority(ctx context.Context, session
 		MaxResponseBytes: options.ModelResponseLimitBytes,
 	}
 	profile, _, snapshot, err := s.resolveSessionModelProfileSnapshotWithFallback(session, resolutionInput, "", "")
+	options.modelSelection = snapshot.Selection
+	options.modelSelectionRevision = snapshot.Revision
 	if err != nil {
 		return options, wrapSessionRunnerModelCallError(err, snapshot, "", "")
 	}

@@ -215,6 +215,7 @@ func (s *Server) executeCompactTool(ctx context.Context, input map[string]any) (
 
 const maxCompactSummaryConversationEntries = 24
 const maxCompactSummaryLineRunes = 700
+const maxCompactRootTaskIntentRunes = 3000
 const maxCompactModelTranscriptEntries = 200
 const maxCompactModelTranscriptLineRunes = 3000
 
@@ -328,6 +329,9 @@ func buildCompactModelPrompt(session sessionstore.Session, entries []eventjourna
 	if strings.TrimSpace(instructions) != "" {
 		lines = append(lines, "", "## Compact Instructions", strings.TrimSpace(instructions))
 	}
+	if rootTask := compactRootTaskIntent(entries); rootTask != "" {
+		lines = append(lines, "", "## Root Task Intent", rootTask)
+	}
 	lines = append(lines, "", "## Conversation Transcript")
 	visible := compactVisibleConversationEntries(entries, maxCompactModelTranscriptEntries)
 	if len(visible) == 0 {
@@ -397,6 +401,9 @@ func buildCompactModelContextSummary(session sessionstore.Session, entries []eve
 	if strings.TrimSpace(instructions) != "" {
 		lines = append(lines, "Compact instructions: "+compactText(strings.TrimSpace(instructions), maxCompactSummaryLineRunes))
 	}
+	if rootTask := compactRootTaskIntent(entries); rootTask != "" {
+		lines = append(lines, "Root task intent: "+rootTask)
+	}
 	recent := compactVisibleConversationEntries(entries, maxCompactSummaryConversationEntries)
 	if len(recent) == 0 {
 		lines = append(lines, "Recent conversation: no visible user or assistant messages were present before compaction.")
@@ -417,6 +424,22 @@ func buildCompactModelContextSummary(session sessionstore.Session, entries []eve
 	}
 	lines = append(lines, durable...)
 	return strings.Join(lines, "\n"), nil
+}
+
+// compactRootTaskIntent is intentionally separate from the recent conversation
+// window. Long scientific tasks can contain hundreds of progress turns; the
+// root user request remains the identity boundary for every continuation and
+// must survive compaction even when it is no longer in the recent window.
+func compactRootTaskIntent(entries []eventjournal.Entry) string {
+	for _, entry := range entries {
+		if !runnerEntryStartsNewLogicalTask(entry) {
+			continue
+		}
+		if text := compactText(runnerMessageText(entry.Message), maxCompactRootTaskIntentRunes); text != "" {
+			return text
+		}
+	}
+	return ""
 }
 
 func compactVisibleConversationEntries(entries []eventjournal.Entry, limit int) []eventjournal.Entry {

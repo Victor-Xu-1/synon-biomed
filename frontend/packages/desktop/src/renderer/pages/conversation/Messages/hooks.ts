@@ -58,7 +58,14 @@ import {
 const [useMessageList, MessageListProvider, useUpdateMessageList] = createContext([] as TMessage[]);
 const [useMessageListLoading, MessageListLoadingProvider, useUpdateMessageListLoading] = createContext(false);
 
-export type MessageListLoadSource = 'initial' | 'terminal-mount' | 'live' | 'refresh' | 'branch' | 'rebase';
+export type MessageListLoadSource =
+  | 'initial'
+  | 'terminal-mount'
+  | 'live'
+  | 'refresh'
+  | 'branch'
+  | 'rebase'
+  | 'cursor-reset';
 export type MessageListLoadError = { source: MessageListLoadSource };
 const [useMessageListLoadError, MessageListLoadErrorProvider, useUpdateMessageListLoadError] =
   createContext<MessageListLoadError | null>(null);
@@ -1398,7 +1405,13 @@ export const useMessageLstCache = (key: string, ownerId = '') => {
               : existingList;
             const nextList = replace
               ? messages
-              : mergeLoadedPageWithCurrent(key, messages, withoutOptimisticUserMessages(liveWindow), true);
+              : mergeLoadedPageWithCurrent(
+                  key,
+                  messages,
+                  withoutOptimisticUserMessages(liveWindow),
+                  true,
+                  source === 'cursor-reset'
+                );
             if (source === 'initial') initialHistoryBaselineRef.current = null;
             writeCachedMessageWindow(key, ownerId, branchRevision, nextList, nextPagination);
             return nextList;
@@ -1531,21 +1544,29 @@ export const useMessageLstCache = (key: string, ownerId = '') => {
 
   useEffect(() => {
     if (!key) return;
-    const reloadCanonicalHistory = () => {
+    const reloadCanonicalHistory = (clearVisibleWindow: boolean, source: 'rebase' | 'cursor-reset') => {
       invalidateMessageHistoryRequest(key);
       resetSynonBiomedBranchSelection(key);
-      update([]);
+      if (clearVisibleWindow) update([]);
       setLoadError(null);
-      setPagination({ ...EMPTY_MESSAGE_PAGINATION_STATE, conversationId: key });
-      void loadMessages(false, 'rebase').catch((error) => {
+      if (clearVisibleWindow) {
+        setPagination({ ...EMPTY_MESSAGE_PAGINATION_STATE, conversationId: key });
+      }
+      void loadMessages(false, source).catch((error) => {
         if (isMessageRequestAbort(error)) return;
         console.error('[useMessageLstCache] Failed to rebase canonical history:', error);
       });
     };
     const unsubscribeRebase = ipcBridge.conversation.historyRebased.on((payload) => {
-      if (payload.conversation_id === key && payload.root_frame_id === key) reloadCanonicalHistory();
+      if (payload.conversation_id === key && payload.root_frame_id === key) reloadCanonicalHistory(true, 'rebase');
     });
-    const unsubscribeCursorReset = ipcBridge.realtime.cursorReset.on(reloadCanonicalHistory);
+    // A realtime cursor reset only invalidates the delivery cursor. It does
+    // not invalidate the conversation itself. Keep the mounted transcript
+    // visible while the bounded tail is refreshed; clearing it here made a
+    // long-running task look as if its original conversation had vanished.
+    const unsubscribeCursorReset = ipcBridge.realtime.cursorReset.on(() =>
+      reloadCanonicalHistory(false, 'cursor-reset')
+    );
     return () => {
       unsubscribeRebase();
       unsubscribeCursorReset();

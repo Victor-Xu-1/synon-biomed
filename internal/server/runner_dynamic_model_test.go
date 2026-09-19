@@ -18,6 +18,41 @@ import (
 	"synon-go/internal/providers"
 )
 
+type preResolvedDynamicModelClient struct {
+	calls atomic.Int64
+}
+
+func (client *preResolvedDynamicModelClient) Complete(
+	_ context.Context,
+	_ agentruntime.ModelRequest,
+) (agentruntime.ModelResponse, error) {
+	client.calls.Add(1)
+	return agentruntime.ModelResponse{Message: agentruntime.Message{Role: "assistant", Content: "pre-resolved"}}, nil
+}
+
+func TestSessionRunnerDynamicModelClientUsesPreResolvedClientOnFirstCall(t *testing.T) {
+	delegate := &preResolvedDynamicModelClient{}
+	client := &sessionRunnerDynamicModelClient{
+		initial: sessionRunnerResolvedModelClient{
+			client:   delegate,
+			identity: "provider\x00endpoint\x00model",
+			model:    "model",
+		},
+		initialReady: true,
+	}
+
+	response, err := client.Complete(context.Background(), agentruntime.ModelRequest{})
+	if err != nil {
+		t.Fatalf("pre-resolved model call error = %v", err)
+	}
+	if response.Message.Content != "pre-resolved" {
+		t.Fatalf("response content = %q, want pre-resolved", response.Message.Content)
+	}
+	if got := delegate.calls.Load(); got != 1 {
+		t.Fatalf("pre-resolved provider calls = %d, want 1", got)
+	}
+}
+
 func TestSessionRunnerDynamicModelClientObservesConversationSwitchOnNextCall(t *testing.T) {
 	providerServer := func(expectedModel, content string, calls *atomic.Int64) *httptest.Server {
 		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

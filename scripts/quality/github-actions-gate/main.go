@@ -501,7 +501,7 @@ func validateStep(step *yaml.Node, state *workflowState, bootstrapJob, requireCh
 		(!state.policy.Requirements.UnconditionalTestEvidenceAllowed || requireCheckout || requireGate || !unconditionalTestEvidenceStep(step)) {
 		return errors.New("actions_conditional_forbidden")
 	}
-	if mappingValue(step, "env") != nil && !packageTokenStep(step, state) {
+	if mappingValue(step, "env") != nil && !packageTokenStep(step, state) && !versionTokenStep(step, state) {
 		return errors.New("actions_environment_override_forbidden")
 	}
 	if err := validateContinueOnError(step); err != nil {

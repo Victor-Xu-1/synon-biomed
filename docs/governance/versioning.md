@@ -35,6 +35,14 @@ drift. The version configuration and identity gate reject versions outside
 `0.1.x`. `initial-version` applies only to the first release, not every release.
 Published versions are never moved; fixes are delivered in a new version.
 
+After proposing a version, trusted tooling from the exact main revision validates
+the complete proposal delta. Only the registered version fields, changelog and
+derived provenance outputs may differ. It refreshes the frontend migration
+fingerprints and license report in a separate non-force commit on the version
+PR. Dependencies and all non-version JSON fields must remain unchanged; proposal
+code is never executed. Concurrent main/PR edits fail closed. Normal PR review
+and CI still apply, and no tag, release or main-branch write is performed.
+
 After reviewing and merging a version PR, run the existing full quality
 workflow once for that exact revision, then promote its verified artifacts to
 the matching immutable Release. Its publication triggers the Packages workflow.

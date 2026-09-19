@@ -129,7 +129,7 @@ class VerificationOwnershipTests(unittest.TestCase):
         groups = contract.matched(repo, [".github/release-please-config.json"])
         self.assertEqual([group["name"] for group in groups], ["version-proposal"])
         self.assertEqual(contract.checks(groups), [
-            ["python3", "-B", "-m", "unittest", "scripts.packaging.test_version_config"],
+            ["python3", "-B", "-m", "unittest", "scripts.packaging.test_version_config", "scripts.packaging.test_version_provenance"],
         ])
 
     def test_ci_guide_is_verified_without_selecting_unrelated_runtime_packages(self):

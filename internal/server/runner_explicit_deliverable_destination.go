@@ -38,7 +38,12 @@ func sessionRunnerNormalizeExplicitDeliverableDestinations(taskIntent string, in
 				break
 			}
 		}
-		if explicitFormat || durableOutputRequested {
+		// A task may name private working files alongside its requested
+		// deliverables (for example, a raw source ledger). The durable-output
+		// signal is a fallback only when the task did not identify a narrower
+		// deliverable name or format; otherwise it would promote every listed
+		// file and expose internal working data in the public artifact set.
+		if explicitFormat || (durableOutputRequested && len(explicit) == 0 && len(formats) == 0) {
 			required[path] = struct{}{}
 		}
 	}

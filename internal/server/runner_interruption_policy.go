@@ -211,9 +211,10 @@ func (s *Server) interruptClaimedSessionRunnerLockedWithPolicy(
 			ReasonCode:               reasonCode,
 			ResumeDetail:             resumeDetail,
 			RecoveryContractRevision: sessionRunnerRecoveryContractRevision,
-			Resumable:                reasonCode == sessionRunnerModelProviderUnavailableReasonCode,
-			AutoResume:               autoResume,
-			Destinations:             transcriptRunnerDestinations(transcriptAuthority),
+			Resumable: reasonCode == sessionRunnerModelProviderUnavailableReasonCode ||
+				reasonCode == sessionRunnerCorrectionNoProgressExhaustedReasonCode,
+			AutoResume:   autoResume,
+			Destinations: transcriptRunnerDestinations(transcriptAuthority),
 		})
 		if err != nil {
 			return fmt.Errorf("persist resumable runner interruption: %w", err)

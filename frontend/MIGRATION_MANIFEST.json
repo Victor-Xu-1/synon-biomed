@@ -3,7 +3,7 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "6e9b72b743692a1c6301dc7ba82daa15e8976c297820875ead4964dcce193303",
+  "adaptationFingerprintSHA256": "f696994078e2d836ed3716cc099cdbbd668d6ef210b944b0461b282cb25e453c",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
   "additionFingerprintSHA256": "f43fa665e005ffdb21dbde67e839e248534776508f4df62700c8cfdd6ffcbdf3",
   "summary": {
@@ -941,9 +941,9 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/GroupedHistory/ProjectHistorySection.tsx",
       "sourceSHA256": "38148c87bf163839e82f1af9cc699b25abc3a4a2b2f1bb2c84e4b62d2e10c9fe",
-      "targetSHA256": "d6ac8bb61ee2626e827697b5a2cbba4873e0f6eede36d32b35cbae5455ac5428",
-      "bytes": 38334,
-      "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
+      "targetSHA256": "7ceb735df2dc7d9eed8d4c003ee84d687bdc4306ff1b99a93501720166d0d3ea",
+      "bytes": 38423,
+      "reason": "Synchronize the committed project list before visible reorder handles can receive input."
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/GroupedHistory/SessionEditorModal.tsx",
@@ -3650,9 +3650,9 @@
     {
       "path": "tests/unit/renderer/ProjectHistorySection.dom.test.tsx",
       "sourceSHA256": "2e8afef2e11d0ed36ae2dbcd0489da3a02d424cd84870f94e5fc7d8041c9677e",
-      "targetSHA256": "ebd2cf0d3aabb056208005b70269742421b2ad82727c1bd5b99804274c99bd4d",
-      "bytes": 24131,
-      "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
+      "targetSHA256": "b5bf44c3b880592c0e2dabbcb27577cd474d930b822e13d836e24a0fd4d40b69",
+      "bytes": 25236,
+      "reason": "Exercise immediate keyboard input on committed project handles before passive effects flush."
     },
     {
       "path": "tests/unit/renderer/ProjectRoute.dom.test.tsx",

@@ -83,7 +83,8 @@ const ProjectHistorySection: React.FC<ProjectHistorySectionProps> = ({
   const saveVersionRef = useRef(0);
   const projectsRequestVersionRef = useRef(0);
 
-  useEffect(() => {
+  // Visible reorder handles must read the committed list before input can arrive.
+  useLayoutEffect(() => {
     projectsRef.current = projects;
   }, [projects]);
 

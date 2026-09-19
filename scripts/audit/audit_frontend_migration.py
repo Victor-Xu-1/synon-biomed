@@ -36,6 +36,8 @@ BLOCKED_SERVER_PACKAGES = {
 }
 
 ALLOWED_ADAPTATIONS = {
+    "packages/desktop/src/renderer/pages/conversation/GroupedHistory/ProjectHistorySection.tsx": "Synchronize the committed project list before visible reorder handles can receive input.",
+    "tests/unit/renderer/ProjectHistorySection.dom.test.tsx": "Exercise immediate keyboard input on committed project handles before passive effects flush.",
     'packages/desktop/src/renderer/main.tsx': 'Remove the global runtime monkey-patch import so React, ResizeObserver, requestAnimationFrame, warnings, and errors retain their native observable behavior.',
     "packages/desktop/src/common/chat/chatLib.ts": "Carry validated canonical Transcript message coordinates and cancelled tool-call status through the migrated message model.",
     "packages/desktop/src/common/chat/normalizeToolCall.ts": "Normalize the canonical cancelled tool-call status without guessing terminal state.",
@@ -493,7 +495,7 @@ ALLOWED_ADAPTATION_RULES = (
     ),
 )
 
-APPROVED_ADAPTATION_FINGERPRINT = "6e9b72b743692a1c6301dc7ba82daa15e8976c297820875ead4964dcce193303"
+APPROVED_ADAPTATION_FINGERPRINT = "f696994078e2d836ed3716cc099cdbbd668d6ef210b944b0461b282cb25e453c"
 APPROVED_REMOVAL_FINGERPRINT = "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4"
 APPROVED_ADDITION_FINGERPRINT = "f43fa665e005ffdb21dbde67e839e248534776508f4df62700c8cfdd6ffcbdf3"
 

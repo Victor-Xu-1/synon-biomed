@@ -696,9 +696,29 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	engine := s.newAgentRuntimeEngineWithContext(
 		withTranscriptRunnerChatRun(evidenceContext, run), options, runtimeToolAuthority,
 	)
+	initialModel := sessionRunnerResolvedModelClient{}
+	initialReady := false
+	if options.ModelProfile != nil && engine.Model != nil {
+		initialModel = sessionRunnerResolvedModelClient{
+			client: newSessionOutputBudgetClient(
+				engine.Model, s.runtimeStore, *options.ModelProfile, session.ID, "agent",
+			),
+			identity: strings.Join([]string{
+				strings.TrimSpace(options.ModelProfile.Provider.ID),
+				strings.TrimSpace(options.ModelProfile.Provider.Endpoint),
+				strings.TrimSpace(options.ModelProfile.Model),
+			}, "\x00"),
+			model:             strings.TrimSpace(options.ModelProfile.Model),
+			selection:         options.modelSelection,
+			selectionRevision: options.modelSelectionRevision,
+		}
+		initialReady = true
+	}
 	engine.Model = &sessionRunnerDynamicModelClient{
 		server: s, sessionID: session.ID, session: session, fallback: engine.Model,
 		fallbackModel: options.Model, role: "agent", audit: options.ModelAudit,
+		initial: initialModel, initialReady: initialReady,
+		initialSelection: options.modelSelection, initialRevision: options.modelSelectionRevision,
 		resolutionInput: providers.ResolutionInput{
 			Context:   ctx,
 			ProjectID: sessionRunnerProjectID(session), RequestTimeout: options.RequestTimeout,

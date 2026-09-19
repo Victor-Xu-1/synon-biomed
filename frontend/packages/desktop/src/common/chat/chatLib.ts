@@ -451,18 +451,26 @@ export const preferTextMessageVersion = (primary: IMessageText, secondary: IMess
     primary.content.content.trim().length > 0;
   const secondaryWouldEraseTerminalContent =
     secondary.content.content.trim().length === 0 && secondary.terminal_superseded !== true;
+  const primaryIsInProgress =
+    primary.terminal_status === undefined && (primary.status === 'work' || primary.status === 'pending');
+  const liveInProgressCopyIsLonger =
+    primaryIsInProgress &&
+    secondary.terminal_status === undefined &&
+    secondary.content.content.length > primary.content.content.length;
 
-  const selected = isTextPublicationCovered(primary, secondary)
-    ? primary
-    : primaryHasAuthoritativeTerminalContent && secondaryWouldEraseTerminalContent
+  const selected = liveInProgressCopyIsLonger
+    ? secondary
+    : isTextPublicationCovered(primary, secondary)
       ? primary
-      : primaryIsReplace !== secondaryIsReplace
-        ? primaryIsReplace
-          ? primary
-          : secondary
-        : secondary.content.content.length > primary.content.content.length
-          ? secondary
-          : primary;
+      : primaryHasAuthoritativeTerminalContent && secondaryWouldEraseTerminalContent
+        ? primary
+        : primaryIsReplace !== secondaryIsReplace
+          ? primaryIsReplace
+            ? primary
+            : secondary
+          : secondary.content.content.length > primary.content.content.length
+            ? secondary
+            : primary;
   const terminalSuperseded = primary.terminal_superseded === true || secondary.terminal_superseded === true;
   const terminalState = primary.terminal_status
     ? {

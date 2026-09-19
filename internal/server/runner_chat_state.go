@@ -44,8 +44,14 @@ type SessionRunnerChatOptions struct {
 	ModelProfile                      *providers.ModelProfile
 	ModelAudit                        func(providers.AuditRecord)
 	RequireSavedModel                 bool
-	sourceToolActivity                *sessionRunnerSourceToolActivity
-	RuntimeSessionConfig              map[string]any
+	// modelSelection and modelSelectionRevision bind the profile resolved by
+	// the runner admission step to the first provider call. The dynamic model
+	// client still re-resolves after a failed call or a live model switch, but
+	// the first call must not repeat the same provider/profile lookup.
+	modelSelection         string
+	modelSelectionRevision int64
+	sourceToolActivity     *sessionRunnerSourceToolActivity
+	RuntimeSessionConfig   map[string]any
 }
 
 type sessionRunnerChatRun struct {

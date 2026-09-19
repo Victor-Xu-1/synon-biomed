@@ -124,3 +124,55 @@ it('prefers authoritative snapshot coverage over a longer stale live copy', () =
   } as IMessageText;
   expect(preferTextMessageVersion(snapshot, live).content.content).toBe('一次说明。');
 });
+
+it('retains longer live text while an in-progress history snapshot catches up', () => {
+  const snapshot = {
+    id: 'segment-running',
+    msg_id: 'segment-running',
+    conversation_id: 'conversation',
+    type: 'text',
+    position: 'left',
+    status: 'work',
+    content: { content: '已输出前缀' },
+    history_coverage_through: 900,
+  } as IMessageText;
+  const live = {
+    ...snapshot,
+    status: 'pending',
+    content: { content: '已输出前缀，正在继续整理中间过程' },
+    history_coverage_through: undefined,
+    source_publication_sequence: 900,
+  } as IMessageText;
+  expect(preferTextMessageVersion(snapshot, live).content.content).toBe('已输出前缀，正在继续整理中间过程');
+});
+
+it('does not let compact history erase a richer live tool record', () => {
+  const persisted = {
+    id: 'tool-1',
+    msg_id: 'tool-1',
+    conversation_id: 'conversation',
+    type: 'tool_call',
+    position: 'left',
+    content: {
+      call_id: 'call-1',
+      name: 'save_artifacts',
+      status: 'running',
+      input: '{"files":["docking_components_fixed.csv"]}',
+      output: '保存结果…',
+      _compact: { truncated: true, original_size: 12000 },
+    },
+  } as TMessage;
+  const live = {
+    ...persisted,
+    content: {
+      ...persisted.content,
+      input: '{"files":["docking_components_fixed.csv"],"human_description":"保存修复后的组件列表"}',
+      output: '{"ok":true,"artifacts":[{"filename":"docking_components_fixed.csv","rows":14}]}',
+      _compact: undefined,
+    },
+  } as TMessage;
+  const merged = mergeLoadedPageWithCurrent('conversation', [persisted], [live]);
+  expect(merged).toHaveLength(1);
+  expect((merged[0] as Extract<TMessage, { type: 'tool_call' }>).content.output).toContain('"rows":14');
+  expect((merged[0] as Extract<TMessage, { type: 'tool_call' }>).content._compact).toBeUndefined();
+});

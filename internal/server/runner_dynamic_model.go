@@ -17,14 +17,18 @@ import (
 // an in-flight request finishes on its original provider and the next call
 // observes the new selection.
 type sessionRunnerDynamicModelClient struct {
-	server          *Server
-	sessionID       string
-	session         sessionstore.Session
-	resolutionInput providers.ResolutionInput
-	audit           func(providers.AuditRecord)
-	fallback        agentruntime.ModelClient
-	fallbackModel   string
-	role            string
+	server           *Server
+	sessionID        string
+	session          sessionstore.Session
+	resolutionInput  providers.ResolutionInput
+	audit            func(providers.AuditRecord)
+	fallback         agentruntime.ModelClient
+	fallbackModel    string
+	role             string
+	initial          sessionRunnerResolvedModelClient
+	initialReady     bool
+	initialSelection string
+	initialRevision  int64
 
 	mu                  sync.RWMutex
 	lastSuccessfulModel string
@@ -101,8 +105,52 @@ func (s *Server) sessionRunnerModelSelectionAdvancedSinceFailure(sessionID strin
 		strings.TrimSpace(current.Selection) != strings.TrimSpace(failure.selection)
 }
 
+func (client *sessionRunnerDynamicModelClient) takeInitial(ctx context.Context) (sessionRunnerResolvedModelClient, bool, error) {
+	if client == nil {
+		return sessionRunnerResolvedModelClient{}, false, nil
+	}
+	client.mu.Lock()
+	if !client.initialReady {
+		client.mu.Unlock()
+		return sessionRunnerResolvedModelClient{}, false, nil
+	}
+	client.initialReady = false
+	initial := client.initial
+	selection := client.initialSelection
+	revision := client.initialRevision
+	client.mu.Unlock()
+	if client.server == nil {
+		return initial, true, nil
+	}
+	sessionID := strings.TrimSpace(client.sessionID)
+	if sessionID == "" {
+		sessionID = strings.TrimSpace(client.session.ID)
+	}
+	if sessionID == "" {
+		return initial, true, nil
+	}
+	snapshot, err := client.server.sessionConversationModelSnapshotWithContext(ctx, sessionID)
+	if err != nil {
+		return sessionRunnerResolvedModelClient{}, false, err
+	}
+	if snapshot.Revision != revision || strings.TrimSpace(snapshot.Selection) != strings.TrimSpace(selection) {
+		return sessionRunnerResolvedModelClient{}, false, nil
+	}
+	initial.selection = snapshot.Selection
+	initial.selectionRevision = snapshot.Revision
+	return initial, true, nil
+}
+
 func (client *sessionRunnerDynamicModelClient) resolve(ctx context.Context) (sessionRunnerResolvedModelClient, error) {
-	if client == nil || client.server == nil {
+	if client == nil {
+		return sessionRunnerResolvedModelClient{}, errors.New("dynamic session model runtime is unavailable")
+	}
+	if initial, ready, err := client.takeInitial(ctx); err != nil {
+		return sessionRunnerResolvedModelClient{}, err
+	} else if ready {
+		return initial, nil
+	}
+	if client.server == nil {
 		return sessionRunnerResolvedModelClient{}, errors.New("dynamic session model runtime is unavailable")
 	}
 	session := client.session

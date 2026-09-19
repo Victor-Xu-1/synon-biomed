@@ -13,7 +13,7 @@ import {
 } from '@/renderer/services/synonBiomedAnnotations';
 import { Button, Empty, Input, InputNumber, Message, Modal, Select, Spin } from '@arco-design/web-react';
 import { CheckOne, Delete, Edit, Magic, Plus, Refresh } from '@icon-park/react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArtifactEditRefinementPanel } from './ArtifactEditRefinementPanel';
 
@@ -213,24 +213,38 @@ export const ArtifactVerificationPanel: React.FC<{
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [auditing, setAuditing] = useState(false);
+  const lifecycleRef = useRef(0);
+  const reloadRevisionRef = useRef(0);
+  const refreshTimerRef = useRef<number | null>(null);
   const [messageApi, messageContextHolder] = Message.useMessage();
 
   const reload = useCallback(async () => {
+    const revision = ++reloadRevisionRef.current;
     setLoading(true);
     setFailed(false);
     try {
-      setChecks(await loadSynonBiomedArtifactVerification(versionId));
+      const next = await loadSynonBiomedArtifactVerification(versionId);
+      if (revision === reloadRevisionRef.current) setChecks(next);
     } catch (error) {
+      if (revision !== reloadRevisionRef.current) return;
       console.error('[ArtifactVerificationPanel] Failed to load verification checks', error);
       setChecks([]);
       setFailed(true);
     } finally {
-      setLoading(false);
+      if (revision === reloadRevisionRef.current) setLoading(false);
     }
   }, [versionId]);
 
   useEffect(() => {
+    lifecycleRef.current += 1;
+    setAuditing(false);
     void reload();
+    return () => {
+      lifecycleRef.current += 1;
+      reloadRevisionRef.current += 1;
+      if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    };
   }, [reload]);
 
   const summary = useMemo(() => {
@@ -241,18 +255,23 @@ export const ArtifactVerificationPanel: React.FC<{
 
   const requestAudit = async () => {
     if (!rootFrameId) return;
+    const lifecycle = lifecycleRef.current;
     setAuditing(true);
     try {
       await requestSynonBiomedFrameAudit(rootFrameId);
+      if (lifecycle !== lifecycleRef.current) return;
       messageApi.success(t('preview.artifactVerification.auditStarted'));
-      window.setTimeout((): void => {
+      if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = window.setTimeout((): void => {
+        refreshTimerRef.current = null;
         void reload();
       }, 1200);
     } catch (error) {
+      if (lifecycle !== lifecycleRef.current) return;
       console.error('[ArtifactVerificationPanel] Failed to start verification audit', error);
       messageApi.error(t('preview.artifactVerification.auditStartFailed'));
     } finally {
-      setAuditing(false);
+      if (lifecycle === lifecycleRef.current) setAuditing(false);
     }
   };
 

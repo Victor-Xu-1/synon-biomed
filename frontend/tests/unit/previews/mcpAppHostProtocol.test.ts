@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import productIdentity from '../../../../product-identity.json';
 import {
   MCP_APP_PROTOCOL_VERSION,
   mcpAppInitializeResult,
@@ -41,7 +42,7 @@ describe('MCP App browser host protocol', () => {
   it('advertises only implemented read-only host capabilities and the product identity', () => {
     expect(mcpAppInitializeResult(MCP_APP_PROTOCOL_VERSION, true)).toEqual({
       protocolVersion: MCP_APP_PROTOCOL_VERSION,
-      hostInfo: { name: 'Synon Biomed', version: '0.1.1' },
+      hostInfo: { name: productIdentity.display_name, version: productIdentity.version },
       hostCapabilities: { serverTools: { listChanged: false }, logging: {} },
       hostContext: {
         displayMode: 'inline',

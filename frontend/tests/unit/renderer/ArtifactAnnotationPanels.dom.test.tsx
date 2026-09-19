@@ -1,5 +1,5 @@
 import { ConfigProvider } from '@arco-design/web-react';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -180,6 +180,37 @@ describe('Artifact annotation and verification panels', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '重新审计' }));
     await waitFor(() => expect(mocks.requestAudit).toHaveBeenCalledWith('frame-1'));
+  });
+
+  it.each([false, true])('does not refresh after unmount when audit response is pending: %s', async (pending) => {
+    let completeAudit!: (value: { frame_id: string }) => void;
+    if (pending)
+      mocks.requestAudit.mockReturnValueOnce(
+        new Promise((resolve) => {
+          completeAudit = resolve;
+        })
+      );
+    const view = await render(
+      <ConfigProvider>
+        <ArtifactVerificationPanel versionId='version-1' rootFrameId='frame-1' />
+      </ConfigProvider>
+    );
+    await screen.findByText('STAT6 binding improved');
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: '重新审计' }));
+      });
+      view.unmount();
+      await act(async () => {
+        if (pending) completeAudit({ frame_id: 'audit-frame' });
+        await Promise.resolve();
+        await vi.advanceTimersByTimeAsync(1200);
+      });
+      expect(mocks.loadVerification).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('reviews a generated diff, allows manual revision and applies an immutable child version', async () => {

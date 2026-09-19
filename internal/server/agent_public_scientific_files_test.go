@@ -22,6 +22,7 @@ import (
 	eventjournal "synon-go/internal/persistence/journal"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
+	"synon-go/internal/toolprogress"
 	"synon-go/internal/tools/securefetch"
 )
 
@@ -272,6 +273,52 @@ func (r *agentPublicScientificUnexpectedEOFReader) Read(buffer []byte) (int, err
 		return copy(buffer, r.payload), nil
 	}
 	return 0, io.ErrUnexpectedEOF
+}
+
+func TestAgentPublicScientificFileDownloadCreatesFreshTaskWorkspace(t *testing.T) {
+	fixture := newAgentSaveArtifactsFixture(t)
+	fixture.server.publicScientificFiles = &agentPublicScientificFileFetcher{
+		body: `{"entry":"4OGI"}`, contentType: "application/json",
+	}
+	fixture.server.publicScientificDownloadSlots = make(chan struct{}, 2)
+	sourceURL := "https://data.example.org/structures/4OGI.json"
+	sourceCallID := appendAgentPublicScientificSourceCheckpoint(
+		t, fixture, "fresh-workspace-source", sourceURL, false, nil,
+	)
+	workspaceDir := filepath.Join(fixture.projectPath, "tasks", "fresh-workspace")
+	fixture.identity.workspaceDir = workspaceDir
+	input := map[string]any{
+		"source_tool_call_id": sourceCallID,
+		"url":                 sourceURL,
+		"human_description":   "Downloading a structure record into a fresh task workspace",
+	}
+	var progress []toolprogress.Update
+	ctx := toolprogress.WithReporter(
+		agentPublicScientificToolContext(t, fixture, "fresh-workspace-download", input),
+		func(update toolprogress.Update) { progress = append(progress, update) },
+	)
+	if _, err := fixture.server.executeAgentPublicScientificFileDownload(
+		ctx, fixture.identity, "fresh-workspace-download", input,
+	); err != nil {
+		t.Fatal(err)
+	}
+	ready := false
+	for _, update := range progress {
+		if update.Phase == "download_ready" && update.BytesCompleted != nil &&
+			*update.BytesCompleted == int64(len(`{"entry":"4OGI"}`)) &&
+			update.BytesTotal != nil && *update.BytesTotal == int64(len(`{"entry":"4OGI"}`)) &&
+			update.BytesPerSecond != nil && *update.BytesPerSecond > 0 {
+			ready = true
+			break
+		}
+	}
+	if !ready {
+		t.Fatalf("final download progress did not retain measured transfer rate: %#v", progress)
+	}
+	stored, err := os.ReadFile(filepath.Join(workspaceDir, "4OGI.json"))
+	if err != nil || string(stored) != `{"entry":"4OGI"}` {
+		t.Fatalf("stored=%q err=%v", stored, err)
+	}
 }
 
 func TestAgentPublicScientificFileDownloadResumesInterruptedTransfer(t *testing.T) {
@@ -659,6 +706,82 @@ func TestAgentPublicScientificFileDownloadUsesAttestedLargeMCPResultAndReplays(t
 	resumedArtifacts := agentSaveArtifactResults(t, resumed)
 	if resumedArtifacts[0]["version_id"] != artifacts[0]["version_id"] || len(fetcher.callSnapshot()) != 1 {
 		t.Fatalf("first=%#v resumed=%#v calls=%#v", first, resumed, fetcher.callSnapshot())
+	}
+}
+
+func TestAgentPublicScientificDownloadedFileCanBePromotedWithoutNewVersion(t *testing.T) {
+	fixture := newAgentSaveArtifactsFixture(t)
+	const content = `{"entry":"4OGI"}`
+	fixture.server.publicScientificFiles = &agentPublicScientificFileFetcher{
+		body: content, contentType: "application/json",
+	}
+	fixture.server.publicScientificDownloadSlots = make(chan struct{}, 2)
+	const sourceURL = "https://data.example.org/structures/4OGI.json"
+	sourceCallID := appendAgentPublicScientificSourceCheckpoint(t, fixture, "promote-source", sourceURL, false, nil)
+	downloadInput := map[string]any{
+		"source_tool_call_id": sourceCallID, "url": sourceURL,
+		"human_description": "Downloading the verified structure record",
+	}
+	downloadResult, err := fixture.server.executeAgentPublicScientificFileDownload(
+		agentPublicScientificToolContext(t, fixture, "promote-download", downloadInput),
+		fixture.identity, "promote-download", downloadInput,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	downloaded := agentSaveArtifactResults(t, downloadResult)
+	if len(downloaded) != 1 {
+		t.Fatalf("download result=%#v", downloadResult)
+	}
+
+	saveInput := map[string]any{
+		"files": []any{"4OGI.json"}, "language": "text",
+		"destination":       map[string]any{"4OGI.json": "snapshot"},
+		"human_description": "Saving the verified structure file",
+	}
+	savedResult, err := fixture.server.executeAgentSaveArtifacts(
+		fixture.toolContext(t, "promote-save", saveInput), fixture.identity, "promote-save", saveInput,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved := agentSaveArtifactResults(t, savedResult)
+	if len(saved) != 1 || saved[0]["version_id"] != downloaded[0]["version_id"] || saved[0]["unchanged"] != true {
+		t.Fatalf("saved result=%#v downloaded=%#v", savedResult, downloadResult)
+	}
+
+	artifactID := stringValue(saved[0]["artifact_id"])
+	versionID := stringValue(saved[0]["version_id"])
+	var consumed, produced, versions int
+	if err := fixture.db.QueryRow(
+		`SELECT COUNT(*) FROM transcript_artifact_commits WHERE artifact_id=? AND version_id=? AND relation='consumed'`,
+		artifactID, versionID,
+	).Scan(&consumed); err != nil {
+		t.Fatal(err)
+	}
+	if err := fixture.db.QueryRow(
+		`SELECT COUNT(*) FROM transcript_artifact_commits WHERE artifact_id=? AND version_id=? AND relation='produced'`,
+		artifactID, versionID,
+	).Scan(&produced); err != nil {
+		t.Fatal(err)
+	}
+	if err := fixture.db.QueryRow(`SELECT COUNT(*) FROM artifact_versions WHERE artifact_id=?`, artifactID).Scan(&versions); err != nil {
+		t.Fatal(err)
+	}
+	if consumed != 1 || produced != 1 || versions != 1 {
+		t.Fatalf("artifact lineage consumed=%d produced=%d versions=%d", consumed, produced, versions)
+	}
+
+	if err := fixture.store.PublishArtifactVersion(
+		context.Background(), versionID, artifactID, fixture.stream.ProjectID, fixture.stream.OwnerID,
+	); err != nil {
+		t.Fatal(err)
+	}
+	visible, err := fixture.store.ListCompatibilityConversationArtifacts(
+		context.Background(), fixture.stream.OwnerID, fixture.stream.ProjectID, fixture.stream.RootFrameID, true,
+	)
+	if err != nil || len(visible) != 1 || visible[0].VersionID != versionID || visible[0].Filename != "4OGI.json" {
+		t.Fatalf("promoted file visibility=%#v err=%v", visible, err)
 	}
 }
 

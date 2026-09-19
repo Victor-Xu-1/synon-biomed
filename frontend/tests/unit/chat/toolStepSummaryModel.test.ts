@@ -139,6 +139,12 @@ describe('tool step summary model', () => {
       detail: '下载文件 · 已下载 50% · 50 MB / 100 MB · 224 KB/s · 剩余 50 MB · 本步骤 1:30',
       resultSummary: '下载 50%',
     });
+    expect(
+      buildToolStepPublicPresentation({ ...running, status: 'completed' }, 'zh-CN')
+    ).toMatchObject({
+      detail: '下载文件 · 已下载 50% · 50 MB / 100 MB · 224 KB/s · 剩余 50 MB · 本步骤 1:30',
+      resultSummary: '已完成',
+    });
   });
 
   it('uses domain result counts for saved artifacts and web searches', () => {

@@ -36,19 +36,42 @@ type agentPublicScientificDownloadStageState struct {
 }
 
 type agentPublicScientificDownloadStage struct {
-	directory string
-	payload   string
-	metadata  string
-	file      *os.File
-	state     agentPublicScientificDownloadStageState
+	directory        string
+	payload          string
+	metadata         string
+	file             *os.File
+	state            agentPublicScientificDownloadStageState
+	transferBytes    int64
+	transferDuration time.Duration
 }
 
 type agentPublicScientificStagedFile struct {
-	file       *os.File
-	directory  string
-	sizeBytes  int64
-	contentSHA string
-	unlock     func()
+	file           *os.File
+	directory      string
+	sizeBytes      int64
+	contentSHA     string
+	bytesPerSecond *float64
+	unlock         func()
+}
+
+func (stage *agentPublicScientificDownloadStage) recordTransfer(bytes int64, duration time.Duration) {
+	if stage == nil || bytes <= 0 || duration <= 0 {
+		return
+	}
+	stage.transferBytes += bytes
+	stage.transferDuration += duration
+}
+
+func (stage *agentPublicScientificDownloadStage) transferRate() *float64 {
+	if stage == nil || stage.transferBytes <= 0 || stage.transferDuration <= 0 {
+		return nil
+	}
+	seconds := stage.transferDuration.Seconds()
+	if seconds <= 0 {
+		return nil
+	}
+	rate := float64(stage.transferBytes) / seconds
+	return &rate
 }
 
 func (staged *agentPublicScientificStagedFile) close() {
@@ -197,7 +220,8 @@ func (s *Server) fetchAndStageAgentPublicScientificFile(
 	if _, err := stage.file.Seek(0, io.SeekStart); err != nil {
 		return nil, "", errors.New("public scientific file download staging failed")
 	}
-	reportAgentPublicScientificDownloadProgress(ctx, "verifying_download", offset, offset, nil)
+	bytesPerSecond := stage.transferRate()
+	reportAgentPublicScientificDownloadProgress(ctx, "verifying_download", offset, offset, bytesPerSecond)
 	hasher := sha256.New()
 	sizeBytes, err := io.Copy(hasher, io.LimitReader(stage.file, maximumBytes+1))
 	if err != nil || sizeBytes <= 0 || sizeBytes > maximumBytes || sizeBytes != offset {
@@ -206,11 +230,11 @@ func (s *Server) fetchAndStageAgentPublicScientificFile(
 	if _, err := stage.file.Seek(0, io.SeekStart); err != nil {
 		return nil, "", errors.New("public scientific file download staging failed")
 	}
-	reportAgentPublicScientificDownloadProgress(ctx, "download_verified", sizeBytes, sizeBytes, nil)
+	reportAgentPublicScientificDownloadProgress(ctx, "download_verified", sizeBytes, sizeBytes, bytesPerSecond)
 	keepOpen, transferredLock = true, true
 	return &agentPublicScientificStagedFile{
 		file: stage.file, directory: stage.directory, sizeBytes: sizeBytes,
-		contentSHA: hex.EncodeToString(hasher.Sum(nil)), unlock: unlock,
+		contentSHA: hex.EncodeToString(hasher.Sum(nil)), bytesPerSecond: bytesPerSecond, unlock: unlock,
 	}, stage.state.ContentType, nil
 }
 
@@ -412,10 +436,12 @@ func (s *Server) continueAgentPublicScientificDownload(
 		progressReader := newAgentPublicScientificProgressReader(
 			ctx, response.Body, *offset, stage.state.ExpectedTotal,
 		)
+		transferStarted := time.Now()
 		written, copyErr := io.Copy(
 			&agentDownloadDiskWriter{writer: stage.file, guard: guard, written: *offset},
 			io.LimitReader(&contextReader{ctx: ctx, reader: progressReader}, remaining+1),
 		)
+		stage.recordTransfer(written, time.Since(transferStarted))
 		progressReader.Complete()
 		close(bodyClosed)
 		closeErr := response.Body.Close()

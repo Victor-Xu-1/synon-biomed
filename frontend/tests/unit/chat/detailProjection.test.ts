@@ -52,6 +52,36 @@ describe('tool detail projection', () => {
       expect(JSON.stringify(detail.resultRows)).not.toContain('72%');
     }
   );
+  it('retains the final real transfer snapshot after a download completes', () => {
+    const detail = buildToolPublicDetailPresentation(
+      tool({
+        name: 'download_public_scientific_file',
+        status: 'completed',
+        output: JSON.stringify({ ok: true, filename: '4OGI.cif' }),
+        progress: {
+          phase: 'download_ready',
+          phasePercent: 100,
+          bytesCompleted: 484_949,
+          bytesTotal: 484_949,
+          bytesPerSecond: 420_000,
+          elapsedMs: 1_155,
+          indeterminate: false,
+        },
+      }),
+      'zh-CN',
+      '已完成'
+    );
+
+    expect(detail.resultRows).toEqual([
+      { label: '当前阶段', value: '下载文件已就绪' },
+      { label: '下载进度', value: '100%' },
+      { label: '已下载', value: '485 KB / 485 KB' },
+      { label: '传输速度', value: '420 KB/s' },
+      { label: '剩余', value: '0 B' },
+      { label: '本步骤已用时', value: '0:01' },
+      { label: '文件名', value: '4OGI.cif' },
+    ]);
+  });
   it('uses one private-field policy for summary rows and nested evidence', () => {
     const detail = buildToolPublicDetailPresentation(
       tool({

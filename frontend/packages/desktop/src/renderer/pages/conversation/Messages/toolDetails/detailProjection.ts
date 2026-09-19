@@ -8,7 +8,7 @@ import {
   sanitizePublicTaskText,
 } from '../components/toolPublicDetailBlocks';
 import { isPublicNarrativeSafe } from '../components/toolStepSummaryModel';
-import { buildToolProgressPublicPresentation } from '../components/toolProgressPresentation';
+import { buildToolProgressPublicPresentation, hasDeterminateByteTransfer } from '../components/toolProgressPresentation';
 import {
   dedupeCollections,
   dedupeRows,
@@ -59,7 +59,10 @@ export function buildToolPublicDetailPresentation(
   const outputBlocks = detailKind === 'method' ? [] : detailBlocks.outputBlocks;
   const outputProjection = buildToolDetailOutputProjection(outputSources, detailKind, chinese, outputBlocks.length > 0);
   const progressRows =
-    tool.status === 'running' && tool.progress ? buildToolProgressPublicPresentation(tool.progress, language).rows : [];
+    tool.progress &&
+    (tool.status === 'running' || (tool.status === 'completed' && hasDeterminateByteTransfer(tool.progress)))
+      ? buildToolProgressPublicPresentation(tool.progress, language).rows
+      : [];
   const resultCollections = dedupeCollections(outputProjection.collections);
   const resultRows = normalizeToolDetailResultRows(
     [...progressRows, ...outputProjection.rows],

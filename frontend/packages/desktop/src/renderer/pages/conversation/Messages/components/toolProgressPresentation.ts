@@ -90,6 +90,17 @@ const byteCountLabel = (bytes: number): string => {
   return `${Number(value.toFixed(digits))} ${units[unitIndex]}`;
 };
 
+export function hasDeterminateByteTransfer(progress: NormalizedToolProgress): boolean {
+  return (
+    typeof progress.bytesCompleted === 'number' &&
+    Number.isFinite(progress.bytesCompleted) &&
+    progress.bytesCompleted >= 0 &&
+    typeof progress.bytesTotal === 'number' &&
+    Number.isFinite(progress.bytesTotal) &&
+    progress.bytesTotal > 0
+  );
+}
+
 export function buildToolProgressPublicPresentation(
   progress: NormalizedToolProgress,
   language: string

@@ -8,8 +8,35 @@ import (
 	"time"
 
 	"synon-go/internal/agentruntime"
+	eventjournal "synon-go/internal/persistence/journal"
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
+
+func TestRepeatedCompletionCorrectionIsBoundedByItsDurableFingerprint(t *testing.T) {
+	detail := "runner completion reference integrity failed (missing_required_deliverables=1)"
+	entries := []eventjournal.Entry{
+		{Message: eventjournal.Message{
+			"type": "runner_checkpoint", "reason_code": "artifact_reference_correction_required",
+			"resume_detail": detail,
+		}},
+		{Message: eventjournal.Message{
+			"type": "runner_checkpoint", "reason_code": "artifact_reference_correction_required",
+			"resume_detail": detail + sessionRunnerNoProgressDetailMarker + `{"schema":"synon.runner_no_progress.v1"}`,
+		}},
+	}
+	if got := runnerRepeatedCorrectionInterruptionCount(entries, "artifact_reference_correction_required", detail); got != 2 {
+		t.Fatalf("repeated correction count=%d, want 2", got)
+	}
+	var integrity *sessionRunnerReferenceIntegrityError
+	integrity = &sessionRunnerReferenceIntegrityError{MissingRequiredDeliverables: []string{"at least one verified downloadable artifact"}}
+	correction, ok := any(integrity).(sessionRunnerBoundedCorrection)
+	if !ok {
+		t.Fatal("reference integrity failure is not a bounded correction")
+	}
+	if reason, gotDetail := correction.runnerCorrection(); reason != "artifact_reference_correction_required" || gotDetail != integrity.Error() {
+		t.Fatalf("correction=(%q,%q), want typed integrity correction", reason, gotDetail)
+	}
+}
 
 func TestNoProgressRouteQuarantineIgnoresPresentationLabelsAndClearsOnMaterialProgress(t *testing.T) {
 	run := &sessionRunnerChatRun{TaskIntent: "complete the task", TaskIntentRevision: 1}

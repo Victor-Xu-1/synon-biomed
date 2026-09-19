@@ -385,6 +385,61 @@ func TestAppendAssistantEventWithCommittedArtifactsPublishesOnlyLatestArtifactHe
 	}
 }
 
+func TestFinishRunnerCoalescesConsumedAndProducedRelationForSameVersion(t *testing.T) {
+	repo, db, _ := newTranscriptRepository(t)
+	claim := seedArtifactProjectionClaim(t, repo, db, "stream-artifact-relation-upgrade", "owner-a")
+	seedArtifactVersion(t, db, "owner-a", "project-a", "root-a", "frame-a", "artifact-a", "version-a1")
+
+	_, consumedSource, _, err := repo.AppendRunnerCheckpoint(context.Background(), AppendRunnerCheckpointInput{
+		Claim: claim, ClientMessageID: "download-source", Phase: RunnerPhaseExecuting,
+		Resumable: true, PayloadJSON: []byte(`{"tool":"download_public_scientific_file"}`), Destinations: []string{"ws"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO transcript_artifact_commits(
+		stream_uid,runner_attempt,source_event_id,ordinal,artifact_id,version_id,relation,created_at
+	) VALUES(?,?,?,?,?,?,?,?)`, claim.StreamUID, claim.Attempt, consumedSource.EventID, 0,
+		"artifact-a", "version-a1", string(ArtifactRelationConsumed), time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, producedSource, _, err := repo.AppendRunnerCheckpoint(context.Background(), AppendRunnerCheckpointInput{
+		Claim: claim, ClientMessageID: "save-source", Phase: RunnerPhaseExecuting,
+		Resumable: true, PayloadJSON: []byte(`{"tool":"save_artifacts"}`), Destinations: []string{"ws"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO transcript_artifact_commits(
+		stream_uid,runner_attempt,source_event_id,ordinal,artifact_id,version_id,relation,created_at
+	) VALUES(?,?,?,?,?,?,?,?)`, claim.StreamUID, claim.Attempt, producedSource.EventID, 0,
+		"artifact-a", "version-a1", string(ArtifactRelationProduced), time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+
+	terminal, _, created, err := repo.FinishRunner(context.Background(), FinishRunnerInput{
+		Claim: claim, ClientMessageID: "runner-finished-relation-upgrade", Status: "completed",
+		PayloadJSON: []byte(`{"status":"completed"}`), Destinations: []string{"ws"},
+	})
+	if err != nil || !created {
+		t.Fatalf("terminal=%#v created=%t err=%v", terminal, created, err)
+	}
+	refs, err := repo.ListArtifactReferences(context.Background(), claim.StreamUID, claim.OwnerID, claim.Attempt)
+	if err != nil || len(refs) != 1 || refs[0].SourceEventID != terminal.EventID ||
+		refs[0].VersionID != "version-a1" || refs[0].Relation != ArtifactRelationProduced {
+		t.Fatalf("terminal=%#v refs=%#v err=%v", terminal, refs, err)
+	}
+	var relation string
+	if err := db.QueryRow(`SELECT relation FROM transcript_artifact_refs
+		WHERE stream_uid=? AND runner_attempt=? AND source_event_id=?`, claim.StreamUID, claim.Attempt, terminal.EventID).Scan(&relation); err != nil {
+		t.Fatal(err)
+	}
+	if relation != string(ArtifactRelationProduced) {
+		t.Fatalf("terminal relation=%q", relation)
+	}
+}
+
 func TestRepositoryArtifactReferencesRestrictSourceDeletionAndRollbackStorageFailures(t *testing.T) {
 	repo, db, _ := newTranscriptRepository(t)
 	claim := seedArtifactProjectionClaim(t, repo, db, "stream-artifact-retention", "owner-a")

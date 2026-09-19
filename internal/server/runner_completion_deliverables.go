@@ -20,8 +20,10 @@ var sessionRunnerExplicitDeliverableNamePattern = regexp.MustCompile(`(?i)\b[a-z
 var sessionRunnerExplicitDeliverableFormatPattern = regexp.MustCompile(`(?i)\b(?:csv|tsv|xlsx|parquet|json|jsonl|markdown|md|html?|pdf|docx|pptx?|sdf|pdb|pdbqt|cif|mmcif|ipynb)\b`)
 
 var sessionRunnerDurableArtifactIntentPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?i)\b(?:downloadable|export(?:ed)?\s+(?:as|to)\s+(?:a\s+)?file|save(?:d)?\s+(?:as|to)\s+(?:a\s+)?file|deliverable\s+files?|file\s+attachments?)\b`),
-	regexp.MustCompile(`(?:可(?:以)?下载|导出(?:为|成)?(?:文件|表格|报告|数据)|保存(?:为|成)(?:文件|表格|报告)|交付(?:物|文件)|文件附件)`),
+	regexp.MustCompile(`(?i)\b(?:downloadable|export(?:ed)?\s+(?:as|to)\s+(?:a\s+)?file|save(?:d)?\s+(?:as|to)\s+(?:a\s+)?file|retain(?:ed)?|preserve(?:d)?|keep(?:ing)?\s+(?:the\s+)?(?:file|artifact|output)|deliverable\s+files?|file\s+attachments?)\b`),
+	regexp.MustCompile(`(?:可(?:以)?下载|导出(?:为|成)?(?:文件|表格|报告|数据)|保存(?:为|成)(?:文件|表格|报告)|保留|留存|整理到(?:当前)?项目|放入(?:当前)?项目|写入(?:当前)?项目|交付(?:物|文件)|文件附件)`),
+	regexp.MustCompile(`(?i)\b(?:save|saved|saving|persist|persisted|persisting|attach|attached|attaching|retain|retained|preserve|preserved)\b[^.\n;:]{0,120}\b(?:files?|artifacts?|attachments?|reports?|logs?|tables?|datasets?|outputs?|project)\b`),
+	regexp.MustCompile(`(?:保存|持久化|附加|保留|留存|整理|写入)[^。！？；\n]{0,80}(?:文件|产物|附件|报告|日志|表格|数据集|输出|项目)`),
 }
 
 func sessionRunnerArtifactNameSatisfiesRequiredDeliverable(taskIntent, name string) bool {

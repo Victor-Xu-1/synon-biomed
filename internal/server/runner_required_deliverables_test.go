@@ -42,6 +42,24 @@ func TestSessionRunnerDoesNotTreatInputDownloadAsOutputArtifactRequirement(t *te
 	}
 }
 
+func TestSessionRunnerRequiresArtifactForExplicitSaveWithoutAsSyntax(t *testing.T) {
+	tasks := []string{
+		"Download the public structure, validate it, and save a concise report together with the raw file or log.",
+		"下载完成后校验文件存在、实际字节数、结构文件可解析，并保存一个简短结果报告和原始文件或日志。",
+		"请把这个公开结构数据整理到当前项目，确认数据可用，并保留原始数据和一份简短的核验说明。",
+	}
+	for _, task := range tasks {
+		if !sessionRunnerRequiresDurableArtifact(task) {
+			t.Fatalf("task %q did not retain its explicit save requirement", task)
+		}
+		if missing := missingSessionRunnerRequiredDeliverables(task, nil); !reflect.DeepEqual(
+			missing, []string{"at least one verified downloadable artifact"},
+		) {
+			t.Fatalf("task %q missing=%#v", task, missing)
+		}
+	}
+}
+
 func TestSessionRunnerRequiresOnlyExplicitlyNamedOutputArtifacts(t *testing.T) {
 	task := "Run the reproducible workflow; output provenance.csv、templates.csv、compounds.csv、validation.json and report.md. Use input_seed.csv as an input."
 	if got := sessionRunnerExplicitDeliverableNames(task); !reflect.DeepEqual(got, []string{

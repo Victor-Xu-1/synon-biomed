@@ -283,7 +283,19 @@ func (s *Server) handleSessionRunnerChatInterruption(
 	var boundedCorrection sessionRunnerBoundedCorrection
 	if errors.As(chatErr, &boundedCorrection) {
 		reasonCode, resumeDetail := boundedCorrection.runnerCorrection()
-		if !runnerInterruptionMayContinueSameTask(reasonCode) {
+		repeatedCorrections := runnerRepeatedCorrectionInterruptionCount(entries, reasonCode, resumeDetail)
+		correctionExhausted := repeatedCorrections >= sessionRunnerCorrectionNoProgressBudget-1
+		if correctionExhausted {
+			// Preserve the exact integrity failure and stop unattended recovery
+			// after bounded identical obligations. A task with durable artifacts is
+			// still recoverable by an explicit user continuation, but it must not
+			// spin through the same final-candidate path forever.
+			reasonCode = sessionRunnerCorrectionNoProgressExhaustedReasonCode
+			resumeDetail = fmt.Sprintf(
+				"the same completion correction remained unresolved after %d bounded attempts; preserve all durable artifacts and wait for an explicit continuation before trying a materially different repair. Last failure: %s",
+				sessionRunnerCorrectionNoProgressBudget, strings.TrimSpace(resumeDetail),
+			)
+		} else if !runnerInterruptionMayContinueSameTask(reasonCode) {
 			return false, nil
 		}
 		if chatRun.AssistantSegmentHasContent {

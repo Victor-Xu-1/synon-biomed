@@ -20,10 +20,14 @@ type AssociateArtifactVersionInput struct {
 	TranscriptAssociation *ArtifactTranscriptAssociation
 }
 
-// AssociateArtifactVersionRealtime appends a realtime transcript association
-// without creating another immutable version or touching blob storage. The
-// artifact, version, project owner, current-version identity, and transcript
-// authority are checked in one transaction.
+// AssociateArtifactVersionRealtime records a realtime produced association
+// without creating another immutable version or touching blob storage. A
+// stream/version already carrying a produced association is already on the
+// authoritative publication path, so the operation is idempotent across
+// producer tools; a prior consumed association is still promoted by adding
+// the missing produced relation. The artifact, version, project owner,
+// current-version identity, and transcript authority are checked in one
+// transaction.
 func (s *Store) AssociateArtifactVersionRealtime(
 	ctx context.Context,
 	input AssociateArtifactVersionInput,
@@ -106,13 +110,14 @@ func (s *Store) AssociateArtifactVersionRealtime(
 	}
 
 	now := s.now().UTC()
-	var existingRelation string
+	var producedCommit int
 	existingErr := tx.QueryRowContext(ctx, `
-		SELECT relation FROM transcript_artifact_commits
-		WHERE stream_uid=? AND runner_attempt=? AND source_event_id=? AND artifact_id=? AND version_id=?`,
+		SELECT 1 FROM transcript_artifact_commits
+		WHERE stream_uid=? AND runner_attempt=? AND artifact_id=? AND version_id=? AND relation='produced'
+		LIMIT 1`,
 		strings.TrimSpace(input.TranscriptAssociation.StreamUID), input.TranscriptAssociation.Attempt,
-		input.TranscriptAssociation.SourceEventID, input.ArtifactID, input.VersionID,
-	).Scan(&existingRelation)
+		input.ArtifactID, input.VersionID,
+	).Scan(&producedCommit)
 	if errors.Is(existingErr, sql.ErrNoRows) {
 		writeInput := WriteArtifactVersionInput{
 			ArtifactID: input.ArtifactID, ProjectID: input.ProjectID,
@@ -126,8 +131,6 @@ func (s *Store) AssociateArtifactVersionRealtime(
 		}
 	} else if existingErr != nil {
 		return Artifact{}, ArtifactVersion{}, fmt.Errorf("look up existing artifact association: %w", existingErr)
-	} else if existingRelation != "produced" {
-		return Artifact{}, ArtifactVersion{}, fmt.Errorf("artifact version already has transcript relation %q", existingRelation)
 	}
 
 	artifact, version, err := loadArtifactVersionResultTx(ctx, tx, input.ArtifactID, input.VersionID)

@@ -8,7 +8,10 @@ import {
   sanitizePublicTaskText,
 } from '../components/toolPublicDetailBlocks';
 import { isPublicNarrativeSafe } from '../components/toolStepSummaryModel';
-import { buildToolProgressPublicPresentation, hasDeterminateByteTransfer } from '../components/toolProgressPresentation';
+import {
+  buildToolProgressPublicPresentation,
+  hasDeterminateByteTransfer,
+} from '../components/toolProgressPresentation';
 import {
   dedupeCollections,
   dedupeRows,

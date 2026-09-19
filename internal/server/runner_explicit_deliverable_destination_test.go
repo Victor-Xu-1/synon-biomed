@@ -51,3 +51,15 @@ func TestExplicitMarkdownAndCSVDeliverablesCannotBeStagedAsWorkingData(t *testin
 		t.Fatalf("required destination=%#v", destination)
 	}
 }
+
+func TestGenericDurableOutputRequestPromotesUnclassifiedFiles(t *testing.T) {
+	input := map[string]any{
+		"files":       []any{"result.bin"},
+		"destination": map[string]any{"result.bin": "working_data"},
+	}
+	got := sessionRunnerNormalizeExplicitDeliverableDestinations("Make every result downloadable.", input)
+	destination := got["destination"].(map[string]any)
+	if destination["result.bin"] != "snapshot" {
+		t.Fatalf("generic durable output was not promoted=%#v", destination)
+	}
+}

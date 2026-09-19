@@ -589,6 +589,7 @@ func transcriptToolHistoryProgress(value any) (map[string]any, bool, error) {
 		"phase": true, "message": true, "phasePercent": true, "bytesPerSecond": true,
 		"bytesCompleted": true, "bytesTotal": true,
 		"completedItems": true, "totalItems": true, "elapsedMs": true, "indeterminate": true,
+		"process": true,
 	}
 	for key := range progress {
 		if !allowed[key] {
@@ -602,6 +603,12 @@ func transcriptToolHistoryProgress(value any) (map[string]any, bool, error) {
 	if message, present := progress["message"]; present {
 		text, ok := message.(string)
 		if !ok || text == "" || strings.TrimSpace(text) != text || len(text) > 240 {
+			return nil, false, transcriptstore.ErrEventConflict
+		}
+	}
+	if process, present := progress["process"]; present {
+		text, ok := process.(string)
+		if !ok || !validTranscriptToolProgressProcess(text) {
 			return nil, false, transcriptstore.ErrEventConflict
 		}
 	}
@@ -646,6 +653,20 @@ func transcriptToolHistoryProgress(value any) (map[string]any, bool, error) {
 		result[key] = candidate
 	}
 	return result, true, nil
+}
+
+func validTranscriptToolProgressProcess(value string) bool {
+	if value == "" || len(value) > 40 || strings.TrimSpace(value) != value {
+		return false
+	}
+	for _, character := range value {
+		if (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9') ||
+			character == '_' || character == '-' || character == '.' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func validTranscriptToolProgressPhase(value string) bool {

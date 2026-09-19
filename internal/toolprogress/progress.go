@@ -14,6 +14,7 @@ import (
 type Update struct {
 	Phase          string
 	Message        string
+	Process        string
 	PhasePercent   *float64
 	BytesPerSecond *float64
 	BytesCompleted *int64
@@ -55,7 +56,7 @@ func Report(ctx context.Context, update Update) {
 	update = Normalize(update)
 	if update.Phase == "" && update.Message == "" && update.PhasePercent == nil &&
 		update.BytesPerSecond == nil && update.BytesCompleted == nil && update.BytesTotal == nil &&
-		update.CompletedItems == nil && update.TotalItems == nil {
+		update.CompletedItems == nil && update.TotalItems == nil && update.Process == "" {
 		return
 	}
 	reporter(update)
@@ -64,6 +65,7 @@ func Report(ctx context.Context, update Update) {
 func Normalize(update Update) Update {
 	update.Phase = boundedText(update.Phase, 80)
 	update.Message = boundedText(update.Message, 240)
+	update.Process = normalizedProcess(update.Process)
 	update.PhasePercent = normalizedPercent(update.PhasePercent)
 	if update.BytesPerSecond != nil &&
 		(math.IsNaN(*update.BytesPerSecond) || math.IsInf(*update.BytesPerSecond, 0) || *update.BytesPerSecond < 0) {
@@ -89,12 +91,23 @@ func Normalize(update Update) Update {
 		completed := *update.TotalItems
 		update.CompletedItems = &completed
 	}
+	// A phase percentage or a complete byte range is determinate evidence even
+	// when the producer was conservative about the flag. Keep the public state
+	// consistent with the facts carried by the update.
+	if update.PhasePercent != nil || (update.BytesCompleted != nil && update.BytesTotal != nil) {
+		update.Indeterminate = false
+	}
 	return update
 }
 
 func Merge(current, incoming Update) Update {
 	incoming = Normalize(incoming)
 	merged := current
+	milestoneOnly := (incoming.CompletedItems != nil || incoming.TotalItems != nil) &&
+		incoming.PhasePercent == nil &&
+		incoming.BytesPerSecond == nil &&
+		incoming.BytesCompleted == nil &&
+		incoming.BytesTotal == nil
 	if incoming.Phase != "" {
 		if incoming.Phase != current.Phase && incoming.PhasePercent == nil {
 			merged.PhasePercent = nil
@@ -102,10 +115,10 @@ func Merge(current, incoming Update) Update {
 		if incoming.Phase != current.Phase && incoming.Message == "" {
 			merged.Message = ""
 		}
-		if incoming.Phase != current.Phase && incoming.BytesPerSecond == nil {
+		if incoming.Phase != current.Phase && incoming.BytesPerSecond == nil && !milestoneOnly {
 			merged.BytesPerSecond = nil
 		}
-		if incoming.Phase != current.Phase && incoming.BytesCompleted == nil && incoming.BytesTotal == nil {
+		if incoming.Phase != current.Phase && incoming.BytesCompleted == nil && incoming.BytesTotal == nil && !milestoneOnly {
 			merged.BytesCompleted = nil
 			merged.BytesTotal = nil
 		}
@@ -114,6 +127,11 @@ func Merge(current, incoming Update) Update {
 	if incoming.Message != "" {
 		merged.Message = incoming.Message
 	}
+	if incoming.Process != "" {
+		merged.Process = incoming.Process
+	}
+	// Milestone-only phase updates are workflow metadata; retain the latest
+	// transfer snapshot so the public view does not blink empty between phases.
 	if incoming.PhasePercent != nil {
 		value := *incoming.PhasePercent
 		merged.PhasePercent = &value
@@ -138,7 +156,12 @@ func Merge(current, incoming Update) Update {
 		value := *incoming.TotalItems
 		merged.TotalItems = &value
 	}
-	merged.Indeterminate = incoming.Indeterminate
+	if incoming.PhasePercent != nil || (incoming.BytesCompleted != nil && incoming.BytesTotal != nil) ||
+		(milestoneOnly && merged.BytesCompleted != nil && merged.BytesTotal != nil) {
+		merged.Indeterminate = false
+	} else {
+		merged.Indeterminate = incoming.Indeterminate
+	}
 	return Normalize(merged)
 }
 
@@ -153,6 +176,26 @@ func boundedText(value string, limit int) string {
 		value = string(characters[:limit])
 	}
 	return value
+}
+
+func normalizedProcess(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" {
+		return ""
+	}
+	var kept []rune
+	for _, character := range value {
+		allowed := (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9') ||
+			character == '_' || character == '-' || character == '.'
+		if !allowed {
+			continue
+		}
+		kept = append(kept, character)
+		if len(kept) >= 40 {
+			break
+		}
+	}
+	return string(kept)
 }
 
 func normalizedPercent(value *float64) *float64 {

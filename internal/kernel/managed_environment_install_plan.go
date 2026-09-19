@@ -12,7 +12,7 @@ func planManagedPipInstall(phases [][]string, options, findLinks, extraIndexes [
 	}
 	plan := make([][]string, 0, len(inputs))
 	for _, packages := range inputs {
-		arguments := []string{"-I", "-m", "pip", "install", "--disable-pip-version-check", "--no-input"}
+		arguments := []string{"-I", "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--progress-bar", "on"}
 		arguments = append(arguments, options...)
 		arguments = append(arguments, managedPipSourceArguments(findLinks, extraIndexes)...)
 		arguments = append(arguments, packages...)

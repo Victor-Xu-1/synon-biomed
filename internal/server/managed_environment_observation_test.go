@@ -260,3 +260,27 @@ func TestManagedEnvironmentBackgroundDispatcherShutdownPreservesRecoverableWork(
 		t.Fatalf("service drain lost recoverable task operation: pending=%d err=%v", pending, err)
 	}
 }
+
+func TestPublicToolProgressPayloadExposesProcessName(t *testing.T) {
+	payload := publicToolProgressPayload(toolprogress.Update{Phase: "installing_packages", Process: "pip", Indeterminate: true}, 0)
+	if payload["process"] != "pip" {
+		t.Fatalf("payload=%#v", payload)
+	}
+}
+
+func TestTranscriptToolHistoryProgressAcceptsProcessField(t *testing.T) {
+	fact, ok, err := transcriptToolHistoryProgress(map[string]any{
+		"phase": "installing_packages", "process": "micromamba", "indeterminate": true,
+	})
+	if err != nil || !ok {
+		t.Fatalf("err=%v ok=%v", err, ok)
+	}
+	if fact["process"] != "micromamba" {
+		t.Fatalf("fact=%#v", fact)
+	}
+	if _, _, err := transcriptToolHistoryProgress(map[string]any{
+		"phase": "installing_packages", "process": "Bad Process!", "indeterminate": true,
+	}); err == nil {
+		t.Fatal("expected conflict for invalid process name")
+	}
+}

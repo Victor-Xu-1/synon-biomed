@@ -377,6 +377,7 @@
     "progressDownloadResult": "下载 {{percent}}%",
     "progressPhaseResult": "阶段 {{percent}}%",
     "progressCurrentPhase": "当前阶段",
+    "progressProcess": "运行进程",
     "progressOverall": "步骤完成比例",
     "progressPhase": "阶段进度",
     "progressDownload": "下载进度",

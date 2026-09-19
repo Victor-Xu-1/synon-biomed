@@ -92,7 +92,8 @@ esac
 				if strings.Contains(commands, "python") || strings.Contains(commands, "pip") {
 					t.Fatalf("unused phase introduced interpreter dependency: %s", commands)
 				}
-			} else if !strings.Contains(commands, "python=3.12") || !strings.Contains(commands, " pip") || !strings.Contains(commands, "-I -m pip install") {
+			} else if !strings.Contains(commands, "python=3.12") || !strings.Contains(commands, " pip") ||
+				!strings.Contains(commands, "-I -m pip install") || !strings.Contains(commands, "--progress-bar on") {
 				t.Fatalf("phase dependencies or execution missing: %s", commands)
 			}
 			if mode == "pip-phases" && strings.Index(commands, "first==1.0") >= strings.Index(commands, "second==2.0") {
@@ -140,7 +141,8 @@ func TestManagedPipInstallPlanStopsAtFailedOrCancelledStage(t *testing.T) {
 				if !errors.Is(err, context.Canceled) || !os.IsNotExist(readErr) {
 					t.Fatalf("cancelled plan started a process: %q, %v", calls, err)
 				}
-			} else if readErr != nil || !strings.Contains(string(calls), "first==1.0") || strings.Contains(string(calls), "second==2.0") {
+			} else if readErr != nil || !strings.Contains(string(calls), "first==1.0") ||
+				!strings.Contains(string(calls), "--progress-bar on") || strings.Contains(string(calls), "second==2.0") {
 				t.Fatalf("execution continued past a failed stage: %q, %v", calls, readErr)
 			}
 		})

@@ -492,3 +492,23 @@ describe('tool step summary model', () => {
     });
   });
 });
+describe('tool progress process identity', () => {
+  it('exposes the running installer process in detail and rows', () => {
+    const presentation = buildToolProgressPublicPresentation(
+      { phase: 'installing_packages', process: 'pip', indeterminate: true },
+      'zh-CN'
+    );
+    expect(presentation.rows[0]).toEqual({ label: '当前阶段', value: '写入依赖包' });
+    expect(presentation.rows[1]).toEqual({ label: '运行进程', value: 'pip' });
+    expect(presentation.compactDetail).toContain('pip');
+    const english = buildToolProgressPublicPresentation(
+      { phase: 'downloading_packages', process: 'micromamba', indeterminate: true },
+      'en-US'
+    );
+    expect(english.rows[1]).toEqual({ label: 'Running process', value: 'micromamba' });
+  });
+  it('omits the process row when the installer identity is unknown', () => {
+    const presentation = buildToolProgressPublicPresentation({ phase: 'queued', indeterminate: true }, 'zh-CN');
+    expect(presentation.rows.some((row) => row.label === '运行进程')).toBe(false);
+  });
+});

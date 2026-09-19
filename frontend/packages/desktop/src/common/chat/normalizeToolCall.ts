@@ -15,6 +15,7 @@ export type NormalizedToolStatus =
 export type NormalizedToolProgress = {
   phase: string;
   message?: string;
+  process?: string;
   phasePercent?: number;
   bytesPerSecond?: number;
   bytesCompleted?: number;
@@ -92,9 +93,12 @@ const normalizeToolProgress = (value: unknown): NormalizedToolProgress | undefin
   const totalItems = boundedProgressNumber(record.totalItems, Number.MAX_SAFE_INTEGER);
   const elapsedMs = boundedProgressNumber(record.elapsedMs, 365 * 24 * 60 * 60 * 1000);
   const message = normalizeHumanDescription(record.message);
+  const process =
+    typeof record.process === 'string' && /^[a-z0-9._-]{1,40}$/u.test(record.process) ? record.process : undefined;
   return {
     phase,
     ...(message ? { message } : {}),
+    ...(process ? { process } : {}),
     ...(phasePercent === undefined ? {} : { phasePercent }),
     ...(bytesPerSecond === undefined ? {} : { bytesPerSecond }),
     ...(bytesCompleted === undefined ? {} : { bytesCompleted }),

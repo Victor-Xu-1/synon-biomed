@@ -1,9 +1,38 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestVersionProvenanceTokenCannotEscapeTrustedCommand(t *testing.T) {
+	policy, err := loadPolicy("../../../docs/governance/github-actions-pins.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := os.ReadFile(filepath.Join("..", "..", "..", ".github", "workflows", "version-pr.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, change := range [][2]string{
+		{"python3 -B scripts/packaging/sync_version_proposal.py", "echo unsafe"},
+		{"GH_TOKEN: $" + "{{ steps.app-token.outputs.token }}", "GH_TOKEN: $" + "{{ secrets.PAT }}"},
+		{"VERSION_PRS: $" + "{{ steps.version.outputs.prs }}", "VERSION_PRS: untrusted"},
+	} {
+		mutated := strings.Replace(string(source), change[0], change[1], 1)
+		root, err := parseWorkflow([]byte(mutated))
+		if err != nil {
+			t.Fatal(err)
+		}
+		state := workflowState{policy: policy, observed: map[string]int{}, currentWorkflow: ".github/workflows/version-pr.yml"}
+		err = validateWorkflow(state.currentWorkflow, root, &state)
+		if err == nil || err.Error() != "actions_environment_override_forbidden" {
+			t.Fatalf("gate error=%v", err)
+		}
+	}
+}
 
 func TestVersionBotOnlyProposesReviewedSingleRepositoryUpdates(t *testing.T) {
 	root := repositoryWorkflow(t, "version-pr.yml")
@@ -23,10 +52,14 @@ func TestVersionBotOnlyProposesReviewedSingleRepositoryUpdates(t *testing.T) {
 		t.Fatal("version bot must depend on the read-only policy gate")
 	}
 	steps := mappingValue(job, "steps")
-	if len(steps.Content) != 2 {
-		t.Fatal("version proposals use only the token and release-planning actions")
+	if len(steps.Content) != 4 {
+		t.Fatal("version proposals require trusted checkout, token, planning and provenance")
 	}
-	token, propose := steps.Content[0], steps.Content[1]
+	token, propose := steps.Content[1], steps.Content[2]
+	if mappingValue(propose, "id").Value != "version" ||
+		namedRun(root, "propose-version", "Synchronize version proposal provenance") != "python3 -B scripts/packaging/sync_version_proposal.py" {
+		t.Fatal("version proposal provenance must be synchronized by trusted tooling")
+	}
 	if !strings.HasPrefix(mappingValue(token, "uses").Value, "actions/create-github-app-token@") ||
 		!strings.HasPrefix(mappingValue(propose, "uses").Value, "googleapis/release-please-action@") {
 		t.Fatal("unexpected release automation authority")

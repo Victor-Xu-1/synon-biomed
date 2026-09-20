@@ -38,6 +38,64 @@ func TestManagedExecutionParameterAcceptsOnlySelectedEvidenceResolver(t *testing
 	}
 }
 
+func TestManagedExecutionParameterRequiresSelectedResolverHandoff(t *testing.T) {
+	pack := sciencecapability.ExecutionPack{
+		ID: "example-capability.primary", Skill: "primary-skill",
+		Parameters: []sciencecapability.ExecutionParameter{
+			{Name: "point_x", Argument: "--point-x", Type: "number", Evidence: "resolved-user-input", EvidenceGroup: "control-point", EvidenceTerms: []string{"control point"}},
+			{Name: "point_y", Argument: "--point-y", Type: "number", Evidence: "resolved-user-input", EvidenceGroup: "control-point"},
+			{Name: "point_z", Argument: "--point-z", Type: "number", Evidence: "resolved-user-input", EvidenceGroup: "control-point"},
+		},
+	}
+	selected := []sciencecapability.ExecutionEvidenceResolver{{
+		EvidenceGroup: "control-point", Skill: "resolver-skill", Implementation: "Resolver Engine",
+	}}
+	blocked := managedExecutionPackParameterEvidencePreflight(
+		pack,
+		"python primary.py --point-x 25.4 --point-y 18.2 --point-z 30.6",
+		nil,
+		"en",
+		selected,
+	)
+	if stringValue(blocked["status"]) != "execution_selected_resolver_handoff_required" ||
+		boolValue(blocked["decision_required"], true) || stringValue(blocked["evidence_group"]) != "control-point" {
+		t.Fatalf("selected resolver values were not routed back to their handoff: %#v", blocked)
+	}
+	if resolver, _ := blocked["selected_resolver"].(sciencecapability.ExecutionEvidenceResolver); resolver != selected[0] {
+		t.Fatalf("selected resolver identity was not preserved: %#v", blocked)
+	}
+	if allowed := managedExecutionPackParameterEvidencePreflight(
+		pack,
+		"python primary.py --point-x 25.4 --point-y 18.2 --point-z 30.6",
+		[]managedExecutionUserEvidence{{
+			Source: "task", Question: "What control point should be used?", Text: "Use control point 25.4 / 18.2 / 30.6.",
+		}},
+		"en",
+		selected,
+	); allowed != nil {
+		t.Fatalf("explicit current-task user values did not override the resolver route: %#v", allowed)
+	}
+	if allowed := managedExecutionPackParameterEvidencePreflight(
+		pack,
+		"python primary.py --resolver-output resolver-result.json",
+		nil,
+		"en",
+		selected,
+	); allowed != nil {
+		t.Fatalf("a parent command without copied controlled values was blocked: %#v", allowed)
+	}
+	withoutResolver := managedExecutionPackParameterEvidencePreflight(
+		pack,
+		"python primary.py --point-x 25.4 --point-y 18.2 --point-z 30.6",
+		nil,
+		"en",
+		nil,
+	)
+	if stringValue(withoutResolver["status"]) != "execution_parameter_evidence_required" {
+		t.Fatalf("ordinary user-evidence enforcement changed without a selected resolver: %#v", withoutResolver)
+	}
+}
+
 func TestExplicitTaskEvidenceBindsUniqueRegisteredResolver(t *testing.T) {
 	workspace := t.TempDir()
 	script := filepath.Join(workspace, ".synon", "runtime", "skills", "pocket-skill-abcd", "scripts", "run.py")

@@ -88,6 +88,19 @@ func managedExecutionPackParameterEvidencePreflight(
 		if len(arguments) == expectedByGroup[group] && resolvedUserEvidenceContainsArguments(userEvidence, group, arguments) {
 			continue
 		}
+		if resolver, found := selectedEvidenceResolverFromSelection(selectedResolvers, group); found {
+			parameters := make([]string, 0, len(arguments))
+			for _, argument := range arguments {
+				parameters = append(parameters, argument.parameter.Name)
+			}
+			return map[string]any{
+				"ok": false, "status": "execution_selected_resolver_handoff_required", "executed": false,
+				"decision_required": false, "execution_pack_id": pack.ID,
+				"evidence_group": group, "parameters": parameters, "selected_resolver": resolver,
+				"message":  "A selected evidence resolver already owns this controlled parameter group; copied resolver values are not user-input authority.",
+				"recovery": "Complete or restore the selected resolver's exact registered entrypoint, then consume its validated handoff through the parent execution pack. Do not transcribe derived values into user-input parameters or ask the user to ratify them.",
+			}
+		}
 		parameters := make([]string, 0, len(arguments))
 		for _, argument := range arguments {
 			parameters = append(parameters, argument.parameter.Name)

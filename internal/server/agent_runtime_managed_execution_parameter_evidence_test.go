@@ -25,6 +25,16 @@ func TestManagedExecutionParameterAcceptsOnlySelectedEvidenceResolver(t *testing
 	); blocked != nil {
 		t.Fatalf("selected resolver implementation was rejected: %#v", blocked)
 	}
+	multiline := `python "/task/.synon/runtime/skills/evidence-resolver/scripts/resolver.py" \
+  --input source.pdb \
+  --method ResolverEngine \
+  --profile auto`
+	if got := managedExecutionArgumentValues(multiline)["--method"]; got != "ResolverEngine" {
+		t.Fatalf("multiline resolver method parsed as %q", got)
+	}
+	if blocked := managedExecutionPackParameterEvidencePreflight(pack, multiline, nil, "en", selected); blocked != nil {
+		t.Fatalf("multiline selected resolver implementation was rejected: %#v", blocked)
+	}
 	for name, command := range map[string]string{
 		"missing":   "python resolver.py",
 		"different": "python resolver.py --method DifferentEngine",
@@ -165,5 +175,49 @@ func TestExplicitTaskEvidenceBindsUniqueRegisteredResolver(t *testing.T) {
 	}
 	if got := unscopedRun.selectedImplementationsSnapshot(); len(got) != 0 {
 		t.Fatalf("a standalone resolver mention selected an unrequested parent: %v", got)
+	}
+}
+
+func TestShippedExplicitResolverEntrypointAcceptsItsRegisteredMethod(t *testing.T) {
+	capabilities, err := sciencecapability.Load("../sciencecapability/scientific-capabilities.v2.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	skillCatalog := skills.Load([]string{"../../skills/synonbiomed"})
+	if failures := skillCatalog.LoadErrors(); len(failures) != 0 {
+		t.Fatalf("load shipped Skills: %#v", failures)
+	}
+	workspace := t.TempDir()
+	script := filepath.Join(
+		workspace, ".synon", "runtime", "skills", "p2rank-pocket-detection-fixture", "scripts", "p2rank_binding_pockets.py",
+	)
+	if err := os.MkdirAll(filepath.Dir(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(script, []byte("print('managed')\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	run := &sessionRunnerChatRun{
+		TaskIntent:              "实际运行 P2Rank 和 AutoDock Vina 完成 docking。",
+		ExecutedSkillNames:      []string{"p2rank-pocket-detection"},
+		SelectedImplementations: []string{"P2Rank"},
+	}
+	gateway := serverAgentRuntimeToolGateway{
+		server:  &Server{skillCatalog: skillCatalog, scienceCapabilities: &capabilities},
+		taskRun: run,
+		kernel:  &agentKernelContext{workspaceDir: workspace},
+	}
+	input := gateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{
+		"command": "python \"" + script + "\" \\\n+  --structure irf5.pdb \\\n+  --p2rank-archive p2rank_2.5.1.tar.gz \\\n+  --method P2Rank \\\n+  --profile auto --top-k 5 --threads 4 --minimum-box-size 20 --box-padding 6",
+	})
+	if selected := run.selectedEvidenceResolversSnapshot(); len(selected) != 1 ||
+		selected[0].Skill != "p2rank-pocket-detection" || selected[0].Implementation != "P2Rank" {
+		t.Fatalf("shipped explicit resolver was not selected: %#v", selected)
+	}
+	if selected := run.selectedImplementationsSnapshot(); len(selected) != 1 || selected[0] != "AutoDock Vina" {
+		t.Fatalf("resolver environment selection was not restored to its explicit parent: %#v", selected)
+	}
+	if blocked := gateway.agentRuntimeManagedExecutionPackPreflight("bash", input); blocked != nil {
+		t.Fatalf("shipped explicit resolver entrypoint was rejected: input=%#v blocked=%#v", input, blocked)
 	}
 }

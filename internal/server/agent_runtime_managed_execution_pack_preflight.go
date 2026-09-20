@@ -261,7 +261,11 @@ func (s *Server) bindExplicitTaskEvidenceResolver(
 	if taskIntent == "" {
 		return
 	}
-	candidates := map[string]sciencecapability.ExecutionEvidenceResolver{}
+	type explicitResolverCandidate struct {
+		resolver sciencecapability.ExecutionEvidenceResolver
+		primary  string
+	}
+	candidates := map[string]explicitResolverCandidate{}
 	for _, capability := range s.scienceCapabilities.Capabilities {
 		for _, engine := range capability.AcceptedEngines {
 			parent := engine.ExecutionPack
@@ -279,23 +283,38 @@ func (s *Server) bindExplicitTaskEvidenceResolver(
 				}
 				key := strings.ToLower(strings.TrimSpace(resolver.EvidenceGroup) + "\x00" +
 					strings.TrimSpace(resolver.Skill) + "\x00" + strings.TrimSpace(resolver.Implementation))
-				candidates[key] = resolver
+				candidates[key] = explicitResolverCandidate{resolver: resolver, primary: primary}
 			}
 		}
 	}
 	if len(candidates) != 1 {
 		return
 	}
-	var candidate sciencecapability.ExecutionEvidenceResolver
-	for _, resolver := range candidates {
-		candidate = resolver
+	var candidate explicitResolverCandidate
+	for _, current := range candidates {
+		candidate = current
+	}
+	previousPrimary := run.selectedImplementationsSnapshot()
+	reclassifiedResolver := len(previousPrimary) == 1 &&
+		taskImplementationMatchesRegistered(previousPrimary[0], candidate.resolver.Implementation) &&
+		!taskImplementationMatchesRegistered(previousPrimary[0], candidate.primary)
+	if reclassifiedResolver {
+		// Environment readiness can temporarily select the resolver as the only
+		// primary while capability discovery is still scoped to that upstream
+		// step. The explicit task names both sides of one registry relationship,
+		// so restore the parent before validating the auxiliary receipt.
+		run.setSelectedImplementations(candidate.primary)
 	}
 	validated, ok := validatedSelectedAskUserEvidenceResolvers(
-		s.skillCatalog, s.scienceCapabilities, run, []sciencecapability.ExecutionEvidenceResolver{candidate},
+		s.skillCatalog, s.scienceCapabilities, run, []sciencecapability.ExecutionEvidenceResolver{candidate.resolver},
 	)
-	if ok && len(validated) == 1 {
-		run.setSelectedEvidenceResolvers(validated...)
+	if !ok || len(validated) != 1 {
+		if reclassifiedResolver {
+			run.setSelectedImplementations(previousPrimary...)
+		}
+		return
 	}
+	run.setSelectedEvidenceResolvers(validated...)
 }
 
 // normalizeManagedExecutionTaskDirectory removes only a redundant `cd` to the

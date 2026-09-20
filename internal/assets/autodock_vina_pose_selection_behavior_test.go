@@ -126,6 +126,14 @@ with tempfile.TemporaryDirectory() as temporary:
         encoding="utf-8",
     )
     (prior / "completed.txt").write_text("preserve", encoding="utf-8")
+    redirected = validate_output_target(root, prior, (receptor, ligand), True)
+    assert redirected == root / "out-2"
+    try:
+        validate_output_target(root, prior, (receptor, ligand))
+    except ValueError as error:
+        assert "must not already exist" in str(error)
+    else:
+        raise AssertionError("a matching workspace marker authorized explicit output reuse")
     original_which = module.shutil.which
     original_argv = sys.argv
     original_cwd = Path.cwd()
@@ -154,12 +162,14 @@ with tempfile.TemporaryDirectory() as temporary:
     staging = root / ".vina-pack-output-rerun"
     staging.mkdir()
     (staging / "new-result.txt").write_text("new", encoding="utf-8")
-    promotion = promote_execution_output(staging, prior, "rerun-token", root)
-    previous = root / promotion["previous"]
-    assert (prior / "new-result.txt").read_text(encoding="utf-8") == "new"
-    assert (previous / "completed.txt").read_text(encoding="utf-8") == "preserve"
-    assert promotion["current"] == "out"
-    assert previous == root / ".vina-pack-generations" / "out" / "rerun-token"
+    try:
+        promote_execution_output(staging, prior, "rerun-token", root)
+    except RuntimeError as error:
+        assert "created before promotion" in str(error)
+    else:
+        raise AssertionError("Vina promotion replaced an existing output target")
+    assert (prior / "completed.txt").read_text(encoding="utf-8") == "preserve"
+    assert (staging / "new-result.txt").read_text(encoding="utf-8") == "new"
 
 with tempfile.TemporaryDirectory() as temporary, tempfile.TemporaryDirectory() as outside_temporary:
     root = Path(temporary).resolve()

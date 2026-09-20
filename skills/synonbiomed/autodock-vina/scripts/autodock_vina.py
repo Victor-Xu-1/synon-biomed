@@ -52,6 +52,7 @@ PRIMARY_SELECTION_BASES = {
 }
 EXECUTION_PACK_ID = "molecular-docking.autodock-vina"
 OUTPUT_OWNERSHIP_MARKER = ".synon-execution-pack.json"
+DEFAULT_OUTPUT_DIR = "out"
 OUTPUT_PROMOTION_RECEIPT_PREFIX = "SYNON_EXECUTION_PACK_OUTPUT_RECEIPT="
 
 
@@ -912,7 +913,7 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--repeat-count", type=int, default=3)
     value.add_argument("--exhaustiveness", type=int, default=8)
     value.add_argument("--num-modes", type=int, default=9)
-    value.add_argument("--output-dir", default="out")
+    value.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     return value
 
 
@@ -972,23 +973,32 @@ def validate_box_size_contract(
         raise ValueError("docking-box sizes must be finite values between 1 and 100 Angstrom")
 
 
-def validate_output_target(root: Path, output: Path, inputs: tuple[Path, ...]) -> None:
+def next_default_output_target(root: Path) -> Path:
+    for index in range(2, 1000):
+        candidate = (root / f"{DEFAULT_OUTPUT_DIR}-{index}").resolve()
+        if not candidate.exists() and not candidate.is_symlink():
+            return candidate
+    raise ValueError("no collision-free default AutoDock Vina output directory is available")
+
+
+def validate_output_target(
+    root: Path,
+    output: Path,
+    inputs: tuple[Path, ...],
+    redirect_default: bool = False,
+) -> Path:
     if output == root or root not in output.parents:
         raise ValueError("output directory must stay inside the authorized working directory")
     for source in inputs:
         if output == source or output in source.parents or source in output.parents:
             raise ValueError("output directory must not overlap an input path or its ancestors")
+    if output.is_symlink():
+        raise ValueError("output directory must not be a symbolic link")
     if not output.exists():
-        return
-    if output.is_symlink() or not output.is_dir():
-        raise ValueError("existing output path is not an execution-owned directory")
-    marker = output / OUTPUT_OWNERSHIP_MARKER
-    try:
-        ownership = json.loads(marker.read_text(encoding="utf-8"))
-    except (OSError, ValueError, TypeError):
-        raise ValueError("existing output directory is not owned by this execution pack") from None
-    if ownership != {"execution_pack_id": EXECUTION_PACK_ID, "schema": "synon.execution-pack-output-owner.v1"}:
-        raise ValueError("existing output directory has conflicting execution ownership")
+        return output
+    if redirect_default:
+        return next_default_output_target(root)
+    raise ValueError("explicit output directory must not already exist")
 
 
 def validated_internal_state_directory(root: Path, path: Path, label: str) -> Path:
@@ -1017,34 +1027,15 @@ def promote_execution_output(
         )
         + "\n",
     )
-    previous = None
-    if target.exists():
-        history_root = validated_internal_state_directory(
-            root, target.parent / ".vina-pack-generations" / target.name, "output history"
-        )
-        previous = history_root / token
-    elif target.is_symlink():
-        raise RuntimeError("execution output target became a symbolic link")
-    if previous is not None and (previous.exists() or previous.is_symlink()):
-        raise RuntimeError("execution output backup path already exists")
-    moved_previous = False
-    try:
-        if previous is not None:
-            if target.is_symlink() or not target.is_dir():
-                raise RuntimeError("execution output target changed before promotion")
-            target.rename(previous)
-            moved_previous = True
-        staging.rename(target)
-    except Exception:
-        if moved_previous and not target.exists() and previous.exists():
-            previous.rename(target)
-        raise
+    if target.exists() or target.is_symlink():
+        raise RuntimeError("execution output target was created before promotion")
+    staging.rename(target)
     return {
         "schema": "synon.execution-pack-output-promotion.v1",
         "execution_pack_id": EXECUTION_PACK_ID,
         "generation_id": token,
         "current": str(target.relative_to(root)),
-        "previous": str(previous.relative_to(root)) if previous is not None else None,
+        "previous": None,
     }
 
 
@@ -1110,7 +1101,9 @@ def main() -> int:
         for source in (receptor_source, ligand_source, pocket_selection_source, pocket_validation_source)
         if source is not None
     )
-    validate_output_target(root, target_output, input_paths)
+    target_output = validate_output_target(
+        root, target_output, input_paths, Path(args.output_dir) == Path(DEFAULT_OUTPUT_DIR)
+    )
     run_token = uuid.uuid4().hex
     output = root / f".vina-pack-output-{run_token}"
     work = root / f".vina-pack-work-{run_token}"

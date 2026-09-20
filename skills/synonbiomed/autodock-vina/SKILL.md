@@ -137,9 +137,12 @@ script executes `vina --help`, `mk_prepare_ligand.py --help`, and
 `mk_prepare_receptor.py --help` before docking, and also executes the reviewed
 `obabel` CDX conversion when the ligand input is CDX. Do not preconvert CDX or
 call any of those CLIs directly. Vina 1.2.x output is captured
-by the script; do not add an unsupported `--log` flag. The default output
-directory is `out`; `--output-dir` may select one task-relative directory and
-is rejected if it escapes the authorized workspace.
+by the script; do not add an unsupported `--log` flag. Do not create, remove,
+or mark an output directory before execution. The default is `out`; when it
+already exists, the pack preserves it and selects the first absent `out-2`,
+`out-3`, and so on. A workspace marker never authorizes reuse. An explicit
+`--output-dir` must be task-relative, stay inside the authorized workspace, and
+be absent before execution. Use the validated output path printed by the pack.
 
 `--repeat-count` controls independent Vina runs per candidate; each run uses a
 deterministic adjacent seed. `--num-modes` controls the sampled modes per run.
@@ -158,36 +161,36 @@ A successful run must retain the exact managed environment generation, Bash
 receipt, input hashes, stdout/stderr, output files, and validation record. The
 workflow publishes and validates:
 
-- `out/docking_scores.csv` with exactly these columns:
+- `<validated-output>/docking_scores.csv` with exactly these columns:
   `ligand_id`, `best_affinity_kcal_mol`, `mode_count`, `receptor_sha256`,
   `center_x`, `center_y`, `center_z`, `size_x`, `size_y`, `size_z`, `seed`,
   `repeat_count`, `exhaustiveness`, `num_modes`, `poses_per_candidate`,
   `primary_pose_run`, `primary_pose_mode`, reference-geometry diagnostics, and
   `rank`. `poses_per_candidate` is always 1. Read this canonical table directly;
   do not guess or rename an affinity field before inspecting its header;
-- `out/ranked_poses.pdbqt`;
-- `out/primary_poses/*.pdbqt`, one validated file per candidate, plus
-  `out/primary_pose_manifest.csv` with ID, rank, score, source mode, and hash.
+- `<validated-output>/ranked_poses.pdbqt`;
+- `<validated-output>/primary_poses/*.pdbqt`, one validated file per candidate, plus
+  `<validated-output>/primary_pose_manifest.csv` with ID, rank, score, source mode, and hash.
   Never split `ranked_poses.pdbqt`; its pre-`MODEL` bytes are metadata;
-- `out/docking_pose_scores.csv`, one primary-pose row per candidate with its
+- `<validated-output>/docking_pose_scores.csv`, one primary-pose row per candidate with its
   affinity, source run/mode, and reference-geometry diagnostics;
-- `out/docking_pose_samples.csv`, the complete internal score ledger for every
+- `<validated-output>/docking_pose_samples.csv`, the complete internal score ledger for every
   sampled run and mode, including the selected-primary flag;
-- `out/docking_complex_ensemble.pdb`, a standard editable PDB containing the
+- `<validated-output>/docking_complex_ensemble.pdb`, a standard editable PDB containing the
   fixed selected protein exactly once, the selected original co-crystal ligand
   as residue `REF` when available, and exactly one primary pose for every
   docked candidate as a separate residue component. Candidate residue names
   are stable three-character component codes and every REMARK maps that code
   back to the original candidate ID, candidate rank, source run/mode, and
   affinity;
-- `out/docking_components.csv`, the editable component registry joining protein
+- `<validated-output>/docking_components.csv`, the editable component registry joining protein
   chains, the optional reference ligand, candidate IDs, PDB residue groups,
   ranks, affinities, and source pose files;
-- `out/vina.log` with bounded CLI receipts;
-- `out/validation.json` with passing input fidelity, source integrity,
+- `<validated-output>/vina.log` with bounded CLI receipts;
+- `<validated-output>/validation.json` with passing input fidelity, source integrity,
   candidate-ID fidelity, retained-pose count fidelity, complex-component
   integrity, output integrity, score summary, and process cleanup;
-- `out/docking_report.md`, generated from the same ranking and pose manifest,
+- `<validated-output>/docking_report.md`, generated from the same ranking and pose manifest,
   with the box basis and score limitations stated explicitly.
 
 Candidate IDs come from the input molecule titles and are preserved exactly
@@ -217,7 +220,7 @@ model may explain those outputs but must not transcribe or recalculate them.
 ## Failure boundary
 
 A failed run ends the current execution unit. Preserve its exit code,
-stdout/stderr, `out/failure.json`, and any completed outputs. Before one new
+stdout/stderr, the pack-reported failure artifact, and any completed outputs. Before one new
 execution, reload this Skill or inspect the documented interface named by the
 receipt and change only the evidence-proven input or parameter. A second
 semantically equivalent failure closes this path. Do not edit-run loop, guess

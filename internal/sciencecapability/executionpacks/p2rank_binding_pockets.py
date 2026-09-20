@@ -68,17 +68,9 @@ def output_target(root: Path, raw: str, inputs: tuple[Path, ...]) -> Path:
         if target == source or target in source.parents or source in target.parents:
             raise ValueError("output directory must not overlap an input path or its ancestors")
     if target.exists():
-        marker = target / OUTPUT_MARKER
-        try:
-            owner = json.loads(marker.read_text(encoding="utf-8"))
-        except (OSError, ValueError, TypeError):
-            if Path(raw) != Path(DEFAULT_OUTPUT_DIR):
-                raise ValueError("existing output directory is not owned by the P2Rank execution pack") from None
+        if Path(raw) == Path(DEFAULT_OUTPUT_DIR):
             return next_default_output_target(root)
-        if owner != {"execution_pack_id": PACK_ID, "schema": "synon.execution-pack-output-owner.v1"}:
-            if Path(raw) != Path(DEFAULT_OUTPUT_DIR):
-                raise ValueError("existing output directory has conflicting execution ownership")
-            return next_default_output_target(root)
+        raise ValueError("explicit output directory must not already exist")
     return target
 
 
@@ -342,30 +334,15 @@ def write_selected_atoms(
     atomic_text(path, "\n".join(lines + ["END", ""]))
 
 
-def promote_output(root: Path, staging: Path, target: Path, token: str) -> dict[str, object]:
-    previous: Path | None = None
-    if target.exists():
-        history = validated_internal_state_directory(
-            root, root / ".p2rank-generations" / target.name, "output history"
-        )
-        previous = history / token
-        if previous.exists() or previous.is_symlink():
-            raise RuntimeError("P2Rank output history path already exists")
-        if target.is_symlink() or not target.is_dir():
-            raise RuntimeError("P2Rank output target changed before promotion")
-        history = validated_internal_state_directory(root, history, "output history")
-        target.rename(previous)
-    try:
-        staging.rename(target)
-    except Exception:
-        if previous is not None and not target.exists() and previous.exists():
-            previous.rename(target)
-        raise
+def promote_output(root: Path, staging: Path, target: Path) -> dict[str, object]:
+    if target.exists() or target.is_symlink():
+        raise RuntimeError("P2Rank output target was created before promotion")
+    staging.rename(target)
     return {
         "schema": "synon.execution-pack-output-promotion.v1",
         "execution_pack_id": PACK_ID,
         "current": str(target.relative_to(root)),
-        "previous": str(previous.relative_to(root)) if previous is not None else None,
+        "previous": None,
     }
 
 
@@ -497,7 +474,7 @@ def main() -> int:
             raise RuntimeError("P2Rank execution validation failed")
         atomic_text(staging / "pocket_validation.json", json.dumps(validation, ensure_ascii=False, indent=2) + "\n")
         shutil.rmtree(runtime)
-        promotion = promote_output(root, staging, target, token)
+        promotion = promote_output(root, staging, target)
         atomic_text(target / "promotion.json", json.dumps(promotion, ensure_ascii=False, indent=2) + "\n")
         print(
             f"P2Rank {P2RANK_VERSION} selected pocket rank 1: probability "

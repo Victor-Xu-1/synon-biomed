@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"synon-go/internal/executionprep"
+	"synon-go/internal/networkpolicy"
 	"synon-go/internal/networktls"
 )
 
@@ -502,6 +503,9 @@ func normalizeSessionDomains(values []string) []string {
 		}
 		seen[value] = struct{}{}
 		result = append(result, value)
+	}
+	if _, found := seen[networkpolicy.PublicWildcard]; found {
+		return []string{networkpolicy.PublicWildcard}
 	}
 	sort.Strings(result)
 	return result

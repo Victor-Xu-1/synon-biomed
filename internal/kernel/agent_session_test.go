@@ -143,6 +143,30 @@ func TestEnsureSessionRestartsWhenEgressAuthorityChanges(t *testing.T) {
 	}
 }
 
+func TestEnsureSessionReusesWildcardEgressAuthorityAfterRedundantDomainGrant(t *testing.T) {
+	manager := newLifecycleTestManager(t, Config{ExecutionTimeout: 5 * time.Second})
+	spec := SessionSpec{
+		OwnerID: "owner-wildcard", ProjectID: "project-wildcard", FrameID: "frame-wildcard",
+		FrameIncarnationID: "incarnation-wildcard", RootFrameID: "root-wildcard",
+		RootFrameIncarnationID: "root-incarnation-wildcard", AgentName: "OPERON",
+		KernelKind: "analysis", Language: "python", Environment: "python", WorkspaceDir: t.TempDir(),
+		EgressAllowedDomains: []string{"*", "github.com"},
+	}
+	first, err := manager.EnsureSession(spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec.EgressAllowedDomains = append(spec.EgressAllowedDomains, "alphafold.ebi.ac.uk")
+	second, err := manager.EnsureSession(spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !second.Reused || second.ID != first.ID || second.Worker != first.Worker ||
+		second.Worker.Generation() != first.Worker.Generation() {
+		t.Fatalf("redundant wildcard grant restarted session: first=%#v second=%#v", first, second)
+	}
+}
+
 func TestOperonSessionHasIndependentStableIdentityAndInventoryKind(t *testing.T) {
 	manager := newLifecycleTestManager(t, Config{ExecutionTimeout: 5 * time.Second})
 	spec := SessionSpec{OwnerID: "owner-agent", ProjectID: "project-agent", FrameID: "frame-agent", FrameIncarnationID: "incarnation-agent", RootFrameID: "root-agent", RootFrameIncarnationID: "root-incarnation-agent", AgentName: "OPERON", KernelKind: "operon", Language: "python", Environment: "repl", WorkspaceDir: t.TempDir()}

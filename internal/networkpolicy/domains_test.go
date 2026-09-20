@@ -39,6 +39,18 @@ func TestNormalizePatternsEnforcesUniqueLimit(t *testing.T) {
 	}
 }
 
+func TestNormalizePatternsCollapsesDomainsCoveredByPublicWildcard(t *testing.T) {
+	domains, err := NormalizePatterns([]string{
+		"github.com", PublicWildcard, "alphafold.ebi.ac.uk", "GITHUB.COM",
+	}, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(domains) != 1 || domains[0] != PublicWildcard {
+		t.Fatalf("wildcard-covered domains = %#v", domains)
+	}
+}
+
 func TestAllowsHostRequiresExplicitAllowAndLetsDenyWin(t *testing.T) {
 	if !AllowsHost("api.example.com", []string{"*.example.com"}, nil) {
 		t.Fatal("allowed public subdomain was rejected")

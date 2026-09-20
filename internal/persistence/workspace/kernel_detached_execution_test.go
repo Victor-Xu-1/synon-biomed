@@ -1037,6 +1037,30 @@ func TestKernelExecutionSessionSpecPreservesCanonicalEgressPolicy(t *testing.T) 
 	}
 }
 
+func TestKernelExecutionSessionSpecDigestIgnoresDomainsCoveredByPublicWildcard(t *testing.T) {
+	spec := kernelExecutionSessionSpecForTest(KernelLocalOperation{
+		KernelID: "kernel-wildcard-egress", OwnerUserID: "owner", ProjectID: "project",
+		RootFrameID: "root", RootFrameIncarnationID: "root-incarnation",
+		FrameID: "frame", FrameIncarnationID: "frame-incarnation", Environment: "python",
+	})
+	spec.EgressAllowedDomains = []string{"*", "github.com"}
+	base, baseJSON, baseSHA, err := canonicalKernelExecutionSessionSpec(spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec.EgressAllowedDomains = append(spec.EgressAllowedDomains, "alphafold.ebi.ac.uk")
+	evolved, evolvedJSON, evolvedSHA, err := canonicalKernelExecutionSessionSpec(spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(base.EgressAllowedDomains) != 1 || base.EgressAllowedDomains[0] != "*" ||
+		len(evolved.EgressAllowedDomains) != 1 || evolved.EgressAllowedDomains[0] != "*" ||
+		baseJSON != evolvedJSON || baseSHA != evolvedSHA {
+		t.Fatalf("wildcard session drifted: base=%#v evolved=%#v base_sha=%s evolved_sha=%s",
+			base.EgressAllowedDomains, evolved.EgressAllowedDomains, baseSHA, evolvedSHA)
+	}
+}
+
 func TestKernelExecutionSessionSpecPreservesTrustedReadOnlyMount(t *testing.T) {
 	spec := kernelExecutionSessionSpecForTest(KernelLocalOperation{
 		KernelID: "kernel-trusted-mount", OwnerUserID: "owner", ProjectID: "project",

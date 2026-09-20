@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"synon-go/internal/networktls"
 	"synon-go/internal/tools/mcpstdio"
 )
 
@@ -140,8 +141,7 @@ func TestOfficialOpenTargetsHostedMCPCompletesRealEGFRResolution(t *testing.T) {
 	if !found {
 		t.Fatal("official Open Targets connector is missing")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
-	defer cancel()
+	ctx := hostedScientificMCPContext(t, connector.Config.URL)
 	tools, err := mcpstdio.ListToolsForServer(ctx, t.TempDir(), connector.Name, connector.Config)
 	if err != nil {
 		t.Fatalf("official hosted tools/list failed: %v", err)
@@ -178,8 +178,7 @@ func TestOfficialIDCRemoteMCPExposesRealReadOnlyCatalog(t *testing.T) {
 	if !found {
 		t.Fatal("official IDC connector is missing")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
-	defer cancel()
+	ctx := hostedScientificMCPContext(t, connector.Config.URL)
 	tools, err := mcpstdio.ListToolsForServer(ctx, t.TempDir(), connector.Name, connector.Config)
 	if err != nil {
 		t.Fatalf("official IDC tools/list failed: %v", err)
@@ -187,6 +186,24 @@ func TestOfficialIDCRemoteMCPExposesRealReadOnlyCatalog(t *testing.T) {
 	if len(tools) == 0 {
 		t.Fatal("official IDC tools/list returned no tools")
 	}
+}
+
+// Live acceptance must use the same trusted TLS/proxy and public-destination
+// boundary as directory probes. Raw protocol calls deliberately do not inherit
+// arbitrary caller transports and are not the configured server runtime path.
+func hostedScientificMCPContext(t *testing.T, endpoint string) context.Context {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	t.Cleanup(cancel)
+	base, err := networktls.HTTPClient(http.DefaultClient, os.Getenv("SYNON_NETWORK_CA_BUNDLE"), os.Getenv("SYNON_NETWORK_PROXY"))
+	if err != nil {
+		t.Fatalf("configure live MCP TLS/proxy: %v", err)
+	}
+	client, err := SecureHTTPClient(ctx, endpoint, base)
+	if err != nil {
+		t.Fatalf("configure live MCP public destination: %v", err)
+	}
+	return mcpstdio.WithHTTPClient(ctx, client)
 }
 
 func TestHostedScientificMCPsExposeRealOAuthAuthorizationBoundary(t *testing.T) {

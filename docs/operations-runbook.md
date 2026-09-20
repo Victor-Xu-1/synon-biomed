@@ -828,6 +828,31 @@ approved policy override to run without a per-call prompt. Provider account,
 quota, billing, data-handling, and commercial terms remain the user's
 responsibility.
 
+### Remote MCP connection timeouts
+
+Public connectors such as Open Targets and Imaging Data Commons do not need
+API keys. A TLS handshake or connection timeout is a network-path failure,
+not evidence of missing credentials. If the deployment requires an outbound
+proxy, set `SYNON_NETWORK_PROXY` (an operator-trusted HTTP proxy origin) in the
+service's persistent startup environment, or set `network.proxy` in its startup
+configuration, then restart that service. A proxy exported only in an interactive
+shell does not configure an already-running service. The configured proxy must
+be reachable from the service's actual host/container/WSL network namespace.
+
+Keep HTTPS certificate verification, public-destination validation and
+per-call timeouts enabled. Verify a fresh MCP catalog and a read-only tool result;
+a successful HTTP response or a previously cached green status is insufficient.
+The opt-in acceptance tests use the same trusted TLS/proxy and public-address
+client boundary as the server. With the deployment's network environment set:
+
+```sh
+SYNON_RUN_REAL_REMOTE_MCP=1 go test ./internal/mcpdirectory -run 'TestOfficial(OpenTargetsHostedMCPCompletesRealEGFRResolution|IDCRemoteMCPExposesRealReadOnlyCatalog)' -count=1 -v
+```
+
+These checks query public data and do not configure credentials or submit paid
+jobs. They require external network access and must not be reported as passing
+when skipped or unavailable.
+
 ## Observability and diagnosis
 
 Windows-native runtime checks:

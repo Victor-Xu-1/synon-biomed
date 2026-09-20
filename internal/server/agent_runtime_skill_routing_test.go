@@ -196,6 +196,12 @@ subprocess.run([sys.executable, "` + script + `", "--engine", "example-cli"], ch
 			}
 		})
 	}
+	if blocked := gateway.agentRuntimeSkillExecutionContractPreflight("repl", map[string]any{
+		"code": `import subprocess, sys
+subprocess.run([sys.executable, "` + script + `", "--help"], check=True)`,
+	}); blocked == nil || blocked["status"] != "skill_execution_entrypoint_required" || blocked["executed"] != false {
+		t.Fatalf("repl subprocess bypassed the managed execution entrypoint: %#v", blocked)
+	}
 	canonicalCommand := `python "` + script + `" --engine example-cli`
 	for _, code := range []string{
 		"import examplelib\nprint(dir(examplelib))",

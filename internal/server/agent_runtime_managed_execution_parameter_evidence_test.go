@@ -1,9 +1,12 @@
 package server
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"synon-go/internal/sciencecapability"
+	"synon-go/internal/skills"
 )
 
 func TestManagedExecutionParameterAcceptsOnlySelectedEvidenceResolver(t *testing.T) {
@@ -32,5 +35,77 @@ func TestManagedExecutionParameterAcceptsOnlySelectedEvidenceResolver(t *testing
 				t.Fatalf("unselected resolver parameter was accepted: %#v", blocked)
 			}
 		})
+	}
+}
+
+func TestExplicitTaskEvidenceBindsUniqueRegisteredResolver(t *testing.T) {
+	workspace := t.TempDir()
+	script := filepath.Join(workspace, ".synon", "runtime", "skills", "pocket-skill-abcd", "scripts", "run.py")
+	if err := os.MkdirAll(filepath.Dir(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(script, []byte("print('managed')\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	run := &sessionRunnerChatRun{
+		TaskIntent:         "Use AutoDock Vina with P2Rank for the requested docking run.",
+		ExecutedSkillNames: []string{"pocket-skill"},
+	}
+	skillCatalog := skills.NewCatalog()
+	skillCatalog.AddSkill(skills.Skill{Name: "docking-skill", ImplementationIdentities: []string{"AutoDock Vina"}})
+	skillCatalog.AddSkill(skills.Skill{Name: "pocket-skill", ImplementationIdentities: []string{"P2Rank"}})
+	resolver := sciencecapability.ExecutionEvidenceResolver{
+		EvidenceGroup: "binding-site-center", Skill: "pocket-skill", Implementation: "P2Rank",
+	}
+	scienceCatalog := &sciencecapability.Catalog{Capabilities: []sciencecapability.Definition{
+		{ID: "molecular-docking", AcceptedEngines: []sciencecapability.EngineDefinition{{ExecutionPack: sciencecapability.ExecutionPack{
+			ID: "molecular-docking.vina", Mode: "local", Skill: "docking-skill",
+			EvidenceResolvers: []sciencecapability.ExecutionEvidenceResolver{resolver},
+		}}}},
+		{ID: "binding-pocket-prediction", AcceptedEngines: []sciencecapability.EngineDefinition{{ExecutionPack: sciencecapability.ExecutionPack{
+			ID: "binding-pocket-prediction.p2rank", Mode: "local", Skill: "pocket-skill",
+			Executable: "python", Script: "executionpacks/run.py",
+			Parameters: []sciencecapability.ExecutionParameter{{
+				Name: "method", Argument: "--method", Type: "string", Evidence: "selected-evidence-resolver",
+			}},
+		}}}},
+	}}
+	gateway := serverAgentRuntimeToolGateway{
+		server: &Server{skillCatalog: skillCatalog, scienceCapabilities: scienceCatalog}, taskRun: run,
+		kernel: &agentKernelContext{workspaceDir: workspace},
+	}
+	input := gateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{
+		"command": `python "` + script + `"`,
+	})
+	if got := managedExecutionArgumentValues(stringValue(input["command"]))["--method"]; got != "P2Rank" {
+		t.Fatalf("explicit task resolver was not normalized into the pack command: %#v", input)
+	}
+	if blocked := gateway.agentRuntimeManagedExecutionPackPreflight("bash", input); blocked != nil {
+		t.Fatalf("explicit task resolver remained blocked: %#v", blocked)
+	}
+	if got := run.selectedImplementationsSnapshot(); len(got) != 1 || got[0] != "AutoDock Vina" {
+		t.Fatalf("explicit parent implementation was not bound: %v", got)
+	}
+	if got := run.selectedEvidenceResolversSnapshot(); len(got) != 1 || got[0] != resolver {
+		t.Fatalf("explicit evidence resolver was not bound: %#v", got)
+	}
+	unscopedRun := &sessionRunnerChatRun{
+		TaskIntent: "Use P2Rank for a standalone pocket prediction.", ExecutedSkillNames: []string{"pocket-skill"},
+	}
+	unscopedGateway := serverAgentRuntimeToolGateway{
+		server: gateway.server, taskRun: unscopedRun, kernel: gateway.kernel,
+	}
+	unscoped := unscopedGateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{
+		"command": `python "` + script + `"`,
+	})
+	if got := managedExecutionArgumentValues(stringValue(unscoped["command"]))["--method"]; got != "" {
+		t.Fatalf("an auxiliary resolver invented its parent implementation: %#v", unscoped)
+	}
+	if blocked := unscopedGateway.agentRuntimeManagedExecutionPackPreflight("bash", unscoped); blocked == nil ||
+		blocked["status"] != "execution_selected_resolver_parameter_required" {
+		t.Fatalf("a resolver without its explicit parent was accepted: %#v", blocked)
+	}
+	if got := unscopedRun.selectedImplementationsSnapshot(); len(got) != 0 {
+		t.Fatalf("a standalone resolver mention selected an unrequested parent: %v", got)
 	}
 }

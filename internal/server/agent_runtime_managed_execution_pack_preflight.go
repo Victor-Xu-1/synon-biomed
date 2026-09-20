@@ -110,7 +110,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 	input map[string]any,
 ) map[string]any {
 	switch publicName {
-	case "bash", "python", "r", "powershell":
+	case "bash", "python", "repl", "r", "powershell":
 	default:
 		return nil
 	}
@@ -138,6 +138,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 		for _, engine := range g.server.scienceCapabilities.LocalExecutionPacksForSkill(skill.Name) {
 			entrypoint := engine.ExecutionPack.MaterializedSkillEntrypoint()
 			if publicName == "bash" && commandExecutesManagedExecutionPack(skill.Name, engine.ExecutionPack, command) {
+				g.server.bindExplicitTaskEvidenceResolver(g.taskRun, engine.ExecutionPack)
 				if preflight := managedExecutionPackParameterEvidencePreflight(
 					engine.ExecutionPack, command, g.taskRun.resolvedUserEvidenceRecordsSnapshot(),
 					managedExecutionResponseLanguage(g.taskRun), g.taskRun.selectedEvidenceResolversSnapshot(),
@@ -213,6 +214,7 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 			if !commandExecutesManagedExecutionPack(skill.Name, pack, command) {
 				continue
 			}
+			g.server.bindExplicitTaskEvidenceResolver(g.taskRun, pack)
 			values := managedExecutionArgumentValues(command)
 			var extra []string
 			for _, parameter := range pack.Parameters {
@@ -245,6 +247,55 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 		}
 	}
 	return input
+}
+
+func (s *Server) bindExplicitTaskEvidenceResolver(
+	run *sessionRunnerChatRun,
+	pack sciencecapability.ExecutionPack,
+) {
+	if s == nil || s.skillCatalog == nil || s.scienceCapabilities == nil || run == nil ||
+		strings.TrimSpace(pack.Skill) == "" || len(run.selectedEvidenceResolversSnapshot()) > 0 {
+		return
+	}
+	taskIntent := strings.TrimSpace(run.TaskIntent)
+	if taskIntent == "" {
+		return
+	}
+	candidates := map[string]sciencecapability.ExecutionEvidenceResolver{}
+	for _, capability := range s.scienceCapabilities.Capabilities {
+		for _, engine := range capability.AcceptedEngines {
+			parent := engine.ExecutionPack
+			if parent.Mode != "local" {
+				continue
+			}
+			for _, resolver := range parent.EvidenceResolvers {
+				if !strings.EqualFold(strings.TrimSpace(resolver.Skill), strings.TrimSpace(pack.Skill)) ||
+					!taskExplicitlyNamesImplementation(taskIntent, resolver.Implementation) {
+					continue
+				}
+				primary, unique := uniqueRegisteredEvidenceResolver(s.skillCatalog, s.scienceCapabilities, resolver)
+				if !unique || !taskExplicitlyNamesImplementation(taskIntent, primary) {
+					continue
+				}
+				key := strings.ToLower(strings.TrimSpace(resolver.EvidenceGroup) + "\x00" +
+					strings.TrimSpace(resolver.Skill) + "\x00" + strings.TrimSpace(resolver.Implementation))
+				candidates[key] = resolver
+			}
+		}
+	}
+	if len(candidates) != 1 {
+		return
+	}
+	var candidate sciencecapability.ExecutionEvidenceResolver
+	for _, resolver := range candidates {
+		candidate = resolver
+	}
+	validated, ok := validatedSelectedAskUserEvidenceResolvers(
+		s.skillCatalog, s.scienceCapabilities, run, []sciencecapability.ExecutionEvidenceResolver{candidate},
+	)
+	if ok && len(validated) == 1 {
+		run.setSelectedEvidenceResolvers(validated...)
+	}
 }
 
 // normalizeManagedExecutionTaskDirectory removes only a redundant `cd` to the

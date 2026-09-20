@@ -931,6 +931,41 @@ func TestFailedDelimitedArtifactSaveUsesWriterBeforeRetry(t *testing.T) {
 	}
 }
 
+func TestPartialArtifactSaveRequiresAnotherToolBeforeCompletion(t *testing.T) {
+	run := &sessionRunnerChatRun{TaskIntent: "Save the requested report and structure"}
+	saveCall := agentruntime.Message{Role: "assistant", ToolCalls: []agentruntime.ToolCall{{
+		ID: "save-partial", Name: "save_artifacts",
+		Arguments: json.RawMessage(`{"files":["report.md","structure.pdb"]}`),
+	}}}
+	saveResult := agentruntime.Message{Role: "tool", ToolCallID: "save-partial", Content: `{
+		"ok":false,"partial":true,"code":"artifact_save_requires_correction",
+		"artifacts":[{"filename":"report.md"}],
+		"errors":[{"path":"structure.pdb","code":"file_not_found","retryable":false}]
+	}`}
+	tools := []agentruntime.ToolSchema{
+		{Name: "edit_file", Capabilities: []string{"artifact-write", "artifact-edit"}},
+		{Name: "download_public_scientific_file", Capabilities: []string{"source-download", "artifact-write"}},
+		{Name: "save_artifacts", Capabilities: []string{"artifact-publication"}},
+	}
+	gateway := serverAgentRuntimeToolGateway{taskRun: run}
+	if choice := gateway.RequiredToolChoice([]agentruntime.Message{saveCall, saveResult}, tools); choice != "required" {
+		t.Fatalf("partial save allowed immediate completion: %#v", choice)
+	}
+
+	repairedCall := agentruntime.Message{Role: "assistant", ToolCalls: []agentruntime.ToolCall{{
+		ID: "save-repaired", Name: "save_artifacts",
+		Arguments: json.RawMessage(`{"files":["structure.pdb"]}`),
+	}}}
+	repairedResult := agentruntime.Message{Role: "tool", ToolCallID: "save-repaired", Content: `{
+		"ok":true,"artifacts":[{"filename":"structure.pdb"}]
+	}`}
+	if choice := gateway.RequiredToolChoice(
+		[]agentruntime.Message{saveCall, saveResult, repairedCall, repairedResult}, tools,
+	); choice != nil && choice != "none" {
+		t.Fatalf("successful repair left tool choice pending: %#v", choice)
+	}
+}
+
 func TestRecordDepthCorrectionDoesNotRepeatCompletedWebResearch(t *testing.T) {
 	boundary := agentruntime.Message{Role: "system", Content: sessionRunnerDurableCorrectionContextMarker}
 	call := agentruntime.Message{Role: "assistant", ToolCalls: []agentruntime.ToolCall{{

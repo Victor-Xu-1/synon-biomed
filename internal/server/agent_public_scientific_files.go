@@ -23,6 +23,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"golang.org/x/net/publicsuffix"
+
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
@@ -1266,8 +1268,10 @@ func agentPublicScientificURLsEquivalent(left, right string) bool {
 }
 
 // agentPublicScientificVisitResultURLs visits only structured URL values and
-// same-origin links from HTML returned alongside an authoritative page URL.
-// It deliberately does not mine arbitrary prose for URLs.
+// same-site links from HTML returned alongside an authoritative page URL. A
+// scientific portal may serve exact native files from a sibling host, while
+// unrelated external links remain outside the source authority. It
+// deliberately does not mine arbitrary prose for URLs.
 func agentPublicScientificVisitResultURLs(value any, visit func(string) bool) bool {
 	visited := 0
 	var inspect func(any, int, *url.URL) bool
@@ -1312,7 +1316,7 @@ func agentPublicScientificVisitResultURLs(value any, visit func(string) bool) bo
 					continue
 				}
 				resolved := inheritedBase.ResolveReference(reference)
-				if !agentPublicScientificSameOrigin(inheritedBase, resolved) {
+				if !agentPublicScientificSameSite(inheritedBase, resolved) {
 					continue
 				}
 				request, err := parseAgentPublicScientificFileRequest(map[string]any{
@@ -1359,7 +1363,7 @@ func agentPublicScientificVisitResultURLs(value any, visit func(string) bool) bo
 
 func agentPublicScientificBaseURLKey(key string) bool {
 	switch strings.ToLower(strings.TrimSpace(key)) {
-	case "url", "source_url", "sourceurl", "request_url", "requesturl", "final_url", "finalurl":
+	case "url", "source_url", "sourceurl", "request_url", "requesturl", "requested_url", "requestedurl", "final_url", "finalurl":
 		return true
 	default:
 		return false
@@ -1392,6 +1396,20 @@ func agentPublicScientificSameOrigin(baseURL, candidateURL *url.URL) bool {
 	}
 	return strings.EqualFold(baseURL.Scheme, candidateURL.Scheme) &&
 		strings.EqualFold(strings.TrimSuffix(baseURL.Hostname(), "."), strings.TrimSuffix(candidateURL.Hostname(), "."))
+}
+
+func agentPublicScientificSameSite(baseURL, candidateURL *url.URL) bool {
+	if agentPublicScientificSameOrigin(baseURL, candidateURL) {
+		return true
+	}
+	if baseURL == nil || candidateURL == nil || baseURL.User != nil || candidateURL.User != nil ||
+		baseURL.Port() != "" || candidateURL.Port() != "" ||
+		!strings.EqualFold(baseURL.Scheme, "https") || !strings.EqualFold(candidateURL.Scheme, "https") {
+		return false
+	}
+	baseSite, baseErr := publicsuffix.EffectiveTLDPlusOne(strings.TrimSuffix(strings.ToLower(baseURL.Hostname()), "."))
+	candidateSite, candidateErr := publicsuffix.EffectiveTLDPlusOne(strings.TrimSuffix(strings.ToLower(candidateURL.Hostname()), "."))
+	return baseErr == nil && candidateErr == nil && baseSite == candidateSite
 }
 
 func ensureAgentPublicScientificDiskSpace(

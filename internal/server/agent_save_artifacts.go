@@ -493,11 +493,34 @@ func (s *Server) executeAgentSaveArtifacts(
 	}
 	if len(failures) > 0 {
 		result["errors"] = failures
+		result = agentSaveArtifactsCorrectionValue(result)
 		if len(artifacts) == 0 {
 			return result, agentSaveArtifactsNoResultsError(failures)
 		}
 	}
 	return result, nil
+}
+
+func agentSaveArtifactsCorrectionValue(value map[string]any) map[string]any {
+	result := copyMapAny(value)
+	result["ok"] = false
+	result["code"] = "artifact_save_requires_correction"
+	if len(anySliceValue(result["artifacts"])) > 0 {
+		result["partial"] = true
+	} else {
+		delete(result, "partial")
+	}
+	retryable := false
+	for _, raw := range anySliceValue(result["errors"]) {
+		failure, _ := raw.(map[string]any)
+		if boolValue(failure["retryable"], false) {
+			retryable = true
+			break
+		}
+	}
+	result["retryable"] = retryable
+	result["recovery"] = "correct_or_omit_the_failed_files_then_continue"
+	return result
 }
 
 func agentSavedArtifactResult(

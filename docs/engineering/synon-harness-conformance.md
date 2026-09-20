@@ -306,9 +306,12 @@ eight-second operation budget; a shorter parent deadline or cancellation is
 not extended by preparation or converted into permission to execute.
 For bounded binary reads, the durable download handoff retains the canonical
 request URL only when a contiguous transport redirect receipt connects it to
-the final response. The original executed WebFetch input binds any additional
-download hosts; nested body URLs and connector claims cannot widen that host
-policy. The existing downloader re-requests the canonical URL, allowing signed
+the final response. The original executed WebFetch input binds redirect hosts.
+A successful HTML source may additionally authorize an exact structured file
+link on an HTTPS sibling host only when both hosts share the same effective
+registrable domain; unrelated external links, arbitrary prose URLs and
+connector claims cannot widen that source authority. The existing downloader
+re-requests the canonical URL, allowing signed
 destinations to rotate within the attested host set while retaining TLS,
 public-address checks, bounded redirects, resume validation and atomic staging.
 Externalized partial receipts keep their owner, size and content-hash checks;
@@ -477,7 +480,10 @@ tools are absent from new model snapshots.
 19. Non-executing Python/code preflight results are `ok=false`. Artifact save
     is partial only when at least one artifact succeeded; zero published
     artifacts plus structural validation errors is a hard model-visible
-    failure. Claim-to-source binding and retrieval-depth gaps preserve the
+    failure. Every partial save carries the same correction code and keeps the
+    next model turn tool-required until a later save settles the correction;
+    a saved sibling file cannot make a missing requested deliverable look
+    complete. Claim-to-source binding and retrieval-depth gaps preserve the
     saved bytes and authored source identities, and return a non-blocking
     `evidence_binding_advisory` with machine-readable grading
     (`source_authenticity`, `retrieval_depth`, `source_tier`, and

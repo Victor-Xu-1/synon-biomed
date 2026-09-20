@@ -484,6 +484,10 @@ func TestAgentSaveArtifactsMatchesObservedClaudeContract(t *testing.T) {
 		strings.Contains(fmt.Sprintf("%#v", errorsFound[0]), fixture.projectPath) {
 		t.Fatalf("partial errors=%#v", partial["errors"])
 	}
+	if partial["ok"] != false || partial["partial"] != true || partial["code"] != "artifact_save_requires_correction" ||
+		agentruntime.ClassifyToolResult(partial) != agentruntime.ToolResultPartial {
+		t.Fatalf("partial correction envelope=%#v", partial)
+	}
 
 	reopened, err := workspace.Open(fixture.databasePath)
 	if err != nil {

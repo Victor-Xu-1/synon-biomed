@@ -1220,6 +1220,51 @@ func TestAgentPublicScientificFileDownloadAuthorizesSameOriginRelativeHTMLLink(t
 	}
 }
 
+func TestAgentPublicScientificFileDownloadAuthorizesSameSiteHTMLFileLink(t *testing.T) {
+	fixture := newAgentSaveArtifactsFixture(t)
+	pageURL := "https://www.rcsb.org/structure/3DSH"
+	sourceURL := "https://files.rcsb.org/download/3DSH.pdb"
+	result := map[string]any{
+		"ok": true,
+		"result": map[string]any{
+			"requestedUrl": pageURL,
+			"body": `<html><a href="//files.rcsb.org/download/3DSH.pdb">coordinates</a>` +
+				`<a href="https://files.example.org/download/3DSH.pdb">external</a></html>`,
+		},
+	}
+	if !agentPublicScientificResultContainsURL(result, sourceURL) {
+		t.Fatal("same-site scientific file link was not recognized by the bounded source parser")
+	}
+	if agentPublicScientificResultContainsURL(result, "https://files.example.org/download/3DSH.pdb") {
+		t.Fatal("an unrelated external file link inherited source authority")
+	}
+	discovered := agentPublicScientificCandidatesFromResult(result, "rcsb-html-structure", 8)
+	if len(discovered) != 1 || discovered[0].URL != sourceURL {
+		t.Fatalf("same-site scientific candidates=%#v", discovered)
+	}
+
+	sourceCallID := appendAgentPublicScientificSourceCheckpoint(
+		t, fixture, "rcsb-html-structure", pageURL, false, func(payload map[string]any) {
+			payload["toolName"] = "web_fetch"
+			raw := json.RawMessage(`{"ok":true,"result":{"requestedUrl":"https://www.rcsb.org/structure/3DSH","body":"\u003chtml\u003e\u003ca href=\"//files.rcsb.org/download/3DSH.pdb\"\u003ecoordinates\u003c/a\u003e\u003c/html\u003e"}}`)
+			payload["toolResult"] = raw
+			payload["resultSha256"] = kernelMCPEvidenceSHA256(raw)
+		},
+	)
+	request, err := parseAgentPublicScientificFileRequest(map[string]any{
+		"url": sourceURL, "filename": "3DSH.pdb", "human_description": "Downloading IRF5 coordinates",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := fixture.server.validateAgentPublicScientificSourceURL(
+		context.Background(), fixture.stream.UID, fixture.stream.OwnerID, request,
+	)
+	if err != nil || resolved.ToolCallID != sourceCallID {
+		t.Fatalf("same-site durable source resolved=%#v want=%q err=%v", resolved, sourceCallID, err)
+	}
+}
+
 func TestAgentPublicScientificFileDownloadRejectsUnattestedURLBeforeNetwork(t *testing.T) {
 	for _, test := range []struct {
 		name      string

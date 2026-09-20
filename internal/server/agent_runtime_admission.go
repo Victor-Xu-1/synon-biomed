@@ -435,25 +435,7 @@ func agentRuntimeRecoverableToolErrorValue(toolName string, response any, err er
 	if !ok || len(anySliceValue(value["errors"])) == 0 {
 		return nil, false
 	}
-	recoverable := copyMapAny(value)
-	recoverable["ok"] = false
-	recoverable["code"] = "artifact_save_requires_correction"
-	if len(anySliceValue(recoverable["artifacts"])) > 0 {
-		recoverable["partial"] = true
-	} else {
-		delete(recoverable, "partial")
-	}
-	retryable := false
-	for _, raw := range anySliceValue(recoverable["errors"]) {
-		failure, _ := raw.(map[string]any)
-		if boolValue(failure["retryable"], false) {
-			retryable = true
-			break
-		}
-	}
-	recoverable["retryable"] = retryable
-	recoverable["recovery"] = "correct_or_omit_the_failed_files_then_continue"
-	return recoverable, true
+	return agentSaveArtifactsCorrectionValue(value), true
 }
 
 func agentRuntimeToolResponseStatus(value any) (string, string) {

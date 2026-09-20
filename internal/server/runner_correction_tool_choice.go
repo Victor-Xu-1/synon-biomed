@@ -145,8 +145,31 @@ func sessionRunnerImmediateArtifactRepairRequired(
 	if len(runnerPendingArtifactSaveEvidenceClasses(run, messages)) > 0 {
 		return true
 	}
+	if runnerLatestArtifactSaveRequiresCorrection(messages) {
+		return true
+	}
 	paths, _ := runnerPendingArtifactFileRepair(messages)
 	return len(paths) > 0
+}
+
+func runnerLatestArtifactSaveRequiresCorrection(messages []agentruntime.Message) bool {
+	calls := runnerToolCallsByCallID(messages)
+	for index := len(messages) - 1; index >= 0; index-- {
+		message := messages[index]
+		if message.Role != "tool" {
+			continue
+		}
+		call, found := calls[message.ToolCallID]
+		if !found || normalizeAgentToolName(call.Name) != "saveartifacts" {
+			continue
+		}
+		var result map[string]any
+		if json.Unmarshal([]byte(strings.TrimSpace(message.Content)), &result) != nil {
+			return false
+		}
+		return runnerArtifactSaveRequiresCorrection(result) && len(anySliceValue(result["errors"])) > 0
+	}
+	return false
 }
 
 func runnerRequiredMCPSourceClassForChoice(

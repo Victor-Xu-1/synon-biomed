@@ -559,6 +559,9 @@ tools are absent from new model snapshots.
     If the user explicitly asks the final answer to report the first failure
     code, that answer must include a bounded machine code from the first failed
     durable tool receipt; later success does not erase or summarize it away.
+    The Web history projection preserves only those explicitly requested codes
+    that match the task-bound durable failure receipt; unrelated runtime
+    identifiers remain behind the normal public-message boundary.
     Tool failures inside such workflows remain local evidence:
     the model observes the concrete failure, makes a materially different
     repair, and continues the same logical task from its durable checkpoint.

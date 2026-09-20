@@ -183,6 +183,28 @@ func TestSessionRunnerSMILESRepairCompletionRequiresEveryExplicitReceipt(t *test
 	}
 }
 
+func TestSessionRunnerSMILESRepairBrowserAcceptancePromptKeepsFinalContract(t *testing.T) {
+	task := `这是一次 Harness 工程回归测试。请在当前任务工作区创建 molecules.smi：第一版必须包含三行：
+smiles name
+CCO ethanol
+not_a_molecule invalid
+请实际调用保存工具验证。保存工具按预期拒绝无效 SMILES 后，读取具体机器错误，使用真实可执行的修复动作把第三行改为 CC ethane，然后再次保存。只有在最终保存回执成功且能重新读取 molecules.smi 后才能宣布完成；任何未执行、待批准或失败的动作都不得描述成已经成功。最终只需简要报告首次失败代码、修复动作和最终产物。不要执行与该文件无关的检索。`
+	contract := buildSessionRunnerExplicitToolContract(task)
+	if !contract.ReportFirstFailureCode || !reflect.DeepEqual(contract.PostWriteReads, []string{"molecules.smi"}) {
+		t.Fatalf("exact browser contract=%#v", contract)
+	}
+	messages := []agentruntime.Message{
+		toolRoundWithInput("save-invalid", "save_artifacts", `{"files":["molecules.smi"]}`),
+		{Role: "tool", ToolCallID: "save-invalid", Content: `{"ok":false,"code":"artifact_save_requires_correction","errors":[{"validation_code":"invalid_smiles_records"}]}`},
+		toolRoundWithInput("save-fixed", "save_artifacts", `{"files":["molecules.smi"]}`), toolResult("save-fixed"),
+		toolRoundWithInput("read-final", "read_file", `{"file_path":"molecules.smi"}`), toolResult("read-final"),
+	}
+	final := "完成结果如下：修复动作与最终产物已验证。"
+	if gaps := contract.finalGaps(messages, final); len(gaps) != 1 || !strings.Contains(gaps[0], "invalid_smiles_records") {
+		t.Fatalf("exact browser final gaps=%#v", gaps)
+	}
+}
+
 func TestSessionRunnerExplicitToolReceiptScopeCompletesFromExactReceipts(t *testing.T) {
 	task := "请只执行运行时能力验收：使用 search_skills 查找 structure-based-molecule-generation，然后使用 skill 加载它；不要运行分子生成、不要创建环境、不要下载文件。最后仅报告两个工具是否成功，以及加载到的 Skill 名称。"
 	messages := []agentruntime.Message{

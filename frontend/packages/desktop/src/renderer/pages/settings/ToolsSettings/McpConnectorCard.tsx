@@ -164,51 +164,53 @@ export const McpConnectorCard: React.FC<{
         </span>
         <span>MCP · {server.transport}</span>
       </div>
-      <div className='synon-mcp-card__usage' aria-label={usageSummary}>
-        <span>{usageDetails.lastUsed}</span>
-        <span>{usageDetails.count}</span>
-      </div>
-      <div className='synon-mcp-card__actions flex items-center justify-between'>
-        <div className='synon-mcp-card__action-cluster flex items-center'>
-          <Button
-            size='small'
-            type='secondary'
-            className='synon-mcp-card__configure'
-            data-testid={`synon-biomed-mcp-${primaryActionKind}-${normalizeTestId(server.name)}`}
-            onClick={primaryAction}
-          >
-            {t('settings.synonBiomedMcpConfigure')}
-          </Button>
-          {hasSecondaryActions ? (
-            <Dropdown droplist={actionMenu} trigger='click' position='br' getPopupContainer={() => document.body}>
-              <Button
-                size='small'
-                type='text'
-                shape='circle'
-                className='synon-mcp-card__more'
-                data-testid={`synon-biomed-mcp-more-${normalizeTestId(server.name)}`}
-                aria-label={t('common.more')}
-                icon={<MoreOne size='15' />}
-              />
-            </Dropdown>
-          ) : null}
+      <div className='synon-mcp-card__footer'>
+        <div className='synon-mcp-card__usage' aria-label={usageSummary}>
+          <span>{usageDetails.lastUsed}</span>
+          <span>{usageDetails.count}</span>
         </div>
-        <button
-          type='button'
-          role='switch'
-          aria-checked={server.enabled}
-          aria-busy={busy}
-          aria-label={t('settings.synonBiomedMcpToggleEnabled', { name: server.displayName })}
-          title={usageSummary}
-          disabled={busy}
-          className='synon-mcp-card__status-control'
-          data-state={connectionState}
-          data-testid={`synon-biomed-mcp-enabled-${normalizeTestId(server.name)}`}
-          onClick={() => onToggle(server, !server.enabled)}
-        >
-          <span className='synon-mcp-card__status-dot' aria-hidden='true' />
-          <span>{connectionLabel}</span>
-        </button>
+        <div className='synon-mcp-card__actions flex items-center justify-between'>
+          <div className='synon-mcp-card__action-cluster flex items-center'>
+            <Button
+              size='small'
+              type='secondary'
+              className='synon-mcp-card__configure'
+              data-testid={`synon-biomed-mcp-${primaryActionKind}-${normalizeTestId(server.name)}`}
+              onClick={primaryAction}
+            >
+              {t('settings.synonBiomedMcpConfigure')}
+            </Button>
+            {hasSecondaryActions ? (
+              <Dropdown droplist={actionMenu} trigger='click' position='br' getPopupContainer={() => document.body}>
+                <Button
+                  size='small'
+                  type='text'
+                  shape='circle'
+                  className='synon-mcp-card__more'
+                  data-testid={`synon-biomed-mcp-more-${normalizeTestId(server.name)}`}
+                  aria-label={t('common.more')}
+                  icon={<MoreOne size='15' />}
+                />
+              </Dropdown>
+            ) : null}
+          </div>
+          <button
+            type='button'
+            role='switch'
+            aria-checked={server.enabled}
+            aria-busy={busy}
+            aria-label={t('settings.synonBiomedMcpToggleEnabled', { name: server.displayName })}
+            title={usageSummary}
+            disabled={busy}
+            className='synon-mcp-card__status-control'
+            data-state={connectionState}
+            data-testid={`synon-biomed-mcp-enabled-${normalizeTestId(server.name)}`}
+            onClick={() => onToggle(server, !server.enabled)}
+          >
+            <span className='synon-mcp-card__status-dot' aria-hidden='true' />
+            <span>{connectionLabel}</span>
+          </button>
+        </div>
       </div>
     </article>
   );

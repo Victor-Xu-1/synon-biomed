@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { resolveSynonBiomedMcpDescription } from '@/renderer/services/mcp/synonBiomedMcpDescriptions';
 
 describe('Synon Biomed MCP descriptions', () => {
+  it.each(['synon-research', 'open-targets-official', 'tamarind-bio', 'adaptyv-cloud-lab', 'idc-rest'])(
+    'localizes the installed %s connector',
+    (name) => {
+      expect(resolveSynonBiomedMcpDescription(name, 'English fallback.', 'zh-CN')).toMatch(/[\u4e00-\u9fff]/);
+    }
+  );
   it('uses the biomedical Chinese copy for the Chinese interface', () => {
     expect(resolveSynonBiomedMcpDescription('pubmed', 'PubMed biomedical literature.', 'zh-CN')).toContain(
       'PubMed 生物医学文献'

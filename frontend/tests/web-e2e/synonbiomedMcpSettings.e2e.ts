@@ -7,6 +7,41 @@ const viewports = [
   { name: 'narrow', width: 390, height: 844 },
 ] as const;
 
+test('keeps the installed connector sheet four by three at wide desktop sizes', async ({ page }) => {
+  await login(page);
+  await page.goto('/#/settings/tools');
+  await expect(page.getByTestId('synon-biomed-mcp-pubmed')).toBeVisible();
+  for (const size of [
+    { width: 1440, height: 1000 },
+    { width: 1836, height: 1662 },
+  ]) {
+    await page.setViewportSize(size);
+    const pager = page.getByRole('navigation', { name: '连接器分页' });
+    const footerPositions: number[] = [];
+    for (const number of [1, 2]) {
+      await pager.getByRole('button', { name: `连接器分页 ${number}`, exact: true }).click();
+      const metrics = await page.getByTestId('synon-biomed-mcp-grid').evaluate((grid) => {
+        const boxes = [...grid.children].map((card) => card.getBoundingClientRect());
+        const scroll = grid.closest('.mcp-library-scroll')!;
+        return {
+          count: boxes.length,
+          columns: new Set(boxes.map((box) => Math.round(box.x))).size,
+          rows: new Set(boxes.map((box) => Math.round(box.y))).size,
+          gridHeight: grid.getBoundingClientRect().height,
+          scrollHeight: scroll.clientHeight,
+          footerY: document.querySelector('.mcp-library-footer')!.getBoundingClientRect().y,
+        };
+      });
+      expect(metrics.count).toBe(12);
+      expect(metrics.columns).toBe(4);
+      expect(metrics.rows).toBe(3);
+      expect(metrics.gridHeight).toBeGreaterThanOrEqual(metrics.scrollHeight - 20);
+      footerPositions.push(metrics.footerY);
+    }
+    expect(footerPositions[0]).toBe(footerPositions[1]);
+  }
+});
+
 for (const viewport of viewports) {
   test.describe(viewport.name, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height } });

@@ -144,12 +144,26 @@
   justify-content: center;
   gap: 2px;
   margin-top: 0;
-  padding-top: 10px;
-  border-top: 1px solid var(--settings-border);
+  padding-top: 0;
   color: var(--settings-text-tertiary);
   font-size: 12px;
   line-height: 16px;
   text-align: left;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--settings-border);
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__footer .synon-mcp-card__actions {
+  padding-top: 0;
+  gap: 6px;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__actions {

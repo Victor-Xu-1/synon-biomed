@@ -108,6 +108,48 @@ html body .settings-page-wrapper[data-settings-route='tools'] .settings-page-con
   padding: 4px 4px 16px;
 }
 
+/* Only the installed twelve-item page owns a four-by-three desktop sheet.
+   Discovery dialogs retain their own responsive grids. Content may grow and
+   scroll on short windows; neither text nor controls are clipped to fit. */
+@container (min-width: 1000px) {
+  .mcp-library-scroll > .arco-spin,
+  .mcp-library-scroll > .arco-spin > .arco-spin-children {
+    height: 100%;
+  }
+
+  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-grid:not(:empty) {
+    min-height: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(min-content, 1fr));
+  }
+
+  .mcp-library-scroll .synon-mcp-card__description {
+    display: flex;
+    flex: 1;
+    align-items: center;
+  }
+
+  .mcp-library-scroll .synon-mcp-card__metadata {
+    margin-top: 0;
+  }
+}
+
+@container (min-width: 1250px) {
+  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card {
+    padding: 22px !important;
+  }
+
+  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card__title-row > span {
+    font-size: 17px !important;
+    line-height: 25px !important;
+  }
+
+  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card__description {
+    font-size: 15px !important;
+    line-height: 25px !important;
+  }
+}
+
 .mcp-library-footer {
   min-height: 48px;
   padding-top: 10px;

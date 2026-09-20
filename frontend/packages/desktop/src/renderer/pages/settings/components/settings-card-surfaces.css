@@ -86,7 +86,7 @@
 }
 
 .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card > .border-t,
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__usage,
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__footer,
 .settings-page-wrapper[data-settings-route='experts'] .expert-card__footer {
   transition: border-color 220ms ease;
 }
@@ -149,7 +149,7 @@
   }
 
   .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover > .border-t,
-  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover .synon-mcp-card__usage,
+  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover .synon-mcp-card__footer,
   .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover .expert-card__footer {
     border-color: color-mix(in srgb, var(--settings-card-interaction-accent) 18%, var(--settings-border)) !important;
   }

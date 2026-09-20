@@ -331,6 +331,9 @@ describe('settings image-based visual contract', () => {
     expect(toolsCss).toContain('.mcp-library-footer');
     expect(toolsCss).not.toContain('visibility: hidden');
     expect(connectorsCss).toContain('repeat(auto-fill, minmax(min(100%, 260px), 1fr))');
+    expect(toolsCss).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
+    expect(toolsCss).toContain('grid-template-rows: repeat(3, minmax(min-content, 1fr))');
+    expect(connectorsCss).toContain('.synon-mcp-card__footer');
     expect(compactCss).toMatch(/details:not\(\[open\]\)\s*>\s*div[\s\S]*?display:\s*none\s*!important/);
   });
 

@@ -762,6 +762,11 @@
   "speechToTextWholeBadge": "Batch",
   "mcp": "MCP Integration",
   "mcpBuiltinDescriptions": {
+    "synon-research": "Discover and call an operator-verified research capability pack through one MCP entry, without installing each source as a separate Skill.",
+    "open-targets-official": "Official Open Targets service for target and disease evidence, tractability, safety, genetics, drug mechanisms and clinical candidates.",
+    "tamarind-bio": "Cloud drug design: structure prediction, docking, protein/antibody/RNA design, molecular generation and property workflows without a local GPU.",
+    "adaptyv-cloud-lab": "Protein and antibody cloud lab: target catalog, experiment design and quotes, binding affinity, expression, thermostability and structured results.",
+    "idc-rest": "Public cancer imaging: read-only cohort discovery, metadata and guarded SQL with citation-ready evidence; no API key or local data download required.",
     "biomart": "Ensembl BioMart — genomic annotations, identifier translation, and cross-reference queries.",
     "pubmed": "PubMed biomedical literature — search, metadata, abstracts, full-text (PMC), related articles, ID conversion, copyright status, and citation lookup.",
     "clinical-trials": "ClinicalTrials.gov — trial search, details, endpoints, sponsor, investigator, and eligibility queries.",

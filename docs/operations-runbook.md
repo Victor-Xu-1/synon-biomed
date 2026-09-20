@@ -43,7 +43,10 @@ Settings → Connectors manages installed MCP services. Search uses the displaye
 localized descriptions; the filter selects connected, attention-needed or custom
 connectors. Cards preserve full names and descriptions, configuration, permissions
 and enable/disable controls. Pagination stays below the independently scrolling
-library. Connection status is a service health signal, not proof of a completed
+library. Wide desktop pages use four columns and three rows (12 connectors),
+with rows sharing the available height. Shorter windows scroll without clipping
+card text or controls; narrow windows keep the responsive layout. Usage and
+configuration share one card footer. Connection status is a service health signal, not proof of a completed
 scientific operation.
 
 Add connector opens custom configuration, the optional local catalog or the online

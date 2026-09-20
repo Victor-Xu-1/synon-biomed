@@ -78,14 +78,11 @@ describe('SynonBiomedMcpSettingsContent', () => {
     const ketcherCard = within(ketcherCardElement);
     expect(pubmedCardElement).toHaveAttribute('data-mcp-visual', 'pubmed');
     expect(ketcherCardElement).toHaveAttribute('data-mcp-visual', 'ketcher-chemistry');
-    expect(pubmedCardElement.querySelector('.mcp-connector-visual--artwork')).toHaveAttribute('aria-hidden', 'true');
-    expect(screen.getByTestId('synon-biomed-mcp-grid-Recommended connectors')).toHaveClass(
-      'grid-cols-1',
-      'xl:grid-cols-4'
-    );
+    expect(pubmedCardElement.querySelector('.mcp-connector-visual--artwork')).toBeNull();
+    expect(screen.getByTestId('synon-biomed-mcp-grid')).toHaveClass('synon-mcp-grid');
     expect(pubmedCard.getByText('Connected')).toBeInTheDocument();
     expect(pubmedCard.getByTestId('synon-biomed-mcp-permissions-pubmed')).toHaveTextContent('Configure');
-    expect(pubmedCard.getByText('Biomedical literature search and metadata')).toBeInTheDocument();
+    expect(pubmedCard.getByText('PubMed — Biomedical literature search and metadata.')).toBeInTheDocument();
     expect(ketcherCard.getByText('Connected')).toBeInTheDocument();
     expect(pubmedCard.queryByText('No authentication')).toBeNull();
     expect(ketcherCard.queryByText('No authentication')).toBeNull();
@@ -566,6 +563,7 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-add'));
     fireEvent.click(await screen.findByText('Free & local'));
     const card = await screen.findByTestId('synon-biomed-mcp-optional-renkin-local');
     expect(card).toHaveAttribute('aria-label', 'RENKIN retrosynthesis. Not installed');
@@ -580,6 +578,90 @@ describe('SynonBiomedMcpSettingsContent', () => {
       )
     );
     await waitFor(() => expect(card).toHaveAttribute('aria-label', 'RENKIN retrosynthesis. Installed'));
+  });
+  it('searches displayed translations and keeps the library filter when closing connector discovery', async () => {
+    const fixture = {
+      ...connectorFixture('bundled:example', 'example', 'Example'),
+      description_i18n: { 'zh-CN': '中文检索说明' },
+    };
+    const fetchMock = vi.fn(
+      async (input: string) =>
+        new Response(
+          JSON.stringify(
+            input.endsWith('directory-health')
+              ? { directoryHealth: { ok: true } }
+              : input.endsWith('/connectors')
+                ? [fixture]
+                : []
+          ),
+          { status: 200 }
+        )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'zh-CN');
+    expect(await screen.findByText('中文检索说明')).toBeVisible();
+    fireEvent.change(screen.getByRole('textbox', { name: '搜索连接器...' }), { target: { value: '中文检索' } });
+    expect(screen.getByText('Example')).toBeVisible();
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-add'));
+    fireEvent.click(await screen.findByText('免费与本地'));
+    await screen.findByTestId('synon-biomed-mcp-optional');
+    fireEvent.click(screen.getByRole('dialog').querySelector('.arco-modal-close-icon')!);
+    expect(screen.getByRole('textbox', { name: '搜索连接器...' })).toHaveValue('中文检索');
+    expect(screen.getByText('Example')).toBeVisible();
+    expect(fetchMock.mock.calls.every(([path]) => !path.endsWith('/install'))).toBe(true);
+  });
+
+  it('reports a failed first load instead of presenting it as an empty inventory', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('unavailable', { status: 503 }))
+    );
+    await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
+    expect(await screen.findByTestId('synon-biomed-mcp-load-error')).toBeVisible();
+    expect(screen.queryByText('No connectors installed yet.')).toBeNull();
+  });
+
+  it('keeps pagination outside the scroll area, resets page after filtering and preserves full localized copy', async () => {
+    const connectors = Array.from({ length: 13 }, (_, i) =>
+      connectorFixture(`bundled:item-${i}`, `item-${i}`, `Connector ${i}`)
+    );
+    connectors[0] = {
+      ...connectors[0],
+      displayName: 'bioRxiv',
+      description: 'bioRxiv/medRxiv preprints: full text and metadata.',
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async (input: string) =>
+          new Response(
+            JSON.stringify(
+              input.endsWith('directory-health')
+                ? { directoryHealth: { ok: true } }
+                : input.endsWith('/connectors')
+                  ? connectors
+                  : []
+            ),
+            { status: 200 }
+          )
+      )
+    );
+    await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
+    expect(await screen.findByRole('heading', { name: 'Connectors 13' })).toBeVisible();
+    expect(screen.getByText('bioRxiv/medRxiv preprints: full text and metadata.')).toBeVisible();
+    const footer = screen.getByTestId('mcp-library-footer');
+    const scroll = screen.getByTestId('mcp-library-scroll');
+    expect(scroll).not.toContainElement(footer);
+    fireEvent.click(within(footer).getByRole('button', { name: 'Connector pagination 2', exact: true }));
+    expect(screen.getByText('Connector 12')).toBeVisible();
+    scroll.scrollTop = 100;
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search connectors...' }), { target: { value: 'preprints' } });
+    await waitFor(() => expect(screen.getByText('bioRxiv')).toBeVisible());
+    expect(scroll.scrollTop).toBe(0);
+    expect(screen.queryByText('Connector 12')).toBeNull();
+    fireEvent.change(screen.getByTestId('synon-biomed-mcp-filter'), { target: { value: 'needs-attention' } });
+    expect(screen.getByText('No connectors match the current filters.')).toBeVisible();
   });
 });
 

@@ -162,23 +162,22 @@ const OptionalMcpCard: React.FC<{
       data-mcp-install-status={item.status}
       aria-label={`${item.displayName}. ${status}`}
     >
-      <McpConnectorVisualMark visual={visual} variant='artwork' />
       <div className='synon-mcp-card__top flex min-w-0 items-center'>
         <div className='synon-mcp-card__icon flex shrink-0 items-center justify-center'>
           <McpConnectorVisualMark visual={visual} />
         </div>
         <div className='synon-mcp-card__identity min-w-0 flex-1'>
           <div className='synon-mcp-card__title-row'>
-            <span className='min-w-0 truncate font-650 text-t-primary' title={item.displayName}>
+            <span className='min-w-0 font-650 text-t-primary' title={item.displayName}>
               {item.displayName}
             </span>
           </div>
         </div>
       </div>
-      <p className='synon-mcp-card__description m-0 line-clamp-3 text-t-secondary' title={item.description}>
+      <p className='synon-mcp-card__description' title={item.description}>
         {item.description}
       </p>
-      <div className='flex flex-col gap-3px px-14px pb-10px text-11px leading-4 text-t-tertiary'>
+      <div className='flex flex-col gap-3px text-12px leading-5 text-t-tertiary break-words'>
         <span>
           {t('settings.synonBiomedMcpOptionalLicense')}: {item.license}
         </span>

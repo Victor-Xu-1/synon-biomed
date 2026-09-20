@@ -19,16 +19,6 @@
   }
 }
 
-/* At the locked 1536px sheet width the three-column cards reserve the taller
-   editorial blocks shown in the approved captures. The compact four-column
-   treatment above remains the wide-rail default. */
-@container (max-width: 1499px) {
-  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-    height: 220px;
-    min-height: 220px;
-  }
-}
-
 @media (max-width: 1040px) {
   .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;

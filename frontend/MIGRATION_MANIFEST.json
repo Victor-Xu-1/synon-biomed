@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "f56d6e56c29af0de15d9c94c8deeaae8105b65179b37ffbce84c24a788bbd47d",
+  "adaptationFingerprintSHA256": "469d51c6662d987474f597ac86642de0f82cae68db5b6b8eac07368a49b0f6b8",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "d22796b90cd284b189b11e15682864d689ebb8754a37d8dad131bdbf63344b2a",
+  "additionFingerprintSHA256": "01b7201b0be8a052487ed26abd3f0ec9e6f4d0618d9cd176131afcece8536f0e",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 406,
     "adaptedSourceFiles": 659,
     "removedSourceFiles": 289,
-    "addedFiles": 614
+    "addedFiles": 616
   },
   "adaptations": [
     {
@@ -2201,15 +2201,15 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/SynonBiomedMcpSettings.tsx",
       "sourceSHA256": "9887b94995b2d8089326b63a078b0fe33e38505bffb7ce36e1ae61647278f939",
-      "targetSHA256": "ca68d38408d187ab2defa4c5e8a7e866ecd9c086a81fcf6fdc04c7ab2fe256dd",
-      "bytes": 35680,
+      "targetSHA256": "dec5abfa14673ece78488f1f8a3066bb01dfd049f894a46e451157ed96913ac0",
+      "bytes": 18836,
       "reason": "Improve MCP connector density, localization, and responsive control layout."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/index.tsx",
       "sourceSHA256": "37b7e34583757a7174605a7b98e4d0e57d09cc00ee241f47b0ae690319ba00ec",
-      "targetSHA256": "72f8ab4830355847ffe3c76204282ae1c7b1cb944a05f0ea807f2a14b85adced",
-      "bytes": 929,
+      "targetSHA256": "ca6c8464419e7bceabc04268fcde9d14c4902a8d521ad916b54fada0fa81da9c",
+      "bytes": 610,
       "reason": "Clarify the expert MCP tool-management surface."
     },
     {
@@ -2446,8 +2446,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/settings.json",
       "sourceSHA256": "d7c89e27673b4245d2efeb4216c9768e08420beabd9294779d4d099207ea5e7a",
-      "targetSHA256": "3918089589c51afa3764d8adcd6befcf30500fa9441272ef505713e676cc5844",
-      "bytes": 126519,
+      "targetSHA256": "47d5f5cf918bc447d91ec76b1e87a3f0250ffda570b3127e464f8401aad70b39",
+      "bytes": 126535,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2537,8 +2537,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/settings.json",
       "sourceSHA256": "3afd2c67b5d1a42960c03d5e70dbdb23c3b6b1a3981665ac37919e199dc814c0",
-      "targetSHA256": "feed1b9d5dedb87310754efc61847aa2f2980813897136146e5dfaf81540c621",
-      "bytes": 122009,
+      "targetSHA256": "5dc124c7baacc36162700735f1d93a13b8c66a8b023b7cec6a866c72a72310ce",
+      "bytes": 122025,
       "reason": "Replace obsolete bun start deployment guidance with Synon Go service guidance."
     },
     {
@@ -4147,8 +4147,8 @@
     {
       "path": "tests/unit/settings/SettingsSider.dom.test.tsx",
       "sourceSHA256": "65eb68d0ab06f5cfc1be64f7073e446f63e4809eaeff132ef49bb2d5f6d50f16",
-      "targetSHA256": "9121fcdb4c908b604f0fadd54f0dc7a80ec870c266bbffe02e031f3b07242bbb",
-      "bytes": 2284,
+      "targetSHA256": "77c1a61b17c591e7237420cf6bb0780daa1738cd7d57642b1f4c682e87d88443",
+      "bytes": 2289,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -4161,8 +4161,8 @@
     {
       "path": "tests/unit/settings/SynonBiomedMcpSettings.dom.test.tsx",
       "sourceSHA256": "e180f2ef876df521f08e312711d87b4b6c8409ec9ad229406d18e4810ca086fb",
-      "targetSHA256": "d901d07758f11a61d29d746142f1d54ef0a82d8f1895e8d0f868bb7758cf357c",
-      "bytes": 25050,
+      "targetSHA256": "bba367f797c77eb5085ba07242f2b307d14a8cda0dcfe5204053f05e576109ea",
+      "bytes": 29026,
       "reason": "Verify localized and compact MCP connector presentation."
     },
     {
@@ -4511,8 +4511,8 @@
     {
       "path": "tests/web-e2e/synonbiomedMcpSettings.e2e.ts",
       "sourceSHA256": "1fae7510bbce47f749850cd36b38c56f796194e746b3ea2723c02e85dec2f1ab",
-      "targetSHA256": "b3332bf7bf203e8b6509243a8c6014c125029dc2fbbf1d8336dd43b6936a24ee",
-      "bytes": 5437,
+      "targetSHA256": "18f9202f2c1ff283e33a2757e6d85bc356c8d299507b60194400cd6cd4d85d9d",
+      "bytes": 5524,
       "reason": "Use configured credentials and verify the Go MCP settings flow in responsive Chromium."
     },
     {
@@ -7542,21 +7542,33 @@
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
+      "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpConnectorCard.tsx",
+      "sha256": "beee223326dc9978e74ee932550dcb94c5d9360e578fdb36fcc65121575c5ec1",
+      "bytes": 11119,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
+      "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpLibraryToolbar.tsx",
+      "sha256": "fb51f4f57152c32492243a406f0e58ae4b708675affa5364ff5d0e5b7f49114d",
+      "bytes": 3695,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpMarketplacePanel.tsx",
-      "sha256": "cf653ecfc6ea69be887cb65933535b634ce8090666e599d3033cb2e5a09c3b9b",
-      "bytes": 11431,
+      "sha256": "8aec11c0e445fea70ca72195dcdf036a2f7c548e603968c024646877ad5fa117",
+      "bytes": 11388,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpOptionalPanel.tsx",
-      "sha256": "9f49f10a160df1155e5edf6c7b66709987c69afbc4754de56afae6653e3b650b",
-      "bytes": 8826,
+      "sha256": "48df135f74db92ecc5ffb03e9186881a84e5a2f0509122fb4222a11039536ff3",
+      "bytes": 8712,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/mcpConnectorVisuals.tsx",
-      "sha256": "fc3e987f1f4db14d5e7abf8a0200a818229f1ca86f22a49e0b120370575431db",
-      "bytes": 8094,
+      "sha256": "a377aaa89fce23f04c7c0afbb21576c6166191252e10d4657e2ff77fe57d5f21",
+      "bytes": 6588,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7663,20 +7675,20 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-breakpoints.css",
-      "sha256": "e1bbe9bcf46b563841c8096ba4a019192c7ac6cf3eee025d0257676c6c39fd87",
-      "bytes": 7563,
+      "sha256": "1956013730a309d90dbfcb4a1fcbd1e16b3fcac56c69875148105762230537d0",
+      "bytes": 7202,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-surfaces.css",
-      "sha256": "73d52b562cb950e6fc14e64288e2aacccbdc56f10ebc55f87eb56057da22c646",
-      "bytes": 8552,
+      "sha256": "61d64c14e47e4b777fcfccbfedd7e481f58247d7996b46d1f63ac24d0adb763d",
+      "bytes": 8370,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-compact-desktop.css",
-      "sha256": "96885cb79c3c6b585392f889f3f914cb2d233aec9e12e45880749754cfb8a8d6",
-      "bytes": 10115,
+      "sha256": "5e55bb5a317c7f14225ff75660db8c083fef38f976745606c4aabdd018cb1942",
+      "bytes": 8941,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7693,8 +7705,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-connectors.css",
-      "sha256": "45756b2f8e8c23cfca68a26dffde1cada134d283c121e2aa343d4796ab3944ec",
-      "bytes": 9143,
+      "sha256": "1d46b8876c01869d35e6f965b99dcbb0df0337263c44342ea15ee15bc04971c5",
+      "bytes": 8222,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7759,14 +7771,14 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-reference-rails.css",
-      "sha256": "5ab9325f920d8c20cd51ff79253f673c7163194174d23d37d8f09492c4bf388e",
-      "bytes": 1570,
+      "sha256": "682b4cf22e78a1ec23fb259db8e7e0348f64ca745dc86da08800c59dbdc25855",
+      "bytes": 1437,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-responsive.css",
-      "sha256": "66f680a8cb50ec6b6e3513c7dae5c7d01c20c4406013be18170f52284ac60f37",
-      "bytes": 3462,
+      "sha256": "6e99c646979f43c87d697d8d03d1fe2db4bf0947ed357f5147e62274a51825c2",
+      "bytes": 3295,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7789,14 +7801,14 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-tabbed-pages.css",
-      "sha256": "70f8883db23a583e89159089c8c1b593176d0e1168835c3a7dc0bdd064e84ffd",
-      "bytes": 1473,
+      "sha256": "36b070a0b6a7ddf7d552774cff8afca75d9090cfaf50943b210d7bcb70fe7bd6",
+      "bytes": 1387,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-tools.css",
-      "sha256": "442c3ac0b13c795ecbcbf900826e4d2cceab084811e96def00a537cb7d361c9f",
-      "bytes": 5629,
+      "sha256": "85ce2a6b9e48050d3ecac42f17c1f0b0086f8cc0f590f35639623049348d90f8",
+      "bytes": 3088,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7807,8 +7819,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settingsVisualContract.ts",
-      "sha256": "99d6fd799630c22bb3841a4c6e20799dc35167abc77f896107699ed1a104f9d0",
-      "bytes": 9050,
+      "sha256": "b553ccdd1b9c61acf038391837231f66262eb1dc3338b19b90cf22d4f3e99633",
+      "bytes": 9063,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9499,8 +9511,8 @@
     },
     {
       "path": "tests/unit/settings/settingsVisualContract.test.ts",
-      "sha256": "489791fcb8235a2fe17609d166746b6d76ca81b688dd4de2beb78c12f4fde3a7",
-      "bytes": 24458,
+      "sha256": "4d0b0751e8e92a23025638ccffa61ba3fe2b38f1726a2515479b14d187ddc92f",
+      "bytes": 24508,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

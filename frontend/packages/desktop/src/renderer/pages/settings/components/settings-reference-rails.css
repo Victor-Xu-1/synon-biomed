@@ -10,10 +10,6 @@
     width: min(1176px, 100%) !important;
   }
 
-  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
-    width: min(1188px, 100%) !important;
-  }
-
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page {
     width: min(1180px, 100%) !important;
   }

@@ -1,179 +1,152 @@
-/* Route-scoped desktop geometry from the accepted settings visual contract. */
+/* Connector library: the same fluid header/list/footer rhythm as Skills. */
+html body .settings-page-wrapper[data-settings-route='tools'] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
 
-@media (min-width: 768px) {
-  /* Tools: the installed connector surface begins immediately below the
-     header.  Tabs and the section label remain in the accessibility tree but
-     no longer consume a second visual header row. */
-  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
-    display: block !important;
-    gap: 0 !important;
-    row-gap: 0 !important;
+html body .settings-page-wrapper[data-settings-route='tools'] .settings-page-content {
+  display: flex;
+  flex: 1;
+  height: auto !important;
+  min-height: 0 !important;
+  padding-bottom: 12px;
+  overflow: hidden !important;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .settings-page-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-tools-page,
+.mcp-library {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.mcp-library {
+  container-type: inline-size;
+  gap: 16px;
+}
+
+.mcp-library > :not(.mcp-library-scroll) {
+  flex-shrink: 0;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .settings-page-header {
+  padding-bottom: 0;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .settings-page-header__row {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .settings-page-header__actions {
+  width: auto;
+}
+
+.mcp-library-total {
+  margin-inline-start: 8px;
+  color: var(--settings-text-secondary);
+  font-size: 16px;
+  font-weight: 450;
+  vertical-align: middle;
+}
+
+.mcp-library-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, 200px) auto auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.mcp-library-search,
+.mcp-library-health {
+  min-width: 0;
+}
+
+.mcp-library-toolbar .arco-btn,
+.mcp-library .settings-page-header__actions .arco-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.mcp-library-select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--settings-border);
+  border-radius: 8px;
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.mcp-library-select:focus-visible {
+  outline: 2px solid var(--settings-accent);
+  outline-offset: 2px;
+}
+
+.mcp-library-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 4px 4px 16px;
+}
+
+.mcp-library-footer {
+  min-height: 48px;
+  padding-top: 10px;
+  border-top: 1px solid var(--settings-border);
+  background: var(--settings-canvas);
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .mcp-library-footer .settings-pagination {
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.mcp-library-browser .arco-modal-content {
+  max-height: min(75vh, 800px);
+  overflow-y: auto;
+}
+
+@container (max-width: 800px) {
+  .mcp-library-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
   }
 
-  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-header {
-    height: 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    visibility: hidden;
+  .mcp-library-search {
+    grid-column: 1 / -1;
   }
 
-  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-content {
-    padding-top: 0 !important;
+  .mcp-library-health {
+    grid-row: 3;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .settings-page-wrapper[data-settings-route='tools'] .settings-mobile-nav-row {
+    flex-shrink: 0;
   }
 
-  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-content-inner {
-    margin-top: 0 !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-pane > div:first-child {
-    position: relative !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    visibility: hidden;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-pane > div:first-child > :last-child {
-    position: absolute !important;
-    top: 21px !important;
-    right: 0 !important;
-    z-index: 4;
-    display: flex !important;
-    visibility: visible !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-toolbar {
-    position: relative !important;
-    height: 46px !important;
-    min-height: 46px !important;
-    margin-top: 21px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    gap: 24px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-toolbar > .arco-input-group-wrapper {
-    width: 387px !important;
-    min-width: 387px !important;
-    flex: 0 0 387px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-toolbar > .arco-select {
-    width: 307px !important;
-    min-width: 307px !important;
-    flex: 0 0 307px !important;
-  }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='tools']
-    .synon-mcp-toolbar
-    > [data-testid='synon-biomed-mcp-directory-health'] {
-    width: 267px !important;
-    min-width: 267px !important;
-    height: 46px !important;
-    flex: 0 0 267px !important;
-    justify-content: flex-end !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-toolbar .arco-btn[type='text'] {
-    width: 36px !important;
-    min-width: 36px !important;
-    height: 36px !important;
-    min-height: 36px !important;
-  }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='tools']
-    .arco-tabs-pane
-    > div:first-child
-    > :last-child
-    > [data-testid='synon-biomed-mcp-reconcile'] {
-    width: 0 !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    border: 0 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='tools']
-    .arco-tabs-pane
-    > div:first-child
-    > :last-child
-    > [data-testid='synon-biomed-mcp-add'] {
-    width: 154px !important;
-    min-width: 154px !important;
-    height: 46px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-section-heading {
-    display: none !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-pane > .arco-spin {
-    margin-top: 0 !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .arco-tabs-pane .synon-mcp-grid {
-    margin-top: 29px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-    height: 220px !important;
-    min-height: 220px !important;
-    padding: 14px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__icon,
-  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-connector-visual--badge {
-    width: 48px !important;
-    height: 48px !important;
-    flex-basis: 48px !important;
-    border-radius: 12px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__top {
-    gap: 12px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__identity {
-    max-width: calc(100% - 60px) !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row > span {
-    font-size: 15px !important;
-    line-height: 22px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__description {
-    width: 100% !important;
-    min-height: 40px !important;
-    margin-top: 6px !important;
-    font-size: 13px !important;
-    line-height: 18px !important;
-    text-align: center !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__configure.arco-btn {
-    min-height: 34px !important;
-    padding-inline: 12px !important;
-    font-size: 13px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
-    width: 104px !important;
-    min-width: 104px !important;
-    height: 34px !important;
-    min-height: 34px !important;
-    border-radius: 999px !important;
-    font-size: 12px !important;
-    line-height: 18px !important;
+  .mcp-library {
+    gap: 12px;
   }
 }

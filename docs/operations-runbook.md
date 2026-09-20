@@ -37,6 +37,21 @@ category. Source identifies where a skill was loaded from; it is not an assertio
 of authorship. Original Markdown instructions remain unchanged, and non-Markdown
 files are shown as source text.
 
+### Connectors
+
+Settings → Connectors manages installed MCP services. Search uses the displayed
+localized descriptions; the filter selects connected, attention-needed or custom
+connectors. Cards preserve full names and descriptions, configuration, permissions
+and enable/disable controls. Pagination stays below the independently scrolling
+library. Connection status is a service health signal, not proof of a completed
+scientific operation.
+
+Add connector opens custom configuration, the optional local catalog or the online
+market. Browsing these catalogs preserves the installed library's search and page.
+Installation, credential authorization and permission changes still require their
+own explicit actions; opening the catalog does not install or authorize anything.
+Sync directory remains available next to the library filters.
+
 ### Source startup
 
 The public community repository is `Victor-Xu-1/synon-biomed`.

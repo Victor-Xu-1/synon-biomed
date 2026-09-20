@@ -43,7 +43,7 @@ describe('SettingsSider navigation', () => {
     );
 
     const skills = screen.getByRole('link', { name: 'Skills' });
-    const tools = screen.getByRole('link', { name: 'Tools' });
+    const tools = screen.getByRole('link', { name: 'Connectors' });
     const models = screen.getByRole('link', { name: 'Models' });
 
     expect(skills).toHaveAttribute('aria-current', 'page');

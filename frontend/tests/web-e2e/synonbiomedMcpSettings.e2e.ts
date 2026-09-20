@@ -25,7 +25,8 @@ for (const viewport of viewports) {
       await expect(page.getByTestId('synon-biomed-mcp-enabled-pubmed')).toHaveAttribute('aria-checked', 'true');
       await assertInsideViewport(settings, viewport.width);
 
-      await page.getByRole('tab', { name: '在线市场' }).click();
+      await page.getByTestId('synon-biomed-mcp-add').click();
+      await page.getByRole('menuitem', { name: '在线市场' }).click();
       const marketplace = page.getByTestId('synon-biomed-mcp-marketplace');
       await expect(marketplace).toBeVisible();
       const marketplaceGrid = page.getByTestId('synon-biomed-mcp-marketplace-grid');
@@ -44,7 +45,7 @@ for (const viewport of viewports) {
       });
       expect(gridMetrics.columns).toBe(viewport.name === 'narrow' ? 1 : 3);
       expect(gridMetrics.fitsViewport).toBe(true);
-      await page.getByRole('tab', { name: '已安装' }).click();
+      await page.locator('.mcp-library-browser .arco-modal-close-icon').click();
 
       await page.getByTestId('synon-biomed-mcp-permissions-pubmed').click();
       await expect(page.getByTestId('synon-biomed-mcp-permission-search_articles-allow')).toBeVisible();
@@ -71,7 +72,7 @@ for (const viewport of viewports) {
           await page.locator('.arco-modal-close-icon').click();
 
           await page.getByTestId('synon-biomed-mcp-reconcile').click();
-          await expect(page.getByText('MCP 工具已修复并刷新。')).toBeVisible();
+          await expect(page.getByText('连接器目录已同步并刷新。')).toBeVisible();
         } finally {
           await restorePubMed(page);
         }

@@ -45,6 +45,10 @@ const skillsCss = readFileSync(
   new URL('../../../packages/desktop/src/renderer/pages/settings/components/settings-skills.css', import.meta.url),
   'utf8'
 );
+const toolsCss = readFileSync(
+  new URL('../../../packages/desktop/src/renderer/pages/settings/components/settings-tools.css', import.meta.url),
+  'utf8'
+);
 const connectorsCss = readFileSync(
   new URL('../../../packages/desktop/src/renderer/pages/settings/components/settings-connectors.css', import.meta.url),
   'utf8'
@@ -195,7 +199,8 @@ describe('settings image-based visual contract', () => {
     expect(cardSurfacesCss).toMatch(/@media \(hover:\s*hover\) and \(pointer:\s*fine\)/);
     expect(cardSurfacesCss).toMatch(/transform:\s*translate3d\(0, -4px, 0\) scale\(1\.006\)/);
     expect(cardSurfacesCss).toMatch(/settings-skill-card:hover[\s\S]*?settings-skill-card__icon/);
-    expect(cardSurfacesCss).toMatch(/synon-mcp-card:hover[\s\S]*?mcp-connector-visual--artwork/);
+    expect(cardSurfacesCss).toMatch(/synon-mcp-card:hover[\s\S]*?synon-mcp-card__icon/);
+    expect(cardSurfacesCss).not.toContain('mcp-connector-visual--artwork');
     expect(cardSurfacesCss).toMatch(/expert-card:hover[\s\S]*?expert-card__artwork/);
     expect(cardSurfacesCss).toMatch(/settings-skill-card:focus-visible/);
     expect(cardSurfacesCss).toMatch(/synon-mcp-card:focus-within/);
@@ -280,11 +285,11 @@ describe('settings image-based visual contract', () => {
     expect(layoutCss).not.toContain('--settings-content-width');
   });
 
-  it('uses readable fluid skill cards while retaining the MCP card contract', () => {
+  it('uses readable fluid skill cards while aligning the connector card contract', () => {
     expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.desktopColumns).toBe(4);
     expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
-    expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(220);
+    expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(236);
     expect(componentsCss).toMatch(/--settings-entity-card-height:\s*256px/);
     expect(componentsCss).toMatch(/--settings-entity-card-title-size:\s*15px/);
     expect(componentsCss).toMatch(/--settings-entity-card-body-size:\s*13px/);
@@ -307,7 +312,7 @@ describe('settings image-based visual contract', () => {
     expect(compactCss).not.toContain('settings-page-header__tabs-actions');
     expect(compactCss).not.toContain("[data-testid='synon-biomed-skills-filter']");
     expect(compactCss).toMatch(
-      /@media \(min-width:\s*1200px\) and \(min-height:\s*768px\) and \(max-height:\s*800px\)[\s\S]*?data-settings-route='account'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='experts'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='tools'[\s\S]*?scale\(0\.72\)/
+      /@media \(min-width:\s*1200px\) and \(min-height:\s*768px\) and \(max-height:\s*800px\)[\s\S]*?data-settings-route='account'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='experts'[\s\S]*?scale\(0\.72\)/
     );
     expect(compactCss).toMatch(
       /max-height:\s*800px[\s\S]*?data-settings-route='compute'[\s\S]*?scale\(0\.68\)[\s\S]*?data-settings-route='network'[\s\S]*?scale\(0\.72\)/
@@ -321,20 +326,16 @@ describe('settings image-based visual contract', () => {
     expect(compactCss).toMatch(
       /data-settings-route='governance'[\s\S]*?memory-manager[\s\S]*?width:\s*100%\s*!important/
     );
-    expect(compactCss).toMatch(/data-settings-route='tools'[\s\S]*?transform:\s*scale\(0\.72\)/);
-
-    expect(compactCss).toMatch(
-      /data-settings-route='tools'[\s\S]*?synon-mcp-grid[\s\S]*?min-height:\s*700px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='tools'[\s\S]*?synon-mcp-card__description[\s\S]*?min-height:\s*54px\s*!important[\s\S]*?text-align:\s*justify\s*!important/
-    );
+    expect(compactCss).not.toContain("data-settings-route='tools'");
+    expect(toolsCss).toMatch(/\.mcp-library-scroll[\s\S]*?overflow-y:\s*auto/);
+    expect(toolsCss).toContain('.mcp-library-footer');
+    expect(toolsCss).not.toContain('visibility: hidden');
+    expect(connectorsCss).toContain('repeat(auto-fill, minmax(min(100%, 260px), 1fr))');
     expect(compactCss).toMatch(/details:not\(\[open\]\)\s*>\s*div[\s\S]*?display:\s*none\s*!important/);
   });
 
   it('uses one compact route scale and removes unreadable account microcopy', () => {
     for (const route of [
-      'tools',
       'models',
       'governance',
       'network',
@@ -409,12 +410,12 @@ describe('settings image-based visual contract', () => {
   });
 
   it('shares the entity typography tokens with MCP cards so their geometry stays in sync', () => {
-    expect(connectorsCss).toMatch(/\.synon-mcp-card[\s\S]*?height:\s*var\(--settings-entity-card-height\)/);
+    expect(connectorsCss).toMatch(/\.synon-mcp-card[\s\S]*?height:\s*auto/);
     expect(connectorsCss).toMatch(
       /\.synon-mcp-card__title-row > span[\s\S]*?font-size:\s*var\(--settings-entity-card-title-size\)/
     );
     expect(connectorsCss).toMatch(
-      /\.synon-mcp-card__description[\s\S]*?line-height:\s*(?:var\(--settings-entity-card-body-line\)|18px)/
+      /\.synon-mcp-card__description[\s\S]*?line-height:\s*(?:var\(--settings-entity-card-body-line\)|21px)/
     );
     expect(connectorsCss).toMatch(
       /data-state='connected'[\s\S]*?background:\s*color-mix\(in srgb, #22b85a 14%, var\(--settings-surface\)\)\s*!important[\s\S]*?color:\s*#18783c\s*!important/

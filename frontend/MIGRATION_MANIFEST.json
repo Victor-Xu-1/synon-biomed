@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "8c7f49b9af9f1fba9e0ec8d9c118b78bee58400e69bf070e51ba589dcff9db29",
+  "adaptationFingerprintSHA256": "f56d6e56c29af0de15d9c94c8deeaae8105b65179b37ffbce84c24a788bbd47d",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "5eb7d3114c1de3eb59aaa6b472da428ca90963f515b45d873a86782889f19e89",
+  "additionFingerprintSHA256": "d22796b90cd284b189b11e15682864d689ebb8754a37d8dad131bdbf63344b2a",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 406,
@@ -4574,8 +4574,8 @@
     {
       "path": "tests/web-e2e/synonbiomedSkillsSettings.e2e.ts",
       "sourceSHA256": "8f0af0b23b4d4d07c439d9b3fac669b28ec33664a854619d7b79350c9c8dee17",
-      "targetSHA256": "e275db26091c67534a0184adad55e73646235dcedebba1b998c5c6974bd1542a",
-      "bytes": 12226,
+      "targetSHA256": "87c6cdc032cfbb5e82da96fb0e5f9f1f25cde5312a7c02d0dbd35ed01de71661",
+      "bytes": 12341,
       "reason": "Use configured credentials and verify the Go Skill lifecycle in responsive Chromium."
     },
     {
@@ -8101,8 +8101,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/styles/workspace-theme.css",
-      "sha256": "33c845dabbf5490368ea70c9f9b2a3d2fa5c9f21a82cfd3b5ae75e3f6d004137",
-      "bytes": 63249,
+      "sha256": "4162e00adef97c6a5b7da972925594908a11bb0e8e04d0c34ec2348a8d54c5b9",
+      "bytes": 63282,
       "reason": "Provide the shared visual shell under a product-neutral filename and CSS custom-property namespace."
     },
     {

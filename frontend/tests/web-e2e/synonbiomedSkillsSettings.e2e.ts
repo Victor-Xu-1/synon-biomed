@@ -95,6 +95,7 @@ for (const viewport of viewports) {
       await expect(detailDialog.getByText('结构生物学与蛋白质工程', { exact: true })).toBeVisible();
       await assertInsideViewport(detailDialog, viewport);
       await assertModalPartsInsideViewport(detailDialog, viewport);
+      expect((await detailDialog.boundingBox())!.height).toBeLessThanOrEqual(Math.min(960, viewport.height - 32));
       await detailDialog.getByLabel('Close').click();
 
       await page.getByTestId('synon-biomed-skills-filter').click();

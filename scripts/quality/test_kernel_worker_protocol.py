@@ -168,13 +168,16 @@ class WorkerProtocolTests(unittest.TestCase):
         self.assertGreater(len(raw), 1000)
 
     def test_large_stream_interrupt_retains_terminal_output(self):
-        cell_id = self.start_cell("print('A' * 10486784 + 'TAIL', flush=True)\nwhile True:\n    pass")
+        cell_id = self.start_cell(
+            "import os, signal\n"
+            "print('A' * 10486784 + 'TAIL', flush=True)\n"
+            "os.kill(os.getpid(), signal.SIGINT)"
+        )
         while True:
             frame = self.frames.get(timeout=12)
             self.assertNotIn("eof", frame)
             if frame.get("type") == "stdout_chunk" and "live stream truncated" in frame.get("data", ""):
                 break
-        self.process.send_signal(signal.SIGINT)
         result, _ = self.terminal(cell_id)
         self.assertTrue(result["interrupted"])
         self.assertTrue(result["stdout"].endswith("TAIL\n"))

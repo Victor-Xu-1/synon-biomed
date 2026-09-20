@@ -74,6 +74,12 @@ python "${SYNON_SKILL_DIR}/scripts/p2rank_binding_pockets.py" \
   --output-dir "pocket_detection"
 ```
 
+If the default `pocket_detection` path already exists without this execution
+pack's ownership marker, the pack preserves it and deterministically selects
+the first absent `pocket_detection-2`, `pocket_detection-3`, and so on. Use the
+validated output path printed by the pack for downstream docking. An explicit
+non-default output path still fails closed on any ownership conflict.
+
 `--profile auto` uses verified PDB provenance/method records, never B-factor
 variance. Explicit `EXPDTA` is authoritative: crystallography selects `default`,
 while predicted/theoretical, NMR, and cryo-EM methods select the

@@ -21,6 +21,7 @@ PACK_ID = "binding-pocket-prediction.p2rank"
 P2RANK_VERSION = "2.5.1"
 P2RANK_ARCHIVE_SHA256 = "d243f2d9036ac053fefb9407b5fe1c85f4fe077c519fd975ac585e995feab274"
 OUTPUT_MARKER = ".synon-execution-pack.json"
+DEFAULT_OUTPUT_DIR = "pocket_detection"
 MAX_ARCHIVE_MEMBERS = 50_000
 MAX_ARCHIVE_EXPANDED_BYTES = 2_000_000_000
 
@@ -48,6 +49,14 @@ def task_file(root: Path, raw: str, label: str) -> Path:
     return path
 
 
+def next_default_output_target(root: Path) -> Path:
+    for index in range(2, 1000):
+        candidate = (root / f"{DEFAULT_OUTPUT_DIR}-{index}").resolve()
+        if not candidate.exists() and not candidate.is_symlink():
+            return candidate
+    raise ValueError("no collision-free default P2Rank output directory is available")
+
+
 def output_target(root: Path, raw: str, inputs: tuple[Path, ...]) -> Path:
     target = root / raw
     if target.is_symlink():
@@ -63,9 +72,13 @@ def output_target(root: Path, raw: str, inputs: tuple[Path, ...]) -> Path:
         try:
             owner = json.loads(marker.read_text(encoding="utf-8"))
         except (OSError, ValueError, TypeError):
-            raise ValueError("existing output directory is not owned by the P2Rank execution pack") from None
+            if Path(raw) != Path(DEFAULT_OUTPUT_DIR):
+                raise ValueError("existing output directory is not owned by the P2Rank execution pack") from None
+            return next_default_output_target(root)
         if owner != {"execution_pack_id": PACK_ID, "schema": "synon.execution-pack-output-owner.v1"}:
-            raise ValueError("existing output directory has conflicting execution ownership")
+            if Path(raw) != Path(DEFAULT_OUTPUT_DIR):
+                raise ValueError("existing output directory has conflicting execution ownership")
+            return next_default_output_target(root)
     return target
 
 
@@ -366,7 +379,7 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--threads", type=int, default=4)
     value.add_argument("--minimum-box-size", type=float, default=20.0)
     value.add_argument("--box-padding", type=float, default=6.0)
-    value.add_argument("--output-dir", default="pocket_detection")
+    value.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     return value
 
 

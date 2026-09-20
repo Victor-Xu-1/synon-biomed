@@ -1162,13 +1162,13 @@
     },
     {
       "path": "p2rank-pocket-detection/scripts/p2rank_binding_pockets.py",
-      "sha256": "40dd1d770128506f164da66385469646e5b3d1cbb573518ae94de0eb9f059994",
-      "bytes": 23262
+      "sha256": "49eb84671344a9c5611cdc7866f205dd024ecdf4dae88b1c286b10bed1a349b5",
+      "bytes": 23862
     },
     {
       "path": "p2rank-pocket-detection/SKILL.md",
-      "sha256": "43195dfe599375b408867f02d4fa2c138400ce2a85000c77d98c5c2e8af3765c",
-      "bytes": 5653
+      "sha256": "a74459b8541122dcca5e56b0ee2443c6bf2bf597d0078093b934a42e34dc5ed8",
+      "bytes": 6036
     },
     {
       "path": "paper-narrative/kernel.py",

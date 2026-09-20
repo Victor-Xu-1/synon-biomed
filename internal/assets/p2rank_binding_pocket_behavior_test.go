@@ -127,6 +127,25 @@ rows = module.parse_predictions(module.Path(sys.argv[8]))
 candidates = module.build_candidates(rows, atoms, 20.0, 6.0)
 print(json.dumps(candidates[0]))
 
+with tempfile.TemporaryDirectory() as root_text:
+    root = Path(root_text).resolve()
+    structure = root / "protein.pdb"
+    archive = root / "p2rank.tar.gz"
+    structure.write_text("ATOM\n", encoding="utf-8")
+    archive.write_bytes(b"archive")
+    (root / module.DEFAULT_OUTPUT_DIR).mkdir()
+    (root / f"{module.DEFAULT_OUTPUT_DIR}-2").mkdir()
+    target = module.output_target(root, module.DEFAULT_OUTPUT_DIR, (structure, archive))
+    assert target == root / f"{module.DEFAULT_OUTPUT_DIR}-3"
+    custom = root / "custom-output"
+    custom.mkdir()
+    try:
+        module.output_target(root, custom.name, (structure, archive))
+    except ValueError as error:
+        assert "not owned" in str(error)
+    else:
+        raise AssertionError("an explicit unowned output directory was silently redirected")
+
 with tempfile.TemporaryDirectory() as root_text, tempfile.TemporaryDirectory() as outside_text:
     root = Path(root_text).resolve()
     outside = Path(outside_text).resolve()

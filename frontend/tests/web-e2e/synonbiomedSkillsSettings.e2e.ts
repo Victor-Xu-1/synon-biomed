@@ -3,6 +3,8 @@ import { webPassword, webUsername } from './synonGoWebCredentials';
 
 const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
+  { name: 'annotation', width: 1380, height: 1100 },
+  { name: 'medium', width: 1024, height: 900 },
   { name: 'narrow', width: 390, height: 844 },
 ] as const;
 
@@ -17,19 +19,20 @@ for (const viewport of viewports) {
       const workspace = page.getByTestId('synon-biomed-skills-section');
       await expect(workspace).toBeVisible();
       await expect(page.getByTestId('add-skill-button')).toBeVisible();
-      await expect(page.getByRole('tab', { name: /推荐/ })).toBeVisible();
-      await expect(page.getByRole('tab', { name: /已导入/ })).toBeVisible();
-      await expect(page.getByRole('tab', { name: /个人/ })).toBeVisible();
+      await expect(page.getByRole('tablist')).toHaveCount(0);
+      await expect(page.getByRole('heading', { name: /技能/ })).toBeVisible();
+      await expect(page.getByRole('button', { name: '筛选', exact: true })).toBeVisible();
+      await assertInsideViewport(page.getByRole('search', { name: '技能' }), viewport);
       await expect(page.getByTestId('skill-category-filter')).toBeVisible();
       const recommendedGrid = page.getByTestId('synon-biomed-skill-grid');
       await expect(recommendedGrid.locator('[data-testid^="synon-biomed-skill-row-"]').first()).toBeVisible();
-      const allRecommendedCount = await recommendedGrid.locator('[data-testid^="synon-biomed-skill-row-"]').count();
-      await page.getByTestId('skill-category-filter-drug-discovery').click();
+      await page.getByRole('combobox', { name: '科研领域' }).selectOption('clinical-regulatory');
       await expect(recommendedGrid.locator('[data-testid^="synon-biomed-skill-row-"]').first()).toBeVisible();
-      await expect
-        .poll(() => recommendedGrid.locator('[data-testid^="synon-biomed-skill-row-"]').count())
-        .toBeLessThan(allRecommendedCount);
-      await page.getByTestId('skill-category-filter-all').click();
+      await expect(recommendedGrid.locator('[data-testid^="synon-biomed-skill-row-"]')).toHaveCount(7);
+      for (const row of await recommendedGrid.locator('[data-testid^="synon-biomed-skill-row-"]').all()) {
+        await expect(row).toContainText('临床开发、注册与上市后');
+      }
+      await page.getByRole('combobox', { name: '科研领域' }).selectOption('all');
       await assertNoHorizontalPageOverflow(page);
 
       const recommendedRow = workspace.locator('[data-testid^="synon-biomed-skill-row-"]').first();
@@ -45,9 +48,16 @@ for (const viewport of viewports) {
       await assertModalPartsInsideViewport(detailDialog, viewport);
       await detailDialog.getByLabel('Close').click();
 
-      const personalTab = page.getByRole('tab', { name: /个人/ });
-      await personalTab.click();
-      await expect(personalTab).toHaveAttribute('aria-selected', 'true');
+      await page.getByTestId('synon-biomed-skills-filter').click();
+      const sourceFilter = page.getByRole('combobox', { name: '来源' });
+      await sourceFilter.selectOption('personal');
+      await expect(sourceFilter).toHaveValue('personal');
+      await page.getByRole('combobox', { name: '启用状态' }).selectOption('disabled');
+      await expect(workspace.locator('[data-testid^="synon-biomed-skill-row-"]')).toHaveCount(0);
+      await page.getByRole('button', { name: '重置筛选' }).click();
+      await expect(sourceFilter).toHaveValue('all');
+      await expect(page.getByRole('combobox', { name: '启用状态' })).toHaveValue('all');
+      await page.getByTestId('synon-biomed-skills-filter').click();
 
       await page.getByTestId('add-skill-button').click();
       await page.getByText('创建个人 Skill', { exact: true }).click();
@@ -58,8 +68,12 @@ for (const viewport of viewports) {
       await assertInsideViewport(createDialog, viewport);
       await createDialog.getByLabel('Close').click();
 
-      const marketplaceTab = page.getByRole('tab', { name: /在线市场/ });
-      await marketplaceTab.click();
+      await page.getByTestId('input-search-synon-biomed-skills').fill('alphafold');
+      await page.getByTestId('add-skill-button').click();
+      await page.getByText('在线市场', { exact: true }).click();
+      const marketDialog = page.locator('.arco-modal').filter({ has: page.getByTestId('skill-market-dialog') });
+      await expect(marketDialog).toBeVisible();
+      await assertInsideViewport(marketDialog, viewport);
       const marketplace = page.getByTestId('synon-biomed-skill-market');
       await expect(marketplace).toBeVisible();
       const marketplaceGrid = page.getByTestId('synon-biomed-skill-market-grid');
@@ -86,7 +100,8 @@ for (const viewport of viewports) {
         const gridColumns = await marketplaceGrid.evaluate(
           (element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length
         );
-        expect(gridColumns).toBe(viewport.name === 'narrow' ? 1 : 4);
+        expect(gridColumns).toBeGreaterThanOrEqual(1);
+        expect(gridColumns).toBeLessThanOrEqual(4);
         const firstMarketCard = marketplaceGrid.locator('[data-testid^="synon-biomed-skill-market-card-"]').first();
         await expect(firstMarketCard).toBeVisible();
         await expect
@@ -102,6 +117,11 @@ for (const viewport of viewports) {
         await expect(marketplaceGrid).toHaveCount(0);
       }
       await assertNoHorizontalPageOverflow(page);
+
+      await marketDialog.getByLabel('Close').click();
+      await expect(page.getByTestId('input-search-synon-biomed-skills')).toHaveValue('alphafold');
+      await expect(workspace.locator('[data-testid^="synon-biomed-skill-row-"]').first()).toBeVisible();
+      await page.getByTestId('input-search-synon-biomed-skills').clear();
 
       await page.getByTestId('add-skill-button').click();
       await page.getByText('从 GitHub 导入', { exact: true }).click();

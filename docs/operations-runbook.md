@@ -16,6 +16,21 @@ authorize a release.
 
 ## Public community source checkout
 
+### Skills library
+
+Settings → Skills lists installed built-in, imported, and personal skills together.
+Search and the Research field selector refine the list; expand Filters to narrow
+by source or enabled state. Personal drafts appear under All sources or Personal
+when the enabled-state filter is All. Imported source update/removal controls
+remain available under the Imported source filter.
+
+Add skill is the single entry for the online market, GitHub import, file import,
+and personal skill creation. The online market opens separately and does not
+replace the library or reset its search and filters. Filtering never disables
+or deletes a skill.
+
+### Source startup
+
 The public community repository is `Victor-Xu-1/synon-biomed`.
 Source version v0.1.1 does not itself designate a tagged or packaged GitHub
 Release. Do not present a workflow artifact, a source archive, or `make build`

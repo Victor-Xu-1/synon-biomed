@@ -19,101 +19,10 @@
     min-height: 700px !important;
   }
 
-  /* The approved Skills strip keeps tabs on the left and search/create
-     controls on the same baseline. Preserve the heading in the accessibility
-     tree, but remove its repeated visual title block. */
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__row {
-    min-height: 1px !important;
-    height: 1px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__title {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    overflow: hidden !important;
-    clip: rect(0 0 0 0) !important;
-    clip-path: inset(50%) !important;
-    white-space: nowrap !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__description {
-    display: none !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-row {
-    display: flex !important;
-    min-height: 46px !important;
-    height: 46px !important;
-    align-items: flex-end !important;
-    justify-content: space-between !important;
-    gap: 24px !important;
-    margin-top: 0 !important;
-    border-bottom: 1px solid var(--settings-border) !important;
-  }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='skills']
-    .settings-page-header__tabs-row
-    > .settings-page-header__tabs {
-    display: flex !important;
-    min-width: 0 !important;
-    flex: 1 1 auto !important;
-    align-items: flex-end !important;
-    gap: 30px !important;
-    margin-top: 0 !important;
-    border-bottom: 0 !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-actions {
-    display: flex !important;
-    min-width: 0 !important;
-    flex: 0 0 auto !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    padding-bottom: 0 !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-actions > .flex {
-    width: auto !important;
-    min-width: 0 !important;
-    flex: 0 0 auto !important;
-    gap: 96px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-toolbar__search {
-    width: 248px !important;
-    min-width: 248px !important;
-    flex: 0 0 248px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] [data-testid='add-skill-button'] {
-    width: 232px !important;
-    min-width: 232px !important;
-    flex: 0 0 232px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .synon-skill-category-filter__options {
-    gap: 6px !important;
-    overflow: visible !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .synon-skill-category-filter__option {
-    padding-inline: 8px !important;
-  }
-
   /* Keep the 15-card sheet and its pager inside the shortest supported
      desktop Chrome viewport instead of clipping the final row of controls. */
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-pagination {
     margin-top: 10px !important;
-  }
-
-  /* The compact reference keeps only search plus the create action in the top
-     strip; the secondary status filter remains available in wider layouts. */
-  html body .settings-page-wrapper[data-settings-route='skills'] [data-testid='synon-biomed-skills-filter'],
-  html body .settings-page-wrapper[data-settings-route='skills'] [data-testid='settings-tab-marketplace'] {
-    display: none !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {

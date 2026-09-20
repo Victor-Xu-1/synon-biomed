@@ -138,47 +138,57 @@ describe('Synon Biomed Skills settings', () => {
     });
   });
 
-  it('renders the v1.1 skill sections and their real grouped content', async () => {
+  it('shows every installed source in one library with a compact, accessible toolbar', async () => {
     await renderSettings();
 
+    expect(await screen.findByTestId('synon-biomed-skill-row-alphafold2')).toBeInTheDocument();
+    expect(screen.getByTestId('synon-biomed-skill-row-github-evidence')).toBeInTheDocument();
+    expect(screen.getByTestId('synon-biomed-skill-row-my-literature-review')).toBeInTheDocument();
+    expect(screen.getByTestId('synon-biomed-skill-draft-draft-review')).toBeInTheDocument();
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '科研领域' })).toHaveValue('all');
+    expect(screen.getByRole('button', { name: '筛选' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: '添加技能' })).toBeInTheDocument();
+  });
+
+  it('combines field, source, enabled-state and search filters without mutating skills', async () => {
+    await renderSettings();
     const alphaRow = await screen.findByTestId('synon-biomed-skill-row-alphafold2');
-    expect(alphaRow).toBeInTheDocument();
-    expect(screen.getByTestId('synon-biomed-skill-grid')).toHaveClass('settings-entity-grid');
-    expect(alphaRow).toHaveClass('settings-entity-card', 'settings-skill-card');
-    const tabsRow = document.querySelector('.settings-page-header__tabs-row');
-    expect(tabsRow).not.toBeNull();
-    expect(tabsRow?.querySelector('[role="tab"]')).not.toBeNull();
-    expect(tabsRow?.querySelector('[data-testid="input-search-synon-biomed-skills"]')).not.toBeNull();
-    expect(tabsRow?.querySelector('[data-testid="add-skill-button"]')).not.toBeNull();
-    expect(document.querySelector('.skills-toolbar')).toBeNull();
-    const categoryFilter = screen.getByTestId('skill-category-filter');
-    expect(categoryFilter).toHaveClass('synon-skill-category-filter');
-    expect(categoryFilter).toHaveAttribute('title', expect.stringContaining('按药物研发'));
-    expect(categoryFilter).toHaveTextContent('科研领域筛选');
-    const allCategories = screen.getByTestId('skill-category-filter-all');
-    const structuralCategory = screen.getByTestId('skill-category-filter-structural-biology');
-    expect(allCategories).toHaveAttribute('aria-pressed', 'true');
-    expect(structuralCategory).toHaveAttribute('aria-pressed', 'false');
-    expect(structuralCategory).toHaveTextContent('结构生物学与蛋白质工程');
-    fireEvent.click(structuralCategory);
-    await waitFor(() => {
-      expect(structuralCategory).toHaveAttribute('aria-pressed', 'true');
-      expect(allCategories).toHaveAttribute('aria-pressed', 'false');
-    });
     expect(alphaRow).toHaveTextContent('预测蛋白质结构');
     expect(alphaRow).toHaveTextContent('结构生物学与蛋白质工程');
-    expect(alphaRow).not.toHaveTextContent('structural-biology');
-    expect(screen.getByRole('tab', { name: '推荐 (1)' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '已导入 (1)' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '个人 (2)' })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('tab', { name: '已导入 (1)' }));
-    expect(await screen.findByTestId('imported-skill-sources')).toHaveTextContent('research-skills');
+    fireEvent.change(screen.getByRole('combobox', { name: '科研领域' }), { target: { value: 'structural-biology' } });
+    expect(screen.queryByTestId('synon-biomed-skill-row-github-evidence')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('synon-biomed-skill-draft-draft-review')).not.toBeInTheDocument();
+    chooseSource('imported');
+    expect(screen.queryByTestId('synon-biomed-skill-row-alphafold2')).not.toBeInTheDocument();
+    expect(screen.getByText('没有匹配的 Skill')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: '科研领域' }), { target: { value: 'all' } });
     expect(screen.getByTestId('synon-biomed-skill-row-github-evidence')).toBeInTheDocument();
+    expect(screen.getByTestId('imported-skill-sources')).toHaveTextContent('research-skills');
+    fireEvent.change(screen.getByRole('combobox', { name: '启用状态' }), { target: { value: 'enabled' } });
+    expect(screen.queryByTestId('synon-biomed-skill-row-github-evidence')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: '启用状态' }), { target: { value: 'disabled' } });
+    expect(screen.getByTestId('synon-biomed-skill-row-github-evidence')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: '搜索技能' }), { target: { value: 'missing' } });
+    expect(screen.getByText('没有匹配的 Skill')).toBeInTheDocument();
+    expect(mocks.setEnabled).not.toHaveBeenCalled();
+  });
 
-    fireEvent.click(screen.getByRole('tab', { name: '个人 (2)' }));
-    expect(await screen.findByTestId('synon-biomed-skill-row-my-literature-review')).toBeInTheDocument();
+  it('preserves personal drafts and deletion controls when sources are combined', async () => {
+    await renderSettings();
+    await screen.findByTestId('synon-biomed-skill-row-alphafold2');
+    expect(screen.getByRole('button', { name: '删除 My Literature Review' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '删除 AlphaFold2' })).not.toBeInTheDocument();
+    chooseSource('personal');
+    expect(screen.getByTestId('synon-biomed-skill-row-my-literature-review')).toBeInTheDocument();
     expect(screen.getByTestId('synon-biomed-skill-draft-draft-review')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: '启用状态' }), { target: { value: 'enabled' } });
+    expect(screen.queryByTestId('synon-biomed-skill-draft-draft-review')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '重置筛选' }));
+    expect(screen.getByRole('combobox', { name: '来源' })).toHaveValue('all');
+    expect(screen.getByRole('combobox', { name: '启用状态' })).toHaveValue('all');
+    expect(screen.getByTestId('synon-biomed-skill-draft-draft-review')).toBeInTheDocument();
+    expect(screen.getByTestId('synon-biomed-skill-row-alphafold2')).toBeInTheDocument();
   });
 
   it('uses the English source description in the English interface', async () => {
@@ -197,7 +207,7 @@ describe('Synon Biomed Skills settings', () => {
   it('opens the online Skill market without replacing the existing import flow', async () => {
     await renderSettings();
 
-    fireEvent.click(screen.getByRole('tab', { name: '在线市场' }));
+    await openMarket();
 
     expect(await screen.findByTestId('synon-biomed-skill-market')).toBeInTheDocument();
     const marketGrid = await screen.findByTestId('synon-biomed-skill-market-grid');
@@ -230,7 +240,7 @@ describe('Synon Biomed Skills settings', () => {
 
   it('filters the market by source and loads one Skill through the pinned import path', async () => {
     await renderSettings();
-    fireEvent.click(screen.getByRole('tab', { name: '在线市场' }));
+    await openMarket();
 
     expect(await screen.findByTestId('synon-biomed-skill-market-grid')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Anthropic Skills/ }));
@@ -249,7 +259,7 @@ describe('Synon Biomed Skills settings', () => {
   it('finishes in a recoverable state when every external market source is unavailable', async () => {
     mocks.previewRepository.mockRejectedValue(new Error('registry unavailable'));
     await renderSettings();
-    fireEvent.click(screen.getByRole('tab', { name: '在线市场' }));
+    await openMarket();
 
     expect(await screen.findByText('部分来源暂不可用，已加载的 Skill 仍可使用。')).toBeInTheDocument();
     expect(screen.getAllByText('暂不可用')).toHaveLength(SKILL_MARKET_SOURCES.length);
@@ -265,7 +275,7 @@ describe('Synon Biomed Skills settings', () => {
     await waitFor(() => expect(mocks.setEnabled).toHaveBeenCalledWith('alphafold2', false));
     await waitFor(() => expect(screen.getByRole('switch', { name: '启用 AlphaFold2' })).not.toBeChecked());
 
-    fireEvent.change(screen.getByRole('textbox', { name: '搜索 Skills' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: '搜索技能' }), {
       target: { value: 'missing' },
     });
     expect(screen.queryByTestId('synon-biomed-skill-row-alphafold2')).not.toBeInTheDocument();
@@ -283,8 +293,8 @@ describe('Synon Biomed Skills settings', () => {
     await renderSettings();
 
     await screen.findByTestId('synon-biomed-skill-row-alphafold2');
-    fireEvent.click(screen.getByRole('tab', { name: '个人 (2)' }));
-    fireEvent.change(screen.getByRole('textbox', { name: '搜索 Skills' }), {
+    chooseSource('personal');
+    fireEvent.change(screen.getByRole('textbox', { name: '搜索技能' }), {
       target: { value: 'my-literature-review' },
     });
 
@@ -304,7 +314,7 @@ describe('Synon Biomed Skills settings', () => {
     fireEvent.click(alphaRow);
     expect(screen.getByTestId('skill-detail-modal')).toHaveTextContent('alphafold2');
 
-    fireEvent.click(screen.getByRole('tab', { name: '已导入 (1)' }));
+    chooseSource('imported');
     fireEvent.click(await screen.findByRole('button', { name: '检查更新' }));
     expect(screen.getByTestId('github-skill-import-modal')).toHaveTextContent(
       'https://github.com/example/research-skills'
@@ -324,6 +334,47 @@ describe('Synon Biomed Skills settings', () => {
     expect(screen.getByRole('button', { name: '重试' })).toBeEnabled();
     consoleError.mockRestore();
   });
+
+  it('returns to the first page when field or source filters narrow a paginated list', async () => {
+    mocks.loadSkills.mockResolvedValue([
+      ...Array.from({ length: 16 }, (_, index) => ({ ...skills[0], name: `structure-${index}` })),
+      { ...skills[1], name: 'clinical-only', category: 'clinical-regulatory' },
+    ]);
+    await renderSettings();
+    await screen.findByTestId('synon-biomed-skill-row-structure-0');
+    fireEvent.click(screen.getByRole('button', { name: '下一页' }));
+    expect(await screen.findByTestId('synon-biomed-skill-row-structure-15')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: '科研领域' }), { target: { value: 'clinical-regulatory' } });
+    expect(await screen.findByTestId('synon-biomed-skill-row-clinical-only')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '下一页' })).not.toBeInTheDocument();
+    chooseSource('personal');
+    expect(screen.queryByTestId('synon-biomed-skill-row-clinical-only')).not.toBeInTheDocument();
+    expect(screen.getByText('没有匹配的 Skill')).toBeInTheDocument();
+  });
+
+  it('preserves library filters and search when the market is opened and closed', async () => {
+    await renderSettings();
+    await screen.findByTestId('synon-biomed-skill-row-alphafold2');
+    fireEvent.change(screen.getByRole('textbox', { name: '搜索技能' }), { target: { value: 'protein' } });
+    fireEvent.change(screen.getByRole('combobox', { name: '科研领域' }), { target: { value: 'structural-biology' } });
+    await openMarket();
+    fireEvent.change(await screen.findByRole('textbox', { name: '搜索在线技能' }), { target: { value: 'different' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByTestId('skill-market-dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('textbox', { name: '搜索技能' })).toHaveValue('protein');
+    expect(screen.getByRole('combobox', { name: '科研领域' })).toHaveValue('structural-biology');
+    expect(screen.getByTestId('synon-biomed-skill-row-alphafold2')).toBeInTheDocument();
+  });
+
+  it('restores an enabled skill if the real save boundary rejects the update', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mocks.setEnabled.mockRejectedValueOnce(new Error('save failed'));
+    await renderSettings();
+    fireEvent.click(await screen.findByRole('switch', { name: '启用 AlphaFold2' }));
+    await waitFor(() => expect(mocks.setEnabled).toHaveBeenCalledWith('alphafold2', false));
+    await waitFor(() => expect(screen.getByRole('switch', { name: '启用 AlphaFold2' })).toBeChecked());
+    consoleError.mockRestore();
+  });
 });
 
 function renderSettings() {
@@ -332,4 +383,15 @@ function renderSettings() {
       <SynonBiomedSkillsSettings withWrapper={false} />
     </ConfigProvider>
   );
+}
+
+function chooseSource(source: string) {
+  const button = screen.getByTestId('synon-biomed-skills-filter');
+  if (button.getAttribute('aria-expanded') === 'false') fireEvent.click(button);
+  fireEvent.change(screen.getByRole('combobox', { name: '来源' }), { target: { value: source } });
+}
+
+async function openMarket() {
+  fireEvent.click(screen.getByRole('button', { name: '添加技能' }));
+  fireEvent.click(await screen.findByText('在线市场'));
 }

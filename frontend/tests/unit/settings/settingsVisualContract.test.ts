@@ -300,30 +300,12 @@ describe('settings image-based visual contract', () => {
     expect(compactCss).toMatch(/@media \(min-width:\s*1200px\) and \(max-height:\s*900px\)/);
     expect(compactCss).toMatch(/data-settings-route='skills'[\s\S]*?transform:\s*scale\(0\.72\)/);
     expect(compactCss).toMatch(/data-settings-route='skills'[\s\S]*?repeat\(5,\s*minmax\(0,\s*1fr\)\)/);
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?settings-page-header__tabs-row[\s\S]*?height:\s*46px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?settings-skills-toolbar__search[\s\S]*?width:\s*248px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?add-skill-button[\s\S]*?width:\s*232px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?tabs-actions > \.flex[\s\S]*?gap:\s*96px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?synon-skill-category-filter__options[\s\S]*?gap:\s*6px\s*!important[\s\S]*?overflow:\s*visible\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?synon-skill-category-filter__option[\s\S]*?padding-inline:\s*8px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?settings-pagination[\s\S]*?margin-top:\s*10px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?synon-biomed-skills-filter[\s\S]*?display:\s*none\s*!important/
-    );
+    expect(skillsCss).toContain('.settings-skill-library-toolbar');
+    expect(skillsCss).toContain('grid-template-columns: minmax(0, 1fr) minmax(180px, 280px) auto');
+    expect(skillsCss).toContain('@container (max-width: 600px)');
+    expect(skillsCss).not.toContain('synon-skill-category-filter__options');
+    expect(compactCss).not.toContain('settings-page-header__tabs-actions');
+    expect(compactCss).not.toContain("[data-testid='synon-biomed-skills-filter']");
     expect(compactCss).toMatch(
       /@media \(min-width:\s*1200px\) and \(min-height:\s*768px\) and \(max-height:\s*800px\)[\s\S]*?data-settings-route='account'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='experts'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='tools'[\s\S]*?scale\(0\.72\)/
     );
@@ -370,14 +352,13 @@ describe('settings image-based visual contract', () => {
     expect(accountCss).not.toMatch(/font-size:\s*(?:9|10)px/);
   });
 
-  it('stacks the Skills tabs above a complete toolbar on medium desktop widths', () => {
-    expect(skillsCss).toMatch(/@media \(min-width:\s*768px\) and \(max-width:\s*1199px\)/);
-    expect(skillsCss).toMatch(
-      /settings-page-header__tabs-row[\s\S]*?flex-direction:\s*column\s*!important[\s\S]*?align-items:\s*stretch\s*!important/
-    );
-    expect(skillsCss).toMatch(
-      /settings-page-header__tabs-actions\s*>\s*\.flex[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s*160px\s*140px\s*!important/
-    );
+  it('reflows Skills controls by available content width without squeezing or hiding actions', () => {
+    expect(skillsCss).toMatch(/settings-skills-page[\s\S]*?container-type:\s*inline-size/);
+    expect(skillsCss).toMatch(/@container \(max-width:\s*600px\)/);
+    expect(skillsCss).toMatch(/settings-skill-library-search[\s\S]*?grid-column:\s*1 \/ -1/);
+    expect(skillsCss).toMatch(/settings-skill-filter-panel[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+    expect(skillsCss).not.toContain('settings-page-header__tabs');
+    expect(skillsCss).not.toMatch(/min-width:\s*(?:420|284|180)px/);
   });
 
   it('gives Account the sea-blue accent and a shared-width header in compact Chrome mode', () => {

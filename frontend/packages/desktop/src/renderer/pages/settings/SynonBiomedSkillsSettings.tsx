@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Button, Dropdown, Input, Menu, Message, Modal, Spin, Switch, Tag } from '@arco-design/web-react';
-import { Down, FileZip, Github, Refresh, Search } from '@icon-park/react';
+import { Button, Dropdown, Menu, Message, Modal, Spin, Switch, Tag } from '@arco-design/web-react';
+import { FileZip, Github, Refresh } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from './components/SettingsPageHeader';
@@ -24,10 +24,10 @@ import {
   SkillDetailModal,
   type SkillModalItem,
 } from './skills/SynonBiomedSkillLibraryModals';
-import { SynonBiomedSkillMarketPanel } from './skills/SynonBiomedSkillMarketPanel';
+import { SkillLibraryToolbar, type SkillSourceFilter, type SkillStatusFilter } from './skills/SkillLibraryToolbar';
+import { SkillMarketModal } from './skills/SkillMarketModal';
 import { loadAvailableSkillsWithSynonBiomed } from '@/renderer/services/skills/skillsCatalog';
 import {
-  getSynonBiomedSkillCategoryCopy,
   getSynonBiomedSkillCategoryLabel,
   getSynonBiomedSkillCategoryOptions,
   resolveSynonBiomedSkillCategory,
@@ -75,9 +75,6 @@ interface SynonBiomedSkillsSettingsProps {
   /** When false, renders without SettingsPageWrapper for route/tab embedding. */
   withWrapper?: boolean;
 }
-
-type SkillFilter = 'all' | 'enabled' | 'disabled';
-type SkillSection = 'recommended' | 'imported' | 'personal' | 'marketplace';
 
 // Five compact columns by three rows keeps the review sheet balanced.
 const SKILLS_PAGE_SIZE = 15;
@@ -140,9 +137,10 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
   const [sources, setSources] = useState<SynonBiomedSkillSource[]>([]);
   const [skillUsage, setSkillUsage] = useState<SynonBiomedSkillUsageByName | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<SkillFilter>('all');
+  const [filter, setFilter] = useState<SkillStatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<SynonBiomedSkillCategorySelection>('all');
-  const [activeSection, setActiveSection] = useState<SkillSection>('recommended');
+  const [activeSection, setActiveSection] = useState<SkillSourceFilter>('all');
+  const [marketVisible, setMarketVisible] = useState(false);
   const [skillPage, setSkillPage] = useState(1);
   const [pendingSkill, setPendingSkill] = useState<string | null>(null);
   const [pendingSource, setPendingSource] = useState<string | null>(null);
@@ -199,11 +197,11 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
     [sources]
   );
   const sectionSkills = useMemo(() => {
-    const groups: Record<SkillSection, SkillInfo[]> = {
+    const groups: Record<SkillSourceFilter, SkillInfo[]> = {
+      all: availableSkills,
       recommended: [],
       imported: [],
       personal: [],
-      marketplace: [],
     };
     for (const skill of availableSkills) {
       const source = (skill.source || '').toLowerCase();
@@ -216,26 +214,21 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
   }, [availableSkills, importedNames]);
 
   const filteredSkills = useMemo(
-    () =>
-      activeSection === 'marketplace'
-        ? []
-        : filterSkills(
-            sectionSkills[activeSection],
-            searchQuery,
-            filter,
-            i18n.language,
-            activeSection === 'recommended' ? categoryFilter : 'all'
-          ),
+    () => filterSkills(sectionSkills[activeSection], searchQuery, filter, i18n.language, categoryFilter),
     [activeSection, categoryFilter, filter, i18n.language, searchQuery, sectionSkills]
   );
-  const recommendedCategoryOptions = useMemo(
-    () => getSynonBiomedSkillCategoryOptions(sectionSkills.recommended, i18n.language),
-    [i18n.language, sectionSkills.recommended]
+  const categoryOptions = useMemo(
+    () => getSynonBiomedSkillCategoryOptions([...availableSkills, ...drafts], i18n.language),
+    [i18n.language, availableSkills, drafts]
   );
-  const recommendedCategoryCopy = useMemo(() => getSynonBiomedSkillCategoryCopy(i18n.language), [i18n.language]);
   const filteredDrafts = useMemo(
-    () => (activeSection === 'personal' ? filterDrafts(drafts, searchQuery) : []),
-    [activeSection, drafts, searchQuery]
+    () =>
+      (activeSection === 'all' || activeSection === 'personal') &&
+      filter === 'all' &&
+      (categoryFilter === 'all' || categoryFilter === 'uncategorized')
+        ? filterDrafts(drafts, searchQuery)
+        : [],
+    [activeSection, categoryFilter, drafts, filter, searchQuery]
   );
   const skillTotalPages = Math.max(1, Math.ceil(filteredSkills.length / SKILLS_PAGE_SIZE));
   const visibleSkills = useMemo(
@@ -298,6 +291,14 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
     });
   }, []);
 
+  const revealPersonalSkills = useCallback(async () => {
+    setActiveSection('personal');
+    setSearchQuery('');
+    setCategoryFilter('all');
+    setFilter('all');
+    await fetchData();
+  }, [fetchData]);
+
   const importFile = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
@@ -307,8 +308,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
       try {
         await importSynonBiomedSkillFile(file, undefined);
         messageRef.current.success(translationRef.current('settings.skillsSettings.fileImported', { name: file.name }));
-        setActiveSection('personal');
-        await fetchData();
+        await revealPersonalSkills();
       } catch (error) {
         console.error('Failed to import skill file:', error);
         messageRef.current.error(translationRef.current('settings.skillsSettings.fileImportFailed'));
@@ -316,7 +316,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
         setImportingFile(false);
       }
     },
-    [fetchData, importingFile]
+    [importingFile, revealPersonalSkills]
   );
 
   const removePersonalSkill = useCallback(
@@ -368,29 +368,18 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
     [fetchData]
   );
 
-  const filterLabel =
-    filter === 'enabled'
-      ? t('settings.skillsSettings.enabled')
-      : filter === 'disabled'
-        ? t('settings.skillsSettings.disabled')
-        : t('settings.skillsSettings.allCount', { count: availableSkills.length });
-  const filterMenu = (
-    <Menu onClickMenuItem={(key) => setFilter(key as SkillFilter)}>
-      <Menu.Item key='all'>{t('settings.skillsSettings.all')}</Menu.Item>
-      <Menu.Item key='enabled'>{t('settings.skillsSettings.enabled')}</Menu.Item>
-      <Menu.Item key='disabled'>{t('settings.skillsSettings.disabled')}</Menu.Item>
-    </Menu>
-  );
   const addMenu = (
     <Menu
       onClickMenuItem={(key) => {
-        if (key === 'github') {
+        if (key === 'marketplace') setMarketVisible(true);
+        else if (key === 'github') {
           setGithubRepo('');
           setGithubVisible(true);
         } else if (key === 'file') fileInputRef.current?.click();
         else setCreateVisible(true);
       }}
     >
+      <Menu.Item key='marketplace'>{t('settings.skillsSettings.marketplace.tab')}</Menu.Item>
       <Menu.Item key='github'>
         <span className='flex items-center gap-8px'>
           <Github size={15} /> {t('settings.skillsSettings.importGithub')}
@@ -409,25 +398,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
   );
 
   const headerActions = (
-    <div className='flex min-w-0 items-center justify-end gap-8px max-md:flex-wrap'>
-      <Input
-        data-testid='input-search-synon-biomed-skills'
-        className='settings-skills-toolbar__search w-240px max-md:order-3 max-md:w-full'
-        value={searchQuery}
-        onChange={setSearchQuery}
-        allowClear
-        prefix={<Search size={15} />}
-        placeholder={t('settings.skillsSettings.search')}
-        aria-label={t('settings.skillsSettings.search')}
-      />
-      {activeSection !== 'marketplace' ? (
-        <Dropdown droplist={filterMenu} trigger='click' position='br'>
-          <Button data-testid='synon-biomed-skills-filter' className='!flex !items-center !gap-6px'>
-            <span>{filterLabel}</span>
-            <Down size={14} />
-          </Button>
-        </Dropdown>
-      ) : null}
+    <>
       <Dropdown droplist={addMenu} trigger='click' position='br'>
         <Button type='primary' data-testid='add-skill-button' loading={importingFile} disabled={importingFile}>
           {t('settings.skillsSettings.addSkill')}
@@ -441,25 +412,11 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
         disabled={importingFile}
         onChange={(event) => void importFile(event)}
       />
-    </div>
+    </>
   );
 
   const list =
-    activeSection === 'marketplace' ? (
-      <SynonBiomedSkillMarketPanel
-        query={searchQuery}
-        importedSkillKeys={importedSkillKeys}
-        onOpenRepository={(repo) => {
-          setGithubRepo(repo);
-          setGithubVisible(true);
-        }}
-        onOpenCustomRepository={() => {
-          setGithubRepo('');
-          setGithubVisible(true);
-        }}
-        onSkillLoaded={fetchData}
-      />
-    ) : loading && availableSkills.length === 0 ? (
+    loading && availableSkills.length === 0 ? (
       <div className='flex min-h-180px items-center justify-center' data-testid='synon-biomed-skills-loading'>
         <Spin />
       </div>
@@ -476,7 +433,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
             onRemove={removeSource}
           />
         ) : null}
-        {activeSection === 'personal' && filteredDrafts.length > 0 ? (
+        {filteredDrafts.length > 0 ? (
           <section className='mb-18px' data-testid='personal-skill-drafts'>
             <SectionLabel
               title={t('settings.skillsSettings.drafts')}
@@ -497,7 +454,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
                 key={skill.name}
                 skill={skill}
                 pendingSkill={pendingSkill}
-                personal={activeSection === 'personal'}
+                personal={sectionSkills.personal.includes(skill)}
                 usage={skillUsage ? findSynonBiomedSkillUsage(skillUsage, skill.name) : null}
                 usageAvailable={skillUsage !== null}
                 onOpen={openSkill}
@@ -508,13 +465,13 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
           </div>
         ) : filteredDrafts.length === 0 ? (
           <div className='border-y border-dashed border-arco-2 py-48px text-center text-13px text-t-secondary'>
-            {searchQuery.trim()
+            {searchQuery.trim() || categoryFilter !== 'all' || filter !== 'all'
               ? t('settings.skillsSettings.noMatches')
               : activeSection === 'imported'
                 ? t('settings.skillsSettings.noImported')
                 : activeSection === 'personal'
                   ? t('settings.skillsSettings.noPersonal')
-                  : t('settings.skillsSettings.noRecommended')}
+                  : t('settings.skillsSettings.noSkills')}
           </div>
         ) : null}
       </div>
@@ -525,32 +482,30 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
       {messageContext}
       <SettingsPageHeader
         data-testid='skills-header'
-        title={t('settings.skillsSettings.title')}
-        description={t('settings.skillsSettings.description')}
-        tabs={[
-          {
-            key: 'recommended',
-            label: t('settings.skillsSettings.recommendedCount', {
-              count: sectionSkills.recommended.length,
-            }),
-          },
-          {
-            key: 'imported',
-            label: t('settings.skillsSettings.importedCount', {
-              count: sectionSkills.imported.length,
-            }),
-          },
-          {
-            key: 'personal',
-            label: t('settings.skillsSettings.personalCount', {
-              count: sectionSkills.personal.length + drafts.length,
-            }),
-          },
-          { key: 'marketplace', label: t('settings.skillsSettings.marketplace.tab') },
-        ]}
-        activeTab={activeSection}
-        onTabChange={(key) => setActiveSection(key as SkillSection)}
-        tabsActions={headerActions}
+        title={
+          <>
+            {t('settings.skillsSettings.title')}{' '}
+            <span className='settings-skill-library-total'>{availableSkills.length + drafts.length}</span>
+          </>
+        }
+        actions={headerActions}
+      />
+      <SkillLibraryToolbar
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        category={categoryFilter}
+        categories={categoryOptions}
+        onCategoryChange={setCategoryFilter}
+        source={activeSection}
+        sourceCounts={{
+          all: availableSkills.length + drafts.length,
+          recommended: sectionSkills.recommended.length,
+          imported: sectionSkills.imported.length,
+          personal: sectionSkills.personal.length + drafts.length,
+        }}
+        onSourceChange={setActiveSection}
+        status={filter}
+        onStatusChange={setFilter}
       />
       {loadError ? (
         <div
@@ -565,23 +520,9 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
         </div>
       ) : null}
       <section data-testid='synon-biomed-skills-section' className='min-h-0'>
-        <div role='tabpanel' aria-label={activeSection}>
-          {activeSection === 'recommended' ? (
-            <SkillCategoryFilter
-              copy={recommendedCategoryCopy}
-              options={recommendedCategoryOptions}
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-            />
-          ) : null}
-          {activeSection === 'imported' ? (
-            <SectionIntro>{t('settings.skillsSettings.importedDescription')}</SectionIntro>
-          ) : null}
-          {activeSection === 'personal' ? (
-            <SectionIntro>{t('settings.skillsSettings.personalDescription')}</SectionIntro>
-          ) : null}
+        <div>
           {list}
-          {activeSection !== 'marketplace' && filteredSkills.length > SKILLS_PAGE_SIZE ? (
+          {filteredSkills.length > SKILLS_PAGE_SIZE ? (
             <SettingsPagination
               page={skillPage}
               totalPages={skillTotalPages}
@@ -591,6 +532,16 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
           ) : null}
         </div>
       </section>
+      <SkillMarketModal
+        visible={marketVisible}
+        onClose={() => setMarketVisible(false)}
+        importedSkillKeys={importedSkillKeys}
+        onOpenRepository={(repo) => {
+          setGithubRepo(repo);
+          setGithubVisible(true);
+        }}
+        onSkillLoaded={fetchData}
+      />
       <GitHubSkillImportModal
         visible={githubVisible}
         initialRepo={githubRepo}
@@ -601,10 +552,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
         visible={createVisible}
         initialDescription=''
         onClose={() => setCreateVisible(false)}
-        onChanged={async () => {
-          setActiveSection('personal');
-          await fetchData();
-        }}
+        onChanged={revealPersonalSkills}
       />
       <SkillDetailModal
         visible={detail !== null}
@@ -853,14 +801,10 @@ function SectionLabel({ title, description, count }: { title: string; descriptio
   );
 }
 
-function SectionIntro({ children }: { children: React.ReactNode }) {
-  return <p className='m-0 mb-10px text-12px text-t-tertiary'>{children}</p>;
-}
-
 function filterSkills(
   skills: SkillInfo[],
   queryValue: string,
-  filter: SkillFilter,
+  filter: SkillStatusFilter,
   language?: string,
   categoryFilter: SynonBiomedSkillCategorySelection = 'all'
 ): SkillInfo[] {
@@ -885,50 +829,6 @@ function filterSkills(
       .filter((value): value is string => Boolean(value))
       .some((value) => value.toLowerCase().includes(query));
   });
-}
-
-function SkillCategoryFilter({
-  copy,
-  options,
-  value,
-  onChange,
-}: {
-  copy: { title: string; description: string };
-  options: Array<{ id: SynonBiomedSkillCategorySelection; label: string; count: number }>;
-  value: SynonBiomedSkillCategorySelection;
-  onChange: (value: SynonBiomedSkillCategorySelection) => void;
-}) {
-  return (
-    <section
-      className='synon-skill-category-filter'
-      data-testid='skill-category-filter'
-      aria-label={copy.title + ' · ' + copy.description}
-      title={copy.description}
-    >
-      <div className='synon-skill-category-filter__header'>
-        <div className='synon-skill-category-filter__title'>{copy.title}</div>
-      </div>
-      <div className='synon-skill-category-filter__options' role='group' aria-label={copy.title}>
-        {options.map((option) => {
-          const selected = option.id === value;
-          return (
-            <button
-              key={`${option.id}-${option.label}`}
-              type='button'
-              className='synon-skill-category-filter__option'
-              data-selected={selected ? 'true' : 'false'}
-              aria-pressed={selected}
-              data-testid={`skill-category-filter-${option.id}`}
-              onClick={() => onChange(option.id)}
-            >
-              <span>{option.label}</span>
-              <span className='synon-skill-category-filter__count'>{option.count}</span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
 }
 
 function filterDrafts(drafts: SynonBiomedSkillDraft[], queryValue: string): SynonBiomedSkillDraft[] {

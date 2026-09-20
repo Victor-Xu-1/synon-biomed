@@ -34,6 +34,20 @@ func TestSanitizeTranscriptWebTerminalMessagesCleansCachedFailure(t *testing.T) 
 	}
 }
 
+func TestPresentationFailureReasonSurvivesHistorySanitization(t *testing.T) {
+	for _, reason := range []string{sessionRunnerResponseLanguageMismatchReasonCode} {
+		messages := []map[string]any{{"terminal_status": "failed", "terminal_reason_code": reason, "content": map[string]any{"content": "回复原始诊断 /private/path?token=secret"}}}
+		server := &Server{}
+		server.sanitizeTranscriptWebTerminalMessages(context.Background(), transcriptstore.Stream{}, messages)
+		first := webString(mapValue(messages[0]["content"])["content"])
+		server.sanitizeTranscriptWebTerminalMessages(context.Background(), transcriptstore.Stream{}, messages)
+		second := webString(mapValue(messages[0]["content"])["content"])
+		if first != second || !strings.Contains(first, "呈现") || strings.Contains(first, "secret") {
+			t.Fatalf("presentation reason lost/leaked: %q -> %q", first, second)
+		}
+	}
+}
+
 func TestSanitizeTranscriptWebPublicMessagesCleansHistoricalInternalNarration(t *testing.T) {
 	messages := []map[string]any{
 		{

@@ -10,12 +10,14 @@ import (
 	"strings"
 
 	sessionstore "synon-go/internal/persistence/sessions"
+	transcriptstore "synon-go/internal/persistence/transcript"
 )
 
 const sessionRunnerVisualArtifactValidationReasonCode = "visual_artifact_validation_required"
 
 type sessionRunnerVisualArtifactValidationRequired struct {
 	Artifacts []string
+	Targets   []transcriptstore.RunnerVisualConditionArtifact
 }
 
 func (err *sessionRunnerVisualArtifactValidationRequired) Error() string {
@@ -30,10 +32,19 @@ func (err *sessionRunnerVisualArtifactValidationRequired) Error() string {
 	return "generated visual artifacts are not bound to a passing immutable VisualReview record: " + strings.Join(names, ", ")
 }
 
-func (err *sessionRunnerVisualArtifactValidationRequired) runnerCorrection() (string, string) {
-	return sessionRunnerVisualArtifactValidationReasonCode, truncateSessionRunnerReferenceDiagnostic(
+func (err *sessionRunnerVisualArtifactValidationRequired) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	var artifacts []string
+	if err != nil {
+		artifacts = append([]string(nil), err.Artifacts...)
+	}
+	visual := transcriptstore.RunnerVisualCondition{UnboundNames: artifacts}
+	if err != nil && len(err.Targets) > 0 {
+		visual.Artifacts = append([]transcriptstore.RunnerVisualConditionArtifact(nil), err.Targets...)
+		visual.UnboundNames = nil
+	}
+	return newRunnerCorrection(sessionRunnerVisualArtifactValidationReasonCode,
 		err.Error()+". For each generated labeled plot or diagram, export a renderer-derived synon.visual-layout.v1 manifest and call VisualReview action=validate_layout. Repair every overlap, clipping, hash, canvas, or manifest blocker and rerun validation before answering. A semantic VisualReview pass is also valid only after its model-visible challenge succeeds.",
-		maxRunnerCorrectionResumeDetailBytes,
+		transcriptstore.RunnerCorrectionCondition{Visual: &visual},
 	)
 }
 
@@ -106,18 +117,21 @@ func (s *Server) verifyVisualArtifactEvidence(artifacts []sessionReviewerArtifac
 		}
 	}
 	missing := []string{}
+	targets := []transcriptstore.RunnerVisualConditionArtifact{}
 	for _, artifact := range visualArtifacts {
 		digest := strings.ToLower(strings.TrimSpace(artifact.ContentSHA256))
 		if len(digest) != sha256.Size*2 {
 			missing = append(missing, artifact.Name+" (invalid artifact digest)")
+			targets = append(targets, transcriptstore.RunnerVisualConditionArtifact{Name: artifact.Name, VersionID: artifact.VersionID, SHA256: artifact.ContentSHA256, Failure: "invalid_digest"})
 			continue
 		}
 		if _, found := validatedHashes[digest]; !found {
 			missing = append(missing, artifact.Name)
+			targets = append(targets, transcriptstore.RunnerVisualConditionArtifact{Name: artifact.Name, VersionID: artifact.VersionID, SHA256: digest, Failure: "missing_validation"})
 		}
 	}
 	if len(missing) > 0 {
-		return &sessionRunnerVisualArtifactValidationRequired{Artifacts: missing}
+		return &sessionRunnerVisualArtifactValidationRequired{Artifacts: missing, Targets: targets}
 	}
 	return nil
 }

@@ -137,6 +137,34 @@ describe('conversationRuntimeViewStore', () => {
     expect(getConversationRuntimeViewSnapshot(conversation_id).terminalProjectionPending).toBe(false);
   });
 
+  it('keeps failure-message synchronization pending without claiming execution is active', () => {
+    const running = hydrateSucceededConversationRuntimeView(
+      undefined,
+      conversation_id,
+      runtime({
+        state: 'running',
+        has_task: true,
+        task_status: 'running',
+        is_processing: true,
+        can_send_message: false,
+      })
+    ).view;
+    const failed = hydrateSucceededConversationRuntimeView(
+      running,
+      conversation_id,
+      runtime({ task_status: 'error' })
+    ).view;
+
+    expect(failed).toMatchObject({
+      state: 'idle',
+      taskStatus: 'error',
+      isProcessing: false,
+      hasTask: false,
+      canSendMessage: true,
+      terminalProjectionPending: true,
+    });
+  });
+
   it('hydrates correction waiting input as sendable without hiding the task', () => {
     const { view, logs } = hydrateSucceededConversationRuntimeView(
       undefined,

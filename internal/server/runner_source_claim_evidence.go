@@ -2,11 +2,9 @@ package server
 
 import (
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -15,8 +13,6 @@ import (
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
-
-const maxRunnerSourceEvidenceBytes = 8 << 20
 
 // validateSessionRunnerSourceClaimEvidence closes the gap between an existing
 // identifier and evidence that actually supports a scientific claim. A source
@@ -76,7 +72,13 @@ func (s *Server) validateSessionRunnerSourceClaimEvidence(
 			_ = reader.Close()
 			continue
 		}
-		data, readErr := io.ReadAll(io.LimitReader(reader, maxRunnerSourceEvidenceBytes+1))
+		var current []string
+		var readErr error
+		if ext == ".json" {
+			current, readErr = scanRunnerSourceEvidenceDocument(ctx, reader, name, corpus, internalHandles)
+		} else {
+			current, readErr = scanRunnerSourceEvidenceLedger(ctx, reader, name, corpus, internalHandles, true)
+		}
 		closeErr := reader.Close()
 		if readErr != nil {
 			return nil, fmt.Errorf("read runner source evidence %q: %w", name, readErr)
@@ -84,35 +86,10 @@ func (s *Server) validateSessionRunnerSourceClaimEvidence(
 		if closeErr != nil {
 			return nil, fmt.Errorf("close runner source evidence %q: %w", name, closeErr)
 		}
-		if len(data) > maxRunnerSourceEvidenceBytes {
-			failures = append(failures, "source_evidence_too_large:"+name)
-			continue
-		}
-		if !runnerSourceClaimEvidenceArtifact(name, data) {
-			continue
-		}
-		failures = append(failures, runnerInternalArtifactReferenceFailures(name, data, internalHandles)...)
-		if strings.EqualFold(filepath.Ext(name), ".json") {
-			failures = append(failures, validateRunnerSourceEvidenceDocument(name, data, corpus)...)
-		} else {
-			failures = append(failures, validateRunnerSourceEvidenceLedger(name, data, corpus)...)
-		}
+		failures = append(failures, current...)
 	}
 	sort.Strings(failures)
 	return failures, nil
-}
-
-func runnerSourceClaimEvidenceArtifact(name string, data []byte) bool {
-	base := strings.ToLower(filepath.Base(strings.TrimSpace(name)))
-	if base == "source_evidence.json" {
-		return true
-	}
-	ext := strings.ToLower(filepath.Ext(base))
-	if ext != ".csv" && ext != ".tsv" {
-		return false
-	}
-	_, _, recognized := runnerEvidenceLedgerRecords(runnerCrossArtifactSnapshot{name: name, text: string(data)})
-	return recognized
 }
 
 // validateRunnerSourceEvidenceLedger verifies the evidence the ledger itself
@@ -122,28 +99,8 @@ func runnerSourceClaimEvidenceArtifact(name string, data []byte) bool {
 // successful durable source-tool receipt from this logical task. Direct quotes
 // use a separate exact-match rule. This closes the title/snippet-to-conclusion
 // gap without rejecting useful paraphrases or imposing a fixed workflow.
-func validateRunnerSourceEvidenceLedger(name string, data []byte, corpus string) []string {
-	reader := csv.NewReader(strings.NewReader(strings.TrimPrefix(string(data), "\ufeff")))
-	if strings.EqualFold(filepath.Ext(name), ".tsv") {
-		reader.Comma = '\t'
-	}
-	reader.FieldsPerRecord = -1
-	records, err := reader.ReadAll()
-	if err != nil || len(records) < 2 {
-		return nil
-	}
-	headers := make(map[string]int, len(records[0]))
-	for index, header := range records[0] {
-		headers[normalizeRunnerTableToken(header)] = index
-	}
-	return validateRunnerSourceEvidenceLedgerRecords(name, records, headers, corpus)
-}
-
-func validateRunnerSourceEvidenceLedgerRecords(
-	name string,
-	records [][]string,
-	headers map[string]int,
-	corpus string,
+func validateRunnerSourceEvidenceLedgerRecordsAtRow(
+	name string, records [][]string, headers map[string]int, corpus string, firstDataRow int,
 ) []string {
 	excerptIndex, hasExcerpt := firstRunnerEvidenceColumn(
 		headers, "evidence_excerpt", "evidenceexcerpt", "supporting_excerpt", "supportingexcerpt",
@@ -167,6 +124,7 @@ func validateRunnerSourceEvidenceLedgerRecords(
 	)
 	failures := make([]string, 0)
 	for rowIndex, row := range records[1:] {
+		rowNumber := rowIndex + firstDataRow
 		if hasStatus && statusIndex < len(row) && runnerSourceEvidenceRowExcluded(row[statusIndex]) {
 			continue
 		}
@@ -180,18 +138,18 @@ func validateRunnerSourceEvidenceLedgerRecords(
 		}
 		identifier := runnerSourceEvidenceRowIdentifier(row, identifierIndexes)
 		if identifier == "" {
-			identifier = fmt.Sprintf("row-%d", rowIndex+2)
+			identifier = fmt.Sprintf("row-%d", rowNumber)
 		}
 		normalizedExcerpt := normalizeRunnerSourceEvidenceText(excerpt)
 		if normalizedExcerpt == "" || locator == "" {
 			failures = append(failures, fmt.Sprintf(
-				"source_ledger_missing_attested_excerpt:%s row=%d source=%s", name, rowIndex+2, identifier,
+				"source_ledger_missing_attested_excerpt:%s row=%d source=%s", name, rowNumber, identifier,
 			))
 			continue
 		}
 		if corpus == "" || !runnerSourceEvidenceCorpusContainsIdentifier(corpus, identifier, locator) {
 			failures = append(failures, fmt.Sprintf(
-				"source_ledger_source_not_in_durable_receipts:%s row=%d source=%s", name, rowIndex+2, identifier,
+				"source_ledger_source_not_in_durable_receipts:%s row=%d source=%s", name, rowNumber, identifier,
 			))
 			continue
 		}
@@ -199,7 +157,7 @@ func validateRunnerSourceEvidenceLedgerRecords(
 			directQuote := normalizeRunnerSourceEvidenceText(row[directQuoteIndex])
 			if directQuote != "" && !strings.Contains(corpus, directQuote) {
 				failures = append(failures, fmt.Sprintf(
-					"source_ledger_direct_quote_not_in_durable_receipts:%s row=%d source=%s", name, rowIndex+2, identifier,
+					"source_ledger_direct_quote_not_in_durable_receipts:%s row=%d source=%s", name, rowNumber, identifier,
 				))
 			}
 		}
@@ -225,14 +183,10 @@ func runnerSourceEvidenceRowIdentifier(row []string, indexes []int) string {
 	return ""
 }
 
-func validateRunnerSourceEvidenceDocument(name string, data []byte, corpus string) []string {
-	var document map[string]any
-	if err := json.Unmarshal(data, &document); err != nil {
-		return []string{"source_evidence_invalid_json:" + name}
-	}
-	sources, _ := document["sources"].([]any)
+func validateRunnerSourceEvidenceSources(name string, sources []any, corpus string, sourceOffset int) []string {
 	failures := []string{}
 	for sourceIndex, rawSource := range sources {
+		sourceIndex += sourceOffset
 		source, _ := rawSource.(map[string]any)
 		claims, declared := source["claims_supported"].([]any)
 		if !declared || len(claims) == 0 {
@@ -351,38 +305,7 @@ func runnerInternalArtifactHandles(messages []agentruntime.Message) map[string]s
 	return handles
 }
 
-func runnerInternalArtifactReferenceFailures(name string, data []byte, handles map[string]struct{}) []string {
-	if len(handles) == 0 || len(data) == 0 {
-		return nil
-	}
-	ext := strings.ToLower(filepath.Ext(strings.TrimSpace(name)))
-	if ext == ".csv" || ext == ".tsv" {
-		reader := csv.NewReader(strings.NewReader(strings.TrimPrefix(string(data), "\ufeff")))
-		if ext == ".tsv" {
-			reader.Comma = '\t'
-		}
-		reader.FieldsPerRecord = -1
-		records, err := reader.ReadAll()
-		if err != nil {
-			return nil
-		}
-		failures := make([]string, 0)
-		for rowIndex, row := range records[1:] {
-			for _, cell := range row {
-				if _, exposed := handles[strings.TrimSpace(cell)]; exposed {
-					failures = append(failures, fmt.Sprintf(
-						"machine_validation_internal_runtime_reference:%s row=%d", name, rowIndex+2,
-					))
-					break
-				}
-			}
-		}
-		return failures
-	}
-	var value any
-	if !strings.EqualFold(ext, ".json") || json.Unmarshal(data, &value) != nil {
-		return nil
-	}
+func runnerSourceValueContainsInternalHandle(value any, handles map[string]struct{}) bool {
 	exposed := false
 	var inspect func(any)
 	inspect = func(current any) {
@@ -403,10 +326,7 @@ func runnerInternalArtifactReferenceFailures(name string, data []byte, handles m
 		}
 	}
 	inspect(value)
-	if exposed {
-		return []string{"machine_validation_internal_runtime_reference:" + name}
-	}
-	return nil
+	return exposed
 }
 
 func normalizeRunnerSourceEvidenceText(value string) string {

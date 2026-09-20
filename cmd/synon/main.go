@@ -235,7 +235,7 @@ func runServer(info buildinfo.Info, cfg config.Config, tlsResolver *networktls.R
 			skillDirectories = []string{packagedSkills}
 		}
 	}
-	kernelManager, err := kernelruntime.DiscoverManagerWithPaths(cfg.CondaHome, cfg.CondaEnvsPath)
+	kernelManager, err := kernelruntime.DiscoverManagerWithPaths(cfg.CondaHome, cfg.CondaEnvsPath, cfg.Network.Proxy)
 	if err != nil {
 		return fmt.Errorf("discover local scientific runtime manager: %w", err)
 	}
@@ -303,8 +303,15 @@ func runServer(info buildinfo.Info, cfg config.Config, tlsResolver *networktls.R
 		ConfigDeniedDomains:    cfg.Network.DeniedDomains,
 		ConfigNetworkProxy:     cfg.Network.Proxy,
 		HTTPClient:             runtimeHTTPClient,
-		WebFetchOptions:        webfetch.Options{BaseHTTPClient: runtimeHTTPClient},
-		WebSearchOptions:       websearch.Options{BaseHTTPClient: runtimeHTTPClient},
+		WebFetchOptions: webfetch.Options{BaseHTTPClient: runtimeHTTPClient,
+			HeaderTimeout:   time.Duration(cfg.Network.ResponseHeaderTimeoutSeconds) * time.Second,
+			ReadIdleTimeout: time.Duration(cfg.Network.ReadIdleTimeoutSeconds) * time.Second},
+		WebSearchOptions: websearch.Options{BaseHTTPClient: runtimeHTTPClient,
+			Timeout:         time.Duration(cfg.Network.SearchTimeoutSeconds) * time.Second,
+			HeaderTimeout:   time.Duration(cfg.Network.ResponseHeaderTimeoutSeconds) * time.Second,
+			ReadIdleTimeout: time.Duration(cfg.Network.ReadIdleTimeoutSeconds) * time.Second},
+		PublicScientificResponseHeaderTimeout: time.Duration(cfg.Network.ResponseHeaderTimeoutSeconds) * time.Second,
+		PublicScientificTransferIdleTimeout:   time.Duration(cfg.Network.TransferIdleTimeoutSeconds) * time.Second,
 		MCPX509Posture: func() mcpstdio.TLSPosture {
 			posture := tlsResolver.Current(context.Background())
 			return mcpstdio.TLSPosture{Strict: posture.Strict, CABundle: posture.CABundle, ProxyURL: cfg.Network.Proxy}

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"synon-go/internal/assets"
+	"synon-go/internal/networktls"
 )
 
 type DiscoveryStage string
@@ -79,11 +80,11 @@ func discoveryFailure(stage DiscoveryStage, err error) error {
 	return &DiscoveryError{Stage: stage, Err: err}
 }
 
-func DiscoverManager() (*Manager, error) {
-	return DiscoverManagerWithPaths(os.Getenv("SYNON_CONDA_HOME"), os.Getenv("SYNON_CONDA_ENVS_PATH"))
-}
-
-func DiscoverManagerWithPaths(condaHome, condaEnvsPath string) (*Manager, error) {
+func DiscoverManagerWithPaths(condaHome, condaEnvsPath, upstreamProxy string) (*Manager, error) {
+	upstreamProxy, err := networktls.NormalizeProxyURL(upstreamProxy)
+	if err != nil {
+		return nil, fmt.Errorf("kernel installer network route: %w", err)
+	}
 	assetRoot, err := discoverAssetRoot()
 	if err != nil {
 		return nil, discoveryFailure(DiscoveryStageAssetRoot, err)
@@ -132,7 +133,8 @@ func DiscoverManagerWithPaths(condaHome, condaEnvsPath string) (*Manager, error)
 		return nil, discoveryFailure(DiscoveryStageMicromamba, err)
 	}
 	manager := NewManager(Config{
-		Python: python, Micromamba: micromamba, CondaHome: condaHome, CondaEnvsPath: condaEnvsPath,
+		UpstreamProxy: upstreamProxy,
+		Python:        python, Micromamba: micromamba, CondaHome: condaHome, CondaEnvsPath: condaEnvsPath,
 		AssetRoot: assetRoot, ManifestPath: filepath.Join(assetRoot, "kernel-compute.manifest.json"),
 		WorkerPath:               filepath.Join(assetRoot, "kernels", "kernel_worker.py"),
 		CondaRuntimeCatalog:      filepath.Join(assetRoot, "conda-runtimes", "manifest.json"),

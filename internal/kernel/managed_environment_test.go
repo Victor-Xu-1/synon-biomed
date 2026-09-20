@@ -1378,18 +1378,23 @@ func TestManagedCondaUninstallDoesNotReceiveChannelArguments(t *testing.T) {
 	}
 }
 
-func TestManagedEnvironmentInstallerInheritsProxyWithoutLeakingItToRuntime(t *testing.T) {
+func TestManagedEnvironmentInstallerUsesConfiguredProxyWithoutLeakingItToRuntime(t *testing.T) {
 	t.Setenv("PATH", "/usr/bin:/bin:relative:/usr/bin")
-	t.Setenv("HTTPS_PROXY", "http://proxy.example.test:8080")
+	t.Setenv("HTTPS_PROXY", "http://unselected.example.test:8080")
 	t.Setenv("NO_PROXY", "127.0.0.1,localhost")
 	t.Setenv("ALL_PROXY", strings.Repeat("x", 4097))
 	manager := NewManager(Config{
-		Micromamba: "/opt/synon/micromamba", CondaHome: "/tmp/synon-conda",
+		UpstreamProxy: "http://proxy.example.test:8080",
+		Micromamba:    "/opt/synon/micromamba", CondaHome: "/tmp/synon-conda",
 		CondaEnvsPath: "/tmp/synon-conda/envs",
 	})
-	installer := strings.Join(manager.managedEnvironmentInstallerEnv(), "\n")
+	installerEnv, err := manager.managedEnvironmentInstallerEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	installer := strings.Join(installerEnv, "\n")
 	if !strings.Contains(installer, "HTTPS_PROXY=http://proxy.example.test:8080") ||
-		!strings.Contains(installer, "NO_PROXY=127.0.0.1,localhost") || strings.Contains(installer, "ALL_PROXY=") {
+		strings.Contains(installer, "NO_PROXY=") || strings.Contains(installer, "ALL_PROXY=") || strings.Contains(installer, "unselected.example") {
 		t.Fatalf("installer proxy environment=%q", installer)
 	}
 	threadLimit := managedEnvironmentInstallerThreadLimit()
@@ -1411,7 +1416,11 @@ func TestManagedEnvironmentInstallerInheritsProxyWithoutLeakingItToRuntime(t *te
 	if strings.Contains(runtimeEnvironment, "HTTPS_PROXY=") || strings.Contains(runtimeEnvironment, "NO_PROXY=") {
 		t.Fatalf("runtime inherited installer proxy authority: %q", runtimeEnvironment)
 	}
-	installerRuntime := strings.Join(managedEnvironmentInstallerRuntimeEnv("/tmp/env"), "\n")
+	installerRuntimeEnv, err := manager.managedEnvironmentInstallerRuntimeEnv("/tmp/env")
+	if err != nil {
+		t.Fatal(err)
+	}
+	installerRuntime := strings.Join(installerRuntimeEnv, "\n")
 	wantBuildPath := "PATH=/tmp/env/bin:/usr/bin:/bin"
 	if !strings.Contains(installerRuntime, wantBuildPath) {
 		t.Fatalf("installer build PATH=%q want %q", installerRuntime, wantBuildPath)

@@ -14,23 +14,45 @@ type runnerLanguageProgressBlocks struct {
 	closed []runnerLanguageProgressBlock
 }
 
+func (client *sessionRunnerResponseLanguageModelClient) discardProgressPresentation(err error) {
+	code := "invalid_progress"
+	if failure, ok := err.(sessionRunnerPresentationViolation); ok {
+		code = failure.Code
+	}
+	if client.audit != nil {
+		client.audit(map[string]any{"decision": "progress_presentation_discarded", "failure_code": code})
+	}
+}
+
 func (blocks *runnerLanguageProgressBlocks) accept(event agentruntime.ModelStreamEvent) (bool, error) {
 	switch event.Kind {
 	case agentruntime.ModelStreamEventPublicProgressDelta:
-		if event.BlockID == "" || len(blocks.closed) >= 64 {
-			return true, errors.New("invalid language progress block")
+		if err := agentruntime.ValidateModelStreamEvent(event); err != nil {
+			return true, sessionRunnerPresentationViolation{Code: "invalid_progress_event"}
+		}
+		if event.BlockID == "" {
+			return true, sessionRunnerPresentationViolation{Code: "missing_block_identity"}
+		}
+		if len(blocks.closed) >= 64 {
+			return true, sessionRunnerPresentationViolation{Code: "too_many_blocks"}
 		}
 		if blocks.open == nil {
 			blocks.open = &runnerLanguageProgressBlock{id: event.BlockID}
 		}
-		if blocks.open.id != event.BlockID || len(blocks.open.text)+len(event.ContentDelta) > 16*1024 {
-			return true, errors.New("language progress block boundary mismatch")
+		if blocks.open.id != event.BlockID {
+			return true, sessionRunnerPresentationViolation{Code: "block_identity_changed"}
+		}
+		if len(blocks.open.text)+len(event.ContentDelta) > 16*1024 {
+			return true, sessionRunnerPresentationViolation{Code: "block_too_large"}
 		}
 		blocks.open.text += event.ContentDelta
 		return true, nil
 	case agentruntime.ModelStreamEventPublicProgressBoundary:
+		if err := agentruntime.ValidateModelStreamEvent(event); err != nil {
+			return true, sessionRunnerPresentationViolation{Code: "invalid_progress_event"}
+		}
 		if blocks.open == nil || blocks.open.id != event.BlockID {
-			return true, errors.New("language progress block is not open")
+			return true, sessionRunnerPresentationViolation{Code: "unexpected_boundary"}
 		}
 		blocks.closed = append(blocks.closed, *blocks.open)
 		blocks.open = nil
@@ -42,7 +64,8 @@ func (blocks *runnerLanguageProgressBlocks) accept(event agentruntime.ModelStrea
 
 func (client *sessionRunnerResponseLanguageModelClient) localizeProgressBlocks(ctx context.Context, request agentruntime.ModelRequest, response agentruntime.ModelResponse, blocks runnerLanguageProgressBlocks, emit func(agentruntime.ModelStreamEvent) error) (agentruntime.ModelResponse, bool, error) {
 	if blocks.open != nil {
-		return response, false, errors.New("language progress block is incomplete")
+		client.discardProgressPresentation(sessionRunnerPresentationViolation{Code: "incomplete_block"})
+		return response, false, nil
 	}
 	if len(blocks.closed) == 0 {
 		return response, false, nil
@@ -51,14 +74,24 @@ func (client *sessionRunnerResponseLanguageModelClient) localizeProgressBlocks(c
 	for _, block := range blocks.closed {
 		text := block.text
 		originalText.WriteString(text)
-		if sessionRunnerClearlyEnglishProgress(text) {
+		if sessionRunnerRequiresChinese(client.language) && sessionRunnerClearlyEnglishProgress(text) {
 			candidate := agentruntime.ModelResponse{Message: agentruntime.Message{Content: text, ToolCalls: response.Message.ToolCalls}}
 			translated, err := client.localizeOrKeepToolCall(ctx, request, candidate)
 			if err != nil {
-				return response, false, err
+				if ctx.Err() != nil {
+					return response, false, ctx.Err()
+				}
+				if errors.Is(err, context.Canceled) {
+					return response, false, err
+				}
+				// A separate valid final answer or original action must not be
+				// rejected just because optional progress conversion was unavailable.
+				client.discardProgressPresentation(sessionRunnerPresentationViolation{Code: "conversion_unavailable"})
+				text = ""
+			} else {
+				text = translated.Message.Content
+				response.Usage = addModelUsage(response.Usage, translated.Usage)
 			}
-			text = translated.Message.Content
-			response.Usage = addModelUsage(response.Usage, translated.Usage)
 		}
 		localizedText.WriteString(text)
 		if emit != nil && text != "" {

@@ -30,6 +30,22 @@ type AskUserEvidenceResolverSelection struct {
 	Implementation string `json:"implementation"`
 }
 
+// ValidateAskUserEvidenceResolverScope keeps one answered input group bound to
+// one route. Repeated identical choices and independent groups are valid; the
+// order of questions or map iteration must not decide between alternatives.
+func ValidateAskUserEvidenceResolverScope(selections []AskUserEvidenceResolverSelection) error {
+	byGroup := make(map[string]string, len(selections))
+	for _, selection := range selections {
+		group := strings.ToLower(strings.TrimSpace(selection.EvidenceGroup))
+		route := strings.ToLower(strings.TrimSpace(selection.Skill) + "\x00" + strings.TrimSpace(selection.Implementation))
+		if prior, found := byGroup[group]; found && prior != route {
+			return errors.New("These answers select different routes for the same controlled input. Select one consistent route, or discuss the choice before continuing.")
+		}
+		byGroup[group] = route
+	}
+	return nil
+}
+
 func EncodeAnsweredAskUserModelContinuation(answers, implementations map[string]string) (string, error) {
 	return EncodeAnsweredAskUserModelContinuationWithEvidenceResolvers(answers, implementations, nil)
 }
@@ -63,6 +79,7 @@ func EncodeAnsweredAskUserModelContinuationWithEvidenceResolvers(
 	var normalizedResolvers map[string]AskUserEvidenceResolverSelection
 	if len(evidenceResolvers) > 0 {
 		normalizedResolvers = make(map[string]AskUserEvidenceResolverSelection, len(evidenceResolvers))
+		scope := make([]AskUserEvidenceResolverSelection, 0, len(evidenceResolvers))
 		for question, resolver := range evidenceResolvers {
 			question = strings.TrimSpace(question)
 			resolver.EvidenceGroup = strings.TrimSpace(resolver.EvidenceGroup)
@@ -76,6 +93,10 @@ func EncodeAnsweredAskUserModelContinuationWithEvidenceResolvers(
 				return "", errors.New("answered AskUser continuation evidence resolver has no matching answer")
 			}
 			normalizedResolvers[question] = resolver
+			scope = append(scope, resolver)
+		}
+		if err := ValidateAskUserEvidenceResolverScope(scope); err != nil {
+			return "", err
 		}
 	}
 	encoded, err := json.Marshal(struct {

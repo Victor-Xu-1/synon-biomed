@@ -33,9 +33,11 @@ func (s *Server) settleSessionRunnerPreparationError(
 	); interrupted {
 		return true, err
 	}
-	if reasonCode, resumeDetail, bounded := sessionRunnerBoundedCorrectionDetails(preparationErr); bounded {
-		return true, s.interruptClaimedSessionRunner(
-			options, result, activeRun, projectionClaim, transcriptAuthority, reasonCode, resumeDetail,
+	var bounded sessionRunnerBoundedCorrection
+	if errors.As(preparationErr, &bounded) {
+		cause := bounded.runnerCorrection()
+		return true, s.interruptClaimedSessionRunnerWithCause(
+			options, result, activeRun, projectionClaim, transcriptAuthority, cause.ReasonCode, cause.Detail, &cause,
 		)
 	}
 	if ctx.Err() == nil && isTransientSQLiteContention(preparationErr) {
@@ -48,8 +50,8 @@ func (s *Server) settleSessionRunnerPreparationError(
 	correction := sessionRunnerPreparationTimeout{
 		stage: stage, timeout: timeout, cause: context.DeadlineExceeded,
 	}
-	reasonCode, resumeDetail := correction.runnerCorrection()
-	return true, s.interruptClaimedSessionRunner(
-		options, result, activeRun, projectionClaim, transcriptAuthority, reasonCode, resumeDetail,
+	cause := correction.runnerCorrection()
+	return true, s.interruptClaimedSessionRunnerWithCause(
+		options, result, activeRun, projectionClaim, transcriptAuthority, cause.ReasonCode, cause.Detail, &cause,
 	)
 }

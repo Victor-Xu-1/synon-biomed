@@ -1,11 +1,11 @@
 package server
 
 import (
+	"context"
 	"io"
 	"math"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"synon-go/internal/runtimecontrol"
 )
@@ -47,22 +47,22 @@ func (g agentDownloadDiskGuard) check(staged, next int64) error {
 }
 
 type agentDownloadDiskWriter struct {
+	ctx     context.Context
 	writer  io.Writer
 	guard   agentDownloadDiskGuard
 	written int64
-	checked int64
-	at      time.Time
 }
 
 func (w *agentDownloadDiskWriter) Write(p []byte) (int, error) {
-	const window = int64(8 << 20)
-	if w.at.IsZero() || w.written-w.checked+int64(len(p)) >= window || time.Since(w.at) >= time.Second {
-		if err := w.guard.check(w.written, max(window, int64(len(p)))); err != nil {
-			return 0, err
-		}
-		w.checked, w.at = w.written, time.Now()
-	}
-	n, err := w.writer.Write(p)
-	w.written += int64(n)
+	return runtimecontrol.GuardDiskWrites(w.ctx, agentDownloadDiskSink{w}, func(next int64) error {
+		return w.guard.check(w.written, next)
+	}).Write(p)
+}
+
+type agentDownloadDiskSink struct{ owner *agentDownloadDiskWriter }
+
+func (sink agentDownloadDiskSink) Write(p []byte) (int, error) {
+	n, err := sink.owner.writer.Write(p)
+	sink.owner.written += int64(n)
 	return n, err
 }

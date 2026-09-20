@@ -1,20 +1,19 @@
 package server
 
 import (
-	"encoding/csv"
-	"fmt"
 	"math"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 )
 
 type runnerCrossArtifactTable struct {
-	source  string
-	ordinal int
-	headers []string
-	rows    [][]string
+	source    string
+	ordinal   int
+	headers   []string
+	rows      [][]string
+	scanStore *runnerArtifactScanStore
+	scanScope int64
 }
 
 type runnerCrossArtifactSharedColumn struct {
@@ -22,128 +21,6 @@ type runnerCrossArtifactSharedColumn struct {
 	rightIndex int
 	name       string
 	canonical  string
-}
-
-func runnerCrossArtifactTableFailures(snapshots []runnerCrossArtifactSnapshot) []string {
-	contractValidation := runnerCrossArtifactContractValidation(snapshots)
-	tables := make([]runnerCrossArtifactTable, 0)
-	for _, snapshot := range snapshots {
-		tables = append(tables, runnerCrossArtifactTables(snapshot)...)
-	}
-	sort.SliceStable(tables, func(i, j int) bool {
-		leftRank, rightRank := runnerCrossArtifactTableSourceRank(tables[i].source), runnerCrossArtifactTableSourceRank(tables[j].source)
-		if leftRank != rightRank {
-			return leftRank < rightRank
-		}
-		return strings.ToLower(tables[i].source) < strings.ToLower(tables[j].source)
-	})
-	failures := append([]string(nil), contractValidation.failures...)
-	for _, table := range tables {
-		failures = append(failures, runnerCrossArtifactRankFailures(table)...)
-	}
-	for left := 0; left < len(tables); left++ {
-		for right := left + 1; right < len(tables); right++ {
-			pair := runnerCrossArtifactTablePairKey(
-				runnerCrossArtifactTableIdentity(tables[left]), runnerCrossArtifactTableIdentity(tables[right]),
-			)
-			if _, explicitlyCovered := contractValidation.covered[pair]; explicitlyCovered {
-				continue
-			}
-			failures = append(failures, compareRunnerCrossArtifactTables(tables[left], tables[right])...)
-			failures = append(failures, compareRunnerCrossArtifactTransposedTables(tables[left], tables[right])...)
-		}
-	}
-	return failures
-}
-
-// compareRunnerCrossArtifactTransposedTables covers a common report layout:
-// machine-readable data keeps entities in rows and measurements in columns,
-// while a Markdown comparison table presents entities in columns and
-// measurements in rows. The ordinary table comparer intentionally cannot
-// match those orientations. This bounded presentation-vs-data comparison uses
-// only intersecting labels and numeric cells; it neither infers missing values
-// nor assigns scientific meaning to a column.
-func compareRunnerCrossArtifactTransposedTables(left, right runnerCrossArtifactTable) []string {
-	if !runnerCrossArtifactPresentationPair(left, right) {
-		return nil
-	}
-	presentation, data := left, right
-	if !strings.EqualFold(filepath.Ext(strings.TrimSpace(presentation.source)), ".md") {
-		presentation, data = data, presentation
-	}
-	if len(presentation.headers) < 2 || len(data.headers) < 2 {
-		return nil
-	}
-
-	dataRows := make(map[string][]string, len(data.rows))
-	for _, row := range data.rows {
-		if len(row) > 0 {
-			dataRows[normalizeRunnerTableToken(row[0])] = row
-		}
-	}
-	type transposedEntity struct {
-		presentationIndex int
-		dataRow           []string
-	}
-	// Keep the presentation header order. Iterating a map here made identical
-	// reports produce different diagnostics across runs, which undermined
-	// reproducible validation and made a real mismatch look intermittent.
-	entities := make([]transposedEntity, 0, len(presentation.headers)-1)
-	for index, header := range presentation.headers[1:] {
-		if row, found := dataRows[normalizeRunnerTableToken(header)]; found {
-			entities = append(entities, transposedEntity{presentationIndex: index + 1, dataRow: row})
-		}
-	}
-	if len(entities) == 0 {
-		return nil
-	}
-
-	dataMetrics := make(map[string]int, len(data.headers)-1)
-	for index, header := range data.headers[1:] {
-		key := canonicalRunnerTransposedMetric(header)
-		if key != "" {
-			dataMetrics[key] = index + 1
-		}
-	}
-	failures := make([]string, 0)
-	matchedMetrics := 0
-	for _, row := range presentation.rows {
-		if len(row) == 0 {
-			continue
-		}
-		metric := canonicalRunnerTransposedMetric(row[0])
-		dataIndex, found := dataMetrics[metric]
-		if !found {
-			continue
-		}
-		matchedMetrics++
-		for _, entity := range entities {
-			presentationIndex, dataRow := entity.presentationIndex, entity.dataRow
-			if presentationIndex >= len(row) || dataIndex >= len(dataRow) {
-				continue
-			}
-			leftValue, leftFormat, leftOK := parseRunnerComparableQuantity(row[presentationIndex])
-			rightValue, rightFormat, rightOK := parseRunnerComparableQuantity(dataRow[dataIndex])
-			if strings.Contains(row[0], "%") || strings.Contains(data.headers[dataIndex], "%") ||
-				strings.Contains(row[presentationIndex], "%") || strings.Contains(dataRow[dataIndex], "%") {
-				leftFormat.percent, rightFormat.percent = true, true
-			}
-			if !leftOK || !rightOK || runnerComparableNumbersEqual(
-				leftValue, rightValue, leftFormat, rightFormat, metric,
-			) {
-				continue
-			}
-			failures = append(failures, fmt.Sprintf(
-				"numeric_transposed_table_mismatch:%s<->%s entity=%s metric=%s values=%s|%s",
-				data.source, presentation.source, strings.TrimSpace(presentation.headers[presentationIndex]),
-				strings.TrimSpace(row[0]), strings.TrimSpace(dataRow[dataIndex]), strings.TrimSpace(row[presentationIndex]),
-			))
-		}
-	}
-	if matchedMetrics == 0 {
-		return nil
-	}
-	return failures
 }
 
 func canonicalRunnerTransposedMetric(value string) string {
@@ -190,59 +67,6 @@ func runnerCrossArtifactTableSourceRank(name string) int {
 	}
 }
 
-func runnerCrossArtifactTables(snapshot runnerCrossArtifactSnapshot) []runnerCrossArtifactTable {
-	switch strings.ToLower(filepath.Ext(strings.TrimSpace(snapshot.name))) {
-	case ".csv":
-		return runnerDelimitedArtifactTables(snapshot, ',')
-	case ".tsv":
-		return runnerDelimitedArtifactTables(snapshot, '\t')
-	case ".md":
-		return runnerMarkdownArtifactTables(snapshot)
-	default:
-		return nil
-	}
-}
-
-func runnerDelimitedArtifactTables(snapshot runnerCrossArtifactSnapshot, comma rune) []runnerCrossArtifactTable {
-	reader := csv.NewReader(strings.NewReader(strings.TrimPrefix(snapshot.text, "\ufeff")))
-	reader.Comma = comma
-	reader.FieldsPerRecord = -1
-	records, err := reader.ReadAll()
-	if err != nil || len(records) < 2 || len(records[0]) < 2 {
-		return nil
-	}
-	return []runnerCrossArtifactTable{{source: snapshot.name, ordinal: 0, headers: records[0], rows: records[1:]}}
-}
-
-func runnerMarkdownArtifactTables(snapshot runnerCrossArtifactSnapshot) []runnerCrossArtifactTable {
-	lines := strings.Split(strings.ReplaceAll(snapshot.text, "\r\n", "\n"), "\n")
-	tables := make([]runnerCrossArtifactTable, 0)
-	for index := 0; index+1 < len(lines); index++ {
-		headers, ok := splitRunnerMarkdownTableLine(lines[index])
-		if !ok || len(headers) < 2 {
-			continue
-		}
-		separator, ok := splitRunnerMarkdownTableLine(lines[index+1])
-		if !ok || len(separator) != len(headers) || !runnerMarkdownSeparatorRow(separator) {
-			continue
-		}
-		rows := make([][]string, 0)
-		cursor := index + 2
-		for ; cursor < len(lines); cursor++ {
-			row, rowOK := splitRunnerMarkdownTableLine(lines[cursor])
-			if !rowOK || len(row) != len(headers) {
-				break
-			}
-			rows = append(rows, row)
-		}
-		if len(rows) > 0 {
-			tables = append(tables, runnerCrossArtifactTable{source: snapshot.name, ordinal: len(tables), headers: headers, rows: rows})
-		}
-		index = cursor - 1
-	}
-	return tables
-}
-
 func splitRunnerMarkdownTableLine(line string) ([]string, bool) {
 	line = strings.TrimSpace(line)
 	if !strings.Contains(line, "|") {
@@ -270,128 +94,6 @@ func runnerMarkdownSeparatorRow(cells []string) bool {
 	return true
 }
 
-func compareRunnerCrossArtifactTables(left, right runnerCrossArtifactTable) []string {
-	if left.source == right.source || len(left.headers) < 2 || len(right.headers) < 2 ||
-		canonicalRunnerTableHeader(left.headers[0]) != canonicalRunnerTableHeader(right.headers[0]) {
-		return nil
-	}
-	rightHeaders := make(map[string]int, len(right.headers))
-	for index, header := range right.headers {
-		rightHeaders[canonicalRunnerTableHeader(header)] = index
-	}
-	shared := make([]runnerCrossArtifactSharedColumn, 0)
-	for leftIndex, header := range left.headers {
-		if leftIndex == 0 {
-			continue
-		}
-		normalized := canonicalRunnerTableHeader(header)
-		if rightIndex, found := rightHeaders[normalized]; found && rightIndex > 0 {
-			shared = append(shared, runnerCrossArtifactSharedColumn{leftIndex: leftIndex, rightIndex: rightIndex, name: strings.TrimSpace(header), canonical: normalized})
-		}
-	}
-	if len(shared) == 0 {
-		return nil
-	}
-	identityColumns := runnerCrossArtifactIdentityColumns(left, right, shared)
-	if identityColumns < 0 || identityColumns >= len(shared) {
-		return nil
-	}
-	rightRows := make(map[string][]string, len(right.rows))
-	for _, row := range right.rows {
-		if len(row) > 0 {
-			rightRows[runnerCrossArtifactRowKey(row, 0, shared, identityColumns, false)] = row
-		}
-	}
-	failures := make([]string, 0)
-	for _, leftRow := range left.rows {
-		if len(leftRow) == 0 {
-			continue
-		}
-		rowKey := runnerCrossArtifactRowKey(leftRow, 0, shared, identityColumns, true)
-		rightRow, found := rightRows[rowKey]
-		if !found {
-			rightRow, found = runnerCrossArtifactApproximateIdentityRow(
-				leftRow, right.rows, left.headers[0], shared, identityColumns,
-			)
-		}
-		if !found {
-			continue
-		}
-		for _, column := range shared[identityColumns:] {
-			if column.leftIndex >= len(leftRow) || column.rightIndex >= len(rightRow) {
-				continue
-			}
-			leftValue, leftFormat, leftOK := parseRunnerComparableNumber(leftRow[column.leftIndex])
-			rightValue, rightFormat, rightOK := parseRunnerComparableNumber(rightRow[column.rightIndex])
-			if !leftOK || !rightOK || runnerComparableNumbersEqual(leftValue, rightValue, leftFormat, rightFormat, column.canonical) {
-				continue
-			}
-			failures = append(failures, fmt.Sprintf(
-				"numeric_table_mismatch:%s<->%s key=%s column=%s values=%s|%s",
-				left.source, right.source, runnerCrossArtifactDisplayRowKey(leftRow, shared, identityColumns), column.name,
-				strings.TrimSpace(leftRow[column.leftIndex]), strings.TrimSpace(rightRow[column.rightIndex]),
-			))
-		}
-	}
-	// A translated or reformatted label is not an identity assertion. Compare
-	// only rows whose explicit identity columns resolve to the same value; a
-	// matching row count cannot establish that two tables describe the same
-	// entities, cohorts, regimens or timepoints.
-	return failures
-}
-
-// runnerCrossArtifactApproximateIdentityRow matches presentation-rounded
-// numeric row keys to their machine-readable source row. Reports commonly
-// render a dose, time, concentration, or score with fewer decimals than the
-// companion CSV. Requiring byte-identical numeric labels turns harmless
-// presentation rounding into a false cross-artifact failure and can prevent
-// the independent scientific reviewer from running. The match is accepted
-// only when exactly one source row is equal at the coarser displayed
-// precision; ambiguous matches fail closed and retain the original mismatch.
-func runnerCrossArtifactApproximateIdentityRow(
-	leftRow []string,
-	rightRows [][]string,
-	firstHeader string,
-	shared []runnerCrossArtifactSharedColumn,
-	identityColumns int,
-) ([]string, bool) {
-	if len(leftRow) == 0 {
-		return nil, false
-	}
-	leftValue, leftFormat, leftOK := parseRunnerComparableNumber(leftRow[0])
-	if !leftOK {
-		return nil, false
-	}
-	column := canonicalRunnerTableHeader(firstHeader)
-	var matched []string
-	for _, candidate := range rightRows {
-		if len(candidate) == 0 {
-			continue
-		}
-		rightValue, rightFormat, rightOK := parseRunnerComparableNumber(candidate[0])
-		if !rightOK || !runnerComparableNumbersEqual(leftValue, rightValue, leftFormat, rightFormat, column) {
-			continue
-		}
-		identityMatches := true
-		for _, identity := range shared[:identityColumns] {
-			if identity.leftIndex >= len(leftRow) || identity.rightIndex >= len(candidate) ||
-				normalizeRunnerTableIdentityValue(leftRow[identity.leftIndex], identity.canonical) !=
-					normalizeRunnerTableIdentityValue(candidate[identity.rightIndex], identity.canonical) {
-				identityMatches = false
-				break
-			}
-		}
-		if !identityMatches {
-			continue
-		}
-		if matched != nil {
-			return nil, false
-		}
-		matched = candidate
-	}
-	return matched, matched != nil
-}
-
 func runnerCrossArtifactPresentationPair(left, right runnerCrossArtifactTable) bool {
 	leftPresentation := strings.EqualFold(filepath.Ext(strings.TrimSpace(left.source)), ".md")
 	rightPresentation := strings.EqualFold(filepath.Ext(strings.TrimSpace(right.source)), ".md")
@@ -408,35 +110,6 @@ func runnerCrossArtifactDisplayRowKey(row []string, shared []runnerCrossArtifact
 		parts = append(parts, column.canonical+"="+value)
 	}
 	return strings.Join(parts, "/")
-}
-
-// runnerCrossArtifactIdentityColumns returns the smallest shared-column prefix
-// needed in addition to column zero to identify every row. This supports
-// repeated entities such as one parameter evaluated at +10% and -10% without
-// assuming any scientific domain or task-specific column names.
-func runnerCrossArtifactIdentityColumns(left, right runnerCrossArtifactTable, shared []runnerCrossArtifactSharedColumn) int {
-	for count := 0; count < len(shared); count++ {
-		if runnerCrossArtifactRowsUnique(left.rows, shared, count, true) &&
-			runnerCrossArtifactRowsUnique(right.rows, shared, count, false) {
-			return count
-		}
-	}
-	return -1
-}
-
-func runnerCrossArtifactRowsUnique(rows [][]string, shared []runnerCrossArtifactSharedColumn, identityColumns int, left bool) bool {
-	seen := make(map[string]struct{}, len(rows))
-	for _, row := range rows {
-		if len(row) == 0 {
-			continue
-		}
-		key := runnerCrossArtifactRowKey(row, 0, shared, identityColumns, left)
-		if _, found := seen[key]; found {
-			return false
-		}
-		seen[key] = struct{}{}
-	}
-	return true
 }
 
 func runnerCrossArtifactRowKey(row []string, firstIndex int, shared []runnerCrossArtifactSharedColumn, identityColumns int, left bool) string {

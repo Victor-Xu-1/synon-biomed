@@ -59,19 +59,25 @@ func agentWorkspaceReadFileToolSchema() agentruntime.ToolSchema {
 	return agentruntime.ToolSchema{
 		Name: "read_file",
 		Description: "Read a UTF-8 text file from this task-scoped workspace or an authorized immutable project version, including an oversized prior tool result. " +
+			"When durable recovery supplies recovery_condition_id, use that exact ID alone to read its complete immutable condition with the same line window; this is diagnostic data, not scientific evidence. " +
 			"Use file_path only for workspace paths. When a prior tool result supplies version_id, including ltr-* identifiers, pass it as version_id and never as file_path. " +
 			"An oversized result's immutable large-tool-result-* artifact_id is also accepted in version_id and resolves to that exact result. " +
 			"Large text must be read with a 1-based line window. File content is detected independently of its extension. HTML, CSV/TSV, DOCX, XLSX and PPTX use passive built-in readers; PDF and common images are attached as multimodal evidence. " +
+			"For complete raw bytes, including a very long line or compact JSON, use zero-based byte_offset and optional byte_limit, following next_byte_offset. Byte windows are exclusive with offset/limit, json_pointer, pages and recovery_condition_id. Prefer the same immutable version_id for every window; mutable file paths do not provide a cross-window snapshot. " +
+			"PDF offset/limit select extracted-text lines without resending visual media; follow next_offset for continuation. Omit the text window to attach the original PDF, or use pages for explicit visual page inspection. Text reading does not establish visual coverage. " +
 			"Other binary or structured formats return a machine-readable reader_contract and reader_selection instead of fake text. Follow that contract to select an available Skill or verified read-only parser, using repl with import host; path = host.artifact_path(version_id) when the immutable original must be materialized. Preserve originals, never execute uploaded macros/programs, and validate extracted content.",
 		Parameters: map[string]any{
 			"type": "object", "additionalProperties": false,
 			"properties": map[string]any{
-				"human_description": map[string]any{"type": "string", "minLength": 1, "maxLength": 256, "description": "Short present-participle label naming the file evidence being read."},
-				"version_id":        map[string]any{"type": "string", "description": "Optional immutable artifact version id or oversized-tool-result version/artifact id owned by this project."},
-				"file_path":         map[string]any{"type": "string", "description": "Workspace-relative path, or an absolute path covered by an active host grant."},
-				"offset":            map[string]any{"type": "integer", "minimum": 1, "description": "Optional 1-based first text line."},
-				"limit":             map[string]any{"type": "integer", "minimum": 1, "description": "Optional number of text lines to return; defaults to 2000 when a window is requested."},
-				"json_pointer":      map[string]any{"type": "string", "description": "Optional RFC 6901 path to a JSON field or array element, as listed in the JSON field directory. Reads that value directly; strings are decoded as text. Keep this path when continuing with next_offset; offsets are relative to the selected value."},
+				"human_description":     map[string]any{"type": "string", "minLength": 1, "maxLength": 256, "description": "Short present-participle label naming the file evidence being read."},
+				"version_id":            map[string]any{"type": "string", "description": "Optional immutable artifact version id or oversized-tool-result version/artifact id owned by this project."},
+				"recovery_condition_id": map[string]any{"type": "string", "description": "Exact condition content ID supplied by the current task recovery context. Exclusive with file_path, version_id and pages. Supports offset/limit and json_pointer."},
+				"file_path":             map[string]any{"type": "string", "description": "Workspace-relative path, or an absolute path covered by an active host grant."},
+				"offset":                map[string]any{"type": "integer", "minimum": 1, "description": "Optional 1-based first text line."},
+				"limit":                 map[string]any{"type": "integer", "minimum": 1, "description": "Optional number of text lines to return; defaults to 2000 when a window is requested."},
+				"byte_offset":           map[string]any{"type": "integer", "minimum": 0, "description": "Zero-based offset in the original bytes; independent of decoded lines. Use next_byte_offset for exact continuation."},
+				"byte_limit":            map[string]any{"type": "integer", "minimum": 1, "description": "Requested original bytes, automatically bounded to the output budget. Requires byte_offset. Invalid UTF-8 byte windows return base64 without replacement or loss."},
+				"json_pointer":          map[string]any{"type": "string", "description": "Optional RFC 6901 path to a JSON field or array element, as listed in the JSON field directory. Reads that value directly; file strings are decoded as text, while recovery-condition values retain JSON escaping to preserve exact diagnostic boundaries. Keep this path when continuing with next_offset; offsets are relative to the selected value."},
 				"pages": map[string]any{
 					"type": "array", "maxItems": agentWorkspaceReadMaxPages,
 					"items":       map[string]any{"type": "integer", "minimum": 1},
@@ -90,6 +96,19 @@ func agentWorkspaceReadFileToolSchema() agentruntime.ToolSchema {
 // file_path can be corrected before validation, permission, and execution.
 // Ordinary path-like strings are never probed or rerouted.
 func normalizeAgentWorkspaceReadFileArguments(input map[string]any) map[string]any {
+	if _, present := input["recovery_condition_id"]; present {
+		normalized := copyMapAny(input)
+		if _, present := normalized["offset"]; !present {
+			normalized["offset"] = 1
+		}
+		if _, present := normalized["limit"]; !present {
+			normalized["limit"] = agentWorkspaceReadDefaultRows
+		}
+		if _, present := normalized["json_pointer"]; !present {
+			normalized["json_pointer"] = ""
+		}
+		return normalized
+	}
 	versionID := strings.TrimSpace(stringValue(input["version_id"]))
 	filePath := strings.TrimSpace(stringValue(input["file_path"]))
 	if versionID != "" {
@@ -173,14 +192,25 @@ func validateAgentWorkspaceFileToolInput(name string, input map[string]any) erro
 }
 
 func validateAgentWorkspaceReadFileInput(input map[string]any) error {
-	allowed := map[string]bool{"version_id": true, "file_path": true, "offset": true, "limit": true, "pages": true, "human_description": true, "json_pointer": true}
+	allowed := map[string]bool{"version_id": true, "file_path": true, "recovery_condition_id": true, "offset": true, "limit": true, "pages": true, "human_description": true, "json_pointer": true, "byte_offset": true, "byte_limit": true}
 	for key := range input {
 		if !allowed[key] {
 			return errors.New("read_file arguments are invalid")
 		}
 	}
+	if err := validateAgentWorkspaceByteWindow(input); err != nil {
+		return err
+	}
 	filePath, filePresent := input["file_path"]
 	versionID, versionPresent := input["version_id"]
+	conditionID, conditionPresent := input["recovery_condition_id"]
+	if conditionPresent {
+		value, ok := conditionID.(string)
+		_, pages := input["pages"]
+		if !ok || !validSHA256Hex(value) || filePresent || versionPresent || pages {
+			return errors.New("read_file recovery condition requires one exact condition ID without a file, version or PDF page selector")
+		}
+	}
 	if filePresent {
 		value, ok := filePath.(string)
 		if !ok || strings.TrimSpace(value) == "" {
@@ -193,8 +223,8 @@ func validateAgentWorkspaceReadFileInput(input map[string]any) error {
 			return errors.New("read_file.version_id must be a non-empty string")
 		}
 	}
-	if !filePresent && !versionPresent {
-		return errors.New("read_file requires file_path or version_id")
+	if !filePresent && !versionPresent && !conditionPresent {
+		return errors.New("read_file requires file_path, version_id or recovery_condition_id")
 	}
 	if raw, found := input["json_pointer"]; found {
 		pointer, ok := raw.(string)

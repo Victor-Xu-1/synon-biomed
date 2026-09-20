@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"synon-go/internal/httpreliability"
 	"synon-go/internal/subprocess"
 )
 
@@ -106,12 +107,16 @@ type Evidence struct {
 }
 
 type Options struct {
-	Root           string
-	Now            func() time.Time
-	Timeout        time.Duration
-	HTTPBackends   []httpSearchBackend
-	ClientForURL   func(context.Context, string) (*http.Client, error)
-	BaseHTTPClient *http.Client
+	// Timeout is the whole query budget, shared by all attempts and helpers.
+	HeaderTimeout   time.Duration
+	ReadIdleTimeout time.Duration
+	MaxAttempts     int
+	Root            string
+	Now             func() time.Time
+	Timeout         time.Duration
+	HTTPBackends    []httpSearchBackend
+	ClientForURL    func(context.Context, string) (*http.Client, error)
+	BaseHTTPClient  *http.Client
 }
 
 type httpSearchBackend struct {
@@ -122,6 +127,9 @@ type httpSearchBackend struct {
 }
 
 type httpSearchBackendResult struct {
+	Outcome        string
+	Attempts       []httpreliability.Receipt
+	RetryAfter     time.Duration
 	Index          int
 	Name           string
 	Hits           []Hit
@@ -146,6 +154,9 @@ type scriptResult struct {
 }
 
 func Search(ctx context.Context, input Input, options Options) (Output, error) {
+	if options.Timeout < 0 || options.HeaderTimeout < 0 || options.ReadIdleTimeout < 0 || options.MaxAttempts < 0 {
+		return Output{}, errors.New("search request budgets must not be negative")
+	}
 	started := time.Now()
 	now := options.Now
 	if now == nil {
@@ -174,7 +185,7 @@ func Search(ctx context.Context, input Input, options Options) (Output, error) {
 	}
 	timeout := options.Timeout
 	if timeout <= 0 {
-		timeout = 30 * time.Second
+		timeout = httpreliability.DefaultSearchTimeout
 	}
 	searchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -182,11 +193,13 @@ func Search(ctx context.Context, input Input, options Options) (Output, error) {
 	script := resolveScriptPath(options.Root)
 	diagnostics["scriptPath"] = script
 	diagnostics["scriptExists"] = fileExists(script)
+	goCompleted := false
 	if shouldTryGoHTTPBackend(script) {
 		hits, httpDiagnostics, err := searchHTTPBackends(searchCtx, input, maxResults, options)
 		for key, value := range httpDiagnostics {
 			diagnostics[key] = value
 		}
+		goCompleted = err == nil
 		if err == nil && len(hits) > 0 {
 			diagnostics["backend"] = "go-http"
 			diagnostics["returnedResults"] = len(hits)
@@ -206,6 +219,15 @@ func Search(ctx context.Context, input Input, options Options) (Output, error) {
 		return unavailable(query, started, "WebSearch timed out after trying the available search backends. Retry later, refine the query, or use a source-specific scientific tool.", diagnostics), nil
 	}
 	if script == "" || !fileExists(script) {
+		if goCompleted {
+			diagnostics["backend"] = "go-http"
+			return outputFromHits(query, started, nil, diagnostics, now), nil
+		}
+		if numberFromDiagnostic(diagnostics["completedBackends"]) > 0 {
+			out := unavailable(query, started, "Some search providers could not complete; responding providers returned no relevant sources. This is incomplete retrieval, not evidence that no sources exist.", diagnostics)
+			out.Failure.Kind = "search_incomplete"
+			return out, nil
+		}
 		return unavailable(query, started, "WebSearch failed: Go HTTP backend returned no usable links and no optional Python search helper was explicitly configured.", diagnostics), nil
 	}
 
@@ -272,7 +294,10 @@ func Search(ctx context.Context, input Input, options Options) (Output, error) {
 	hits := selectRelevantHits(raw, input, maxResults)
 	diagnostics["returnedResults"] = len(hits)
 	if len(hits) == 0 {
-		return unavailable(query, started, "WebSearch failed: Synon built-in websearch.py returned no usable links.", diagnostics), nil
+		diagnostics["outcome"] = "empty"
+		if len(raw) > 0 {
+			diagnostics["outcome"] = "filtered"
+		}
 	}
 
 	diagnostics["backend"] = "python-ddgs"
@@ -318,6 +343,7 @@ func webSearchRetrievalCoverage(returned int, diagnostics map[string]any) map[st
 		"exhaustive":           false,
 		"provider_total_known": false,
 	}
+	coverage["incomplete"] = numberFromDiagnostic(diagnostics["failedBackends"]) > 0
 	if values, ok := diagnostics["providerTotals"].(map[string]any); ok && len(values) > 0 {
 		coverage["provider_totals"] = values
 	}

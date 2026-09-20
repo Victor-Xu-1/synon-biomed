@@ -62,6 +62,8 @@
   "toolPublicDetail": {
     "sourceMismatch": "来源待核对",
     "fullTextUnavailable": "全文不可用",
+    "sourceUnavailable": "来源不可用",
+    "sourceUnavailableNote": "本次响应不能作为有效来源证据；任务可重试或改用其他来源。",
     "partialContent": "部分内容",
     "readSize": "已读取 {{size}}",
     "sourceMismatchNote": "请求来源与结果回执不一致，请核对详情；不能据此视为同一来源。",

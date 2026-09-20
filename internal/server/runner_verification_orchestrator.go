@@ -52,8 +52,19 @@ func (err sessionRunnerCompletionReviewCorrection) Error() string {
 	return sessionRunnerCompletionReviewCorrectionDetail(err.Summary, err.Issues)
 }
 
-func (err sessionRunnerCompletionReviewCorrection) runnerCorrection() (string, string) {
-	return "completion_review_correction_required", err.Error()
+func (err sessionRunnerCompletionReviewCorrection) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	review := transcriptstore.RunnerReviewCondition{Summary: err.Summary}
+	for _, issue := range err.Issues {
+		version := ""
+		if issue.ArtifactVersionID != nil {
+			version = *issue.ArtifactVersionID
+		}
+		review.Issues = append(review.Issues, transcriptstore.RunnerReviewConditionIssue{
+			MessageIndex: issue.MessageIndex, Claim: issue.Claim, Verdict: issue.Verdict, Severity: issue.Severity,
+			Evidence: issue.Evidence, ArtifactVersionID: version, EvidenceRefs: append([]string(nil), issue.EvidenceRefs...), EvidenceQuote: issue.EvidenceQuote,
+		})
+	}
+	return newRunnerCorrection("completion_review_correction_required", err.Error(), transcriptstore.RunnerCorrectionCondition{Review: &review})
 }
 
 func sessionRunnerCompletionReviewCorrectionDetail(summary string, issues []sessionRunnerReviewIssue) string {
@@ -73,9 +84,7 @@ func sessionRunnerCompletionReviewCorrectionDetail(summary string, issues []sess
 		parts = append(parts, severity+": "+claim)
 	}
 	detail := strings.Join(parts, "; ")
-	if len(detail) > maxRunnerCorrectionResumeDetailBytes {
-		detail = detail[:maxRunnerCorrectionResumeDetailBytes]
-	}
+	detail = truncateSessionRunnerReferenceDiagnostic(detail, maxRunnerCorrectionResumeDetailBytes)
 	return detail
 }
 

@@ -58,7 +58,7 @@ func sessionRunnerCorrectionStillRequiresAction(run *sessionRunnerChatRun, messa
 		edited, saved := runnerSourceRepairMutationState(messages)
 		return !edited || !saved
 	}
-	toolNames := runnerToolNamesByCallID(messages[boundary+1:])
+	calls := runnerToolCallsByCallID(messages[boundary+1:])
 	if runnerCorrectionRequiresSourceLocatorRepair(run.CorrectionReason, run.CorrectionDetail) {
 		if runnerUnsupportedSourceRemovalSavedSinceCorrection(messages) {
 			return false
@@ -76,17 +76,21 @@ func sessionRunnerCorrectionStillRequiresAction(run *sessionRunnerChatRun, messa
 		if message.Role != "tool" || strings.TrimSpace(message.Content) == "" {
 			continue
 		}
+		call := calls[message.ToolCallID]
+		if runnerCorrectionReadCall(call) {
+			continue
+		}
 		var result any
 		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
 			continue
 		}
 		if agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
 			if runnerCorrectionIsAgentOwnedArtifactRepair(run.CorrectionReason, run.CorrectionDetail) &&
-				!strings.EqualFold(toolNames[message.ToolCallID], "save_artifacts") {
+				!strings.EqualFold(call.Name, "save_artifacts") {
 				continue
 			}
 			if runnerCorrectionRequiresValidatedPublicDownload(run.CorrectionReason, run.CorrectionDetail) &&
-				!strings.EqualFold(toolNames[message.ToolCallID], "download_public_scientific_file") {
+				!strings.EqualFold(call.Name, "download_public_scientific_file") {
 				continue
 			}
 			return false
@@ -127,7 +131,7 @@ func sessionRunnerCorrectionReadyForRevalidation(
 			agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded {
 			continue
 		}
-		if _, found := calls[message.ToolCallID]; found {
+		if call, found := calls[message.ToolCallID]; found && !runnerCorrectionReadCall(call) {
 			return true
 		}
 	}
@@ -179,7 +183,10 @@ func sessionRunnerCorrectionRequiredToolChoice(
 	run *sessionRunnerChatRun,
 	messages []agentruntime.Message,
 	tools []agentruntime.ToolSchema,
-) any {
+) (choice any) {
+	defer func() {
+		choice = runnerCorrectionFailedEditChoice(choice, messages, tools)
+	}()
 	if choice := runnerPendingAskUserRequiredSkillChoice(runnerPendingAskUserRequiredSkillNames(messages), tools); choice != nil {
 		return choice
 	}
@@ -1415,7 +1422,7 @@ func runnerSuccessfulToolNamesSinceCorrection(messages []agentruntime.Message) m
 		return map[string]bool{}
 	}
 	window := messages[boundary+1:]
-	names := runnerToolNamesByCallID(window)
+	calls := runnerToolCallsByCallID(window)
 	succeeded := make(map[string]bool)
 	for _, message := range window {
 		if message.Role != "tool" || strings.TrimSpace(message.Content) == "" {
@@ -1425,7 +1432,11 @@ func runnerSuccessfulToolNamesSinceCorrection(messages []agentruntime.Message) m
 		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
 			continue
 		}
-		toolName := strings.ToLower(strings.TrimSpace(names[message.ToolCallID]))
+		call := calls[message.ToolCallID]
+		if runnerCorrectionReadCall(call) {
+			continue
+		}
+		toolName := strings.ToLower(strings.TrimSpace(call.Name))
 		if agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded ||
 			runnerCorrectionToolResultProvidesDownloadHandoff(toolName, result) {
 			succeeded[toolName] = true
@@ -1528,11 +1539,6 @@ func runnerToolCallsByCallID(messages []agentruntime.Message) map[string]agentru
 		}
 	}
 	return calls
-}
-
-func sessionRunnerCorrectionReasonRequiresTool(reason, detail string) bool {
-	entries := runnerCorrectionEntriesForClassification(reason, detail)
-	return recoveredRunnerCorrectionRequiresTool(entries)
 }
 
 // sessionRunnerCorrectionToolSchemas keeps user clarification available for

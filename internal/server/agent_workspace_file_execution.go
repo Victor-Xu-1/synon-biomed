@@ -56,6 +56,9 @@ func (s *Server) executeAgentWorkspaceReadFile(
 	projectID string,
 	input map[string]any,
 ) (any, error) {
+	if conditionID := strings.TrimSpace(stringValue(input["recovery_condition_id"])); conditionID != "" {
+		return s.readRunnerCorrectionCondition(ctx, identity, userID, projectID, conditionID, input)
+	}
 	if filePath := strings.TrimSpace(stringValue(input["file_path"])); filePath != "" {
 		target, err := s.resolveAgentWorkspaceFileTarget(identity, userID, filePath, false)
 		if err != nil {

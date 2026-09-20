@@ -2970,16 +2970,32 @@ func TestSessionRunnerScientificArtifactGateRejectsBadFinalWithoutAutomaticRepla
 		t.Fatalf("explicit bad SDF failures=%#v err=%v", failures, err)
 	}
 
+	// Final delivery uses the current produced-version projection. The earlier
+	// malformed version above is deliberately superseded, so it is rejected by
+	// reference authority before scientific validation. Exercise the scientific
+	// completion gate with a current invalid version, not a stale reference.
+	run := &sessionRunnerChatRun{Transcript: &transcriptRunnerAuthority{Stream: fixture.stream, Claim: fixture.claim}}
+	currentCommits, err := server.sessionRunnerArtifactCommitReferences(context.Background(), run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := sessionstore.Session{ID: "frame-save", Project: &sessionstore.Project{ID: "project-save"}}
+	stale, err := server.unresolvedSessionRunnerArtifactReferences(session, run, currentCommits, "{{artifact:"+badVersion.ID+"}}")
+	if err != nil || !reflect.DeepEqual(stale, []string{badVersion.ID}) {
+		t.Fatalf("superseded reference=%v err=%v", stale, err)
+	}
+	_, badVersion = seedSessionRunnerSDFCommit(t, fixture, artifact.ID, "molecules.sdf", malformed+"\n", transcriptstore.ArtifactRelationProduced)
+
 	model := &scientificArtifactRepairModel{
 		badVersionID: badVersion.ID, goodVersionID: goodVersion.ID, testing: t,
 	}
 	discards := 0
 	result, err := server.runSessionAgentWithArtifactReferenceRepair(
 		context.Background(),
-		sessionstore.Session{ID: "frame-save", Project: &sessionstore.Project{ID: "project-save"}},
+		session,
 		agentruntime.Engine{Model: model},
 		agentruntime.RunRequest{Messages: []agentruntime.Message{{Role: "user", Content: "Publish molecules.sdf"}}},
-		&sessionRunnerChatRun{Transcript: &transcriptRunnerAuthority{Stream: fixture.stream, Claim: fixture.claim}},
+		run,
 		func(_ int, text string) error {
 			if text != "" {
 				t.Fatalf("scientific repair discard text=%q", text)

@@ -54,7 +54,10 @@ func TestValidateRunnerSourceEvidenceDocumentRequiresAttestedClaimExcerpts(t *te
 			if err != nil {
 				t.Fatal(err)
 			}
-			failures := validateRunnerSourceEvidenceDocument("source_evidence.json", document, corpus)
+			failures, err := scanRunnerSourceEvidenceDocument(context.Background(), strings.NewReader(string(document)), "source_evidence.json", corpus, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if test.want == "" {
 				if len(failures) != 0 {
 					t.Fatalf("attested source claim rejected: %#v", failures)
@@ -150,13 +153,15 @@ func TestRunnerSourceEvidenceRejectsInternalToolArtifactHandles(t *testing.T) {
 	handles := runnerInternalArtifactHandles(evidence)
 	ledger := "来源,关键结论,URL,内部引用\n" +
 		"Nature,该研究完整报告了实验方法观察结果和主要结论,https://doi.org/10.1000/example," + handle + "\n"
-	failures := runnerInternalArtifactReferenceFailures("证据表.csv", []byte(ledger), handles)
+	corpus := "https://doi.org/10.1000/example"
+	failures, err := scanRunnerSourceEvidenceLedger(context.Background(), strings.NewReader(ledger), "证据表.csv", corpus, handles, true)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(failures) != 1 || !strings.Contains(failures[0], "machine_validation_internal_runtime_reference") {
 		t.Fatalf("internal tool handle was not rejected from the user artifact: %#v", failures)
 	}
-	if failures := runnerInternalArtifactReferenceFailures(
-		"证据表.csv", []byte(strings.ReplaceAll(ledger, handle, "https://doi.org/10.1000/example")), handles,
-	); len(failures) != 0 {
+	if failures, err := scanRunnerSourceEvidenceLedger(context.Background(), strings.NewReader(strings.ReplaceAll(ledger, handle, "https://doi.org/10.1000/example")), "证据表.csv", corpus, handles, true); err != nil || len(failures) != 0 {
 		t.Fatalf("portable source locator was rejected: %#v", failures)
 	}
 }

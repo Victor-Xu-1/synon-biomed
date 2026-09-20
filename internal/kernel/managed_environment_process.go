@@ -53,11 +53,15 @@ func (w managedEnvironmentActivityWriter) Write(value []byte) (int, error) {
 }
 
 func (m *Manager) runManagedEnvironmentCommand(ctx context.Context, arguments ...string) error {
-	return m.runManagedEnvironmentProcessWithEnv(ctx, m.config.Micromamba, m.managedEnvironmentInstallerEnv(), arguments...)
+	return m.runManagedEnvironmentProcess(ctx, m.config.Micromamba, arguments...)
 }
 
 func (m *Manager) runManagedEnvironmentProcess(ctx context.Context, executable string, arguments ...string) error {
-	return m.runManagedEnvironmentProcessWithEnv(ctx, executable, m.managedEnvironmentInstallerEnv(), arguments...)
+	environment, err := m.managedEnvironmentInstallerEnv()
+	if err != nil {
+		return err
+	}
+	return m.runManagedEnvironmentProcessWithEnv(ctx, executable, environment, arguments...)
 }
 
 func (m *Manager) runManagedEnvironmentProcessWithEnv(ctx context.Context, executable string, environment []string, arguments ...string) error {
@@ -94,9 +98,9 @@ func (m *Manager) runManagedEnvironmentProcessWithEnv(ctx context.Context, execu
 	return nil
 }
 
-func (m *Manager) managedEnvironmentInstallerEnv() []string {
+func (m *Manager) managedEnvironmentInstallerEnv() ([]string, error) {
 	threadLimit := strconv.Itoa(managedEnvironmentInstallerThreadLimit())
-	return managedEnvironmentInstallerProxyEnv(kernelEnvironment(map[string]string{
+	return managedEnvironmentInstallerNetworkEnv(kernelEnvironment(map[string]string{
 		"HOME": m.config.CondaHome, "MAMBA_ROOT_PREFIX": m.config.CondaHome,
 		"CONDA_PKGS_DIRS": filepath.Join(m.config.CondaHome, "pkgs"),
 		"PATH":            managedExecutableSearchPath(filepath.Dir(m.config.Micromamba)), "PYTHONNOUSERSITE": "1",
@@ -111,7 +115,7 @@ func (m *Manager) managedEnvironmentInstallerEnv() []string {
 		// runtime boundary instead of making every task guess library-specific
 		// repair variables after a crash.
 		"KMP_AFFINITY": "disabled", "OMP_PROC_BIND": "false",
-	}))
+	}), m.config.UpstreamProxy)
 }
 
 func managedEnvironmentInstallerThreadLimit() int {
@@ -203,8 +207,8 @@ func managedEnvironmentRuntimeThreadLimit() int {
 	return limit
 }
 
-func managedEnvironmentInstallerRuntimeEnv(prefix string) []string {
-	return managedEnvironmentInstallerProxyEnv(managedEnvironmentRuntimeEnv(prefix))
+func (m *Manager) managedEnvironmentInstallerRuntimeEnv(prefix string) ([]string, error) {
+	return managedEnvironmentInstallerNetworkEnv(managedEnvironmentRuntimeEnv(prefix), m.config.UpstreamProxy)
 }
 
 // Package hooks and interpreter launchers need OS utilities as well as the
@@ -225,24 +229,6 @@ func managedExecutableSearchPath(preferred string) string {
 		}
 	}
 	return strings.Join(result, string(os.PathListSeparator))
-}
-
-// managedEnvironmentInstallerProxyEnv forwards only the conventional proxy
-// variables needed by package managers. Runtime kernels do not inherit them,
-// so a dependency installer can work on proxy-required networks without
-// turning proxy credentials into ambient task authority.
-func managedEnvironmentInstallerProxyEnv(environment []string) []string {
-	for _, key := range []string{
-		"HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
-		"http_proxy", "https_proxy", "no_proxy", "all_proxy",
-	} {
-		value, found := os.LookupEnv(key)
-		if !found || value == "" || len(value) > 4096 || strings.ContainsAny(value, "\x00\r\n") {
-			continue
-		}
-		environment = append(environment, key+"="+value)
-	}
-	return environment
 }
 
 func validateManagedEnvironmentImports(ctx context.Context, language, prefix string, imports []string) error {

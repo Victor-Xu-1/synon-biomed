@@ -117,6 +117,22 @@ func (s *Server) interruptClaimedSessionRunner(
 	reasonCode string,
 	resumeDetails ...string,
 ) error {
+	resumeDetail := ""
+	if len(resumeDetails) > 0 {
+		resumeDetail = resumeDetails[0]
+	}
+	return s.interruptClaimedSessionRunnerWithCause(options, result, activeRun, projectionClaim, transcriptAuthority, reasonCode, resumeDetail, nil)
+}
+
+func (s *Server) interruptClaimedSessionRunnerWithCause(
+	options SessionRunnerChatOptions,
+	result *SessionRunnerCycleResult,
+	activeRun *activeSessionRun,
+	projectionClaim sessionstore.RunnerMutationClaim,
+	transcriptAuthority *transcriptRunnerAuthority,
+	reasonCode, resumeDetail string,
+	cause *transcriptstore.RunnerInterruptionCause,
+) error {
 	if activeRun == nil || result == nil {
 		return errors.New("runner interruption requires an active runner result")
 	}
@@ -125,8 +141,9 @@ func (s *Server) interruptClaimedSessionRunner(
 		return errors.New("runner interruption reason is required")
 	}
 	return withActiveRunSettlementContext(activeRun, 2*time.Second, func(persistCtx context.Context) error {
-		return s.interruptClaimedSessionRunnerLockedWithContext(
-			persistCtx, options, result, activeRun, projectionClaim, transcriptAuthority, reasonCode, resumeDetails...,
+		return s.interruptClaimedSessionRunnerLockedWithCause(
+			persistCtx, options, result, activeRun, projectionClaim, transcriptAuthority,
+			reasonCode, runnerInterruptionAutoResume(reasonCode), resumeDetail, cause,
 		)
 	})
 }
@@ -189,12 +206,36 @@ func (s *Server) interruptClaimedSessionRunnerLockedWithPolicy(
 	autoResume bool,
 	resumeDetails ...string,
 ) error {
-	if err := markActiveSessionRunnerPaused(activeRun); err != nil {
-		return err
-	}
 	resumeDetail := ""
 	if len(resumeDetails) > 0 {
 		resumeDetail = strings.TrimSpace(resumeDetails[0])
+	}
+	return s.interruptClaimedSessionRunnerLockedWithCause(persistCtx, options, result, activeRun, projectionClaim, transcriptAuthority, reasonCode, autoResume, resumeDetail, nil)
+}
+
+func (s *Server) interruptClaimedSessionRunnerLockedWithCause(
+	persistCtx context.Context,
+	options SessionRunnerChatOptions,
+	result *SessionRunnerCycleResult,
+	activeRun *activeSessionRun,
+	projectionClaim sessionstore.RunnerMutationClaim,
+	transcriptAuthority *transcriptRunnerAuthority,
+	reasonCode string,
+	autoResume bool,
+	resumeDetail string,
+	cause *transcriptstore.RunnerInterruptionCause,
+) error {
+	resumeDetail = strings.TrimSpace(resumeDetail)
+	var causePayload map[string]any
+	if cause != nil {
+		var err error
+		causePayload, err = transcriptstore.RunnerInterruptionCausePayload(*cause)
+		if err != nil {
+			return err
+		}
+	}
+	if err := markActiveSessionRunnerPaused(activeRun); err != nil {
+		return err
 	}
 	if activeRun.settled {
 		result.Status = "interrupted"
@@ -210,6 +251,7 @@ func (s *Server) interruptClaimedSessionRunnerLockedWithPolicy(
 			ClientMessageID:          transcriptRunnerClientMessageID(transcriptAuthority.Claim, reasonCode),
 			ReasonCode:               reasonCode,
 			ResumeDetail:             resumeDetail,
+			Cause:                    cause,
 			RecoveryContractRevision: sessionRunnerRecoveryContractRevision,
 			Resumable: reasonCode == sessionRunnerModelProviderUnavailableReasonCode ||
 				reasonCode == sessionRunnerCorrectionNoProgressExhaustedReasonCode,
@@ -236,6 +278,9 @@ func (s *Server) interruptClaimedSessionRunnerLockedWithPolicy(
 		}
 		if resumeDetail != "" {
 			checkpointPayload["resumeDetail"] = resumeDetail
+		}
+		if cause != nil {
+			checkpointPayload[transcriptstore.RunnerInterruptionCauseField] = causePayload
 		}
 		checkpoint, err := s.checkpointSessionRunner(checkpointPayload)
 		if err != nil {
@@ -266,9 +311,12 @@ func (s *Server) interruptClaimedSessionRunnerLockedWithPolicy(
 func runnerInterruptionNeedsRecoveryBackoff(reasonCode string) bool {
 	switch strings.TrimSpace(reasonCode) {
 	case "provider_stream_no_progress",
+		sessionRunnerResponseLanguageMismatchReasonCode,
+		sessionRunnerFinalPresentationReasonCode,
 		sessionRunnerProviderTransportTemporaryReasonCode,
 		sessionRunnerSelectedSkillContractUnavailableReasonCode,
 		sessionRunnerToolRoundNoProgressExhaustedReasonCode,
+		sessionRunnerCorrectionNoProgressExhaustedReasonCode,
 		sessionRunnerEmptyFinalResponseReasonCode,
 		sessionRunnerContentDeltaPersistenceDeadlineReasonCode,
 		sessionRunnerRealScientificEvidenceRequiredReasonCode,
@@ -277,6 +325,7 @@ func runnerInterruptionNeedsRecoveryBackoff(reasonCode string) bool {
 		sessionRunnerRequiredToolChoiceUnsatisfiedReasonCode,
 		sessionRunnerCompletionReviewRecoveryReasonCode,
 		sessionRunnerPlanStepsIncompleteReasonCode,
+		sessionRunnerPlanApprovalRequiredReasonCode,
 		sessionRunnerVisualArtifactValidationReasonCode:
 		return true
 	default:
@@ -287,6 +336,8 @@ func runnerInterruptionNeedsRecoveryBackoff(reasonCode string) bool {
 func runnerInterruptionMayContinueSameTask(reasonCode string) bool {
 	switch strings.TrimSpace(reasonCode) {
 	case "runtime_draining",
+		sessionRunnerResponseLanguageMismatchReasonCode,
+		sessionRunnerFinalPresentationReasonCode,
 		sessionRunnerSupervisorInterruptedReasonCode,
 		sessionRunnerResumeDispatchInterruptedReasonCode,
 		sessionRunnerToolLifecyclePersistenceReasonCode,
@@ -300,6 +351,7 @@ func runnerInterruptionMayContinueSameTask(reasonCode string) bool {
 		sessionRunnerProviderContextPressureReasonCode,
 		sessionRunnerToolRoundNoProgressReasonCode,
 		sessionRunnerToolRoundNoProgressExhaustedReasonCode,
+		sessionRunnerCorrectionNoProgressExhaustedReasonCode,
 		sessionRunnerToolRoundLimitReasonCode,
 		sessionRunnerEmptyFinalResponseReasonCode,
 		sessionRunnerContentDeltaPersistenceDeadlineReasonCode,
@@ -308,6 +360,7 @@ func runnerInterruptionMayContinueSameTask(reasonCode string) bool {
 		sessionRunnerRequiredToolChoiceUnsatisfiedReasonCode,
 		sessionRunnerCompletionReviewRecoveryReasonCode,
 		sessionRunnerPlanStepsIncompleteReasonCode,
+		sessionRunnerPlanApprovalRequiredReasonCode,
 		sessionRunnerVisualMediaUnsupportedReasonCode,
 		sessionRunnerVisualArtifactValidationReasonCode,
 		sessionRunnerStoreContentionReasonCode,
@@ -336,6 +389,8 @@ func runnerInterruptionMayContinueSameTask(reasonCode string) bool {
 func runnerInterruptionAutoResume(reasonCode string) bool {
 	switch strings.TrimSpace(reasonCode) {
 	case "runtime_draining",
+		sessionRunnerResponseLanguageMismatchReasonCode,
+		sessionRunnerFinalPresentationReasonCode,
 		sessionRunnerSupervisorInterruptedReasonCode,
 		sessionRunnerResumeDispatchInterruptedReasonCode,
 		sessionRunnerToolLifecyclePersistenceReasonCode,
@@ -350,6 +405,7 @@ func runnerInterruptionAutoResume(reasonCode string) bool {
 		sessionRunnerProviderContextPressureReasonCode,
 		sessionRunnerToolRoundNoProgressReasonCode,
 		sessionRunnerToolRoundNoProgressExhaustedReasonCode,
+		sessionRunnerCorrectionNoProgressExhaustedReasonCode,
 		sessionRunnerToolRoundLimitReasonCode,
 		sessionRunnerEmptyFinalResponseReasonCode,
 		sessionRunnerContentDeltaPersistenceDeadlineReasonCode,
@@ -357,6 +413,7 @@ func runnerInterruptionAutoResume(reasonCode string) bool {
 		sessionRunnerRequiredToolChoiceUnsatisfiedReasonCode,
 		sessionRunnerCompletionReviewRecoveryReasonCode,
 		sessionRunnerPlanStepsIncompleteReasonCode,
+		sessionRunnerPlanApprovalRequiredReasonCode,
 		sessionRunnerVisualMediaUnsupportedReasonCode,
 		sessionRunnerVisualArtifactValidationReasonCode,
 		sessionRunnerStoreContentionReasonCode,

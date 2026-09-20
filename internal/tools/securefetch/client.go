@@ -14,8 +14,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
+
+	"synon-go/internal/httpreliability"
 )
 
 type ErrorCode string
@@ -36,6 +37,7 @@ const (
 type FetchError struct {
 	Code       ErrorCode
 	statusCode int
+	retryAfter time.Duration
 	cause      error
 }
 
@@ -54,6 +56,14 @@ func HTTPStatus(err error) (int, bool) {
 		return 0, false
 	}
 	return target.statusCode, true
+}
+
+func HTTPRetryAfter(err error) time.Duration {
+	var target *FetchError
+	if errors.As(err, &target) {
+		return target.retryAfter
+	}
+	return 0
 }
 
 type AddressResolver interface {
@@ -99,16 +109,19 @@ type Policy struct {
 }
 
 type Response struct {
-	Body              io.ReadCloser
-	StatusCode        int
-	ContentType       string
-	ContentLength     int64
-	FinalURL          *url.URL
-	ETag              string
-	LastModified      string
-	ContentRangeStart int64
-	ContentRangeEnd   int64
-	ContentRangeTotal int64
+	Body        io.ReadCloser
+	StatusCode  int
+	ContentType string
+	// ReportedContentType preserves validated MIME parameters such as charset.
+	// ContentType remains the normalized media type for existing consumers.
+	ReportedContentType string
+	ContentLength       int64
+	FinalURL            *url.URL
+	ETag                string
+	LastModified        string
+	ContentRangeStart   int64
+	ContentRangeEnd     int64
+	ContentRangeTotal   int64
 }
 
 type Client struct {
@@ -161,12 +174,13 @@ func New(options Options) *Client {
 
 func hardenedTransport() *http.Transport {
 	return &http.Transport{
-		Proxy:                 nil,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ResponseHeaderTimeout: 60 * time.Second,
+		Proxy:               nil,
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        100,
+		IdleConnTimeout:     90 * time.Second,
+		TLSHandshakeTimeout: 10 * time.Second,
+		// The request attempt context owns the configurable header budget.
+		ResponseHeaderTimeout: 0,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig:       &tls.Config{MinVersion: tls.VersionTLS12},
 	}
@@ -185,6 +199,13 @@ func (c *Client) Fetch(ctx context.Context, rawURL string, policy Policy) (*Resp
 		return nil, fetchError(CodeInvalidRequest)
 	}
 	clientTimeout := compiled.timeout
+	attempt := httpreliability.Begin(ctx, compiled.timeout)
+	handedOff := false
+	defer func() {
+		if !handedOff {
+			attempt.Close()
+		}
+	}()
 	if compiled.longLivedTransfer {
 		clientTimeout = 0
 	}
@@ -195,7 +216,7 @@ func (c *Client) Fetch(ctx context.Context, rawURL string, policy Policy) (*Resp
 		}
 		return nil
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
+	request, err := http.NewRequestWithContext(attempt.Context, http.MethodGet, target.String(), nil)
 	if err != nil {
 		return nil, fetchError(CodeInvalidRequest)
 	}
@@ -214,6 +235,7 @@ func (c *Client) Fetch(ctx context.Context, rawURL string, policy Policy) (*Resp
 	}
 	response, err := client.Do(request)
 	if err != nil {
+		err = attempt.Error(err)
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return nil, err
 		}
@@ -223,9 +245,18 @@ func (c *Client) Fetch(ctx context.Context, rawURL string, policy Policy) (*Resp
 		}
 		return nil, fetchErrorWithCause(CodeTransport, err)
 	}
+	idleTimeout := compiled.timeout
+	if compiled.longLivedTransfer {
+		idleTimeout = compiled.transferIdleTimeout
+	}
+	response.Body, err = attempt.Body(response.Body, idleTimeout)
+	if err != nil {
+		return nil, fetchErrorWithCause(CodeTransport, err)
+	}
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		response.Body.Close()
-		return nil, &FetchError{Code: CodeStatus, statusCode: response.StatusCode}
+		return nil, &FetchError{Code: CodeStatus, statusCode: response.StatusCode,
+			retryAfter: httpreliability.RetryAfter(response.Header.Get("Retry-After"), time.Now())}
 	}
 	contentRangeStart, contentRangeEnd, contentRangeTotal := int64(-1), int64(-1), int64(-1)
 	bodyLimit := compiled.maxBytes
@@ -250,7 +281,7 @@ func (c *Client) Fetch(ctx context.Context, rawURL string, policy Policy) (*Resp
 		bodyLimit = compiled.prefixBytes
 	}
 	rawContentType := strings.TrimSpace(response.Header.Get("Content-Type"))
-	mediaType, _, err := mime.ParseMediaType(rawContentType)
+	mediaType, mediaParameters, err := mime.ParseMediaType(rawContentType)
 	if rawContentType == "" && compiled.allowMissingContentType {
 		mediaType, err = "", nil
 	}
@@ -258,7 +289,11 @@ func (c *Client) Fetch(ctx context.Context, rawURL string, policy Policy) (*Resp
 		response.Body.Close()
 		return nil, fetchError(CodeContentType)
 	}
-	if response.ContentLength > bodyLimit {
+	lengthLimit := bodyLimit
+	if compiled.prefixBytes > 0 && response.StatusCode == http.StatusOK {
+		lengthLimit = compiled.maxBytes
+	}
+	if response.ContentLength > lengthLimit {
 		response.Body.Close()
 		return nil, fetchError(CodeResponseTooLarge)
 	}
@@ -275,20 +310,25 @@ func (c *Client) Fetch(ctx context.Context, rawURL string, policy Policy) (*Resp
 		}
 	}
 	body := io.ReadCloser(response.Body)
-	if compiled.longLivedTransfer {
-		body = &transferIdleReadCloser{body: body, timeout: compiled.transferIdleTimeout}
+	reader := io.Reader(body)
+	if compiled.prefixBytes > 0 && response.StatusCode == http.StatusOK {
+		// A server may ignore Range. Deliberately reading an exact prefix is
+		// not a claim to have acquired its whole advertised representation.
+		reader = io.LimitReader(body, compiled.prefixBytes)
 	}
+	handedOff = true
 	return &Response{
-		Body:              &boundedReadCloser{reader: body, closer: body, remaining: bodyLimit},
-		StatusCode:        response.StatusCode,
-		ContentType:       mediaType,
-		ContentLength:     response.ContentLength,
-		FinalURL:          response.Request.URL,
-		ETag:              etag,
-		LastModified:      lastModified,
-		ContentRangeStart: contentRangeStart,
-		ContentRangeEnd:   contentRangeEnd,
-		ContentRangeTotal: contentRangeTotal,
+		Body:                &boundedReadCloser{reader: reader, closer: body, remaining: bodyLimit},
+		StatusCode:          response.StatusCode,
+		ContentType:         mediaType,
+		ReportedContentType: mime.FormatMediaType(mediaType, mediaParameters),
+		ContentLength:       response.ContentLength,
+		FinalURL:            response.Request.URL,
+		ETag:                etag,
+		LastModified:        lastModified,
+		ContentRangeStart:   contentRangeStart,
+		ContentRangeEnd:     contentRangeEnd,
+		ContentRangeTotal:   contentRangeTotal,
 	}, nil
 }
 
@@ -395,41 +435,6 @@ func explicitProxyURL(raw string) (*url.URL, error) {
 		return nil, errors.New("invalid proxy URL")
 	}
 	return parsed, nil
-}
-
-type transferIdleTimeoutError struct{}
-
-func (transferIdleTimeoutError) Error() string   { return "secure fetch transfer became idle" }
-func (transferIdleTimeoutError) Timeout() bool   { return true }
-func (transferIdleTimeoutError) Temporary() bool { return true }
-
-type transferIdleReadCloser struct {
-	body    io.ReadCloser
-	timeout time.Duration
-}
-
-func (reader *transferIdleReadCloser) Read(buffer []byte) (int, error) {
-	if reader == nil || reader.body == nil || reader.timeout <= 0 {
-		return 0, io.ErrClosedPipe
-	}
-	var expired atomic.Bool
-	timer := time.AfterFunc(reader.timeout, func() {
-		expired.Store(true)
-		_ = reader.body.Close()
-	})
-	count, err := reader.body.Read(buffer)
-	_ = timer.Stop()
-	if expired.Load() {
-		return count, transferIdleTimeoutError{}
-	}
-	return count, err
-}
-
-func (reader *transferIdleReadCloser) Close() error {
-	if reader == nil || reader.body == nil {
-		return nil
-	}
-	return reader.body.Close()
 }
 
 // ResumeValidator returns the only validator value that Fetch will permit in

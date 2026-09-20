@@ -10,22 +10,32 @@ import (
 	"time"
 
 	"synon-go/internal/agentruntime"
+	transcriptstore "synon-go/internal/persistence/transcript"
 )
 
 const updateStepStatusToolName = "update_step_status"
 const sessionRunnerPlanStepsIncompleteReasonCode = "plan_step_status_required"
 
 type sessionRunnerPlanStepsIncomplete struct {
-	steps []string
+	condition transcriptstore.RunnerPlanCondition
 }
 
 func (err sessionRunnerPlanStepsIncomplete) Error() string {
-	return "approved plan has steps without terminal status: " + strings.Join(err.steps, ", ")
+	return "approved plan has steps without terminal status: " + strings.Join(err.stepTitles(), ", ")
 }
 
-func (err sessionRunnerPlanStepsIncomplete) runnerCorrection() (string, string) {
-	return sessionRunnerPlanStepsIncompleteReasonCode,
-		"before completing, call update_step_status for every unreported plan step and mark each completed, blocked, or skipped; exact remaining titles: " + strings.Join(err.steps, "; ")
+func (err sessionRunnerPlanStepsIncomplete) stepTitles() []string {
+	titles := make([]string, 0, len(err.condition.Steps))
+	for _, step := range err.condition.Steps {
+		titles = append(titles, step.Title)
+	}
+	return titles
+}
+
+func (err sessionRunnerPlanStepsIncomplete) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	return newRunnerCorrection(sessionRunnerPlanStepsIncompleteReasonCode,
+		"before completing, call update_step_status for every unreported plan step and mark each completed, blocked, or skipped; exact remaining titles: "+strings.Join(err.stepTitles(), "; "),
+		transcriptstore.RunnerCorrectionCondition{Plan: &err.condition})
 }
 
 type generatedPlanStepIdentity struct {
@@ -432,7 +442,7 @@ func resolveGeneratedPlanStepIdentity(
 	return match, nil
 }
 
-func (s *Server) incompleteGeneratedPlanStepTitles(frameID string) ([]string, error) {
+func (s *Server) incompleteGeneratedPlanCondition(frameID string) (*sessionRunnerPlanStepsIncomplete, error) {
 	if s == nil || s.workspaceStore == nil || strings.TrimSpace(frameID) == "" {
 		return nil, nil
 	}
@@ -449,12 +459,15 @@ func (s *Server) incompleteGeneratedPlanStepTitles(frameID string) ([]string, er
 		return nil, err
 	}
 	statuses := mapValue(contextData["_step_statuses"])
-	remaining := make([]string, 0)
+	remaining := &sessionRunnerPlanStepsIncomplete{condition: transcriptstore.RunnerPlanCondition{ArtifactID: stringValue(contextData["_plan_artifact_id"]), VersionID: stringValue(contextData["_plan_version_id"])}}
 	for _, step := range steps {
 		status := strings.TrimSpace(stringValue(mapValue(statuses[step.ID])["status"]))
 		if status != "completed" && status != "blocked" && status != "skipped" {
-			remaining = append(remaining, step.Title)
+			remaining.condition.Steps = append(remaining.condition.Steps, transcriptstore.RunnerPlanConditionStep{ID: step.ID, Title: step.Title})
 		}
+	}
+	if len(remaining.condition.Steps) == 0 {
+		return nil, nil
 	}
 	return remaining, nil
 }

@@ -94,8 +94,12 @@ func askUserImplementationSelectionContractCorrection(
 	issues := make([]string, 0)
 	requiredPreflights := make([]any, 0)
 	for questionIndex, question := range questions {
-		if len(run.selectedImplementationsSnapshot()) == 0 && run.implementationSelectionRequiredSnapshot() && len(question.Options) < 3 {
-			issues = append(issues, fmt.Sprintf("question %d has fewer than three preflighted implementation choices", questionIndex+1))
+		// A pending environment decision does not turn a separate input or
+		// parameter question into an implementation choice. The shared question
+		// schema owns option cardinality; only typed implementation proposals
+		// require execution evidence here.
+		if !askUserQuestionContainsImplementationChoice(question) {
+			continue
 		}
 		for optionIndex, option := range question.Options {
 			metadata := option.Metadata
@@ -171,8 +175,12 @@ func (s *Server) resolveUniqueRegisteredImplementationAskUser(
 	resolution := map[string]any{
 		"ok": true, "executed": false, "status": "implementation_selection_resolved",
 		"decision_required": false, "selected_implementations": []string{selected},
-		"message":  "The active capability registry has exactly one viable local implementation, so no user implementation decision is required.",
-		"recovery": "Continue the registered implementation through its loaded Skill, exact environment package contract, reviewed entrypoint, and controlled-input preflight. Do not ask the user to compare unavailable or duplicate environment variants.",
+		"required_capabilities": run.requiredScientificCapabilitiesSnapshot(),
+		"message":               "The active capability registry has exactly one viable local primary route; any auxiliary input-source selection remains separate.",
+		"recovery":              "Continue the registered implementation through its loaded Skill, exact environment package contract, reviewed entrypoint, and controlled-input preflight. Do not ask the user to compare unavailable or duplicate environment variants.",
+	}
+	if available := managedExecutionEvidenceResolversForSelectedImplementations(s.skillCatalog, s.scienceCapabilities, run); len(available) > 0 {
+		resolution["available_evidence_resolvers"] = available
 	}
 	bound, _ := s.bindRegistrySelectedImplementationReceipt(ctx, resolution).(map[string]any)
 	return bound, true
@@ -180,6 +188,7 @@ func (s *Server) resolveUniqueRegisteredImplementationAskUser(
 
 func askUserImplementationCapabilityContractCorrection(
 	catalog *skills.Catalog,
+	capabilityCatalog *sciencecapability.Catalog,
 	run *sessionRunnerChatRun,
 	result map[string]any,
 ) map[string]any {
@@ -194,6 +203,7 @@ func askUserImplementationCapabilityContractCorrection(
 	if !ok || len(questions) == 0 {
 		return nil
 	}
+	routes := registeredImplementationRoutes(catalog, capabilityCatalog)
 	issues := make([]string, 0)
 	for questionIndex, question := range questions {
 		for optionIndex, option := range question.Options {
@@ -203,6 +213,12 @@ func askUserImplementationCapabilityContractCorrection(
 				continue
 			}
 			provided := semanticManagedEnvironmentCapabilities(dedicated.RequiredCapabilities)
+			if route := routes[strings.ToLower(strings.TrimSpace(dedicated.Name))]; route != nil && !route.ambiguous {
+				provided = nil
+				for capability := range registeredImplementationRouteCapabilities(route, routes) {
+					provided = append(provided, capability)
+				}
+			}
 			missing := missingScientificCapabilities(required, provided)
 			if len(missing) > 0 {
 				issues = append(issues, fmt.Sprintf(
@@ -361,11 +377,18 @@ func askUserContainsSubstantialImplementationChoice(result map[string]any) bool 
 		return false
 	}
 	for _, question := range questions {
-		for _, option := range question.Options {
-			if strings.TrimSpace(stringValue(option.Metadata["implementation"])) != "" ||
-				askUserResourceProfileMetadataValue(option.Metadata["resources"]) != nil {
-				return true
-			}
+		if askUserQuestionContainsImplementationChoice(question) {
+			return true
+		}
+	}
+	return false
+}
+
+func askUserQuestionContainsImplementationChoice(question askUserQuestion) bool {
+	for _, option := range question.Options {
+		if strings.TrimSpace(stringValue(option.Metadata["implementation"])) != "" ||
+			askUserResourceProfileMetadataValue(option.Metadata["resources"]) != nil {
+			return true
 		}
 	}
 	return false
@@ -411,6 +434,6 @@ func askUserImplementationSelectionCorrection(issues []string) map[string]any {
 	return map[string]any{
 		"ok": true, "executed": false, "status": "implementation_decision_contract_incomplete",
 		"decision_required": true, "issues": append([]string(nil), issues...),
-		"recovery": "Finish read-only discovery and exact preflight for every materially viable route, then ask again. A first substantial implementation choice needs at least three scientifically valid, concrete implementations; continue discovery instead of padding the list with a fallback that does not provide the required capability. The Harness automatically binds matching preflight receipts; every option must name the exact implementation and include only a concise CPU, memory, and GPU/VRAM profile. Use unresolved instead of unsupported numeric claims. Do not create or install an environment before the user answers.",
+		"recovery": "Finish read-only discovery and exact preflight for the materially viable routes being compared, then ask again. Present only genuine alternatives; do not invent additional implementations to fill an option quota. The Harness automatically binds matching preflight receipts; every implementation option must name the exact implementation and include a concise CPU, memory, and GPU/VRAM profile. Use unresolved instead of unsupported numeric claims. Input and parameter decisions do not select or authorize a scientific implementation. Do not create or install an environment before its required implementation choice is resolved.",
 	}
 }

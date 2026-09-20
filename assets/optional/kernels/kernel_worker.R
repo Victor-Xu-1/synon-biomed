@@ -300,6 +300,55 @@ expression_line <- function(parsed, index) {
   )
 }
 
+# The manager retains the same taint outside this mutable interpreter. A prior
+# arbitrary cell never becomes trusted by changing this worker-local value.
+.observation_tainted <- FALSE
+.observation_bindings <- list(
+  "r.directory"=list(name="getwd", value=base::getwd),
+  "r.process"=list(name="Sys.getpid", value=base::Sys.getpid),
+  "r.system"=list(name="Sys.info", value=base::Sys.info)
+)
+.observation_print <- base::print
+observation_binding_matches <- function(name, expected, scope) {
+  while (!identical(scope, emptyenv())) {
+    if (exists(name, envir=scope, inherits=FALSE)) {
+      # Do not force a promise or active binding while trying to prove it.
+      # These capabilities must resolve directly to the captured base binding.
+      if (!identical(scope, baseenv()) || bindingIsActive(name, scope)) return(FALSE)
+      return(identical(get(name, envir=scope, inherits=FALSE), expected))
+    }
+    scope <- parent.env(scope)
+  }
+  FALSE
+}
+observation_refusal <- function(request) {
+  proof <- request$observation
+  if (is.null(proof)) {
+    .observation_tainted <<- TRUE
+    return(NULL)
+  }
+  if (isTRUE(.observation_tainted)) return("runtime_binding_provenance_unproved")
+  if (!identical(proof$schema, "synon.execution-observation.v1") ||
+      !identical(proof$language, "r")) return("diagnostic_contract_invalid")
+  # The host checked the raw code digest under its execute lock immediately
+  # before sending this request. The worker parses that unchanged code below.
+  if (!is.character(proof$source_sha256) || length(proof$source_sha256) != 1L ||
+      !grepl("^[a-f0-9]{64}$", proof$source_sha256) ||
+      !identical(proof$source_sha256, request$observation_code_sha256)) return("diagnostic_source_binding_mismatch")
+  operations <- proof$operations
+  if (!is.list(operations) || length(operations) == 0L || length(operations) > 256L) return("diagnostic_operation_unproved")
+  for (operation in operations) {
+    if (!is.character(operation) || length(operation) != 1L) return("diagnostic_operation_unproved")
+    if (identical(operation, "r.literal")) next
+    binding <- .observation_bindings[[operation]]
+    if (is.null(binding) || !observation_binding_matches(binding$name, binding$value, session_env))
+      return("diagnostic_binding_unproved")
+  }
+  if (!observation_binding_matches("print", .observation_print, globalenv()))
+    return("diagnostic_implicit_binding_unproved")
+  NULL
+}
+
 evaluate_request <- function(request, protocol_connection) {
   request_id <- if (is.character(request$id) && length(request$id) == 1L) request$id else ""
   code <- if (is.character(request$code) && length(request$code) == 1L) request$code else ""
@@ -315,6 +364,17 @@ evaluate_request <- function(request, protocol_connection) {
       trace = list(error_lineno = NULL, error_call = NULL),
       usage = list(wall_s = 0, cpu_s = 0, peak_rss_kb = NULL)
     ))
+  }
+
+  refusal <- observation_refusal(request)
+  if (!is.null(refusal)) {
+    return(list(id=request_id, stdout="", stderr="", error=NULL, interrupted=FALSE,
+      trace=list(error_lineno=NULL, error_call=NULL), usage=list(),
+      preflight=list(schema="synon.execution-observation.v1", ok=FALSE,
+        status="implementation_selection_required", executed=FALSE, decision_required=TRUE,
+        reason=refusal,
+        message="Diagnostic runtime bindings are unproved; scientific implementation selection remains required.",
+        recovery="Inspect the existing runtime and complete the pending implementation choice. Do not retry unchanged or reset the session implicitly.")))
   }
 
   stdout_path <- tempfile(pattern = "synon-r-stdout-", tmpdir = getwd())

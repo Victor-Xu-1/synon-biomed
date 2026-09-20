@@ -54,7 +54,7 @@ func (s *Server) executeAgentContainerEnvironmentTool(
 		return decision, nil
 	}
 	requirements := defaultManagedEnvironmentCreateRequirements(request.ResourceRequirements, 1)
-	requirements, requiredCapabilities := s.applyLoadedSkillResourceRequirements(ctx, requirements)
+	requirements, requiredCapabilities, capabilitySkill := s.applyImplementationResourceRequirements(request.Implementation, requirements)
 	if _, err := normalizeManagedEnvironmentResourceRequirements(requirements); err != nil {
 		return nil, err
 	}
@@ -70,9 +70,10 @@ func (s *Server) executeAgentContainerEnvironmentTool(
 			"ok": true, "mode": "preflight", "executed": false, "feasible": false,
 			"status": "container_preflight_failed", "implementation": request.Implementation,
 			"requirements": requirements, "required_capabilities": requiredCapabilities,
-			"machine":    s.managedEnvironmentMachineSnapshot(ctx, identity),
-			"diagnostic": boundedManagedEnvironmentError(err),
-			"recovery":   "Keep the selected implementation and image authority. Repair the Docker daemon, NVIDIA runtime, image reference, registry access, or host capacity identified by the diagnostic, then repeat this exact preflight. Do not substitute another scientific implementation without a new user decision.",
+			"capability_contract_skill": capabilitySkill,
+			"machine":                   s.managedEnvironmentMachineSnapshot(ctx, identity),
+			"diagnostic":                boundedManagedEnvironmentError(err),
+			"recovery":                  "Keep the selected implementation and image authority. Repair the Docker daemon, NVIDIA runtime, image reference, registry access, or host capacity identified by the diagnostic, then repeat this exact preflight. Do not substitute another scientific implementation without a new user decision.",
 		}, nil
 	}
 	preflightResult := map[string]any{
@@ -80,8 +81,9 @@ func (s *Server) executeAgentContainerEnvironmentTool(
 		"ok": true, "mode": "preflight", "executed": false, "feasible": preflight.Ready,
 		"status": "container_preflight_ready", "implementation": request.Implementation,
 		"requirements": requirements, "required_capabilities": requiredCapabilities,
-		"machine":           s.managedEnvironmentMachineSnapshot(ctx, identity),
-		"container_runtime": preflight.Resources, "image": preflight.Spec.Image,
+		"capability_contract_skill": capabilitySkill,
+		"machine":                   s.managedEnvironmentMachineSnapshot(ctx, identity),
+		"container_runtime":         preflight.Resources, "image": preflight.Spec.Image,
 		"accelerator": preflight.Spec.Accelerator, "network": preflight.Spec.Network,
 		"resource_requirements_verified": false,
 		"resource_requirements_note":     "CPU, memory, disk, and accelerator-memory minima remain advisory unless supplied by a reviewed Skill or current official source; the observed Docker and NVIDIA runtime checks are real preflight evidence.",

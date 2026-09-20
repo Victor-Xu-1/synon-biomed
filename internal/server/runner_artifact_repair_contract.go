@@ -17,12 +17,12 @@ var runnerMissingSourceLocatorPattern = regexp.MustCompile(
 )
 
 // runnerArtifactRepairRequirements converts validator diagnostics into a
-// bounded machine-readable repair contract. The validator remains the sole
+// complete machine-readable repair contract. The validator remains the sole
 // authority for deciding whether bytes pass; this projection only tells the
 // outer agent which semantic state must change and prevents formatting-only
 // mutations from being mistaken for a repair.
 func runnerArtifactRepairRequirements(detail string) []map[string]any {
-	matches := runnerMissingSourceLocatorPattern.FindAllStringSubmatch(strings.TrimSpace(detail), 64)
+	matches := runnerMissingSourceLocatorPattern.FindAllStringSubmatch(strings.TrimSpace(detail), -1)
 	if len(matches) == 0 {
 		return nil
 	}
@@ -35,11 +35,13 @@ func runnerArtifactRepairRequirements(detail string) []map[string]any {
 		path := strings.TrimSpace(match[1])
 		sourceType := strings.TrimSpace(match[3])
 		row, err := strconv.Atoi(match[2])
-		if err != nil || row <= 0 || row > 1_000_000 || path == "" || len(path) > 1024 ||
-			len(sourceType) > 128 {
+		// Coordinates here describe a finding, not a read/mutation grant. Its
+		// later file operation validates actual scope and resources. Preview
+		// limits must not silently erase a valid target from repair authority.
+		if err != nil || row <= 0 || path == "" || sourceType == "" {
 			continue
 		}
-		key := strings.ToLower(path) + "\x00" + strconv.Itoa(row) + "\x00" + strings.ToLower(sourceType)
+		key := path + "\x00" + strconv.Itoa(row) + "\x00" + strings.ToLower(sourceType)
 		if _, duplicate := seen[key]; duplicate {
 			continue
 		}
@@ -60,7 +62,7 @@ func runnerArtifactRepairRequirements(detail string) []map[string]any {
 		})
 	}
 	sort.Slice(result, func(left, right int) bool {
-		leftPath, rightPath := strings.ToLower(stringValue(result[left]["artifact_path"])), strings.ToLower(stringValue(result[right]["artifact_path"]))
+		leftPath, rightPath := stringValue(result[left]["artifact_path"]), stringValue(result[right]["artifact_path"])
 		if leftPath != rightPath {
 			return leftPath < rightPath
 		}
@@ -145,7 +147,7 @@ func runnerCorrectionCapabilityAttemptedSinceBoundary(
 			continue
 		}
 		call, found := calls[message.ToolCallID]
-		if !found {
+		if !found || runnerCorrectionReadCall(call) {
 			continue
 		}
 		schema, found := schemas[normalizeAgentToolName(call.Name)]

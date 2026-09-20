@@ -178,6 +178,13 @@ describe('Synon Biomed runtime operations model', () => {
   it('maps internal result-correction reasons to the public rejected-result category', () => {
     expect(
       normalizeSynonBiomedRuntimeSnapshot({
+        id: 'frame-presentation-correction',
+        status: 'failed',
+        runtime_failure_reason: 'response_language_mismatch',
+      })
+    ).toMatchObject({ failureReason: 'response_language_mismatch', failureKind: 'result_rejected' });
+    expect(
+      normalizeSynonBiomedRuntimeSnapshot({
         id: 'frame-artifact-correction-exhausted',
         status: 'failed',
         runtime_failure_reason: 'artifact_reference_correction_required',

@@ -55,5 +55,11 @@ func (s *Server) restoreDurableEvidencePayload(ctx context.Context, stream trans
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
+	// Host MCP adapters return JSON text as a string. Keep those exact encoded
+	// bytes and their digest in storage, then use the same evidence projection
+	// as an inline result so structured records survive externalization.
+	if decoded, valid := sessionRunnerDurableToolResult(raw); valid {
+		return decoded, nil
+	}
 	return string(raw), nil
 }

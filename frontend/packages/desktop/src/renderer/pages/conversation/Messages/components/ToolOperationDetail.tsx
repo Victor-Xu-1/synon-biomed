@@ -150,7 +150,10 @@ const ToolOperationDetail: React.FC<{
                   </div>
                 ) : null}
                 {displayItem.fileDiffs?.length ? <ToolOperationDiffs diffs={displayItem.fileDiffs} /> : null}
-                {detailPresentation.showResearchSources && displayItem.output && !displayItem.remoteDetail ? (
+                {detailPresentation.showResearchSources &&
+                displayItem.output &&
+                !displayItem.remoteDetail &&
+                displayItem.truncated !== true ? (
                   <MessageWebResearchSources
                     toolName={displayItem.name}
                     input={displayItem.input}

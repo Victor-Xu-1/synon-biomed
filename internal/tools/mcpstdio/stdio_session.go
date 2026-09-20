@@ -89,8 +89,6 @@ func startSession(ctx context.Context, root string, config ServerConfig) (*sessi
 		_ = process.close()
 		return nil, err
 	}
-	scanner := bufio.NewScanner(stdout)
-	scanner.Buffer(make([]byte, 64*1024), maxScannerTokenBytes)
 	sess := &session{
 		command:    command,
 		cmd:        cmd,
@@ -98,7 +96,7 @@ func startSession(ctx context.Context, root string, config ServerConfig) (*sessi
 		stdin:      stdin,
 		stdout:     stdout,
 		stderrPipe: stderr,
-		scanner:    scanner,
+		reader:     bufio.NewReaderSize(stdout, mcpResponseBufferBytes),
 		encoder:    json.NewEncoder(stdin),
 		stderr:     &limitedBuffer{},
 	}

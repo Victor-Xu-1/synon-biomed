@@ -37,7 +37,18 @@ function receiptRecord(value: unknown, depth = 0): Record<string, unknown> | nul
   }
   if (!record(value)) return null;
   if (
-    ['requested_url', 'url', 'bytes_read', 'available', 'complete', 'partial', 'truncated'].some((key) => key in value)
+    [
+      'requestedUrl',
+      'requested_url',
+      'url',
+      'bytesRead',
+      'bytes_read',
+      'sourceUnavailable',
+      'available',
+      'complete',
+      'partial',
+      'truncated',
+    ].some((key) => key in value)
   )
     return value;
   return receiptRecord(value.result, depth + 1) ?? receiptRecord(value.data, depth + 1);
@@ -63,30 +74,39 @@ export function publicReceiptScalar(key: string, value: unknown): unknown {
 export function retrievalReceiptPresentation(input: unknown, output: unknown, chinese: boolean) {
   const receipt = receiptRecord(output);
   const requested = record(input) ? publicSourceUrl(input.url) : null;
-  const receiptRequest = publicSourceUrl(receipt?.requested_url);
+  const receiptRequest = publicSourceUrl(receipt?.requestedUrl ?? receipt?.requested_url);
   const returned = publicSourceUrl(receipt?.url ?? receipt?.source_url);
   // Only an explicit request identity can contradict input. A different final
   // URL alone may be a legitimate redirect, and must not imply a failure.
   const mismatch = !!(requested && receiptRequest && requested !== receiptRequest);
   const sourceChanged = !mismatch && !!(requested && returned && requested !== returned);
-  const bytes = receipt?.bytes_read;
+  const bytes = receipt?.bytesRead ?? receipt?.bytes_read;
   const size = typeof bytes === 'number' && Number.isSafeInteger(bytes) && bytes >= 0 ? formatBytes(bytes) : null;
   const partial = receipt?.partial === true || receipt?.truncated === true || receipt?.complete === false;
+  // The native receipt describes source availability separately from transport
+  // completion: an error page can be fully read without acquiring any evidence.
+  // Inspect only receipt metadata, never body/content or nested scientific data.
+  const unavailable = receipt?.sourceUnavailable === true;
   const summary = mismatch
     ? toolPublicDetailText(chinese, 'sourceMismatch')
-    : receipt?.available === false
-      ? toolPublicDetailText(chinese, 'fullTextUnavailable')
-      : partial
-        ? [toolPublicDetailText(chinese, 'partialContent'), size].filter(Boolean).join(' · ')
-        : size !== null
-          ? toolPublicDetailText(chinese, 'readSize', { size })
-          : null;
+    : unavailable
+      ? toolPublicDetailText(chinese, 'sourceUnavailable')
+      : receipt?.available === false
+        ? toolPublicDetailText(chinese, 'fullTextUnavailable')
+        : partial
+          ? [toolPublicDetailText(chinese, 'partialContent'), size].filter(Boolean).join(' · ')
+          : size !== null
+            ? toolPublicDetailText(chinese, 'readSize', { size })
+            : null;
   return {
     summary,
-    notices: mismatch
-      ? [toolPublicDetailText(chinese, 'sourceMismatchNote')]
-      : sourceChanged
-        ? [toolPublicDetailText(chinese, 'sourceChangedNote')]
-        : [],
+    notices: [
+      ...(mismatch
+        ? [toolPublicDetailText(chinese, 'sourceMismatchNote')]
+        : sourceChanged
+          ? [toolPublicDetailText(chinese, 'sourceChangedNote')]
+          : []),
+      ...(unavailable ? [toolPublicDetailText(chinese, 'sourceUnavailableNote')] : []),
+    ],
   };
 }

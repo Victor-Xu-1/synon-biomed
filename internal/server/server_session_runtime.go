@@ -19,6 +19,7 @@ import (
 	eventjournal "synon-go/internal/persistence/journal"
 
 	sessionstore "synon-go/internal/persistence/sessions"
+	transcriptstore "synon-go/internal/persistence/transcript"
 )
 
 func (s *Server) executeSynonLinkTool(ctx context.Context, input map[string]any) (string, any, error) {
@@ -210,6 +211,11 @@ func (s *Server) checkpointSessionRunner(input map[string]any) (map[string]any, 
 	if afterEventID := numberValue(input["afterEventId"]); afterEventID > 0 {
 		message["afterEventId"] = afterEventID
 	}
+	if _, present, err := transcriptstore.ParseRunnerInterruptionCause(input); err != nil {
+		return nil, err
+	} else if present {
+		message[transcriptstore.RunnerInterruptionCauseField] = input[transcriptstore.RunnerInterruptionCauseField]
+	}
 	for _, key := range []string{"toolCallId", "toolName", "toolInput", "toolResult", "toolPhase", "modelToolCalls", "resumeCacheKey", "reasonCode", "resumeDetail", "planModeDenial"} {
 		if value, ok := input[key]; ok && value != nil {
 			message[key] = value
@@ -391,6 +397,10 @@ func (s *Server) finishSessionRunner(input map[string]any) (map[string]any, erro
 	now := time.Now().UTC()
 	attempt := claim.Attempt
 	finishText := strings.TrimSpace(stringValue(input["message"]))
+	failureReason := strings.TrimSpace(stringValue(input["reasonCode"]))
+	if failureReason != "" && (status != "failed" || !validRunnerFailureReason(failureReason)) {
+		return nil, errors.New("runner failure reason is invalid for the terminal state")
+	}
 	message := eventjournal.Message{
 		"type":          "runner_finished",
 		"role":          "system",
@@ -402,6 +412,9 @@ func (s *Server) finishSessionRunner(input map[string]any) (map[string]any, erro
 	message["runnerAttempt"] = attempt
 	if finishText != "" {
 		message["text"] = finishText
+	}
+	if failureReason != "" {
+		message["reason_code"] = failureReason
 	}
 	if afterEventID := numberValue(input["afterEventId"]); afterEventID > 0 {
 		message["afterEventId"] = afterEventID
@@ -556,7 +569,7 @@ func validateRunnerFinishEntry(entry *eventjournal.Entry, expected eventjournal.
 		strings.TrimSpace(entry.ClientMessageID) != strings.TrimSpace(clientMessageID) {
 		return errors.New("runner finish durable metadata does not match the request")
 	}
-	for _, key := range []string{"type", "role", "runnerId", "runnerAttempt", "status", "text", "afterEventId"} {
+	for _, key := range []string{"type", "role", "runnerId", "runnerAttempt", "status", "text", "afterEventId", "reason_code"} {
 		actual, actualOK := entry.Message[key]
 		wanted, wantedOK := expected[key]
 		if actualOK != wantedOK || (actualOK && fmt.Sprint(actual) != fmt.Sprint(wanted)) {

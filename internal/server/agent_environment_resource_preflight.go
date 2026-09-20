@@ -148,32 +148,34 @@ func managedEnvironmentPreflightDependencyNames(packages []string) ([]string, bo
 	return uniqueSortedFolded(names), hasSourceRequirement
 }
 
-func (s *Server) applyLoadedSkillResourceRequirements(
-	ctx context.Context,
+// applyImplementationResourceRequirements binds resource requirements to the
+// exact catalog implementation under inspection. Loaded Skills describe task
+// history, not the capabilities of every later engine or dependency stage.
+// An unknown identity has no catalog capability authority; in particular,
+// concatenating registered names must not synthesize a composite contract.
+func (s *Server) applyImplementationResourceRequirements(
+	implementation string,
 	requirements managedEnvironmentResourceRequirements,
-) (managedEnvironmentResourceRequirements, []string) {
-	run, _ := transcriptRunnerChatRunFromContext(ctx)
-	if run == nil || s == nil || s.skillCatalog == nil {
-		return requirements, nil
+) (managedEnvironmentResourceRequirements, []string, string) {
+	if s == nil || s.skillCatalog == nil {
+		return requirements, nil, ""
 	}
-	requiredCapabilities := []string(nil)
-	for _, skillName := range run.executedSkillNamesSnapshot() {
-		skill, found := findCatalogSkill(s.skillCatalog, skillName)
-		if !found {
+	skill, found := dedicatedSkillForImplementation(s.skillCatalog, implementation)
+	if !found {
+		return requirements, nil, ""
+	}
+	requiredCapabilities := make([]string, 0, len(skill.RequiredCapabilities))
+	for _, capability := range skill.RequiredCapabilities {
+		capability = strings.ToLower(strings.TrimSpace(capability))
+		if capability == "" {
 			continue
 		}
-		for _, capability := range skill.RequiredCapabilities {
-			capability = strings.ToLower(strings.TrimSpace(capability))
-			if capability == "" {
-				continue
-			}
-			requiredCapabilities = append(requiredCapabilities, capability)
-			if capability == "gpu" && requirements.Accelerator != "required" {
-				requirements.Accelerator = "required"
-			}
+		requiredCapabilities = append(requiredCapabilities, capability)
+		if capability == "gpu" {
+			requirements.Accelerator = "required"
 		}
 	}
-	return requirements, uniqueSortedFolded(requiredCapabilities)
+	return requirements, uniqueSortedFolded(requiredCapabilities), skill.Name
 }
 
 func (s *Server) executeManagedEnvironmentResourcePreflight(
@@ -221,7 +223,7 @@ func (s *Server) executeManagedEnvironmentResourcePreflight(
 			"recovery":        "Keep the same implementation. Resolve its canonical public source from the loaded dedicated Skill or a successful current-task source lookup, then retry this exact read-only preflight with the corrected source. Do not infer an owner, repository, release, checkpoint, or entry point from the implementation name.",
 		}, nil
 	}
-	requirements, requiredCapabilities := s.applyLoadedSkillResourceRequirements(ctx, spec.ResourceRequirements)
+	requirements, requiredCapabilities, capabilitySkill := s.applyImplementationResourceRequirements(spec.Implementation, spec.ResourceRequirements)
 	inventory := s.kernelManager.ListAllSessionKernelsWithResources(identity.workspaceDir)
 	machine := inventory.Machine
 	gpu := compute.UnavailableGPUInfo()
@@ -257,10 +259,13 @@ func (s *Server) executeManagedEnvironmentResourcePreflight(
 	// Skill or current official source supplies those values, a mismatch is a
 	// useful planning observation but not authority to reject a capable route
 	// or force an implementation change. A categorical GPU requirement derived
-	// from the loaded Skill remains authoritative because it describes the
-	// implementation capability itself, not a guessed capacity threshold.
+	// from the exact implementation Skill remains authoritative because it
+	// describes the implementation itself, not a guessed capacity threshold.
 	verifiedBlockers := make([]string, 0, 1)
-	verifiedAcceleratorRequirement := "none"
+	verifiedAcceleratorRequirement := ""
+	if capabilitySkill != "" {
+		verifiedAcceleratorRequirement = "none"
+	}
 	for _, capability := range requiredCapabilities {
 		if capability == "gpu" {
 			verifiedAcceleratorRequirement = "required"
@@ -339,10 +344,11 @@ func (s *Server) executeManagedEnvironmentResourcePreflight(
 		"operation": spec.Operation, "implementation": spec.Implementation,
 		"required_imports": append([]string(nil), spec.Imports...),
 		"requirements":     requirements, "required_capabilities": requiredCapabilities,
+		"capability_contract_skill":        capabilitySkill,
 		"resource_requirements_verified":   false,
 		"verified_accelerator_requirement": verifiedAcceleratorRequirement,
 		"observed_resource_shortfalls":     observedShortfalls,
-		"resource_requirements_note":       "Model-supplied CPU, memory, disk, and accelerator-memory minima are advisory until supported by a reviewed Skill or current official source. They cannot reject a route or force a new user decision. Categorical capabilities declared by the loaded Skill remain enforceable.",
+		"resource_requirements_note":       "Model-supplied CPU, memory, disk, and accelerator-memory minima are advisory until supported by a reviewed Skill or current official source. They cannot reject a route or force a new user decision. Categorical requirements come only from the exact implementation's catalog Skill; an empty capability_contract_skill means no implementation capability contract was established. Host feasibility is not scientific readiness or implementation authorization.",
 		"source_evidence":                  sourceEvidence,
 		"machine": map[string]any{
 			"sampled_at": machine.SampledAt, "cpu_cores": machine.Cores,

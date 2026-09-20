@@ -16,6 +16,25 @@ type responseLanguageFixtureModel struct {
 	response agentruntime.ModelResponse
 }
 
+func TestResponseLanguageConversionAuditsBothSidesWithoutSemanticVerdict(t *testing.T) {
+	original := "Show the requested repetition literally " + strings.Repeat("echo ", 30)
+	translated := "按请求原样重复 " + strings.Repeat("回声 ", 30)
+	model := &responseLanguageSequenceModel{responses: []agentruntime.ModelResponse{
+		{Message: agentruntime.Message{Content: original}},
+		{Message: agentruntime.Message{Content: translated}},
+	}}
+	var record map[string]any
+	client := &sessionRunnerResponseLanguageModelClient{delegate: model, language: "zh", audit: func(value map[string]any) { record = value }}
+	response, err := client.Complete(context.Background(), agentruntime.ModelRequest{})
+	if err != nil || len(model.requests) != 2 || response.Message.Content != translated {
+		t.Fatalf("diagnostics changed intentional repetition: calls=%d err=%v", len(model.requests), err)
+	}
+	if record["input_longest_equal_unit_run"] != 30 || record["output_longest_equal_unit_run"] != 30 ||
+		record["input_whitespace_units"] != 35 || record["output_whitespace_units"] != 31 {
+		t.Fatalf("conversion sides are not independently observable: %v", record)
+	}
+}
+
 type responseLanguageSequenceModel struct {
 	chunks    [][]string
 	responses []agentruntime.ModelResponse
@@ -293,10 +312,11 @@ func TestResponseLanguageGateStillChecksUnconstrainedResponse(t *testing.T) {
 	}
 }
 
-func TestLegacyResponseLanguageMismatchCorrectionRemainsReadableButDoesNotPauseForInput(t *testing.T) {
-	if runnerInterruptionMayContinueSameTask(sessionRunnerResponseLanguageMismatchReasonCode) ||
-		runnerInterruptionAutoResume(sessionRunnerResponseLanguageMismatchReasonCode) {
-		t.Fatal("response language mismatch must be repaired inline or fail terminally, not pause for user input")
+func TestResponseLanguageMismatchUsesExistingBoundedCorrectionRecovery(t *testing.T) {
+	if !runnerInterruptionMayContinueSameTask(sessionRunnerResponseLanguageMismatchReasonCode) ||
+		!runnerInterruptionAutoResume(sessionRunnerResponseLanguageMismatchReasonCode) ||
+		!runnerInterruptionNeedsRecoveryBackoff(sessionRunnerResponseLanguageMismatchReasonCode) {
+		t.Fatal("presentation correction must retain the task through the existing backoff dispatcher")
 	}
 	entries := []eventjournal.Entry{{Message: eventjournal.Message{
 		"type":          "runner_checkpoint",

@@ -22,7 +22,22 @@ func (s *Server) executeApprovedAgentRuntimeTool(
 		ctx, "approved-deferred", sessionID, call.ID, canonical, input,
 		exactServerToolGatewayOptions{ResumeAfterApproval: true, AuditExtra: auditExtra},
 	)
-	return receipt.Value, receipt.Input, receipt.Status, receipt.Err
+	return receipt.Value, receipt.Input, agentRuntimeApprovalStatus(receipt.Status, receipt.Value), receipt.Err
+}
+
+// A recoverable gateway "partial" result is not an approval state. Preserve
+// its precise payload, and settle the approval as failed for native rejection
+// or completed for genuine partial work. Missing/unknown receipts fail closed.
+// Reading the same mapping recovers existing receipts without granting access.
+func agentRuntimeApprovalStatus(status string, result any) string {
+	status = strings.ToLower(strings.TrimSpace(status))
+	if status == "partial" && result != nil {
+		if agentruntime.IsNonExecutingPreflight(result) || agentruntime.ClassifyToolResult(result).HardFailed() {
+			return "failed"
+		}
+		return "completed"
+	}
+	return status
 }
 
 func (s *Server) resolveApprovedAgentToolContext(ctx context.Context, sessionID string) *agentKernelContext {

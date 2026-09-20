@@ -71,6 +71,16 @@ func (s *Server) canonicalManagedEnvironmentImplementation(ctx context.Context, 
 	if !found || (requested != "" && !taskImplementationMatchesRegistered(requested, selected)) {
 		return requested
 	}
+	if requested == "" {
+		// A unique primary route can include separate auxiliary environments.
+		// An unnamed provisioning request does not identify which stage it is
+		// for; retain the existing exact-identity correction in that case.
+		skill, _ := dedicatedSkillForImplementation(s.skillCatalog, selected)
+		route := registeredImplementationRoutes(s.skillCatalog, s.scienceCapabilities)[strings.ToLower(strings.TrimSpace(skill.Name))]
+		if !route.directlyProvides(semanticManagedEnvironmentCapabilities(run.requiredScientificCapabilitiesSnapshot())) {
+			return requested
+		}
+	}
 	run.setSelectedImplementations(selected)
 	run.setRegistrySelectedImplementation(selected)
 	run.setImplementationSelectionRequired(false)
@@ -267,45 +277,11 @@ func (s *Server) uniqueRegisteredLocalImplementation(requiredCapabilities []stri
 	if len(required) == 0 {
 		return "", false
 	}
-	selected := ""
-	for _, capabilityID := range required {
-		identities := map[string]string{}
-		foundCapability := false
-		for _, capability := range s.scienceCapabilities.Capabilities {
-			if !strings.EqualFold(strings.TrimSpace(capability.ID), capabilityID) {
-				continue
-			}
-			foundCapability = true
-			for _, engine := range capability.AcceptedEngines {
-				if engine.ExecutionPack.Mode != "local" {
-					continue
-				}
-				skill, found := findCatalogSkill(s.skillCatalog, engine.ExecutionPack.Skill)
-				if !found {
-					continue
-				}
-				for _, identity := range skill.ImplementationIdentities {
-					identity = strings.TrimSpace(identity)
-					if key := askUserImplementationIdentityKey(identity); key != "" {
-						identities[key] = identity
-					}
-				}
-			}
-			break
-		}
-		if !foundCapability || len(identities) != 1 {
-			return "", false
-		}
-		current := ""
-		for _, identity := range identities {
-			current = identity
-		}
-		if selected != "" && !askUserImplementationIdentityMatches(selected, current) {
-			return "", false
-		}
-		selected = current
+	candidates := registeredImplementationRouteCandidates(s.skillCatalog, s.scienceCapabilities, required)
+	if len(candidates) != 1 {
+		return "", false
 	}
-	return selected, selected != ""
+	return candidates[0], true
 }
 
 func taskImplementationMatchesRegistered(requested, registered string) bool {

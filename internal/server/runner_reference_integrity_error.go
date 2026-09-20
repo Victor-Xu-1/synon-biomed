@@ -3,52 +3,46 @@ package server
 import (
 	"fmt"
 	"strings"
+	transcriptstore "synon-go/internal/persistence/transcript"
 )
 
-type sessionRunnerReferenceIntegrityError struct {
-	UnresolvedArtifacts          int
-	UnresolvedArtifactReferences []string
-	MalformedArtifactReferences  []string
-	UnsupportedCitations         []string
-	InvalidReferenceArtifacts    []string
-	InvalidScientificArtifacts   []string
-	CrossArtifactFailures        []string
-	InvalidResearchArtifacts     []string
-	MissingLocalArtifacts        []string
-	MissingRequiredDeliverables  []string
-}
+type sessionRunnerReferenceIntegrityError transcriptstore.RunnerReferenceCondition
 
 func (err *sessionRunnerReferenceIntegrityError) Error() string {
+	return truncateSessionRunnerReferenceDiagnostic(err.formatDiagnostics(formatSessionRunnerReferenceDiagnostics), maxRunnerCorrectionResumeDetailBytes)
+}
+
+func (err *sessionRunnerReferenceIntegrityError) formatDiagnostics(format func([]string) string) string {
 	if err == nil {
 		return "runner completion reference integrity failed"
 	}
 	details := make([]string, 0, 6)
 	if len(err.MalformedArtifactReferences) > 0 {
-		details = append(details, "malformed artifact references "+formatSessionRunnerReferenceDiagnostics(err.MalformedArtifactReferences))
+		details = append(details, "malformed artifact references "+format(err.MalformedArtifactReferences))
 	}
 	if len(err.UnresolvedArtifactReferences) > 0 {
-		details = append(details, "unresolved artifact references "+formatSessionRunnerReferenceDiagnostics(err.UnresolvedArtifactReferences))
+		details = append(details, "unresolved artifact references "+format(err.UnresolvedArtifactReferences))
 	}
 	if len(err.UnsupportedCitations) > 0 {
-		details = append(details, "unsupported identifiers "+formatSessionRunnerReferenceDiagnostics(err.UnsupportedCitations))
+		details = append(details, "unsupported identifiers "+format(err.UnsupportedCitations))
 	}
 	if len(err.InvalidReferenceArtifacts) > 0 {
-		details = append(details, "invalid rejected-reference artifacts "+formatSessionRunnerReferenceDiagnostics(err.InvalidReferenceArtifacts))
+		details = append(details, "invalid rejected-reference artifacts "+format(err.InvalidReferenceArtifacts))
 	}
 	if len(err.InvalidScientificArtifacts) > 0 {
-		details = append(details, "invalid scientific artifacts "+formatSessionRunnerReferenceDiagnostics(err.InvalidScientificArtifacts))
+		details = append(details, "invalid scientific artifacts "+format(err.InvalidScientificArtifacts))
 	}
 	if len(err.CrossArtifactFailures) > 0 {
-		details = append(details, "cross-artifact consistency failures "+formatSessionRunnerReferenceDiagnostics(err.CrossArtifactFailures))
+		details = append(details, "cross-artifact consistency failures "+format(err.CrossArtifactFailures))
 	}
 	if len(err.InvalidResearchArtifacts) > 0 {
-		details = append(details, "invalid research artifacts "+formatSessionRunnerReferenceDiagnostics(err.InvalidResearchArtifacts))
+		details = append(details, "invalid research artifacts "+format(err.InvalidResearchArtifacts))
 	}
 	if len(err.MissingLocalArtifacts) > 0 {
-		details = append(details, "missing local artifacts "+formatSessionRunnerReferenceDiagnostics(err.MissingLocalArtifacts))
+		details = append(details, "missing local artifacts "+format(err.MissingLocalArtifacts))
 	}
 	if len(err.MissingRequiredDeliverables) > 0 {
-		details = append(details, "missing required deliverables "+formatSessionRunnerReferenceDiagnostics(err.MissingRequiredDeliverables))
+		details = append(details, "missing required deliverables "+format(err.MissingRequiredDeliverables))
 	}
 	detail := ""
 	if len(details) > 0 {
@@ -63,6 +57,10 @@ func (err *sessionRunnerReferenceIntegrityError) Error() string {
 // at settlement loses the machine-readable failure boundary and can cause a
 // resumed task to regenerate the same final candidate without retaining the
 // correction obligation.
-func (err *sessionRunnerReferenceIntegrityError) runnerCorrection() (string, string) {
-	return "artifact_reference_correction_required", err.Error()
+func (err *sessionRunnerReferenceIntegrityError) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	reference := transcriptstore.RunnerReferenceCondition{}
+	if err != nil {
+		reference = transcriptstore.RunnerReferenceCondition(*err)
+	}
+	return newRunnerCorrection("artifact_reference_correction_required", err.Error(), transcriptstore.RunnerCorrectionCondition{Reference: &reference})
 }

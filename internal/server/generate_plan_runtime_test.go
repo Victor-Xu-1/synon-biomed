@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -502,7 +503,7 @@ func TestPlanModeRejectsProseCompletionThenPersistsGeneratedPlan(t *testing.T) {
 		}
 		if sequence == 2 {
 			encoded, _ := json.Marshal(request.Messages)
-			if !strings.Contains(string(encoded), "Plan-mode completion gate 1/3") {
+			if !strings.Contains(string(encoded), "Plan-mode completion gate 1:") {
 				t.Fatalf("second request omitted plan-mode correction: %s", encoded)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{
@@ -588,10 +589,11 @@ func TestPlanModeUsesExplicitSessionControlAndBoundedCompletionDenials(t *testin
 			return nil
 		},
 	)
-	if err != nil || result.FinalMessage.Content != "Prose plan candidate" {
+	var pending sessionRunnerPlanApprovalRequired
+	if !errors.As(err, &pending) || result.FinalMessage.Content != "Prose plan candidate" {
 		t.Fatalf("result=%#v err=%v", result, err)
 	}
-	if model.calls != maxSessionRunnerPlanModeDenials+1 ||
+	if model.calls != maxSessionRunnerPlanModeUnitDenials ||
 		!slices.Equal(denials, []int{1, 2, 3}) {
 		t.Fatalf("calls=%d denials=%#v", model.calls, denials)
 	}

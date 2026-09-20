@@ -1,5 +1,23 @@
 package agentruntime
 
+// PublicProgressPresentationError identifies only malformed optional narration.
+// Transport, cancellation, resource limits and publication failures are not
+// presentation errors and must never be discarded with a progress field.
+type PublicProgressPresentationError struct{ detail string }
+
+func (err *PublicProgressPresentationError) Error() string { return err.detail }
+
+func publicProgressPresentationError(detail string) error {
+	return &PublicProgressPresentationError{detail: detail}
+}
+
+// ValidateModelStreamEvent shares the native event contract with adapters which
+// hold optional progress before handing the original action to the Engine.
+func ValidateModelStreamEvent(event ModelStreamEvent) error {
+	_, err := normalizeModelStreamEvent(event)
+	return err
+}
+
 type ModelStreamEventKind string
 
 const (

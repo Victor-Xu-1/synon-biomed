@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 
 	"synon-go/internal/assets"
+	"synon-go/internal/executionprep"
 	"synon-go/internal/processsupervisor"
 )
 
@@ -30,6 +31,9 @@ const (
 )
 
 type Config struct {
+	// UpstreamProxy is the resolved operator network route. Installers must
+	// not re-read mutable process proxy variables after manager construction.
+	UpstreamProxy            string
 	Python                   string
 	Micromamba               string
 	CondaHome                string
@@ -81,6 +85,9 @@ type request struct {
 	WorkingDir   string `json:"working_dir,omitempty"`
 	HostEnabled  bool   `json:"host_enabled"`
 	Fresh        bool   `json:"fresh,omitempty"`
+
+	Observation           *executionprep.Observation `json:"observation,omitempty"`
+	ObservationCodeSHA256 string                     `json:"observation_code_sha256,omitempty"`
 }
 
 type protocolMessage struct {
@@ -178,6 +185,10 @@ type Worker struct {
 	responses    chan Response
 	done         chan struct{}
 	diagnostics  *tailBuffer
+
+	// Protected by executeMu, outside the mutable interpreter. Once arbitrary
+	// source has been dispatched, later diagnostics cannot prove its bindings.
+	observationTainted bool
 
 	executeMu       sync.Mutex
 	writeMu         sync.Mutex
@@ -704,6 +715,7 @@ func (w *Worker) Execute(ctx context.Context, code, origin string) (Response, er
 		return Response{}, w.stoppedError()
 	default:
 	}
+	w.observationTainted = true
 	if err := w.writeProtocol(payload); err != nil {
 		return Response{}, fmt.Errorf("write kernel request: %w", err)
 	}
@@ -927,29 +939,7 @@ func (w *Worker) writeHostAck(callID string) error {
 }
 
 func (w *Worker) writeHostResult(call HostCall, result any, callErr error) error {
-	wire := hostResultWire{Type: "host_result", ID: call.ID, CellID: call.CellID, OK: callErr == nil, Result: result}
-	if callErr != nil {
-		wire.Result = nil
-		wire.Error = hostCallFailure(callErr)
-	}
-	payload, err := json.Marshal(wire)
-	if err != nil {
-		wire.OK, wire.Result = false, nil
-		wire.Error = &hostResultError{Code: "invalid_result", Message: "host result is not JSON serializable"}
-		payload, err = json.Marshal(wire)
-	}
-	if err != nil {
-		return err
-	}
-	if len(payload) > maxHostResultBytes {
-		wire.OK, wire.Result = false, nil
-		wire.Error = &hostResultError{Code: "result_too_large", Message: fmt.Sprintf("host result exceeds %d bytes", maxHostResultBytes)}
-		payload, err = json.Marshal(wire)
-		if err != nil {
-			return err
-		}
-	}
-	return w.writeProtocol(payload)
+	return w.writeHostResultContext(context.Background(), call, result, callErr)
 }
 
 func (w *Worker) wait() {

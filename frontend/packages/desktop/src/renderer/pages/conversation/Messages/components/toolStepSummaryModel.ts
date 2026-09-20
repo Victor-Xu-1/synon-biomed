@@ -243,6 +243,7 @@ export function buildToolStepResultSummary(tool: NormalizedToolCall, language: s
     // before its result records are hydrated. Trust only explicit retrieved /
     // returned counters in that truncated envelope, never a generic transport
     // "results" counter that may describe provider attempts.
+    if (tool.truncated) return chinese ? '检索详情待加载' : 'Search details pending';
     return chinese ? '未发现可用来源' : 'No usable sources';
   }
 

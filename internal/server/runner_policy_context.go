@@ -18,6 +18,7 @@ import (
 	eventjournal "synon-go/internal/persistence/journal"
 
 	sessionstore "synon-go/internal/persistence/sessions"
+	transcriptstore "synon-go/internal/persistence/transcript"
 
 	"synon-go/internal/skills"
 	"synon-go/internal/toolcontract"
@@ -197,8 +198,8 @@ func (err selectedSkillContractUnavailable) Unwrap() error {
 	return errSelectedSkillContractUnavailable
 }
 
-func (err selectedSkillContractUnavailable) runnerCorrection() (string, string) {
-	return sessionRunnerSelectedSkillContractUnavailableReasonCode, err.Error()
+func (err selectedSkillContractUnavailable) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	return newRunnerTextCorrection(sessionRunnerSelectedSkillContractUnavailableReasonCode, err.Error())
 }
 
 func (s *Server) runtimeSkillsByName(names []string, excluded []string) ([]skills.Skill, error) {

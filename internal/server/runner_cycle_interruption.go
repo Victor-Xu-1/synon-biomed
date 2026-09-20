@@ -28,6 +28,14 @@ func (s *Server) handleSessionRunnerChatInterruption(
 	if chatErrRef != nil {
 		chatErr = *chatErrRef
 	}
+	// A late validator rejection must not schedule new work after cancellation.
+	// Let the existing terminal settlement own cancellation and cleanup.
+	if cause := context.Cause(ctx); errors.Is(cause, ErrGenerationStopped) || errors.Is(cause, context.Canceled) {
+		if chatErrRef != nil {
+			*chatErrRef = context.Canceled
+		}
+		return false, nil
+	}
 	var reviewStageErr *sessionRunnerReviewStageError
 	if errors.As(chatErr, &reviewStageErr) {
 		if chatRun != nil && chatRun.AfterEventID > result.CheckpointEventID {
@@ -37,9 +45,10 @@ func (s *Server) handleSessionRunnerChatInterruption(
 		if reviewStageErr != nil && strings.TrimSpace(reviewStageErr.Error()) != "" {
 			resumeDetail += ": " + reviewStageErr.Error()
 		}
-		if err := s.interruptClaimedSessionRunner(
+		cause := newRunnerTextCorrection(sessionRunnerCompletionReviewRecoveryReasonCode, resumeDetail)
+		if err := s.interruptClaimedSessionRunnerWithCause(
 			options, result, activeRun, projectionClaim, transcriptAuthority,
-			sessionRunnerCompletionReviewRecoveryReasonCode, resumeDetail,
+			cause.ReasonCode, cause.Detail, &cause,
 		); err != nil {
 			return true, err
 		}
@@ -269,33 +278,36 @@ func (s *Server) handleSessionRunnerChatInterruption(
 			resumeDetail = "the provider repeatedly emitted a tool call after the outer runtime closed tool execution for immutable validation; preserve the current candidate and retry the terminal response without executing another tool"
 		}
 		if correction, found := latestRunnerCorrection(entries); found && recoveredRunnerCorrectionRequiresTool(entries) {
-			reasonCode = correction.ReasonCode
-			resumeDetail = correction.Detail
+			cause := correction.cause()
+			return true, s.interruptClaimedSessionRunnerWithCause(options, result, activeRun, projectionClaim, transcriptAuthority,
+				cause.ReasonCode, cause.Detail, &cause)
 		}
-		if err := s.interruptClaimedSessionRunner(
+		cause := newRunnerTextCorrection(reasonCode, resumeDetail)
+		if err := s.interruptClaimedSessionRunnerWithCause(
 			options, result, activeRun, projectionClaim, transcriptAuthority,
-			reasonCode, resumeDetail,
+			cause.ReasonCode, cause.Detail, &cause,
 		); err != nil {
 			return true, err
 		}
 		return true, nil
 	}
 	var boundedCorrection sessionRunnerBoundedCorrection
-	if errors.As(chatErr, &boundedCorrection) {
-		reasonCode, resumeDetail := boundedCorrection.runnerCorrection()
-		repeatedCorrections := runnerRepeatedCorrectionInterruptionCount(entries, reasonCode, resumeDetail)
-		correctionExhausted := repeatedCorrections >= sessionRunnerCorrectionNoProgressBudget-1
-		if correctionExhausted {
-			// Preserve the exact integrity failure and stop unattended recovery
-			// after bounded identical obligations. A task with durable artifacts is
-			// still recoverable by an explicit user continuation, but it must not
-			// spin through the same final-candidate path forever.
-			reasonCode = sessionRunnerCorrectionNoProgressExhaustedReasonCode
-			resumeDetail = fmt.Sprintf(
-				"the same completion correction remained unresolved after %d bounded attempts; preserve all durable artifacts and wait for an explicit continuation before trying a materially different repair. Last failure: %s",
-				sessionRunnerCorrectionNoProgressBudget, strings.TrimSpace(resumeDetail),
-			)
-		} else if !runnerInterruptionMayContinueSameTask(reasonCode) {
+	if !errors.As(chatErr, &boundedCorrection) {
+		var invalidPresentation *agentruntime.PublicProgressPresentationError
+		if errors.As(chatErr, &invalidPresentation) {
+			boundedCorrection = sessionRunnerFinalPresentationCorrection{}
+		}
+	}
+	if boundedCorrection != nil {
+		cause := boundedCorrection.runnerCorrection()
+		if _, err := transcriptstore.RunnerInterruptionCausePayload(cause); err != nil {
+			return true, err
+		}
+		reasonCode, resumeDetail := cause.ReasonCode, cause.Detail
+		// The obligation outlives any one strategy. Canonical tool receipts and
+		// this immutable rejection close unchanged routes at admission; counting
+		// rejections is observability, not a lifetime for the logical task.
+		if !runnerInterruptionMayContinueSameTask(reasonCode) {
 			return false, nil
 		}
 		if chatRun.AssistantSegmentHasContent {
@@ -306,9 +318,9 @@ func (s *Server) handleSessionRunnerChatInterruption(
 		if chatRun.AfterEventID > result.CheckpointEventID {
 			result.CheckpointEventID = chatRun.AfterEventID
 		}
-		if err := s.interruptClaimedSessionRunner(
+		if err := s.interruptClaimedSessionRunnerWithCause(
 			options, result, activeRun, projectionClaim, transcriptAuthority,
-			reasonCode, resumeDetail,
+			reasonCode, resumeDetail, &cause,
 		); err != nil {
 			return true, err
 		}

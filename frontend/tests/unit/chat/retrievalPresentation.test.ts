@@ -12,6 +12,63 @@ const tool = (input: object, output: object = {}): NormalizedToolCall => ({
 });
 
 describe('retrieval presentation', () => {
+  it.each([403, 404, 618, 0])(
+    'shows native unavailable receipt %i without treating response bytes as evidence',
+    (statusCode) => {
+      const item = tool(
+        { url: 'https://example.org/source' },
+        {
+          ok: true,
+          result: {
+            requestedUrl: 'https://example.org/source',
+            url: 'https://example.org/source',
+            sourceUnavailable: true,
+            statusCode,
+            bytesRead: statusCode === 0 ? 0 : 146,
+            complete: statusCode !== 0,
+            body: 'upstream error page',
+          },
+        }
+      );
+      expect(buildToolStepPublicPresentation(item, 'en-US').resultSummary).toBe('Source unavailable');
+      expect(buildToolStepPublicPresentation(item, 'zh-CN').resultSummary).toBe('来源不可用');
+      const detail = buildToolPublicDetailPresentation(item, 'en-US', null);
+      expect(detail.notices).toContain(
+        'This response is not usable source evidence. The task can retry or use another source.'
+      );
+      // Retrieval availability does not rewrite the transport or logical-task state.
+      expect(item.status).toBe('completed');
+    }
+  );
+  it.each([
+    [{ bytesRead: 2048, complete: true }, '已读取 2.0 KB'],
+    [{ bytesRead: 2048, complete: false }, '部分内容 · 2.0 KB'],
+    [{ data: JSON.stringify({ bytesRead: 0, complete: true }) }, '已读取 0 B'],
+    [{ sourceUnavailable: 'true', bytesRead: 1, complete: true }, '已读取 1 B'],
+    [{ body: JSON.stringify({ sourceUnavailable: true }), bytesRead: 1, complete: true }, '已读取 1 B'],
+  ])('reads typed receipt metadata only: %j', (receipt, summary) => {
+    expect(buildToolStepPublicPresentation(tool({}, receipt), 'zh-CN').resultSummary).toBe(summary);
+  });
+  it('checks native requested identity and keeps unavailable evidence visible alongside a mismatch', () => {
+    const item = tool(
+      { url: 'https://example.org/a' },
+      {
+        ok: true,
+        result: {
+          requestedUrl: 'https://example.org/b',
+          url: 'https://example.org/b',
+          sourceUnavailable: true,
+        },
+      }
+    );
+    expect(buildToolStepPublicPresentation(item, 'en-US').resultSummary).toBe('Check source');
+    expect(buildToolPublicDetailPresentation(item, 'en-US', null).notices).toHaveLength(2);
+  });
+  it('does not unwrap arbitrary downloaded content as a retrieval receipt', () => {
+    const item = tool({}, { body: { result: { sourceUnavailable: true } } });
+    expect(buildToolStepPublicPresentation(item, 'en-US').resultSummary).not.toBe('Source unavailable');
+    expect(buildToolPublicDetailPresentation(item, 'en-US', null).notices).toEqual([]);
+  });
   it('prefers explicit subjects and preserves distinguishable public URL paths', () => {
     expect(
       buildToolStepPublicPresentation(tool({ url: 'https://example.org/articles/123', title: '随访研究' }), 'zh-CN')

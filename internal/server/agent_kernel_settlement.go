@@ -470,14 +470,16 @@ func prepareAgentKernelExecution(
 		} else {
 			source = command
 		}
-		var terminalErr error
-		stderr, exitStatus, bashExitCode, terminalErr = normalizeAgentBashTerminal(stderr, exitStatus)
-		if terminalErr != nil {
-			if stderr != "" {
-				stderr += "\n"
+		if !outcome.ObservationRefused {
+			var terminalErr error
+			stderr, exitStatus, bashExitCode, terminalErr = normalizeAgentBashTerminal(stderr, exitStatus)
+			if terminalErr != nil {
+				if stderr != "" {
+					stderr += "\n"
+				}
+				stderr += terminalErr.Error()
+				exitStatus = "error"
 			}
-			stderr += terminalErr.Error()
-			exitStatus = "error"
 		}
 	}
 	recovery := ""
@@ -557,10 +559,13 @@ func prepareAgentKernelExecution(
 	}
 	if codePreflight != nil {
 		result["ok"] = false
-		result["status"] = "code_preflight_required"
+		result["status"] = stringValue(codePreflight["status"])
 		result["executed"] = false
 		result["preflight"] = codePreflight
 		result["message"] = stringValue(codePreflight["message"])
+		if boolValue(codePreflight["decision_required"], false) {
+			result["decision_required"] = true
+		}
 	}
 	if outcome.TimedOut {
 		result["timed_out"] = true
@@ -609,7 +614,7 @@ func prepareAgentKernelExecution(
 		eventPayload["exit_code"] = bashExitCode
 	}
 	if codePreflight != nil {
-		eventPayload["status"] = "code_preflight_required"
+		eventPayload["status"] = stringValue(codePreflight["status"])
 		eventPayload["executed"] = false
 		eventPayload["preflight"] = codePreflight
 	}

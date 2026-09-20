@@ -14,7 +14,7 @@ func TestImplementationAuthorityDoesNotInterpretReportProse(t *testing.T) {
 	gateway := serverAgentRuntimeToolGateway{taskRun: run, allowedTools: []string{"edit_file"}}
 	for _, prose := range []string{"当前方案的风险见附件。", "Current implementation risks are documented in the appendix.", "## Selected implementation\nengine-b\n"} {
 		args, _ := json.Marshal(map[string]any{"file_path": "report.md", "old_string": "", "new_string": prose, "human_description": "Update report"})
-		if diagnostic := gateway.ToolCallPreflightDiagnostic(agentruntime.ToolCall{ID: "report-edit", Name: "edit_file", Arguments: args}); strings.Contains(diagnostic, "selected_implementation_declaration_mismatch") {
+		if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), agentruntime.ToolCall{ID: "report-edit", Name: "edit_file", Arguments: args}); strings.Contains(diagnostic, "selected_implementation_declaration_mismatch") {
 			t.Fatalf("prose interpreted as an authority update: %s", diagnostic)
 		}
 		if got := run.selectedImplementationsSnapshot(); !reflect.DeepEqual(got, []string{"engine-a"}) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	transcriptstore "synon-go/internal/persistence/transcript"
+	"synon-go/internal/toolcontract"
 )
 
 const kernelMCPEvidenceSchemaV1 = "synon.kernel_mcp_evidence.v1"
@@ -147,7 +148,31 @@ func (s *Store) CommitKernelMCPEvidenceTx(
 		return FrameEvent{}, fmt.Errorf("kernel MCP evidence request mismatch: %w", ErrKernelLocalOperationConflict)
 	}
 	rawResult, err := json.Marshal(input.Audit.Result)
-	if err != nil || digestKernelMCPAuditBytes(rawResult) != input.ResultSHA256 || !kernelMCPJSONEqual(payload.ToolResult, rawResult) {
+	if err != nil || digestKernelMCPAuditBytes(rawResult) != input.ResultSHA256 {
+		return FrameEvent{}, fmt.Errorf("kernel MCP evidence result mismatch: %w", ErrKernelLocalOperationConflict)
+	}
+	descriptor, _, externalized, descriptorErr := toolcontract.DecodeExternalizedResult(payload.ToolResult)
+	if descriptorErr != nil {
+		return FrameEvent{}, descriptorErr
+	}
+	if externalized {
+		if descriptor.Outcome != "succeeded" ||
+			descriptor.SHA256 != input.ResultSHA256 || descriptor.SizeBytes != int64(len(rawResult)) {
+			return FrameEvent{}, fmt.Errorf("kernel MCP evidence result mismatch: %w", ErrKernelLocalOperationConflict)
+		}
+		record, found, err := scanRunnerLargeToolResultRow(tx.QueryRowContext(ctx,
+			`SELECT `+runnerLargeToolResultSelect+` WHERE version_id=? AND owner_user_id=?`, descriptor.VersionID, operation.OwnerUserID))
+		if err != nil {
+			return FrameEvent{}, err
+		}
+		if !found || record.ArtifactID != descriptor.ArtifactID || record.StreamUID != operation.StreamUID ||
+			record.ProjectID != operation.ProjectID || record.RootFrameID != operation.RootFrameID || record.FrameID != operation.FrameID ||
+			record.ToolCallID != input.HostCallID || record.ToolName != input.ToolName || record.SourceEventID != operation.SourceEventID ||
+			record.RunnerID != input.Claim.RunnerID || record.ClaimToken != input.Claim.ClaimToken || record.Attempt != input.Claim.Attempt ||
+			record.ContentSHA256 != descriptor.SHA256 || record.SizeBytes != descriptor.SizeBytes || record.ContentType != descriptor.ContentType {
+			return FrameEvent{}, fmt.Errorf("kernel MCP evidence result reference mismatch: %w", ErrKernelLocalOperationConflict)
+		}
+	} else if !kernelMCPJSONEqual(payload.ToolResult, rawResult) {
 		return FrameEvent{}, fmt.Errorf("kernel MCP evidence result mismatch: %w", ErrKernelLocalOperationConflict)
 	}
 	return s.finishKernelMCPAuditTx(ctx, tx, input.Audit, rawInput, rawResult, event.EventID)

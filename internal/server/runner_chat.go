@@ -71,8 +71,7 @@ const sessionRunnerRecoveryContractRevision = 25
 const sessionRunnerConsecutiveIdenticalToolRoundBudget = 3
 const sessionRunnerToolRoundNoProgressReasonCode = "runner_tool_round_no_progress"
 const sessionRunnerToolRoundNoProgressExhaustedReasonCode = "runner_tool_round_no_progress_exhausted"
-const sessionRunnerCorrectionNoProgressExhaustedReasonCode = "runner_correction_no_progress_exhausted"
-const sessionRunnerCorrectionNoProgressBudget = 3
+const sessionRunnerCorrectionNoProgressExhaustedReasonCode = transcriptstore.RetiredCorrectionBudgetReason
 const sessionRunnerToolRoundLimitReasonCode = "runner_tool_round_limit_exhausted"
 const sessionRunnerToolFailedReasonCode = "tool_call_failed"
 const sessionRunnerProviderContextPressureReasonCode = "provider_context_pressure"
@@ -98,7 +97,7 @@ const sessionRunnerModelAuditRuntimeNamespace = "session-runner-model-audit"
 
 type sessionRunnerBoundedCorrection interface {
 	error
-	runnerCorrection() (reasonCode string, resumeDetail string)
+	runnerCorrection() transcriptstore.RunnerInterruptionCause
 }
 
 var errSessionRunnerPreparationDeadline = errors.New("runner preparation deadline exceeded")
@@ -122,27 +121,15 @@ func (e sessionRunnerPreparationTimeout) Unwrap() error {
 	return e.cause
 }
 
-func (e sessionRunnerPreparationTimeout) runnerCorrection() (string, string) {
+func (e sessionRunnerPreparationTimeout) runnerCorrection() transcriptstore.RunnerInterruptionCause {
 	stage := strings.TrimSpace(e.stage)
 	if stage == "" {
 		stage = "unknown"
 	}
-	return sessionRunnerPreparationTimeoutReasonCode, fmt.Sprintf(
+	return newRunnerTextCorrection(sessionRunnerPreparationTimeoutReasonCode, fmt.Sprintf(
 		"runner preparation timed out during %s after %s; durable history and prior tool results are preserved, and the next bounded attempt must resume from the latest checkpoint",
 		stage, e.timeout,
-	)
-}
-
-func sessionRunnerBoundedCorrectionDetails(err error) (string, string, bool) {
-	if err == nil {
-		return "", "", false
-	}
-	var correction sessionRunnerBoundedCorrection
-	if !errors.As(err, &correction) {
-		return "", "", false
-	}
-	reasonCode, resumeDetail := correction.runnerCorrection()
-	return strings.TrimSpace(reasonCode), strings.TrimSpace(resumeDetail), true
+	))
 }
 
 func classifySessionRunnerPreparationStageError(
@@ -176,11 +163,11 @@ func (e sessionRunnerKernelRecoveryTimeout) Unwrap() error {
 	return e.cause
 }
 
-func (e sessionRunnerKernelRecoveryTimeout) runnerCorrection() (string, string) {
-	return sessionRunnerKernelRecoveryTimeoutReasonCode, fmt.Sprintf(
+func (e sessionRunnerKernelRecoveryTimeout) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	return newRunnerTextCorrection(sessionRunnerKernelRecoveryTimeoutReasonCode, fmt.Sprintf(
 		"approved kernel work exceeded its bounded recovery window of %s; preserve the exact durable operation and resume it from its latest checkpoint with the active runner lease",
 		e.timeout,
-	)
+	))
 }
 
 type sessionRunnerPersistenceInterruption struct {
@@ -721,13 +708,15 @@ func (run *sessionRunnerChatRun) recordProviderAcceptedContent(delta string, eve
 }
 
 type sessionRunnerTaskContract struct {
-	Version            int                          `json:"version"`
-	TaskIntentID       string                       `json:"taskIntentId,omitempty"`
-	TaskIntentRevision int64                        `json:"taskIntentRevision,omitempty"`
-	TaskIntentSHA256   string                       `json:"taskIntentSha256,omitempty"`
-	AcceptanceChecks   []string                     `json:"acceptanceChecks"`
-	TemporalScopes     []sessionRunnerTemporalScope `json:"temporalScopes,omitempty"`
-	CorrectionReason   string                       `json:"correctionReason,omitempty"`
+	Version               int                          `json:"version"`
+	TaskIntentID          string                       `json:"taskIntentId,omitempty"`
+	TaskIntentRevision    int64                        `json:"taskIntentRevision,omitempty"`
+	TaskIntentSHA256      string                       `json:"taskIntentSha256,omitempty"`
+	AcceptanceChecks      []string                     `json:"acceptanceChecks"`
+	TemporalScopes        []sessionRunnerTemporalScope `json:"temporalScopes,omitempty"`
+	CorrectionReason      string                       `json:"correctionReason,omitempty"`
+	CorrectionConditionID string                       `json:"correctionConditionId,omitempty"`
+	CorrectionFingerprint string                       `json:"correctionFingerprint,omitempty"`
 }
 
 type chatCompletionMessage struct {

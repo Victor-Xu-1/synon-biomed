@@ -319,6 +319,21 @@ func deliveryDestinations(ctx context.Context, conn *sql.Conn, streamUID string,
 	return values, rows.Err()
 }
 
+// ValidateLiveRunnerClaim is the read-only counterpart of the transaction
+// method. It shares the same owner, active-stream, input and lease authority.
+func (r *Repository) ValidateLiveRunnerClaim(ctx context.Context, claim RunnerClaim) (Stream, error) {
+	if r == nil || r.readDatabase() == nil {
+		return Stream{}, ErrSchemaUnavailable
+	}
+	conn, err := r.readDatabase().Conn(ctx)
+	if err != nil {
+		return Stream{}, err
+	}
+	defer conn.Close()
+	stream, err := validateClaimConn(ctx, conn, claim, r.now().UTC(), true)
+	return stream, schemaError(err)
+}
+
 func validateClaimConn(ctx context.Context, conn *sql.Conn, claim RunnerClaim, now time.Time, requireLive bool) (Stream, error) {
 	if err := validateClaimInput(claim); err != nil {
 		return Stream{}, err

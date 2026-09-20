@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-const maxBufferedModelStreamEvents = 65_536
-
 // completeModelRound owns the provider streaming boundary. Required-tool
 // rounds buffer deltas until the response satisfies the tool-choice contract;
 // ordinary rounds publish deltas immediately through the same event path.
@@ -16,10 +14,7 @@ func (e Engine) completeModelRound(
 	request ModelRequest,
 	bufferUntilToolChoice bool,
 ) (ModelResponse, []ModelStreamEvent, error) {
-	bufferedDeltas := make([]ModelStreamEvent, 0)
-	bufferedDeltaBytes := 0
-	bufferedPrivateReasoning := false
-	bufferedToolBoundary := false
+	buffered := bufferedModelStream{}
 	dispatch := func(event ModelStreamEvent) error {
 		normalized, err := normalizeModelStreamEvent(event)
 		if err != nil {
@@ -29,36 +24,16 @@ func (e Engine) completeModelRound(
 		explicitPublicProgress := event.Kind == ModelStreamEventPublicProgressDelta ||
 			event.Kind == ModelStreamEventPublicProgressBoundary
 		if bufferUntilToolChoice && !explicitPublicProgress {
-			if event.Kind == ModelStreamEventPrivateReasoning {
-				if bufferedPrivateReasoning {
-					return nil
-				}
-				bufferedPrivateReasoning = true
-			}
-			if event.Kind == ModelStreamEventToolCallBoundary {
-				if bufferedToolBoundary {
-					return nil
-				}
-				bufferedToolBoundary = true
-			}
-			bufferedDeltaBytes += len(event.ContentDelta)
-			if bufferedDeltaBytes > maxOpenAIChatResponseBytes {
-				return errors.New("agent runtime initial tool-choice response exceeds the bounded buffer")
-			}
-			if len(bufferedDeltas) >= maxBufferedModelStreamEvents {
-				return errors.New("agent runtime initial tool-choice response exceeds the event limit")
-			}
-			bufferedDeltas = append(bufferedDeltas, event)
-			return nil
+			return buffered.append(event)
 		}
 		if e.OnModelDelta != nil {
 			if err := e.OnModelDelta(event); err != nil {
-				return err
+				return modelPresentationPublicationError{cause: err}
 			}
 		}
 		if event.ContentDelta != "" {
 			if err := e.emit(Event{Type: EventModelDelta, Message: event.ContentDelta}); err != nil {
-				return err
+				return modelPresentationPublicationError{cause: err}
 			}
 		}
 		return nil
@@ -67,12 +42,12 @@ func (e Engine) completeModelRound(
 		if decoder.envelopeCount() == 0 {
 			if strings.Contains(response.Message.Content, PublicProgressEnvelopeBegin) ||
 				strings.Contains(response.Message.Content, PublicProgressEnvelopeEnd) {
-				return ModelResponse{}, errors.New("provider returned unobserved public progress control bytes")
+				return response, publicProgressPresentationError("provider returned unobserved public progress control bytes")
 			}
 			return response, nil
 		}
 		if response.Message.Content != decoder.rawContent() {
-			return ModelResponse{}, errors.New("provider public progress stream disagrees with its terminal content")
+			return response, publicProgressPresentationError("provider public progress stream disagrees with its terminal content")
 		}
 		if len(response.Message.ToolCalls) > 0 {
 			response.Message.Content = decoder.visibleContent()
@@ -81,51 +56,68 @@ func (e Engine) completeModelRound(
 		}
 		return response, nil
 	}
+	recovery := modelPresentationRecovery{}
 	streaming, ok := e.Model.(StreamingModelClient)
 	if !ok {
 		response, err := e.Model.Complete(ctx, request)
 		if err != nil || response.Message.Content == "" {
-			return response, bufferedDeltas, err
+			return recovery.finish(ctx, e, response, buffered.events(), err)
 		}
 		decoder := newPublicProgressEnvelopeDecoder(dispatch)
-		if err := decoder.write(response.Message.Content); err != nil {
-			return ModelResponse{}, bufferedDeltas, err
+		if err := recovery.retain(decoder.write(response.Message.Content)); err != nil {
+			return recovery.finish(ctx, e, response, buffered.events(), err)
 		}
-		if err := decoder.finish(); err != nil {
-			return ModelResponse{}, bufferedDeltas, err
+		if recovery.failure == nil {
+			if err := recovery.retain(decoder.finish()); err != nil {
+				return recovery.finish(ctx, e, response, buffered.events(), err)
+			}
 		}
-		response, err = normalizeResponse(response, decoder)
-		return response, bufferedDeltas, err
+		if recovery.failure == nil {
+			response, err = normalizeResponse(response, decoder)
+			err = recovery.retain(err)
+		}
+		return recovery.finish(ctx, e, response, buffered.events(), err)
 	}
 	decoder := newPublicProgressEnvelopeDecoder(dispatch)
 	response, err := streaming.CompleteStream(ctx, request, func(event ModelStreamEvent) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		recovery.bytes += len(event.ContentDelta)
+		if recovery.bytes > maxOpenAIChatResponseBytes {
+			return errors.New("agent runtime model response exceeds the byte limit")
+		}
+		if recovery.failure != nil {
+			return nil
+		}
 		normalized, err := normalizeModelStreamEvent(event)
 		if err != nil {
-			return err
+			return recovery.retain(err)
 		}
 		event = normalized
 		if event.Kind == ModelStreamEventContentDelta {
-			return decoder.write(event.ContentDelta)
+			return recovery.retain(decoder.write(event.ContentDelta))
 		}
 		if event.Kind == ModelStreamEventToolCallBoundary {
 			if err := decoder.boundary(); err != nil {
-				return err
+				return recovery.retain(err)
 			}
 		}
 		return dispatch(event)
 	})
-	finishErr := decoder.finish()
 	if err != nil {
-		if finishErr != nil {
-			return response, bufferedDeltas, errors.Join(err, finishErr)
+		return recovery.finish(ctx, e, response, buffered.events(), err)
+	}
+	if recovery.failure == nil {
+		if err := recovery.retain(decoder.finish()); err != nil {
+			return recovery.finish(ctx, e, response, buffered.events(), err)
 		}
-		return response, bufferedDeltas, err
 	}
-	if finishErr != nil {
-		return ModelResponse{}, bufferedDeltas, finishErr
+	if recovery.failure == nil {
+		response, err = normalizeResponse(response, decoder)
+		err = recovery.retain(err)
 	}
-	response, err = normalizeResponse(response, decoder)
-	return response, bufferedDeltas, err
+	return recovery.finish(ctx, e, response, buffered.events(), err)
 }
 
 func normalizeModelStreamEvent(event ModelStreamEvent) (ModelStreamEvent, error) {
@@ -146,11 +138,11 @@ func normalizeModelStreamEvent(event ModelStreamEvent) (ModelStreamEvent, error)
 		}
 	case ModelStreamEventPublicProgressDelta:
 		if event.ContentDelta == "" || event.ReasoningActive || !validPublicProgressBlockID(event.BlockID) {
-			return ModelStreamEvent{}, errors.New("agent runtime public progress delta is invalid")
+			return ModelStreamEvent{}, publicProgressPresentationError("agent runtime public progress delta is invalid")
 		}
 	case ModelStreamEventPublicProgressBoundary:
 		if event.ContentDelta != "" || event.ReasoningActive || !validPublicProgressBlockID(event.BlockID) {
-			return ModelStreamEvent{}, errors.New("agent runtime public progress boundary is invalid")
+			return ModelStreamEvent{}, publicProgressPresentationError("agent runtime public progress boundary is invalid")
 		}
 	case ModelStreamEventPrivateReasoning:
 		if event.ContentDelta != "" || !event.ReasoningActive || event.BlockID != "" {

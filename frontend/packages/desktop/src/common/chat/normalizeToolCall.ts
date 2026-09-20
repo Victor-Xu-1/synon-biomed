@@ -1,5 +1,6 @@
 import type { IMessageAcpToolCall, IMessageToolCall, IMessageToolGroup } from './chatLib';
 import { getAcpImagePath } from './acpToolCallOutput';
+import { parseLargeToolResultReference } from './largeToolResultReference';
 
 export type NormalizedToolStatus =
   | 'pending'
@@ -184,13 +185,23 @@ export function normalizeToolGroup(message: IMessageToolGroup): NormalizedToolCa
       input = description;
     }
 
+    const output = getResultDisplayText(result_display);
+    const largeResult = parseLargeToolResultReference(output);
     return {
       key: call_id,
       name,
       status: normalizeToolGroupStatus(status),
       description: desc,
       input,
-      output: getResultDisplayText(result_display),
+      output,
+      ...(largeResult
+        ? {
+            truncated: true,
+            compactResultCount: largeResult.sourceCount,
+            messageId: message.id,
+            conversationId: message.conversation_id,
+          }
+        : {}),
     };
   });
 }
@@ -295,6 +306,7 @@ export function normalizeAcpToolCall(message: IMessageAcpToolCall): NormalizedTo
 
   const transportStatus = normalizeAcpStatus(update.status);
   const status = transportStatus === 'completed' && outputReportsSemanticFailure(output) ? 'error' : transportStatus;
+  const largeResult = parseLargeToolResultReference(output);
 
   return {
     key: update.tool_call_id,
@@ -304,8 +316,8 @@ export function normalizeAcpToolCall(message: IMessageAcpToolCall): NormalizedTo
     humanDescription: normalizeHumanDescription(rawInput?.human_description) ?? normalizeHumanDescription(update.title),
     input,
     output,
-    truncated: content?._compact?.truncated === true,
-    compactResultCount: normalizeCompactResultCount(content?._compact?.result_count),
+    truncated: content?._compact?.truncated === true || largeResult !== null,
+    compactResultCount: normalizeCompactResultCount(content?._compact?.result_count) ?? largeResult?.sourceCount,
     messageId: message.id,
     conversationId: message.conversation_id,
     imagePath: getAcpImagePath(update),
@@ -383,6 +395,7 @@ export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall
     transportStatus === 'completed' && outputReportsSemanticFailure(output ?? error) ? 'error' : transportStatus;
   const operationKey =
     Number.isSafeInteger(attempt) && Number(attempt) >= 1 ? `${Number(attempt)}:${operation_id || call_id}` : call_id;
+  const largeResult = parseLargeToolResultReference(output ?? error);
 
   return {
     key: operationKey,
@@ -394,8 +407,8 @@ export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall
     ),
     input: displayInput,
     output: output ?? error,
-    truncated: content._compact?.truncated === true,
-    compactResultCount: normalizeCompactResultCount(content._compact?.result_count),
+    truncated: content._compact?.truncated === true || largeResult !== null,
+    compactResultCount: normalizeCompactResultCount(content._compact?.result_count) ?? largeResult?.sourceCount,
     progress: normalizeToolProgress(progress),
     ...(Number.isSafeInteger(attempt) && Number(attempt) >= 1 ? { attempt: Number(attempt) } : {}),
     ...(operation_id ? { operationId: operation_id } : {}),

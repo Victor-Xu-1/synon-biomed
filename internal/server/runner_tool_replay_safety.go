@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"synon-go/internal/kernelcontract"
+	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
 )
 
@@ -44,11 +45,11 @@ func (e sessionRunnerToolReplaySafetyPending) Unwrap() error {
 	return e.cause
 }
 
-func (e sessionRunnerToolReplaySafetyPending) runnerCorrection() (string, string) {
-	return sessionRunnerToolReplaySafetyReasonCode, fmt.Sprintf(
+func (e sessionRunnerToolReplaySafetyPending) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	return newRunnerTextCorrection(sessionRunnerToolReplaySafetyReasonCode, fmt.Sprintf(
 		"read-only replay authority for interrupted tool %s is temporarily unavailable; preserve the original durable call and retry its safety resolution before executing or declaring an unknown outcome",
 		strings.TrimSpace(e.toolName),
-	)
+	))
 }
 
 // runnerToolCallReplaySafeAfterInterruption decides whether an already-started

@@ -76,27 +76,27 @@ func (d *publicProgressEnvelopeDecoder) consume(flushOutside bool) error {
 			end := strings.Index(d.pending, PublicProgressEnvelopeEnd)
 			if end < 0 {
 				if len(d.pending) > maxPublicProgressEnvelopeBytes {
-					return errors.New("public progress envelope exceeds the byte limit")
+					return publicProgressPresentationError("public progress envelope exceeds the byte limit")
 				}
 				if flushOutside {
-					return errors.New("public progress envelope is incomplete at the model boundary")
+					return publicProgressPresentationError("public progress envelope is incomplete at the model boundary")
 				}
 				return nil
 			}
 			payload := d.pending[:end]
 			d.pending = d.pending[end+len(PublicProgressEnvelopeEnd):]
 			if strings.Contains(payload, PublicProgressEnvelopeBegin) || len(payload) > maxPublicProgressEnvelopeBytes {
-				return errors.New("public progress envelope is nested or oversized")
+				return publicProgressPresentationError("public progress envelope is nested or oversized")
 			}
 			envelope, err := decodePublicProgressEnvelope(payload)
 			if err != nil {
 				return err
 			}
 			if d.count >= maxPublicProgressBlocks {
-				return errors.New("public progress response exceeds the block limit")
+				return publicProgressPresentationError("public progress response exceeds the block limit")
 			}
 			if _, duplicate := d.ids[envelope.ID]; duplicate {
-				return fmt.Errorf("public progress block id %q is duplicated", envelope.ID)
+				return publicProgressPresentationError(fmt.Sprintf("public progress block id %q is duplicated", envelope.ID))
 			}
 			d.ids[envelope.ID] = struct{}{}
 			d.count++
@@ -127,11 +127,11 @@ func (d *publicProgressEnvelopeDecoder) consume(flushOutside bool) error {
 			continue
 		}
 		if strings.Contains(d.pending, PublicProgressEnvelopeEnd) {
-			return errors.New("public progress response contains an unmatched end marker")
+			return publicProgressPresentationError("public progress response contains an unmatched end marker")
 		}
 		if flushOutside {
 			if partialPublicProgressMarker(d.pending) {
-				return errors.New("public progress response ends with an incomplete control marker")
+				return publicProgressPresentationError("public progress response ends with an incomplete control marker")
 			}
 			if err := d.emitCandidate(d.pending); err != nil {
 				return err
@@ -153,7 +153,7 @@ func (d *publicProgressEnvelopeDecoder) emitCandidate(content string) error {
 		return nil
 	}
 	if strings.Contains(content, "<|PublicProgress") {
-		return errors.New("public progress response contains a malformed control marker")
+		return publicProgressPresentationError("public progress response contains a malformed control marker")
 	}
 	d.candidate.WriteString(content)
 	d.visible.WriteString(content)
@@ -187,57 +187,57 @@ func decodePublicProgressEnvelope(payload string) (publicProgressEnvelope, error
 	decoder.UseNumber()
 	start, err := decoder.Token()
 	if err != nil || start != json.Delim('{') {
-		return publicProgressEnvelope{}, errors.New("public progress envelope must be one JSON object")
+		return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope must be one JSON object")
 	}
 	var envelope publicProgressEnvelope
 	seen := make(map[string]struct{}, 3)
 	for decoder.More() {
 		token, err := decoder.Token()
 		if err != nil {
-			return publicProgressEnvelope{}, errors.New("public progress envelope contains an invalid key")
+			return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope contains an invalid key")
 		}
 		key, ok := token.(string)
 		if !ok {
-			return publicProgressEnvelope{}, errors.New("public progress envelope key must be a string")
+			return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope key must be a string")
 		}
 		if _, duplicate := seen[key]; duplicate {
-			return publicProgressEnvelope{}, fmt.Errorf("public progress envelope duplicates %q", key)
+			return publicProgressEnvelope{}, publicProgressPresentationError(fmt.Sprintf("public progress envelope duplicates %q", key))
 		}
 		seen[key] = struct{}{}
 		switch key {
 		case "version":
 			var number json.Number
 			if err := decoder.Decode(&number); err != nil || number.String() != "1" {
-				return publicProgressEnvelope{}, errors.New("public progress envelope version must be 1")
+				return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope version must be 1")
 			}
 			envelope.Version = 1
 		case "id":
 			if err := decoder.Decode(&envelope.ID); err != nil {
-				return publicProgressEnvelope{}, errors.New("public progress envelope id must be a string")
+				return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope id must be a string")
 			}
 		case "text":
 			if err := decoder.Decode(&envelope.Text); err != nil {
-				return publicProgressEnvelope{}, errors.New("public progress envelope text must be a string")
+				return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope text must be a string")
 			}
 		default:
-			return publicProgressEnvelope{}, fmt.Errorf("public progress envelope field %q is unsupported", key)
+			return publicProgressEnvelope{}, publicProgressPresentationError(fmt.Sprintf("public progress envelope field %q is unsupported", key))
 		}
 	}
 	end, err := decoder.Token()
 	if err != nil || end != json.Delim('}') {
-		return publicProgressEnvelope{}, errors.New("public progress envelope JSON object is incomplete")
+		return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope JSON object is incomplete")
 	}
 	if err := requirePublicProgressJSONEOF(decoder); err != nil {
 		return publicProgressEnvelope{}, err
 	}
 	if envelope.Version != 1 || !validPublicProgressBlockID(envelope.ID) {
-		return publicProgressEnvelope{}, errors.New("public progress envelope requires version 1 and a safe id")
+		return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope requires version 1 and a safe id")
 	}
 	if strings.TrimSpace(envelope.Text) == "" || !utf8.ValidString(envelope.Text) ||
 		len(envelope.Text) > maxPublicProgressTextBytes || utf8.RuneCountInString(envelope.Text) > maxPublicProgressTextRunes ||
 		!validPublicProgressTextCharacters(envelope.Text) || strings.Contains(envelope.Text, PublicProgressEnvelopeBegin) ||
 		strings.Contains(envelope.Text, PublicProgressEnvelopeEnd) {
-		return publicProgressEnvelope{}, errors.New("public progress envelope text is empty, unsafe, or oversized")
+		return publicProgressEnvelope{}, publicProgressPresentationError("public progress envelope text is empty, unsafe, or oversized")
 	}
 	return envelope, nil
 }
@@ -254,7 +254,7 @@ func validPublicProgressTextCharacters(value string) bool {
 func requirePublicProgressJSONEOF(decoder *json.Decoder) error {
 	var extra any
 	if err := decoder.Decode(&extra); err != io.EOF {
-		return errors.New("public progress envelope contains trailing JSON")
+		return publicProgressPresentationError("public progress envelope contains trailing JSON")
 	}
 	return nil
 }

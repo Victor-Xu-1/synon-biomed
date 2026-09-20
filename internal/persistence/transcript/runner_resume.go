@@ -9,11 +9,20 @@ import (
 	"time"
 )
 
+// RetiredCorrectionBudgetReason identifies an obsolete execution policy, not
+// a user decision or an external prerequisite. Current recovery quarantines
+// failed strategies using canonical receipts, so these checkpoints can safely
+// re-enter the existing dispatcher. Keep their historical payload immutable.
+const RetiredCorrectionBudgetReason = "runner_correction_no_progress_exhausted"
+
+const automaticCheckpointEligibilitySQL = `(COALESCE(json_extract(events.payload_json,'$.auto_resume'),1)=1
+	OR json_extract(events.payload_json,'$.reason_code')='` + RetiredCorrectionBudgetReason + `')`
+
 // RunnerInterruption is the newest durable interruption checkpoint for a
 // stream whose runner lease is no longer active. It is the explicit-continue
 // counterpart to AutoResume candidates: an interruption with AutoResume=false
-// (for example an artifact-reference correction) must wait for a user or
-// dispatch continue, and this lookup gates that path.
+// must wait for a user or dispatch continue, except for the explicitly retired
+// correction-budget policy. This lookup also gates explicit continuation.
 type RunnerInterruption struct {
 	StreamUID          string
 	Attempt            int64
@@ -212,7 +221,7 @@ func (r *Repository) GetResumableCheckpoint(
 }
 
 // AutoResumeCandidate is a frame whose latest runner interruption is marked
-// AutoResume (the task may continue without user intervention). The bounce
+// AutoResume or used the retired correction-budget policy. The bounce
 // count is diagnostic scheduling metadata only; it never limits continuation.
 type AutoResumeCandidate struct {
 	StreamUID                string
@@ -308,7 +317,7 @@ func (r *Repository) GetAutoResumeCandidate(
 			AND streams.owner_id=? AND streams.kind='frame_ref'
 			AND LOWER(TRIM(frame.status)) NOT IN ('completed','failed','cancelled','canceled','success','replaced','stopped')
 			AND json_extract(events.payload_json,'$.reason_code') IS NOT NULL
-			AND COALESCE(json_extract(events.payload_json,'$.auto_resume'),1)=1`,
+			AND `+automaticCheckpointEligibilitySQL,
 		streamUID, r.now().UTC(), ownerID,
 	).Scan(
 		&candidate.StreamUID, &candidate.OwnerID, &candidate.FrameID,
@@ -396,7 +405,7 @@ func (r *Repository) ListAutoResumeCandidates(
 			AND streams.kind='frame_ref'
 			AND LOWER(TRIM(frame.status)) NOT IN ('completed','failed','cancelled','canceled','success','replaced','stopped')
 			AND json_extract(events.payload_json,'$.reason_code') IS NOT NULL
-			AND COALESCE(json_extract(events.payload_json,'$.auto_resume'),1)=1
+			AND `+automaticCheckpointEligibilitySQL+`
 		ORDER BY checkpoint.checkpoint_sequence DESC
 		LIMIT ?`, r.now().UTC(), ownerID, limit)
 	if err != nil {
@@ -497,7 +506,7 @@ func (r *Repository) ListAllAutoResumeCandidatesPage(
 				AND streams.kind='frame_ref'
 				AND LOWER(TRIM(frame.status)) NOT IN ('completed','failed','cancelled','canceled','success','replaced','stopped')
 				AND json_extract(events.payload_json,'$.reason_code') IS NOT NULL
-				AND COALESCE(json_extract(events.payload_json,'$.auto_resume'),1)=1
+				AND `+automaticCheckpointEligibilitySQL+`
 			ORDER BY checkpoint.checkpoint_sequence DESC, checkpoint.stream_uid
 			LIMIT ? OFFSET ?`, r.now().UTC(), limit, offset)
 	if err != nil {

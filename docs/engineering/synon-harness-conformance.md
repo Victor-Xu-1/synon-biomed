@@ -34,6 +34,63 @@ batches and generic input/output fallbacks do not define the public layout.
   live viable configurations have material trade-offs, the model asks once.
   A compatible ready environment and a still-valid answered route are reused,
   while routine reversible tool choices continue autonomously.
+  Implementation evidence checks apply to typed implementation choices, not
+  unrelated input or parameter questions while an environment choice is
+  pending. Two evidence-backed alternatives are sufficient; no extra option
+  quota requires inventing an engine. Answering an input question does not
+  authorize installation or resolve a pending implementation choice.
+  Environment resource preflight binds categorical requirements to the exact
+  implementation's catalog Skill, not the union of previously loaded Skills.
+  Its `capability_contract_skill` names that authority; an empty value means
+  no implementation capability contract was established. Unknown or composite
+  names do not inherit capabilities from task history. Host feasibility does
+  not attest scientific readiness, select an implementation, or remove any
+  outstanding task-level capability or downstream evidence requirement.
+  Registry singleton selection requires one exact primary route covering all
+  required scientific capabilities. Coverage follows the primary pack and its
+  registered controlled-input resolvers; alternatives for the same input group
+  contribute their common capabilities, never the union of mutually exclusive
+  routes. Selecting the primary preserves every task requirement and does not
+  authorize an auxiliary execution. Its input-source choice, receipt and pack
+  validation still apply. Unlinked, unselected transitive or ambiguous pack
+  identities cannot be invented into a complete route. Multiple complete routes
+  still require the existing selection decision; discovery is not readiness or
+  execution evidence.
+  When full coverage includes an auxiliary stage, unnamed environment requests
+  retain the existing exact-implementation requirement; they cannot silently
+  provision the primary environment. Primary selection reports the outstanding
+  capabilities and available resolver choices separately from authorization.
+  The same registered route coverage validates primary options when multiple
+  routes exist; their individual preflight and choice requirements remain.
+  A registry-bound auxiliary resolver uses only the typed `evidence_resolver`
+  selection. An existing typed group/Skill/implementation tuple is matched
+  directly; conflicting or malformed tuples cannot be rewritten from prose,
+  and exact tuples do not need an engine-name mention in their display text.
+  Checkpoint and execution normalization remove both public and
+  nested primary-selection fields from that option so re-parsing cannot turn
+  it back into a primary engine choice. An explicit implementation takes
+  precedence over comparative prose; an unregistered composite or version is
+  not silently rebound to an engine mentioned inside its name or description.
+  Primary and auxiliary selections share one event-ordered replay scope. A
+  changed primary retires older auxiliary selections from active authority,
+  not from history; re-confirming the same primary preserves them. Current
+  primary selection supersedes loaded-Skill discovery history. When only an
+  answered resolver remains in bounded replay, its exact, uniquely registered
+  parent can be restored; ambiguous parentage cannot select an engine, and
+  catalog-wide recovery cannot override an existing primary selection.
+  Concurrent answers for one controlled input group cannot authorize conflicting
+  resolver routes. The shared continuation constraint is checked before the
+  response batch writes grants or answers, leaving conflicts correctable in the
+  pending card. Historical same-event conflicts remain visible to validation;
+  a later explicit answer replaces that group's active choice without rewriting
+  its history. Map iteration never selects a route.
+  Externalized tool-result references are recognized independently of history
+  preview compaction. Timeline normalization and lazy detail loading share the
+  canonical artifact/version route decoder. Version-bound search-view counts
+  describe discovered records, not completed source reading; an unhydrated
+  result with no reliable count is pending detail, not an empty search. The
+  existing authenticated detail loader and paged large-result surface remain
+  the only disclosure path, including during loading, failures and retries.
 - `generate_plan` accepts phases, parallel delegations, desired outputs,
   feasibility, and approve-only textual approval. `update_step_status` is the
   only plan-progress mutation and supports `in_progress`, `completed`,
@@ -130,6 +187,140 @@ and its opaque continuation. Candidate counts never claim exhaustive coverage.
 `web_fetch` records requested and final URLs, redirect hops, retrieval time,
 selected response headers and a hash of returned response bytes. HTTP `Date`,
 `Last-Modified` and website chrome dates are not promoted to publication dates.
+Retrieval summaries and details use the same bounded receipt decoder for native
+camel-case fields and existing snake-case records. An explicit unavailable
+source is shown as unavailable even when its error page was read completely;
+response byte counts are not evidence acquisition. The source-status notice
+does not rewrite transport completion or turn a recoverable source failure into
+a terminal task failure. Downloaded body content is not status metadata.
+The same unavailable outcome does not count as semantic progress at tool
+settlement or durable replay: receiving an unavailable-source response cannot
+clear a previously closed no-progress action. Successful and partial usable
+results retain their existing progress semantics.
+Repeated correction counts are folded in constant space from the same complete,
+fenced transcript projection, then carried as private claim-bound replay data.
+The provider history window does not reset this count. A newly typed correction
+obligation or a new task starts a new scope; unrelated successful tools,
+clarification responses and protocol repair do not erase an unresolved one.
+The derived aggregate is not model-authored data or another persisted authority.
+An interruption's scheduler reason and its original correction cause
+are separate fields in the same atomic checkpoint. Exhaustion labels do not
+replace the repair scope or erase the failed attempt from replay accounting.
+The versioned cause separates its bounded UTF-8 display from a complete typed
+condition. Reference diagnostics retain every category and exact identifier;
+review issues retain claims, message coordinates, severity/verdict, immutable
+versions, evidence references and quoted evidence. Unfinished plan steps bind
+their IDs and plan version; visual findings bind image versions and digests.
+Semantic identity treats diagnostic sets as unordered and duplicate-insensitive,
+but preserves meaningful identifier case/internal whitespace and every evidence
+field. A review's human-description summary is presentation when explicit issues
+exist; summary-only historical conditions remain distinct. Exact content IDs
+also retain presentation and ordering for immutable reads.
+Complete conditions use bounded chunks in the same Transcript transaction as
+the interruption and lease release. The existing event-size limit is unchanged;
+missing, reordered or corrupt chunks cannot hydrate a condition. Chunk storage
+does not consume the provider's checkpoint seed window. Full recovery data is a
+private, nonserialized projection, not additional model history or another store.
+The context and task contract carry the bounded display and exact condition ID.
+The existing `read_file` tool accepts `recovery_condition_id` as an exclusive
+read source, with line windows and `json_pointer` selections. It validates the
+live owner/task/input/lease, preserves JSON escaping in paged diagnostic values,
+and reports per-page coverage. Reading a condition is control-plane inspection,
+not new scientific evidence, a changed artifact or a reset of the repair budget.
+Novel diagnostic windows advance the tool loop; repeating a cached window does
+not manufacture progress. A versioned selection cursor is derived from native
+read receipts across execution-unit boundaries. Bounded replay retains its last
+receipt with the original protocol closure and ordinary replay-size checks.
+Coverage records delivered contiguous lines, not comprehension or correctness;
+owner, current input and active branch still fence access to the condition.
+Repair classifiers consume the complete condition; display counts, identifier
+lengths and row-preview limits do not truncate their requirement set.
+Old checkpoints without complete data remain explicit legacy evidence. The
+reader does not invent clipped fields or assert equality with a new complete
+condition. The compatibility journal adapter retains supplied causes, while its
+existing storage limits remain separate from canonical Transcript chunking.
+Preserving a cause does not reopen an unchanged failed strategy. Correction
+counts do not bound the logical task: current admission derives closed routes
+from complete canonical conditions and receipts, with explicit material-input
+changes required for re-evaluation. The retired correction-budget reason is
+eligible through the existing dispatcher without rewriting old checkpoints;
+user-decision, external-blocker and terminal/cancellation boundaries remain.
+Reader versions must understand the cause/condition contracts before resuming
+their checkpoints; rollback must preserve all original events.
+Response-presentation validation uses this same correction authority. A failed
+inline language conversion distinguishes upstream failures from empty output,
+wrong language, changed protected literals and unexpected tool proposals.
+Provider errors retain their identity; cancellation cannot release an original
+tool call. A validated original action is never replaced by a translator action.
+Optional progress blocks keep their protocol bounds but are not execution
+prerequisites. Malformed native blocks or embedded envelopes are drained
+without publication; a complete valid action proposal still reaches ordinary
+schema, permission and admission checks. Metadata diagnostics record the
+discard without exposing private reasoning. Cancellation, transport failures,
+total response limits and downstream publication errors cannot be discarded
+as presentation errors. This applies to streaming/nonstreaming and every
+response language; no correction budget is spent on optional narration.
+Pre-tool progress cannot establish the proposed operation's completion.
+Completion-shaped narration is withheld until the same task has a prior
+successful execution or explicit reuse receipt; failed, partial, unavailable,
+decision-required and rejected-before-execution receipts grant no authority.
+This preserves useful observations from earlier completed work without letting
+the current proposal self-certify. Independently validated final responses
+retain their authority. This language check is not a scientific truth detector.
+Final-language conversion first uses the existing faithful conversion. If
+that rejects a candidate containing protected literals, a single different
+route binds those literals to host-owned slots, validates each slot exactly
+once and restores original bytes. The primary action is never regenerated;
+invented or duplicated protected literals also fail validation. Both
+conversion costs count and presentation calls do not request hidden reasoning.
+An unusable final candidate remains distinct from optional progress. It
+preserves completed receipts through the existing typed correction/backoff
+authority; persistent inability to produce a valid final answer remains an
+explicit correctness blocker, not an endless retry or false completion.
+Terminal settlement chooses a safe machine reason before localizing public
+detail. The existing terminal event carries that reason atomically; frame
+details, persisted message history and live notifications project the same
+identity. Stop-hook, cleanup and response-persistence failures replace earlier
+causes when they determine the final outcome. Public labels are closed,
+localized categories, never provider payloads or filesystem paths.
+No-progress call deduplication uses the same complete semantic execution
+fingerprint as live retry guards and durable recovery. Human-facing argument
+previews remain bounded, but their clipping, JSON key order and presentation
+labels never decide whether two execution identities are the same.
+Recent closed-route previews are not the admission set. During no-progress
+recovery, a single cancellable, fenced transcript scan matches the proposed
+batch against exact completed idempotent receipts, typed terminal admission
+rejections and explicit closure checkpoints. Matching state is bounded by the
+proposal, not history size. Failed or unavailable results are not implicitly
+completed evidence; a rejected route is not described as successful execution.
+Task/obligation changes and material progress retain their existing reset
+semantics. An authority read failure never falls back to the recent preview.
+Tool preflight receives one proposed batch and the execution context before
+any model-response or tool-start publication. Diagnostics remain bound to exact
+call indices in the existing rejection/repair path. Cancellation, unavailable
+preflight authority and invalid diagnostic indices stop admission as errors;
+they are not converted into a model-selection retry or a tool receipt. The
+server applies its existing validators through this single batch entry point.
+Execution-source preparation inherits the task context while retaining its
+eight-second operation budget; a shorter parent deadline or cancellation is
+not extended by preparation or converted into permission to execute.
+For bounded binary reads, the durable download handoff retains the canonical
+request URL only when a contiguous transport redirect receipt connects it to
+the final response. The original executed WebFetch input binds any additional
+download hosts; nested body URLs and connector claims cannot widen that host
+policy. The existing downloader re-requests the canonical URL, allowing signed
+destinations to rotate within the attested host set while retaining TLS,
+public-address checks, bounded redirects, resume validation and atomic staging.
+Externalized partial receipts keep their owner, size and content-hash checks;
+failed results do not acquire download authority.
+PDF text is streamed from the existing passive extractor into the canonical
+serialized-budgeted line window. Default reads retain the original document
+attachment; explicit `offset`/`limit` reads select extracted text without
+resending visual media. `next_offset` advances through whole-document text,
+while selected-page visual reads expose a separate whole-text read input.
+Text windows do not claim visual coverage. Extraction failure is explicit,
+cancellation reaps the extractor, and staging copies the authorized file handle
+instead of reopening a potentially replaced pathname. Originals are unchanged.
 The existing immutable large-result and `read_file` authority presents HTML
 publisher metadata and JATS abstract/body/sections/tables/captions/references;
 the raw response remains independently readable and the view is rebuilt from
@@ -222,8 +413,11 @@ tools are absent from new model snapshots.
 16. A request sent with `plan_mode=true` keeps the ordinary model-visible tool
     set and model-judged AskUser behavior; it does not impose a fixed tool
     sequence, search count, or task classifier. If the model attempts to finish
-    with prose while no matching approved plan exists, one bounded durable stop
-    hook returns that candidate to the same turn for correction. Provider-supplied
+    with prose while no matching approved plan exists, a bounded execution-unit
+    stop hook returns that candidate for correction. Exhausting that unit
+    preserves a resumable plan-approval obligation, never a successful result.
+    Approval and tool exposure use the same artifact/task-input revision/content
+    binding; an old approval cannot hide plan generation for new input. Provider-supplied
     plan `version`, IDs, agent assignment and step status are stripped at
     admission because those fields are runtime-owned; the resulting nested v3
     plan still passes strict artifact validation.
@@ -238,13 +432,28 @@ tools are absent from new model snapshots.
     returns the diagnostic to the next model sample. The model may correct the
     call, select another advertised tool, or continue with available evidence;
     the Harness does not run hidden private repair rounds or quarantine the
-    entire tool schema after one malformed call. The third rejection in the
-    same tool-name/error-code family is returned as `retryable=false` with a
-    directive to abandon that path for the current segment, so superficial
-    argument changes cannot create an unbounded correction loop. Every
+    entire tool schema after a malformed call. A repeated rejection in the
+    same tool/target/diagnostic family eventually exhausts its private correction
+    window, while the capability stays available for genuinely corrected inputs.
+    Admission alone and unrelated successes do not reset that family. Every
     `executed=false` result is also `ok=false`; a stale `edit_file` may use one
     successful `read_file` as inspection evidence and retry once, after which
     the same file/error family closes even if `old_string` keeps changing.
+    Persisted native edit conditions also preflight changed invalid variants
+    through the same content-type, structural and replacement validators;
+    exact valid corrections remain eligible after continuation or restart.
+    A native edit rejection also releases a named editor-only correction choice
+    to required-tool selection. Other admitted inspection, acquisition and
+    execution tools remain available to repair the cause; they do not discharge
+    the outstanding validation obligation. Reads and unrelated edits do not
+    reset the failed target, and the same invalid input stays preflight-blocked.
+    Approval resumption preserves the waiting batch until the terminal receipt
+    commits. A non-executing rejection settles that waiting item atomically
+    with its failed checkpoint, without replaying the approved mutation or
+    terminating the logical task. Recoverable gateway outcomes are normalized
+    to the existing approval terminal states; precise diagnostics and partial
+    results remain in the original receipt. Unknown or missing receipts do not
+    acquire execution authority.
     A successful mutator that explicitly reports `changed=false`,
     `unchanged=true`, or only unchanged artifact versions does not advance the
     mutation epoch. A complete before/after file hash also ignores a
@@ -301,12 +510,16 @@ tools are absent from new model snapshots.
     `none` is an Engine-enforced protocol state: that model request carries an
     empty Tool catalog, and a provider-emitted Tool call is discarded and
     privately resampled instead of reaching the gateway.
-20. Durable correction checkpoints are Codex-style stop-hook feedback. They
+20. Durable correction checkpoints provide typed recovery feedback. They
     preserve the reason, affected state and acceptance condition and never
     classify task prose into a domain, filename, tool identity or task-specific
     workflow. A machine-owned structural condition may require the next generic
     capability transition, but the model chooses its arguments and scientific
-    content from current evidence. Architecture tests reject task-specific
+    content from current evidence. Complete Transcript route membership is
+    evaluated with cancellable bounded-memory passes, not bounded display or
+    replay windows. Canonical identical conditions and explicitly identified
+    unchanged materials close a rejected route, not a tool or logical task.
+    Architecture tests reject task-specific
     routing strings and require graceful fallback when a capability is absent.
 21. Scientific source and execution admission does not branch on pharmaceutical
     domain words such as formulation, pharmacokinetics, binding mode or
@@ -461,6 +674,26 @@ tools are absent from new model snapshots.
   treated as an infinite storage request. Atomic staging, validator-bound
   Range/If-Range resume, finite retries and SHA-256 verification remain in the
   same transfer path. Waiting for another writer is cancellable.
+  Connection/header and response-read inactivity are separate budgets, not a
+  total download lifetime. The positive-second network configuration fields
+  `response_header_timeout_seconds` (60), `read_idle_timeout_seconds` (30),
+  `transfer_idle_timeout_seconds` (300) and `search_timeout_seconds` (90)
+  have matching `SYNON_NETWORK_..._SECONDS` environment overrides. The search
+  timeout bounds one query, including all providers and retry waits; a caller's
+  shorter deadline or cancellation always wins. Binary Web reads sample a
+  bounded prefix and retain their canonical download handoff.
+  Search receipts distinguish completed-empty, relevance-filtered, HTTP,
+  connection, header-timeout and body-idle outcomes and retain actual attempts.
+  Transient status retries honor Retry-After without shortening server advice.
+  Full transfers count consecutive attempts without additional retained bytes
+  of the same validated representation, not lifetime connections. Repeated
+  replacement representations do not reset that budget. A deferred retry keeps
+  its not-before time and private partial file across service reconstruction;
+  its receipt reports retained bytes, resumability and the actual failure.
+  Managed installers consume the same explicit proxy configuration as the
+  service. Detached installers restore it from the claimed durable session
+  specification. Ambient proxy variables cannot override that route, and
+  analysis processes do not inherit installer proxy credentials.
   Default R environment repair uses the existing installer supervisor instead
   of a separate wall-clock-limited process path. Native subprocesses inherit
   slow-network defaults: pip uses a socket-idle timeout, mamba's minimum-rate
@@ -474,7 +707,15 @@ Shell grammar. A static single-command argv may contain comments, continued
 lines and trailing newlines; substitutions, redirections, pipelines and extra
 commands cannot inherit that entrypoint's authority. Runtime-owned arguments
 are appended to the parsed argv and quoted as data, not concatenated after a
-comment. Native R parsing accepts omitted call arguments and array indices;
+comment. Python preparation tracks witnessed HTTP response chunks through
+iterator bindings, file contexts and called helper parameters into file writes
+or stream copies. These facts use the same durable-download requirement as
+direct response-body writes; they do not execute or rewrite user source.
+Streaming API inspection without a file sink, rebound local data and unresolved
+values do not by themselves establish file acquisition. Authenticated/private
+transfers are not rerouted to the public downloader. This is bounded static
+effect preparation, not exhaustive program analysis or a sandbox guarantee.
+Native R parsing accepts omitted call arguments and array indices;
 partial parse failures retain witnessed effects and explicit uncertainty.
 Python API witnesses use native from-import semantics for submodules and do
 not treat scoped/optional imports or rebound names as proven missing APIs.
@@ -487,6 +728,11 @@ a reasoning-only interval produces one localized activity state. Waiting for a
 question, plan decision, permission, background completion, model selection,
 failure, and success remain distinct. While a plan is awaiting a decision, the
 composer stays available for approval, questions, or requested revisions.
+Pending transcript projection is a message-synchronization state, not evidence
+of active execution. Only a successful completed task awaiting its displayed
+answer uses the finalizing capsule. Failed, cancelled, paused, waiting-input and
+newer active phases retain their authoritative label, icon and available actions;
+failure-message hydration and explicit retry remain intact.
 Older transcript pages, delayed history-rebase events, and remote replayed user
 rows never override explicit user scrolling; only the local optimistic user
 row can force a post-submit jump to the bottom. Conversation detail caches are

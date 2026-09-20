@@ -18,6 +18,7 @@ func (s *Server) publicTranscriptTerminalProjection(
 	projection.Detail = publicSessionRunnerFailureMessage(
 		projection.Detail,
 		s.transcriptWebTaskLanguage(ctx, stream, projection.Detail),
+		projection.ReasonCode,
 	)
 	return projection
 }
@@ -39,7 +40,7 @@ func (s *Server) sanitizeTranscriptWebTerminalMessages(
 		if language == "" {
 			language = s.transcriptWebTaskLanguage(ctx, stream, webString(content["content"]))
 		}
-		content["content"] = publicSessionRunnerFailureMessage(webString(content["content"]), language)
+		content["content"] = publicSessionRunnerFailureMessage(webString(content["content"]), language, webString(message["terminal_reason_code"]))
 	}
 }
 

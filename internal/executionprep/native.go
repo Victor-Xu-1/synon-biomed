@@ -22,7 +22,7 @@ func DecodeNative(language string, raw []byte) ([]Fact, error) {
 		return nil, errors.New("source fact output exceeds budget")
 	}
 	var facts []Fact
-	if language == "python" {
+	if language == "python" || language == "powershell" {
 		if err := json.Unmarshal(raw, &facts); err != nil {
 			return nil, err
 		}
@@ -56,7 +56,7 @@ func DecodeNative(language string, raw []byte) ([]Fact, error) {
 			return nil, errors.New("invalid source fact")
 		}
 		switch fact.Kind {
-		case "call", "source", "script", "process":
+		case "call", "source", "script", "process", "observation":
 		default:
 			return nil, errors.New("invalid source fact kind")
 		}

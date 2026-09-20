@@ -1468,11 +1468,11 @@ func TestDeliveryStepPublishesArtifactsPreparedBeforeDelivery(t *testing.T) {
 
 func TestAutonomousPlanCompletionDoesNotGateFinalOutput(t *testing.T) {
 	server, _, frameID := newGeneratedPlanProcessFixture(t)
-	remaining, err := server.incompleteGeneratedPlanStepTitles(frameID)
+	remaining, err := server.incompleteGeneratedPlanCondition(frameID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(remaining) != 0 {
+	if remaining != nil {
 		t.Fatalf("autonomous navigation became a completion gate: %v", remaining)
 	}
 }

@@ -1,13 +1,9 @@
 package server
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
-	"encoding/xml"
 	"errors"
 	"fmt"
-	"io"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -15,8 +11,6 @@ import (
 
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
-
-const maxRunnerCrossArtifactScanBytes = 16 << 20
 
 var (
 	runnerCrossArtifactPathPattern           = regexp.MustCompile("(?i)(?:outputs|reports)/([A-Za-z0-9][A-Za-z0-9_.-]*\\.[A-Za-z0-9]+)")
@@ -39,6 +33,9 @@ func (s *Server) validateSessionRunnerCrossArtifactConsistency(
 	commits []transcriptstore.ArtifactReferenceInput,
 	finalContents ...string,
 ) ([]string, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	finalContent := ""
 	if len(finalContents) > 0 {
 		finalContent = strings.TrimSpace(finalContents[0])
@@ -57,7 +54,7 @@ func (s *Server) validateSessionRunnerCrossArtifactConsistency(
 	if s == nil || s.workspaceStore == nil || strings.TrimSpace(projectID) == "" {
 		return nil, errors.New("runner cross-artifact authority is unavailable")
 	}
-	snapshots := make([]runnerCrossArtifactSnapshot, 0, len(latest))
+	inputs := make([]runnerArtifactScanInput, 0, len(latest))
 	producedNames := make(map[string]struct{}, len(latest))
 	authoritativeArtifactReferences := make(map[string]map[string]struct{})
 	for _, commit := range latest {
@@ -125,28 +122,16 @@ func (s *Server) validateSessionRunnerCrossArtifactConsistency(
 			}
 			continue
 		}
-		data, readErr := io.ReadAll(io.LimitReader(reader, maxRunnerCrossArtifactScanBytes+1))
-		closeErr := reader.Close()
-		if readErr != nil {
-			return nil, fmt.Errorf("read runner cross-artifact %q: %w", name, readErr)
-		}
-		if closeErr != nil {
+		if closeErr := reader.Close(); closeErr != nil {
 			return nil, fmt.Errorf("close runner cross-artifact %q: %w", name, closeErr)
 		}
-		if len(data) > maxRunnerCrossArtifactScanBytes {
-			continue
-		}
-		text, textErr := runnerCrossArtifactVisibleText(name, data)
-		if textErr != nil {
-			return nil, textErr
-		}
-		snapshots = append(snapshots, runnerCrossArtifactSnapshot{name: name, text: text})
+		inputs = append(inputs, s.runnerArtifactScanInput(name, commit.VersionID, projectID))
 	}
 	if finalContent != "" {
-		snapshots = append(snapshots, runnerCrossArtifactSnapshot{name: "final_response.md", text: finalContent})
+		inputs = append(inputs, runnerArtifactTextInput("final_response.md", finalContent))
 	}
-	sort.Slice(snapshots, func(i, j int) bool {
-		return strings.ToLower(snapshots[i].name) < strings.ToLower(snapshots[j].name)
+	sort.Slice(inputs, func(i, j int) bool {
+		return strings.ToLower(inputs[i].name) < strings.ToLower(inputs[j].name)
 	})
 
 	failures := make([]string, 0)
@@ -181,68 +166,12 @@ func (s *Server) validateSessionRunnerCrossArtifactConsistency(
 				" actual=" + strings.Join(runnerCrossArtifactSortedKeys(actual), "|"))
 		}
 	}
-	for _, snapshot := range snapshots {
-		for _, match := range runnerCrossArtifactPathPattern.FindAllStringSubmatch(snapshot.text, -1) {
-			if len(match) != 2 {
-				continue
-			}
-			referencedName := strings.ToLower(filepath.Base(match[1]))
-			if _, found := producedNames[referencedName]; !found {
-				appendFailure("missing_artifact_reference:" + match[1] + " in " + snapshot.name)
-			}
-		}
+	scanned, err := inspectRunnerArtifactInputs(ctx, inputs, producedNames)
+	if err != nil {
+		return nil, err
 	}
-	for _, snapshot := range snapshots {
-		for _, failure := range runnerMachineValidationFailures(snapshot.name, snapshot.text) {
-			appendFailure(failure)
-		}
-		for _, failure := range runnerCrossArtifactTemplateFailures(snapshot.name, snapshot.text) {
-			appendFailure(failure)
-		}
-		for _, failure := range runnerEvidenceProvenanceFailures(snapshot) {
-			appendFailure(failure)
-		}
-	}
-	for _, failure := range runnerCrossArtifactTableFailures(snapshots) {
+	for _, failure := range scanned {
 		appendFailure(failure)
-	}
-
-	for _, inventory := range snapshots {
-		lowerName := strings.ToLower(filepath.Base(inventory.name))
-		if !strings.Contains(lowerName, "env") || !strings.Contains(lowerName, "inventory") {
-			continue
-		}
-		for _, match := range runnerCrossArtifactMissingPackagePattern.FindAllStringSubmatch(inventory.text, -1) {
-			if len(match) != 2 {
-				continue
-			}
-			packageName := match[1]
-			versionPattern := regexp.MustCompile(
-				"(?i)(?:^|[^A-Za-z0-9_.-])" + regexp.QuoteMeta(packageName) +
-					"(?:\\s+|[:=]\\s*)v?[0-9]+\\.[0-9]+(?:\\.[0-9]+)*\\b",
-			)
-			for _, companion := range snapshots {
-				if companion.name == inventory.name {
-					continue
-				}
-				for _, location := range versionPattern.FindAllStringIndex(companion.text, -1) {
-					start, end := location[0], location[1]
-					contextStart := runnerCrossArtifactMaxInt(0, start-80)
-					contextEnd := runnerCrossArtifactMinInt(len(companion.text), end+80)
-					contextText := strings.ToLower(companion.text[contextStart:contextEnd])
-					if strings.Contains(contextText, "missing") ||
-						strings.Contains(contextText, "not installed") ||
-						strings.Contains(contextText, "unavailable") ||
-						strings.Contains(contextText, "缺失") ||
-						strings.Contains(contextText, "未安装") ||
-						strings.Contains(contextText, "未找到") {
-						continue
-					}
-					appendFailure("environment_claim_conflict:" + packageName + " in " + companion.name)
-					break
-				}
-			}
-		}
 	}
 	sort.Strings(failures)
 	return failures, nil
@@ -296,69 +225,4 @@ func runnerCrossArtifactScanName(name string) bool {
 	default:
 		return false
 	}
-}
-
-func runnerCrossArtifactVisibleText(name string, data []byte) (string, error) {
-	if strings.EqualFold(filepath.Ext(strings.TrimSpace(name)), ".pptx") {
-		return runnerCrossArtifactPPTXText(data)
-	}
-	return string(data), nil
-}
-
-func runnerCrossArtifactPPTXText(data []byte) (string, error) {
-	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return "", fmt.Errorf("read runner cross-artifact presentation: %w", err)
-	}
-	var text strings.Builder
-	for _, entry := range reader.File {
-		path := filepath.ToSlash(entry.Name)
-		if !strings.HasPrefix(path, "ppt/slides/slide") || !strings.HasSuffix(path, ".xml") {
-			continue
-		}
-		file, openErr := entry.Open()
-		if openErr != nil {
-			return "", fmt.Errorf("open runner cross-artifact slide: %w", openErr)
-		}
-		decoder := xml.NewDecoder(file)
-		for {
-			token, tokenErr := decoder.Token()
-			if tokenErr == io.EOF {
-				break
-			}
-			if tokenErr != nil {
-				_ = file.Close()
-				return "", fmt.Errorf("decode runner cross-artifact slide: %w", tokenErr)
-			}
-			start, ok := token.(xml.StartElement)
-			if !ok || start.Name.Local != "t" {
-				continue
-			}
-			var value string
-			if decodeErr := decoder.DecodeElement(&value, &start); decodeErr != nil {
-				_ = file.Close()
-				return "", fmt.Errorf("decode runner cross-artifact slide text: %w", decodeErr)
-			}
-			text.WriteString(value)
-			text.WriteByte('\n')
-		}
-		if closeErr := file.Close(); closeErr != nil {
-			return "", fmt.Errorf("close runner cross-artifact slide: %w", closeErr)
-		}
-	}
-	return text.String(), nil
-}
-
-func runnerCrossArtifactMaxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func runnerCrossArtifactMinInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

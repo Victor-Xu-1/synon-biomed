@@ -95,6 +95,32 @@ func TestDelegatedAskUserContinuationHasDistinctProvenance(t *testing.T) {
 	}
 }
 
+func TestAnsweredAskUserContinuationResolverScope(t *testing.T) {
+	first := AskUserEvidenceResolverSelection{EvidenceGroup: "point", Skill: "resolver-a", Implementation: "Resolver A"}
+	for _, tc := range []struct {
+		name   string
+		second AskUserEvidenceResolverSelection
+		valid  bool
+	}{
+		{"duplicate route", first, true},
+		{"same route normalized", AskUserEvidenceResolverSelection{EvidenceGroup: " POINT ", Skill: " Resolver-A ", Implementation: " RESOLVER A "}, true},
+		{"different group", AskUserEvidenceResolverSelection{EvidenceGroup: "other", Skill: "resolver-b", Implementation: "Resolver B"}, true},
+		{"different engine", AskUserEvidenceResolverSelection{EvidenceGroup: "point", Skill: "resolver-a", Implementation: "Resolver B"}, false},
+		{"different skill", AskUserEvidenceResolverSelection{EvidenceGroup: "point", Skill: "resolver-b", Implementation: "Resolver A"}, false},
+		{"normalized group conflict", AskUserEvidenceResolverSelection{EvidenceGroup: " POINT ", Skill: "resolver-b", Implementation: "Resolver B"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := EncodeAnsweredAskUserModelContinuationWithEvidenceResolvers(
+				map[string]string{"first": "first route", "second": "second route"}, nil,
+				map[string]AskUserEvidenceResolverSelection{"first": first, "second": tc.second},
+			)
+			if (err == nil) != tc.valid || (!tc.valid && result != "") {
+				t.Fatalf("scope valid=%t got result=%q err=%v", tc.valid, result, err)
+			}
+		})
+	}
+}
+
 func TestAskUserResultV1UsesClosedStructuredStates(t *testing.T) {
 	tests := []struct {
 		name    string

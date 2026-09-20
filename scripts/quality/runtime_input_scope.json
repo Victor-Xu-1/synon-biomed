@@ -6,6 +6,7 @@
       "paths": [
         "assets/optional/kernel-compute.manifest.json",
         "assets/optional/kernels/synon_biomed_runtime/worker_execution.py",
+        "assets/optional/kernels/synon_biomed_runtime/worker_effects.py",
         "assets/optional/kernels/synon_biomed_runtime/worker_streams.py",
         "assets/optional/kernels/synon_biomed_runtime/worker_reads.py"
       ],

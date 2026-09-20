@@ -963,8 +963,8 @@ func TestAgentPublicScientificFileDownloadAcceptsTruncatedWebFetchAsDownloadAuth
 	resolved, err := fixture.server.validateAgentPublicScientificSourceURL(
 		context.Background(), fixture.stream.UID, fixture.stream.OwnerID, request,
 	)
-	if err != nil || resolved != sourceCallID {
-		t.Fatalf("resolved=%q want=%q err=%v", resolved, sourceCallID, err)
+	if err != nil || resolved.ToolCallID != sourceCallID {
+		t.Fatalf("resolved=%#v want=%q err=%v", resolved, sourceCallID, err)
 	}
 
 	request.SourceURL = "https://ftp.ncbi.nlm.nih.gov/geo/other.h5"
@@ -1023,7 +1023,7 @@ func TestAgentPublicScientificDownloadPreflightPrivatelyRejectsGuessedURL(t *tes
 		ID: "guessed-download", Name: "download_public_scientific_file",
 		Arguments: json.RawMessage(`{"url":"https://files.rcsb.org/download/9ODR.cif.gz","filename":"9ODR.cif.gz","human_description":"Downloading coordinates"}`),
 	}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "scientific_download_source_preflight_required") ||
 		!strings.Contains(diagnostic, "Do not retry another guessed") ||
 		!strings.Contains(diagnostic, "continue with the verified evidence") ||
@@ -1032,7 +1032,7 @@ func TestAgentPublicScientificDownloadPreflightPrivatelyRejectsGuessedURL(t *tes
 		t.Fatalf("guessed URL preflight diagnostic=%q", diagnostic)
 	}
 	call.Arguments = json.RawMessage(`{"url":"https://files.rcsb.org/download/9ODR.cif","filename":"9ODR.cif","human_description":"Downloading coordinates"}`)
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("canonical durable source URL was rejected: %s", diagnostic)
 	}
 }
@@ -1052,7 +1052,7 @@ func TestAgentPublicScientificDownloadPreflightPrivatelyRejectsPathFilename(t *t
 		ID: "nested-download", Name: "download_public_scientific_file",
 		Arguments: json.RawMessage(`{"url":"https://files.rcsb.org/download/9ODR.cif","filename":"inputs/9ODR.cif","human_description":"Downloading coordinates"}`),
 	}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "scientific_download_contract_preflight_required") ||
 		!strings.Contains(diagnostic, "path-free filename") || !strings.Contains(diagnostic, "continue with sufficient verified evidence") {
 		t.Fatalf("nested filename preflight diagnostic=%q", diagnostic)

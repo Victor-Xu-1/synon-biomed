@@ -303,15 +303,16 @@ func (fn FuncToolGateway) Execute(ctx context.Context, call ToolCall) (ToolResul
 type EventType string
 
 const (
-	EventModelRequest  EventType = "model_request"
-	EventModelDelta    EventType = "model_delta"
-	EventModelResponse EventType = "model_response"
-	EventToolStarted   EventType = "tool_started"
-	EventToolProgress  EventType = "tool_progress"
-	EventToolCompleted EventType = "tool_completed"
-	EventToolFailed    EventType = "tool_failed"
-	EventToolPaused    EventType = "tool_paused"
-	EventFinal         EventType = "final"
+	EventModelRequest           EventType = "model_request"
+	EventModelDelta             EventType = "model_delta"
+	EventModelResponse          EventType = "model_response"
+	EventPresentationDiagnostic EventType = "presentation_diagnostic"
+	EventToolStarted            EventType = "tool_started"
+	EventToolProgress           EventType = "tool_progress"
+	EventToolCompleted          EventType = "tool_completed"
+	EventToolFailed             EventType = "tool_failed"
+	EventToolPaused             EventType = "tool_paused"
+	EventFinal                  EventType = "final"
 )
 
 type Event struct {

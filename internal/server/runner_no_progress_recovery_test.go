@@ -24,7 +24,7 @@ func TestRepeatedCompletionCorrectionIsBoundedByItsDurableFingerprint(t *testing
 			"resume_detail": detail + sessionRunnerNoProgressDetailMarker + `{"schema":"synon.runner_no_progress.v1"}`,
 		}},
 	}
-	if got := runnerRepeatedCorrectionInterruptionCount(entries, "artifact_reference_correction_required", detail); got != 2 {
+	if got := runnerRepeatedCorrectionInterruptionCount(entries, transcriptstore.RunnerInterruptionCause{ReasonCode: "artifact_reference_correction_required", Detail: detail}); got != 2 {
 		t.Fatalf("repeated correction count=%d, want 2", got)
 	}
 	var integrity *sessionRunnerReferenceIntegrityError
@@ -33,43 +33,76 @@ func TestRepeatedCompletionCorrectionIsBoundedByItsDurableFingerprint(t *testing
 	if !ok {
 		t.Fatal("reference integrity failure is not a bounded correction")
 	}
-	if reason, gotDetail := correction.runnerCorrection(); reason != "artifact_reference_correction_required" || gotDetail != integrity.Error() {
-		t.Fatalf("correction=(%q,%q), want typed integrity correction", reason, gotDetail)
+	if cause := correction.runnerCorrection(); cause.ReasonCode != "artifact_reference_correction_required" || cause.Detail != integrity.Error() || cause.Condition == nil {
+		t.Fatalf("correction=%#v, want typed integrity correction", cause)
 	}
 }
 
-func TestNoProgressRouteQuarantineIgnoresPresentationLabelsAndClearsOnMaterialProgress(t *testing.T) {
+func TestUnavailableSourceDoesNotResetSemanticProgress(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		result   map[string]any
+		progress bool
+	}{
+		{"source unavailable", map[string]any{"sourceUnavailable": true, "complete": true, "bytesRead": 146}, false},
+		{"native envelope", map[string]any{"ok": true, "result": map[string]any{"sourceUnavailable": true, "statusCode": 403}}, false},
+		{"recoverable failure", map[string]any{"failure": map[string]any{"recoverable": true, "kind": "source_unavailable"}}, false},
+		{"unavailable status", map[string]any{"status": "unavailable"}, false},
+		{"all sources unavailable", map[string]any{"sources": []any{map[string]any{"status": "unavailable"}}}, false},
+		{"failed result", map[string]any{"ok": false}, false},
+		{"unchanged result", map[string]any{"ok": true, "effect": map[string]any{"state": "unchanged"}}, false},
+		{"cached result", map[string]any{"ok": true, "reused": true}, false},
+		{"successful read", map[string]any{"ok": true, "content": "new source content"}, true},
+		{"partial usable output", map[string]any{"partial": true, "content": "usable source subset"}, true},
+		{"body is not status", map[string]any{"ok": true, "body": map[string]any{"sourceUnavailable": true}}, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if got := runnerToolCompletionHasMaterialProgress("web_fetch", test.result); got != test.progress {
+				t.Errorf("live progress=%t, want %t", got, test.progress)
+			}
+			entries := []eventjournal.Entry{
+				{Message: eventjournal.Message{"type": "runner_checkpoint", "reason_code": sessionRunnerToolRoundNoProgressReasonCode}},
+				{Message: eventjournal.Message{"type": "runner_checkpoint", "status": "completed", "toolPhase": "completed", "toolName": "web_fetch", "toolResult": test.result}},
+			}
+			wantCount := 1
+			if test.progress {
+				wantCount = 0
+			}
+			if got := runnerToolRoundNoProgressInterruptionCount(entries); got != wantCount {
+				t.Errorf("replayed no-progress count=%d, want %d", got, wantCount)
+			}
+		})
+	}
+}
+
+func TestNoProgressRecoveryPreviewPreservesIdentityAndProgressReset(t *testing.T) {
 	run := &sessionRunnerChatRun{TaskIntent: "complete the task", TaskIntentRevision: 1}
 	run.restoreNoProgressRecovery(newSessionRunnerNoProgressRecovery(
-		runnerRecoveryObligationFingerprint(nil, "", ""),
+		runnerRecoveryObligationFingerprint(nil, transcriptstore.RunnerInterruptionCause{}),
 	))
 	run.recordNoProgress([]agentruntime.ToolCall{{
 		Name:      "update_step_status",
 		Arguments: json.RawMessage(`{"step":"module-1","status":"in_progress","human_description":"first label"}`),
 	}})
-	blocked := run.noProgressRoutePreflight(
+	blocked := run.NoProgressRecovery.containsFingerprint(agentruntime.ExecutionCallFingerprint(
 		"update_step_status",
 		json.RawMessage(`{"step":"module-1","status":"in_progress","human_description":"different label"}`),
-		"update_step_status",
-		map[string]any{"step": "module-1", "status": "in_progress", "human_description": "different label"},
-	)
-	if stringValue(blocked["status"]) != "durable_no_progress_route_closed" {
+	))
+	if !blocked {
 		t.Fatalf("presentation-only change reopened a closed route: %#v", blocked)
 	}
-	changed := run.noProgressRoutePreflight(
+	changed := run.NoProgressRecovery.containsFingerprint(agentruntime.ExecutionCallFingerprint(
 		"update_step_status",
 		json.RawMessage(`{"step":"module-1","status":"completed"}`),
-		"update_step_status", map[string]any{"step": "module-1", "status": "completed"},
-	)
-	if changed != nil {
+	))
+	if changed {
 		t.Fatalf("materially changed action was quarantined: %#v", changed)
 	}
 	run.recordMaterialProgress()
-	if blockedAfterProgress := run.noProgressRoutePreflight(
+	if blockedAfterProgress := run.NoProgressRecovery.containsFingerprint(agentruntime.ExecutionCallFingerprint(
 		"update_step_status",
 		json.RawMessage(`{"step":"module-1","status":"in_progress"}`),
-		"update_step_status", map[string]any{"step": "module-1", "status": "in_progress"},
-	); blockedAfterProgress != nil {
+	)); blockedAfterProgress {
 		t.Fatalf("material progress did not release prior route: %#v", blockedAfterProgress)
 	}
 }
@@ -107,7 +140,7 @@ func TestLongReplayRestoresCorrectionAndNoProgressStateOutsideProviderWindow(t *
 		"resume_detail": correctionDetail,
 	})
 	state := newSessionRunnerNoProgressRecovery(runnerRecoveryObligationFingerprint(
-		authority, "artifact_reference_correction_required", correctionDetail,
+		authority, transcriptstore.RunnerInterruptionCause{ReasonCode: "artifact_reference_correction_required", Detail: correctionDetail},
 	))
 	state.recordNoProgress([]agentruntime.ToolCall{{
 		Name: "save_artifacts", Arguments: json.RawMessage(`{"files":["report.md"]}`),
@@ -120,6 +153,31 @@ func TestLongReplayRestoresCorrectionAndNoProgressStateOutsideProviderWindow(t *
 		appendRunnerToolCheckpoint(t, repo, claimed.Claim, fmt.Sprintf("no-progress-audit-%03d", index), map[string]any{
 			"status": "running", "audit": index,
 		})
+	}
+	// A completed transport carrying an unavailable source must not reopen the
+	// previously closed action when restoring the durable, bounded history.
+	run := &sessionRunnerChatRun{SessionID: stream.SessionID, Attempt: int(claimed.Claim.Attempt),
+		ClaimToken: claimed.Claim.ClaimToken, Transcript: authority,
+		CorrectionReason: "artifact_reference_correction_required", CorrectionDetail: correctionDetail}
+	run.restoreNoProgressRecovery(state)
+	options := SessionRunnerChatOptions{RunnerID: claimed.Claim.RunnerID, SessionID: stream.SessionID}
+	call := agentruntime.ToolCall{ID: "unavailable-read", Name: "web_fetch", Arguments: json.RawMessage(`{"url":"https://example.org/source"}`)}
+	if err := server.checkpointChatModelToolCalls(options, run, []agentruntime.ToolCall{call}); err != nil {
+		t.Fatal(err)
+	}
+	if err := server.checkpointSessionRunnerToolEvent(context.Background(), options, run, agentruntime.Event{
+		Type: agentruntime.EventToolStarted, ToolName: call.Name, ToolCallID: call.ID, Arguments: string(call.Arguments),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := server.checkpointSessionRunnerToolEvent(context.Background(), options, run, agentruntime.Event{
+		Type: agentruntime.EventToolCompleted, ToolName: call.Name, ToolCallID: call.ID, Arguments: string(call.Arguments),
+		Result: `{"ok":true,"result":{"sourceUnavailable":true,"statusCode":404,"complete":true,"bytesRead":127}}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if blocked := run.NoProgressRecovery.containsFingerprint(agentruntime.ExecutionCallFingerprint("save_artifacts", json.RawMessage(`{"files":["report.md"]}`))); !blocked {
+		t.Fatalf("unavailable receipt reopened live action: %#v", blocked)
 	}
 
 	entries, err := server.loadTranscriptRunnerReplay(context.Background(), authority, 20, 20)
@@ -134,5 +192,17 @@ func TestLongReplayRestoresCorrectionAndNoProgressStateOutsideProviderWindow(t *
 	if !found || restored.Consecutive != 1 || len(restored.ClosedActions) != 1 ||
 		restored.ClosedActions[0].Tool != "save_artifacts" {
 		t.Fatalf("bounded replay lost no-progress state: found=%t state=%#v", found, restored)
+	}
+	runtimeState, err := repo.GetRunnerRuntimeState(context.Background(), stream.UID, stream.OwnerID, claimed.Claim.Attempt)
+	if err != nil || runtimeState.Status != "running" {
+		t.Fatalf("recoverable unavailable source terminated the runner: state=%#v err=%v", runtimeState, err)
+	}
+	history, found, err := server.loadTranscriptWebHistory(context.Background(), stream.OwnerID, stream.SessionID)
+	if err != nil || !found || len(history) == 0 {
+		t.Fatalf("history found=%t err=%v", found, err)
+	}
+	content, _ := history[len(history)-1]["content"].(map[string]any)
+	if content["call_id"] != call.ID || content["status"] != "completed" {
+		t.Fatalf("unavailable transport lifecycle was changed: %#v", content)
 	}
 }

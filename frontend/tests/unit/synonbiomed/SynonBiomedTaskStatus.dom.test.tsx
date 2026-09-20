@@ -70,6 +70,26 @@ const expectDetailsSurfaceClosed = () => {
 };
 
 describe('SynonBiomedTaskStatus', () => {
+  it.each(['response_language_mismatch'])('shows a precise safe presentation failure for %s', async (failureReason) => {
+    await renderWithI18n(
+      <SynonBiomedTaskStatus
+        {...defaultProps}
+        snapshot={snapshot('failed', {
+          failureKind: 'result_rejected',
+          failureReason,
+          error: 'private provider payload sk-secretValue123456',
+        })}
+      />
+    );
+    expect(screen.getByTestId('synon-biomed-task-failure-reason')).toHaveTextContent(
+      /回复呈现需要修正|Response presentation needs correction/i
+    );
+    fireEvent.click(screen.getByTestId('synon-biomed-task-details-trigger'));
+    expect(screen.getByTestId('synon-biomed-task-center-failure-detail')).toHaveTextContent(
+      /已有文件和执行结果已保留|Existing files and execution results are preserved/i
+    );
+    expect(screen.queryByText(/sk-secretValue123456/)).not.toBeInTheDocument();
+  });
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
@@ -93,6 +113,54 @@ describe('SynonBiomedTaskStatus', () => {
     expect(screen.getByText(/preparing final result|正在整理最终结果/i)).toBeInTheDocument();
     expect(screen.queryByText(/^task completed$|^任务已完成$/i)).not.toBeInTheDocument();
   });
+
+  it.each([
+    { status: 'failed', phase: 'failed', active: false },
+    { status: 'cancelled', phase: 'cancelled', active: false },
+    { status: 'paused', phase: 'paused', active: false },
+    { status: 'awaiting_user_response', phase: 'waiting_input', active: false },
+    { status: 'processing', phase: 'running', active: true },
+  ])(
+    'does not replace $status with result preparation while messages synchronize',
+    async ({ status, phase, active }) => {
+      const onResume = vi.fn();
+      await renderWithI18n(
+        <SynonBiomedTaskStatus
+          {...defaultProps}
+          snapshot={snapshot(
+            status,
+            status === 'awaiting_user_response'
+              ? {
+                  pendingInputRequests: [
+                    {
+                      requestId: 'pending-input',
+                      toolId: 'ask-input',
+                      kind: 'ask_user',
+                      tool: 'ask_user',
+                      code: null,
+                      description: null,
+                      environment: null,
+                      mode: null,
+                      questions: [],
+                    },
+                  ],
+                }
+              : {}
+          )}
+          terminalProjectionPending
+          onResume={status === 'failed' ? onResume : undefined}
+        />
+      );
+
+      expect(screen.getByTestId('synon-biomed-task-status-indicator')).toHaveAttribute('data-state', phase);
+      expect(screen.queryByText(/preparing final result|正在整理最终结果/i)).not.toBeInTheDocument();
+      expect(Boolean(screen.queryByTestId('synon-biomed-task-status-spinner'))).toBe(active);
+      if (status === 'failed') {
+        fireEvent.click(screen.getByTestId('synon-biomed-task-status-action'));
+        expect(onResume).toHaveBeenCalledOnce();
+      }
+    }
+  );
 
   it('keeps the running capsule and its pause control as the only active controls', async () => {
     vi.useFakeTimers();

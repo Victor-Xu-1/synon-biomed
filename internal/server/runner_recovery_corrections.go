@@ -122,7 +122,41 @@ func sessionEntriesToChatMessages(systemPrompt string, entries []eventjournal.En
 type recoveredRunnerCorrection struct {
 	ReasonCode               string
 	Detail                   string
+	Condition                *transcriptstore.RunnerCorrectionCondition
+	ReadCoverage             *runnerConditionReadCoverage
 	RecoveryContractRevision int64
+}
+
+// The scheduler reason is not the underlying correction obligation. Older
+// checkpoints without a typed cause remain historical evidence; do not infer
+// a machine condition by parsing their human-facing exhaustion text.
+const runnerCorrectionProjectionType = "runner_correction_projection"
+
+func runnerCheckpointRecoveryCondition(entry eventjournal.Entry) transcriptstore.RunnerInterruptionCause {
+	message := entry.Message
+	reason := firstNonEmpty(strings.TrimSpace(stringValue(message["reason_code"])), strings.TrimSpace(stringValue(message["reasonCode"])))
+	detail := firstNonEmpty(strings.TrimSpace(stringValue(message["resume_detail"])), strings.TrimSpace(stringValue(message["resumeDetail"])))
+	// Only the canonical loader can create this Go value; JSON/tool content
+	// cannot impersonate hydrated authority or manufacture missing evidence.
+	if entry.SourceEventType == "runner_checkpoint" || entry.SourceEventType == runnerCorrectionProjectionType {
+		if cause, ok := entry.RuntimeProjection.(transcriptstore.RunnerInterruptionCause); ok {
+			return cause
+		}
+		if correction, ok := entry.RuntimeProjection.(recoveredRunnerCorrection); ok {
+			return correction.cause()
+		}
+	}
+	cause, present, err := transcriptstore.ParseRunnerInterruptionCause(message)
+	if err != nil {
+		return transcriptstore.RunnerInterruptionCause{}
+	}
+	if present {
+		return cause
+	}
+	if reason == sessionRunnerCorrectionNoProgressExhaustedReasonCode {
+		return transcriptstore.RunnerInterruptionCause{}
+	}
+	return transcriptstore.RunnerInterruptionCause{ReasonCode: reason, Detail: detail}
 }
 
 func latestRunnerCorrection(entries []eventjournal.Entry) (recoveredRunnerCorrection, bool) {
@@ -146,31 +180,35 @@ func latestRunnerCorrection(entries []eventjournal.Entry) (recoveredRunnerCorrec
 		if strings.TrimSpace(stringValue(message["type"])) != "runner_checkpoint" {
 			continue
 		}
-		reason := strings.TrimSpace(stringValue(message["reason_code"]))
-		if reason == "" {
-			reason = strings.TrimSpace(stringValue(message["reasonCode"]))
+		cause := runnerCheckpointRecoveryCondition(entry)
+		if cause.ConditionRef != nil {
+			return recoveredRunnerCorrection{}, false
 		}
+		reason, detail := cause.ReasonCode, cause.Detail
 		switch reason {
 		case "artifact_reference_correction_required",
 			"completion_review_correction_required",
 			sessionRunnerCompletionReviewRecoveryReasonCode,
 			sessionRunnerRealScientificEvidenceRequiredReasonCode,
 			sessionRunnerPlanStepsIncompleteReasonCode,
+			sessionRunnerPlanApprovalRequiredReasonCode,
 			sessionRunnerRequiredToolChoiceUnsatisfiedReasonCode,
-			sessionRunnerVisualArtifactValidationReasonCode, sessionRunnerResponseLanguageMismatchReasonCode:
+			sessionRunnerVisualArtifactValidationReasonCode, sessionRunnerResponseLanguageMismatchReasonCode, sessionRunnerFinalPresentationReasonCode:
 		default:
 			continue
-		}
-		detail := strings.TrimSpace(stringValue(message["resume_detail"]))
-		if detail == "" {
-			detail = strings.TrimSpace(stringValue(message["resumeDetail"]))
 		}
 		if detail == "" || len(detail) > maxRunnerCorrectionResumeDetailBytes {
 			return recoveredRunnerCorrection{}, false
 		}
 		correction := recoveredRunnerCorrection{
 			ReasonCode: reason, Detail: detail,
+			Condition:                cause.Condition,
 			RecoveryContractRevision: recoveredRunnerContractRevision(message),
+		}
+		if entry.SourceEventType == runnerCorrectionProjectionType {
+			if projected, ok := entry.RuntimeProjection.(recoveredRunnerCorrection); ok {
+				correction.ReadCoverage = projected.ReadCoverage
+			}
 		}
 		if recoveredRunnerCorrectionSupersededByCurrentContract(correction) {
 			return recoveredRunnerCorrection{}, false
@@ -221,7 +259,7 @@ func recoveredRunnerCorrectionSupersededByCurrentContract(correction recoveredRu
 	return correction.RecoveryContractRevision > 0 &&
 		correction.RecoveryContractRevision < sessionRunnerRecoveryContractRevision &&
 		correction.ReasonCode == "artifact_reference_correction_required" &&
-		sessionRunnerCorrectionOnlyHasPublicationFreshnessFailures(correction.Detail)
+		sessionRunnerCorrectionOnlyHasPublicationFreshnessFailures(correction.repairDetail())
 }
 
 func hasRecoveredRunnerCorrection(entries []eventjournal.Entry) bool {
@@ -234,8 +272,13 @@ func recoveredRunnerCorrectionRequiresTool(entries []eventjournal.Entry) bool {
 	if !found {
 		return false
 	}
-	switch correction.ReasonCode {
+	return sessionRunnerCorrectionReasonRequiresTool(correction.ReasonCode, correction.repairDetail())
+}
+
+func sessionRunnerCorrectionReasonRequiresTool(reason, detail string) bool {
+	switch reason {
 	case sessionRunnerPlanStepsIncompleteReasonCode,
+		sessionRunnerPlanApprovalRequiredReasonCode,
 		sessionRunnerVisualArtifactValidationReasonCode,
 		sessionRunnerRealScientificEvidenceRequiredReasonCode,
 		"completion_review_correction_required":
@@ -246,17 +289,10 @@ func recoveredRunnerCorrectionRequiresTool(entries []eventjournal.Entry) bool {
 		// reference corrections remain model-directed: removing an unsupported
 		// claim needs no tool, while preserving it still fails the immutable
 		// reference validator unless a new durable source receipt attests it.
-		return runnerCorrectionReportsArtifactMutation(correction.Detail)
+		return runnerCorrectionReportsArtifactMutation(detail)
 	default:
 		return false
 	}
-}
-
-func runnerCorrectionEntriesForClassification(reason, detail string) []eventjournal.Entry {
-	return []eventjournal.Entry{{Message: eventjournal.Message{
-		"type": "runner_checkpoint", "status": "interrupted",
-		"reason_code": strings.TrimSpace(reason), "resume_detail": strings.TrimSpace(detail),
-	}}}
 }
 
 func recoveredRunnerInitialToolChoice(entries []eventjournal.Entry, availableToolSets ...[]agentruntime.ToolSchema) any {
@@ -374,6 +410,8 @@ func recoveredRunnerCorrectionContext(entries []eventjournal.Entry) string {
 	switch correction.ReasonCode {
 	case sessionRunnerPlanStepsIncompleteReasonCode:
 		transition = "advance_durable_plan"
+	case sessionRunnerPlanApprovalRequiredReasonCode:
+		transition = "prepare_plan_for_approval"
 	case "artifact_reference_correction_required":
 		transition = "repair_current_candidate"
 	case "completion_review_correction_required":
@@ -384,7 +422,7 @@ func recoveredRunnerCorrectionContext(entries []eventjournal.Entry) string {
 		transition = "resume_pending_runtime_transition"
 	case sessionRunnerRealScientificEvidenceRequiredReasonCode:
 		transition = "satisfy_missing_capability"
-	case sessionRunnerResponseLanguageMismatchReasonCode:
+	case sessionRunnerResponseLanguageMismatchReasonCode, sessionRunnerFinalPresentationReasonCode:
 		transition = "replace_response_presentation"
 	case sessionRunnerVisualArtifactValidationReasonCode:
 		transition = "repair_and_revalidate_visual_output"
@@ -401,7 +439,9 @@ func recoveredRunnerCorrectionContext(entries []eventjournal.Entry) string {
 		"revalidate_after_state_change":       true,
 		"logical_task_unbounded":              true,
 	}
-	if requirements := runnerArtifactRepairRequirements(correction.Detail); len(requirements) > 0 {
+	if correction.Condition != nil {
+		contract["condition"] = runnerCorrectionReadDescriptor(correction.Condition, correction.ReadCoverage)
+	} else if requirements := runnerArtifactRepairRequirements(correction.Detail); len(requirements) > 0 {
 		contract["repair_requirements"] = requirements
 	}
 	encoded, err := json.Marshal(contract)

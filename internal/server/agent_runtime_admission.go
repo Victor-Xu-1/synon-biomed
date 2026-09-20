@@ -83,11 +83,39 @@ func (g serverAgentRuntimeToolGateway) ToolCallAdmissionDiagnostic(call agentrun
 	return string(raw)
 }
 
-// ToolCallPreflightDiagnostic runs task-scoped policy before the engine emits
+// ToolCallPreflightDiagnostics runs task-scoped policy before the engine emits
 // EventModelResponse or EventToolStarted. Kernel tools cannot safely return a
 // synthetic correction after their durable start boundary because the
 // lifecycle store would then correctly require a matching kernel operation.
-func (g serverAgentRuntimeToolGateway) ToolCallPreflightDiagnostic(call agentruntime.ToolCall) string {
+func (g serverAgentRuntimeToolGateway) ToolCallPreflightDiagnostics(ctx context.Context, calls []agentruntime.ToolCall) (map[int]string, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	diagnostics, err := g.noProgressBatchPreflight(ctx, calls)
+	if err != nil {
+		return nil, err
+	}
+	if diagnostics == nil {
+		diagnostics = make(map[int]string)
+	}
+	for index, call := range calls {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		if diagnostics[index] != "" {
+			continue
+		}
+		if diagnostic := g.toolCallPreflightDiagnostic(ctx, call); diagnostic != "" {
+			diagnostics[index] = diagnostic
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return diagnostics, nil
+}
+
+func (g serverAgentRuntimeToolGateway) toolCallPreflightDiagnostic(ctx context.Context, call agentruntime.ToolCall) string {
 	requestedName := call.Name
 	name, err := canonicalRuntimeToolName(requestedName)
 	if err != nil || retiredAgentRuntimeRequestedName(requestedName) || retiredAgentRuntimeRequestedName(name) {
@@ -108,13 +136,7 @@ func (g serverAgentRuntimeToolGateway) ToolCallPreflightDiagnostic(call agentrun
 	if g.validateAdmittedToolArguments(name, input) != nil {
 		return ""
 	}
-	preflight := map[string]any(nil)
-	if g.taskRun != nil {
-		preflight = g.taskRun.noProgressRoutePreflight(requestedName, call.Arguments, name, input)
-	}
-	if preflight == nil {
-		preflight = agentRuntimeGeneratePlanContractPreflight(name, input)
-	}
+	preflight := agentRuntimeGeneratePlanContractPreflight(name, input)
 	if preflight == nil {
 		preflight = g.computeQuestionImplementationPreflight(name, input)
 	}
@@ -126,7 +148,7 @@ func (g serverAgentRuntimeToolGateway) ToolCallPreflightDiagnostic(call agentrun
 		if g.server != nil && g.server.kernelManager != nil {
 			preparer = g.server.kernelManager
 		}
-		preflight = agentExecutionPreparationPreflight(name, input, g.kernel, preparer)
+		preflight = agentExecutionPreparationPreflight(ctx, name, input, g.kernel, preparer)
 	}
 	if preflight == nil && g.server != nil && g.server.kernelManager != nil {
 		preflight = agentRuntimePythonEnvironmentAPIPreflight(name, input, g.server.kernelManager)
@@ -173,7 +195,7 @@ func (g serverAgentRuntimeToolGateway) ToolCallPreflightDiagnostic(call agentrun
 	}
 	if preflight == nil {
 		preflight = g.agentRuntimeManagedExecutionOutputMutationPreflight(
-			context.Background(), name, input,
+			ctx, name, input,
 		)
 	}
 	// Deterministic, context-free validation must also protect recovery runners.

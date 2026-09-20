@@ -19,7 +19,6 @@ import (
 const (
 	runnerLargeToolResultVersionPrefix    = "ltr-"
 	runnerLargeToolResultArtifactIDPrefix = "large-tool-result-"
-	maxRunnerLargeToolResultBytes         = 256 << 20
 )
 
 var (
@@ -122,11 +121,14 @@ func (s *Store) WriteRunnerLargeToolResult(
 		input.OwnerUserID == "" || input.RunnerID == "" || input.ClaimToken == "" ||
 		input.ToolName == "" || input.ToolCallID == "" || input.Attempt < 0 ||
 		input.SourceEventID <= 0 || len(input.Content) == 0 ||
-		len(input.Content) > maxRunnerLargeToolResultBytes || !json.Valid(input.Content) {
+		!json.Valid(input.Content) {
 		return RunnerLargeToolResult{}, errRunnerLargeToolResultInvalid
 	}
 	versionID := runnerLargeToolResultVersionPrefix + uuid.NewString()
-	temporary, size, digest, err := s.stageArtifactWrite(ctx, bytes.NewReader(input.Content), maxRunnerLargeToolResultBytes)
+	// The original result is already materialized by the tool contract. Bound
+	// the copy to those exact bytes; the shared writer checks actual remaining
+	// disk capacity as it streams, without an unrelated product-size ceiling.
+	temporary, size, digest, err := s.stageArtifactWrite(ctx, bytes.NewReader(input.Content), int64(len(input.Content)))
 	if err != nil {
 		return RunnerLargeToolResult{}, err
 	}

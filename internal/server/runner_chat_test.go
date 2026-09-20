@@ -59,7 +59,13 @@ func TestSessionRunnerPreparationCheckpointDeadlineIsBoundedAndResumable(t *test
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatal("classified preparation error must preserve its deadline cause")
 	}
-	reason, detail, bounded := sessionRunnerBoundedCorrectionDetails(err)
+	var correction sessionRunnerBoundedCorrection
+	bounded := errors.As(err, &correction)
+	if !bounded {
+		t.Fatalf("not a typed correction: %v", err)
+	}
+	cause := correction.runnerCorrection()
+	reason, detail := cause.ReasonCode, cause.Detail
 	if !bounded || reason != sessionRunnerPreparationTimeoutReasonCode ||
 		!strings.Contains(detail, "history_replay") {
 		t.Fatalf("preparation checkpoint correction = (%q, %q, %t)", reason, detail, bounded)
@@ -85,7 +91,8 @@ func TestSessionRunnerKernelRecoveryTimeoutIsBoundedAndResumable(t *testing.T) {
 	if !errors.Is(correction, errSessionRunnerKernelRecoveryDeadline) {
 		t.Fatal("kernel recovery timeout must preserve its deadline cause")
 	}
-	reason, detail := correction.runnerCorrection()
+	cause := correction.runnerCorrection()
+	reason, detail := cause.ReasonCode, cause.Detail
 	if reason != sessionRunnerKernelRecoveryTimeoutReasonCode ||
 		!strings.Contains(detail, "durable operation") {
 		t.Fatalf("kernel recovery correction = (%q, %q)", reason, detail)
@@ -1597,7 +1604,8 @@ func TestSessionRunnerChatPreparationTimeoutInterruptsBlockedLifecycleHook(t *te
 	if preparationErr.stage != "lifecycle_hooks" {
 		t.Fatalf("preparation timeout stage = %q, want lifecycle_hooks", preparationErr.stage)
 	}
-	reason, detail := preparationErr.runnerCorrection()
+	cause := preparationErr.runnerCorrection()
+	reason, detail := cause.ReasonCode, cause.Detail
 	if reason != sessionRunnerPreparationTimeoutReasonCode || !strings.Contains(detail, "lifecycle_hooks") {
 		t.Fatalf("runner correction reason=%q detail=%q", reason, detail)
 	}

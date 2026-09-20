@@ -16,6 +16,7 @@ import (
 
 	taskstore "synon-go/internal/persistence/tasks"
 
+	"synon-go/internal/executionprep"
 	"synon-go/internal/tools/shellops"
 )
 
@@ -33,7 +34,7 @@ func (s *Server) executeShellTool(ctx context.Context, toolName string, input ma
 			return nil, err
 		}
 		if boolValue(input["run_in_background"], false) {
-			return s.startBackgroundShellCommand(routeTool, routeShell, routeReason, input)
+			return s.startBackgroundShellCommand(routeTool, routeShell, routeReason, input, executionprep.ObservationFromContext(ctx))
 		}
 		result, err := shellops.ExecuteShellCommand(
 			ctx,
@@ -58,7 +59,7 @@ func (s *Server) executeShellTool(ctx context.Context, toolName string, input ma
 		}
 		if boolValue(input["run_in_background"], false) {
 			shellName := strings.ToLower(executorToolName)
-			return s.startBackgroundShellCommand(executorToolName, shellName, "", input)
+			return s.startBackgroundShellCommand(executorToolName, shellName, "", input, executionprep.ObservationFromContext(ctx))
 		}
 		return shellops.ExecuteShellCommand(
 			ctx,
@@ -82,7 +83,7 @@ func (s *Server) executeShellTool(ctx context.Context, toolName string, input ma
 	)
 }
 
-func (s *Server) startBackgroundShellCommand(toolName string, shellName string, routeReason string, input map[string]any) (map[string]any, error) {
+func (s *Server) startBackgroundShellCommand(toolName string, shellName string, routeReason string, input map[string]any, observations ...*executionprep.Observation) (map[string]any, error) {
 	if s.taskStore == nil {
 		return nil, errors.New("task store is not configured")
 	}
@@ -124,7 +125,11 @@ func (s *Server) startBackgroundShellCommand(toolName string, shellName string, 
 	if _, _, _, err := s.taskStore.UpdateWithOptions(task.ID, taskstore.UpdateOptions{Metadata: metadata, MetadataSet: true}); err != nil {
 		return nil, err
 	}
-	running, err := shellops.StartShellCommand(context.Background(), s.fileRoot, toolName, command, stringValue(input["workdir"]))
+	executionContext := context.Background()
+	if len(observations) > 0 {
+		executionContext = executionprep.WithObservation(executionContext, observations[0])
+	}
+	running, err := shellops.StartShellCommand(executionContext, s.fileRoot, toolName, command, stringValue(input["workdir"]))
 	if err != nil {
 		failedStatus := "failed"
 		metadata["error"] = err.Error()

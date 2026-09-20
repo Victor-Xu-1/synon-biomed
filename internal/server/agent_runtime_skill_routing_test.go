@@ -24,7 +24,7 @@ func TestAdvertisedRootToolDoesNotRequireSkillPreflight(t *testing.T) {
 		ID: "fetch", Name: "web_fetch",
 		Arguments: json.RawMessage(`{"url":"https://example.test"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("advertised root tool was forced through Skill preflight: %s", diagnostic)
 	}
 }
@@ -108,7 +108,7 @@ func TestLoadedSkillGuidanceDoesNotCreateAStringMatchingExecutionGate(t *testing
 		ID: "alternate", Name: "python",
 		Arguments: json.RawMessage(`{"code":"from examplelib import Builder\nBuilder().run()","environment":"science"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("Skill guidance became a substring-based execution gate: %s", diagnostic)
 	}
 }
@@ -469,7 +469,7 @@ func TestLoadedSkillDoesNotRevokeAdvertisedRootTool(t *testing.T) {
 		ID: "read", Name: "read_file",
 		Arguments: json.RawMessage(`{"path":"/tmp/input.txt"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("loaded Skill revoked an advertised root tool: %s", diagnostic)
 	}
 }
@@ -633,7 +633,7 @@ func TestMaterializedSkillScriptPreflightRunsInPrivateGatewayAdmission(t *testin
 		ID: "invalid-script-arguments", Name: "bash",
 		Arguments: json.RawMessage(`{"command":"python \"` + script + `\" --inputs data.csv"}`),
 	}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "skill_arguments_preflight_required") ||
 		!strings.Contains(diagnostic, "--inputs") {
 		t.Fatalf("private gateway diagnostic=%q", diagnostic)
@@ -650,7 +650,7 @@ func TestNamedHostMCPCallUsesLiveSnapshotWithoutSkillAdmission(t *testing.T) {
 		ID: "mcp-query", Name: "repl",
 		Arguments: json.RawMessage(`{"code":"result = host.mcp(\"literature\", \"search\", query=\"example\")"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("named host.mcp call was forced through Skill admission: %s", diagnostic)
 	}
 }

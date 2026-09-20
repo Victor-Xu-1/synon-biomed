@@ -75,15 +75,15 @@ func TestSearchRejectsUnrelatedNavigationLinksAsEvidence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Search error = %v", err)
 	}
-	if out.Failure == nil || out.Failure.Kind != "search_unavailable" || len(out.Sources) != 0 {
+	if out.Failure != nil || len(out.Sources) != 0 {
 		t.Fatalf("unrelated navigation links must not become evidence: %#v", out)
 	}
-	if out.Retrieval["source_unavailable"] != true || out.Retrieval["returned"] != 0 ||
+	if out.Retrieval["source_unavailable"] == true || out.Retrieval["returned"] != 0 ||
 		out.Retrieval["exhaustive"] != false {
 		t.Fatalf("unavailable retrieval coverage = %#v", out.Retrieval)
 	}
 	states, ok := out.Diagnostics["httpBackends"].([]map[string]any)
-	if !ok || len(states) != 1 || states[0]["rawResults"] != 2 || states[0]["returnedResults"] != 0 {
+	if !ok || len(states) != 1 || states[0]["rawResults"] != 2 || states[0]["returnedResults"] != 0 || states[0]["outcome"] != "filtered" {
 		t.Fatalf("semantic filtering diagnostics = %#v", out.Diagnostics)
 	}
 }
@@ -119,7 +119,7 @@ func TestSearchRejectsLiveShapedGenericPDBResultsWhenExactIdentifierIsMissing(t 
 			if err != nil {
 				t.Fatalf("Search error = %v", err)
 			}
-			if out.Failure == nil || out.Failure.Kind != "search_unavailable" || len(out.Sources) != 0 {
+			if out.Failure != nil || len(out.Sources) != 0 {
 				t.Fatalf("generic PDB pages must not satisfy exact-identifier research: %#v", out)
 			}
 			states := out.Diagnostics["httpBackends"].([]map[string]any)

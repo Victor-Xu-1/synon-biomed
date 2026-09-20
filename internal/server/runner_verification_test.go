@@ -217,7 +217,8 @@ func TestCompletionReviewReviseRejectsCandidateWithoutAutoResumeLoop(t *testing.
 			Claim: "No docking calculation or ranked output was produced.", Severity: "high",
 		}},
 	}
-	reason, detail := correction.runnerCorrection()
+	cause := correction.runnerCorrection()
+	reason, detail := cause.ReasonCode, cause.Detail
 	if reason != "completion_review_correction_required" ||
 		!strings.Contains(detail, "completion reviewer rejected the current candidate") ||
 		!strings.Contains(detail, "high: No docking calculation or ranked output was produced.") {

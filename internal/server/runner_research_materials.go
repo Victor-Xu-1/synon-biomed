@@ -12,6 +12,7 @@ import (
 
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
+	"synon-go/internal/toolcontract"
 )
 
 type sessionRunnerResearchCheckpoint struct {
@@ -19,6 +20,9 @@ type sessionRunnerResearchCheckpoint struct {
 	Checkpoint       sessionRunnerDurableToolCheckpoint
 	ResultReference  map[string]any
 	ResultUnreadable bool
+	// The immutable checkpoint is the attestation authority. Decoding a JSON
+	// string or restoring an external result creates only this in-memory view.
+	verifiedResult json.RawMessage
 }
 
 // sessionRunnerResearchSourceAttempt is a host-observed terminal invocation.
@@ -207,6 +211,7 @@ func (s *Server) sessionRunnerResearchMaterials(
 			}
 			resultReference := researchMaterialResultReference(decodeResearchCheckpointObject(checkpoint.ToolResult))
 			resultUnreadable := false
+			var verifiedResult json.RawMessage
 			if s.sessionRunnerResearchAttemptTool(checkpoint) ||
 				normalizeAgentToolName(checkpoint.ToolName) == normalizeAgentToolName(updateStepStatusToolName) {
 				// Progress receipts are part of source routing authority: the
@@ -232,12 +237,13 @@ func (s *Server) sessionRunnerResearchMaterials(
 					// Keep the attempt and require a different usable source.
 					resultUnreadable = true
 				} else {
-					checkpoint.ToolResult = json.RawMessage(restored)
+					verifiedResult = json.RawMessage(restored)
 				}
 			}
 			events = append(events, sessionRunnerResearchCheckpoint{
 				EventID: projected.Event.EventID, Checkpoint: checkpoint,
 				ResultReference: resultReference, ResultUnreadable: resultUnreadable,
+				verifiedResult: verifiedResult,
 			})
 		}
 		if len(page) < sessionRunnerDurableEvidencePageSize {
@@ -344,12 +350,16 @@ func researchMaterialsFromCheckpoints(
 	for _, event := range events {
 		checkpoint := event.Checkpoint
 		executedInput := sessionRunnerDurableExecutedToolInput(checkpoint)
+		projected := checkpoint
+		if len(event.verifiedResult) > 0 {
+			projected.ToolResult = event.verifiedResult
+		}
 		if strings.EqualFold(strings.TrimSpace(checkpoint.ToolName), updateStepStatusToolName) {
 			if !strings.EqualFold(strings.TrimSpace(checkpoint.ToolPhase), "completed") {
 				continue
 			}
 			input := decodeResearchCheckpointObject(executedInput)
-			result := decodeResearchCheckpointObject(checkpoint.ToolResult)
+			result := decodeResearchCheckpointObject(projected.ToolResult)
 			step := firstNonEmpty(strings.TrimSpace(stringValue(result["step"])), strings.TrimSpace(stringValue(input["step"])))
 			status := firstNonEmpty(strings.TrimSpace(stringValue(result["status"])), strings.TrimSpace(stringValue(input["status"])))
 			// A completion request may be redirected back to in_progress. Route
@@ -365,7 +375,7 @@ func researchMaterialsFromCheckpoints(
 			}
 			continue
 		}
-		if !researchCheckpointExecutedTerminal(checkpoint) || s == nil || !s.sessionRunnerResearchAttemptTool(checkpoint) {
+		if !researchCheckpointExecutedTerminal(projected) || s == nil || !s.sessionRunnerResearchAttemptTool(checkpoint) {
 			continue
 		}
 		investigations := make([]string, 0, len(active))
@@ -377,19 +387,23 @@ func researchMaterialsFromCheckpoints(
 			ID: checkpoint.ToolCallID, Name: checkpoint.ToolName, Arguments: executedInput,
 		}
 		digest := sha256.Sum256(checkpoint.ToolResult)
+		resultSHA256 := hex.EncodeToString(digest[:])
+		if descriptor, _, externalized, err := toolcontract.DecodeExternalizedResult(checkpoint.ToolResult); externalized && err == nil {
+			resultSHA256 = descriptor.SHA256
+		}
 		attempt := sessionRunnerResearchSourceAttempt{
 			EventID: event.EventID, ToolCallID: strings.TrimSpace(checkpoint.ToolCallID),
 			ToolName:         strings.TrimSpace(checkpoint.ToolName),
 			ToolCapabilities: append([]string(nil), checkpoint.ToolCapabilities...),
 			InvestigationIDs: investigations,
 			Request:          decodeResearchCheckpointObject(executedInput), Outcome: agentruntime.ToolResultUnavailable,
-			ResultSHA256: hex.EncodeToString(digest[:]),
+			ResultSHA256: resultSHA256,
 		}
 		if event.ResultUnreadable {
 			materials.Attempts = append(materials.Attempts, attempt)
 			continue
 		}
-		resultText, valid := sessionRunnerDurableToolResult(checkpoint.ToolResult)
+		resultText, valid := sessionRunnerDurableToolResult(projected.ToolResult)
 		if !valid {
 			materials.Attempts = append(materials.Attempts, attempt)
 			continue
@@ -431,7 +445,7 @@ func researchMaterialsFromCheckpoints(
 		if materialRole == "" {
 			continue
 		}
-		result := decodeResearchCheckpointObject(checkpoint.ToolResult)
+		result := decodeResearchCheckpointObject(projected.ToolResult)
 		resultReference := event.ResultReference
 		if len(resultReference) == 0 {
 			resultReference = researchMaterialResultReference(result)

@@ -214,7 +214,7 @@ type session struct {
 	stdin      io.WriteCloser
 	stdout     io.ReadCloser
 	stderrPipe io.ReadCloser
-	scanner    *bufio.Scanner
+	reader     *bufio.Reader
 	encoder    *json.Encoder
 	mu         sync.Mutex
 	closeOnce  sync.Once
@@ -229,7 +229,7 @@ type sdkSession struct {
 	stdin      io.WriteCloser
 	stdout     io.ReadCloser
 	stderrPipe io.ReadCloser
-	scanner    *bufio.Scanner
+	reader     *bufio.Reader
 	encoder    *json.Encoder
 	mu         sync.Mutex
 	closeOnce  sync.Once

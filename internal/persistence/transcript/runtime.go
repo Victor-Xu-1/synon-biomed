@@ -200,6 +200,10 @@ func (r *Repository) InterruptRunner(ctx context.Context, input InterruptRunnerI
 	if input.RecoveryContractRevision < 0 || input.RecoveryContractRevision > 1_000_000 {
 		return InterruptRunnerResult{}, errors.New("runner interruption recovery contract revision is invalid")
 	}
+	storedCause, conditionBytes, err := prepareRunnerCorrectionStorage(input.ClientMessageID, input.Cause)
+	if err != nil {
+		return InterruptRunnerResult{}, err
+	}
 	payloadValue := map[string]any{
 		"status":      "interrupted",
 		"reason_code": input.ReasonCode,
@@ -208,11 +212,21 @@ func (r *Repository) InterruptRunner(ctx context.Context, input InterruptRunnerI
 	if input.ResumeDetail != "" {
 		payloadValue["resume_detail"] = input.ResumeDetail
 	}
+	if storedCause != nil {
+		cause, err := RunnerInterruptionCausePayload(*storedCause)
+		if err != nil {
+			return InterruptRunnerResult{}, err
+		}
+		payloadValue[RunnerInterruptionCauseField] = cause
+	}
 	if input.RecoveryContractRevision > 0 {
 		payloadValue["recovery_contract_revision"] = input.RecoveryContractRevision
 	}
 	payload, err := json.Marshal(payloadValue)
 	if err != nil {
+		return InterruptRunnerResult{}, err
+	}
+	if err := validatePayload(EventSourcePayload, payload, nil); err != nil {
 		return InterruptRunnerResult{}, err
 	}
 	var result InterruptRunnerResult
@@ -232,6 +246,9 @@ func (r *Repository) InterruptRunner(ctx context.Context, input InterruptRunnerI
 		}
 		if candidate := RunnerPhase(strings.TrimSpace(currentPhase)); validCheckpointPhase(candidate) {
 			phase = candidate
+		}
+		if err := appendRunnerCorrectionChunksConn(ctx, conn, input, phase, storedCause, conditionBytes, now); err != nil {
+			return err
 		}
 		checkpoint, event, created, err := appendRunnerCheckpointConn(ctx, conn, AppendRunnerCheckpointInput{
 			Claim: input.Claim, ClientMessageID: input.ClientMessageID,

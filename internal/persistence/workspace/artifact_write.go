@@ -15,6 +15,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
+	"synon-go/internal/runtimecontrol"
 )
 
 // WriteArtifactVersionInput models the v1.1 user-edit path. Content is staged
@@ -410,7 +412,7 @@ func (s *Store) stageArtifactWrite(ctx context.Context, content io.Reader, maxBy
 		reader = io.LimitReader(reader, maxBytes+1)
 	}
 	hasher := sha256.New()
-	written, err := io.Copy(io.MultiWriter(file, hasher), reader)
+	written, err := io.Copy(io.MultiWriter(runtimecontrol.DiskCapacityWriter(ctx, file, path), hasher), reader)
 	if err != nil {
 		return "", 0, "", fmt.Errorf("stream artifact content: %w", err)
 	}

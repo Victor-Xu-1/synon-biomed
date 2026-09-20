@@ -32,7 +32,7 @@ func (s *Server) executeAgentAskUserQuestion(ctx context.Context, sessionID, too
 		if resolution, resolved := s.resolveUniqueRegisteredImplementationAskUser(ctx, run, resultMap); resolved {
 			return resolution, nil
 		}
-		if correction := askUserImplementationCapabilityContractCorrection(s.skillCatalog, run, resultMap); correction != nil {
+		if correction := askUserImplementationCapabilityContractCorrection(s.skillCatalog, s.scienceCapabilities, run, resultMap); correction != nil {
 			return correction, nil
 		}
 		if correction := askUserManagedExecutionParameterEvidenceCorrection(

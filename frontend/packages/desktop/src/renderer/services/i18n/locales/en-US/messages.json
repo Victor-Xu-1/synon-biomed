@@ -62,6 +62,8 @@
   "toolPublicDetail": {
     "sourceMismatch": "Check source",
     "fullTextUnavailable": "Full text unavailable",
+    "sourceUnavailable": "Source unavailable",
+    "sourceUnavailableNote": "This response is not usable source evidence. The task can retry or use another source.",
     "partialContent": "Partial content",
     "readSize": "Read {{size}}",
     "sourceMismatchNote": "The requested source and result receipt disagree. Check the details before treating them as the same source.",

@@ -125,6 +125,7 @@ ALLOWED_ADDITIONS = {
     "packages/desktop/src/renderer/pages/settings/skills/skillSourceLabel.ts": "Share truthful localized source labels between library cards and detail views without claiming authorship.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryToolbar.tsx": "Provide one responsive search and research-field toolbar with accessible source/status refinement controls.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillMarketModal.tsx": "Reuse the existing pinned-import market in a bounded dialog without resetting the installed library search or filters.",
+    "packages/desktop/src/common/chat/largeToolResultReference.ts": "Validate canonical immutable large-result descriptors for the existing lazy detail and source-count presentation without accepting arbitrary content URLs.",
     "packages/desktop/src/renderer/pages/settings/AppearanceSettings/presets/warm.css": "Keep the warm palette under its visual family name while retaining the original import record.",
     "packages/desktop/src/renderer/pages/settings/AppearanceSettings/presets/cool.css": "Keep the cool palette under its visual family name while retaining the original import record.",
     "packages/desktop/src/renderer/styles/workspace-theme.css": "Provide the shared visual shell under a product-neutral filename and CSS custom-property namespace.",
@@ -500,9 +501,9 @@ ALLOWED_ADAPTATION_RULES = (
     ),
 )
 
-APPROVED_ADAPTATION_FINGERPRINT = "c28662c608fddab845dfd6580d8d6ecc7d133407ac8d2a8785560064e1254973"
+APPROVED_ADAPTATION_FINGERPRINT = "78c91e40843babc8df09d428a55f6d60bec085a1508c79ee4e5372a0a93308a5"
 APPROVED_REMOVAL_FINGERPRINT = "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4"
-APPROVED_ADDITION_FINGERPRINT = "cddb17bae12de34d2128180dcf2b085c1a823fdea56f9fb8d7261f8918d4778d"
+APPROVED_ADDITION_FINGERPRINT = "0a7675de0f8ee524a4509904f0f23b5a533fc68bf3e7b1f49bc83e97e4082f93"
 
 MANUAL_LICENSES = {
     "@nightingale-elements/nightingale-msa": {

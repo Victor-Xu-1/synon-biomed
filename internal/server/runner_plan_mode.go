@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"synon-go/internal/agentruntime"
@@ -13,9 +13,22 @@ import (
 )
 
 const (
-	maxSessionRunnerPlanModeDenials = 3
-	planModeDenialToolPhase         = "plan_mode_denial"
+	maxSessionRunnerPlanModeUnitDenials         = 3
+	planModeDenialToolPhase                     = "plan_mode_denial"
+	sessionRunnerPlanApprovalRequiredReasonCode = "plan_approval_required"
 )
+
+// The execution unit is bounded; the plan obligation is not. This uses the
+// same correction checkpoint and recovery admission as other completion gates.
+type sessionRunnerPlanApprovalRequired struct{}
+
+func (sessionRunnerPlanApprovalRequired) Error() string {
+	return "plan mode requires a durable plan and approval for the current task input before completion"
+}
+
+func (err sessionRunnerPlanApprovalRequired) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	return newRunnerTextCorrection(sessionRunnerPlanApprovalRequiredReasonCode, err.Error())
+}
 
 // sessionRunnerPlanModeEnabled reads the existing conversation control. Plan
 // mode is an explicit user-selected execution state; task wording is never
@@ -54,7 +67,8 @@ func (s *Server) restoreSessionRunnerPlanControl(
 		return tracking, false, err
 	}
 	hasPlan := strings.TrimSpace(stringValue(metadata.ContextData["_plan_artifact_id"])) != ""
-	approved = boolValue(metadata.ContextData["_plan_approved"], false)
+	hasPlan = hasPlan && sessionRunnerPlanMatchesTask(metadata.ContextData, run)
+	approved = hasPlan && boolValue(metadata.ContextData["_plan_approved"], false)
 	if run != nil {
 		run.AutonomousPlanning = !explicitReview && !approved && (!hasPlan || autonomousGeneratedPlan(metadata.ContextData))
 		run.planProgressAvailable.Store(hasPlan && (approved || autonomousGeneratedPlan(metadata.ContextData)))
@@ -98,9 +112,9 @@ func sessionRunnerPlanModeRules() string {
 
 func sessionRunnerPlanModeCorrection(language string, denial int) string {
 	if sessionRunnerRequiresChinese(language) {
-		return fmt.Sprintf("计划模式完成门禁 %d/%d：本请求仍在等待可审批的结构化计划。不要用普通文本计划结束；如有实质性歧义，可先调用 ask_user，否则现在调用 generate_plan，并等待用户审批后再执行。", denial, maxSessionRunnerPlanModeDenials)
+		return fmt.Sprintf("计划模式完成检查 %d：本请求仍在等待可审批的结构化计划。不要用普通文本计划结束；如有实质性歧义，可先调用 ask_user，否则调用 generate_plan，并等待用户审批后再执行。", denial)
 	}
-	return fmt.Sprintf("Plan-mode completion gate %d/%d: this request is still waiting for an approvable structured plan. Do not finish with a prose plan. If a material ambiguity remains, call ask_user; otherwise call generate_plan now and wait for approval before execution.", denial, maxSessionRunnerPlanModeDenials)
+	return fmt.Sprintf("Plan-mode completion gate %d: this request is still waiting for an approvable structured plan. Do not finish with a prose plan. If a material ambiguity remains, call ask_user; otherwise call generate_plan and wait for approval before execution.", denial)
 }
 
 func (s *Server) sessionRunnerPlanModePending(session sessionstore.Session, run *sessionRunnerChatRun) (bool, error) {
@@ -121,24 +135,33 @@ func (s *Server) sessionRunnerPlanModePending(session sessionstore.Session, run 
 	if err != nil {
 		return false, fmt.Errorf("read plan-mode state: %w", err)
 	}
-	if !found || !boolValue(metadata.ContextData["_plan_approved"], false) {
+	if !found || strings.TrimSpace(stringValue(metadata.ContextData["_plan_artifact_id"])) == "" || !boolValue(metadata.ContextData["_plan_approved"], false) {
 		return true, nil
 	}
-	if run.TaskIntentID != "" && strings.TrimSpace(stringValue(metadata.ContextData["_plan_task_intent_id"])) != strings.TrimSpace(run.TaskIntentID) {
-		return true, nil
+	return !sessionRunnerPlanMatchesTask(metadata.ContextData, run), nil
+}
+
+// Tool availability and completion must consult the same input binding. An
+// old approval cannot hide the only capability that can prepare the new plan.
+func sessionRunnerPlanMatchesTask(data map[string]any, run *sessionRunnerChatRun) bool {
+	if run == nil {
+		return true
 	}
-	if run.TaskIntentRevision > 0 && numberValue(metadata.ContextData["_plan_task_intent_revision"]) != run.TaskIntentRevision {
-		return true, nil
+	if run.TaskIntentID != "" && strings.TrimSpace(stringValue(data["_plan_task_intent_id"])) != strings.TrimSpace(run.TaskIntentID) {
+		return false
 	}
-	if run.TaskIntent != "" && strings.TrimSpace(stringValue(metadata.ContextData["_plan_task_intent_sha256"])) != generatedPlanTaskIntentSHA(run.TaskIntent) {
-		return true, nil
+	if run.TaskIntentRevision > 0 && numberValue(data["_plan_task_intent_revision"]) != run.TaskIntentRevision {
+		return false
 	}
-	return false, nil
+	return run.TaskIntent == "" || strings.TrimSpace(stringValue(data["_plan_task_intent_sha256"])) == generatedPlanTaskIntentSHA(run.TaskIntent)
 }
 
 func sessionRunnerPlanModeDenialCount(entries []eventjournal.Entry) int {
 	latest := 0
 	for _, entry := range entries {
+		if runnerEntryStartsNewLogicalTask(entry) {
+			latest = 0
+		}
 		message := entry.Message
 		if stringValue(message["type"]) != "runner_checkpoint" ||
 			stringValue(message["toolPhase"]) != planModeDenialToolPhase {
@@ -153,10 +176,9 @@ func sessionRunnerPlanModeDenialCount(entries []eventjournal.Entry) int {
 
 type sessionRunnerPlanModeCandidateRejected func(denial int, correction string) error
 
-// runSessionAgentWithPlanMode mirrors the reference Harness completion gate:
-// the model retains ordinary tool choice, but a plan-mode turn cannot finish
-// as prose while no approved plan exists. The bounded denial counter is
-// durable, so process recovery cannot turn this into an unbounded loop.
+// runSessionAgentWithPlanMode never treats an unmet approval obligation as
+// success. Each execution unit has a finite opportunity to change strategy;
+// further work continues from a durable correction with closed-route admission.
 func (s *Server) runSessionAgentWithPlanMode(
 	ctx context.Context,
 	session sessionstore.Session,
@@ -169,9 +191,27 @@ func (s *Server) runSessionAgentWithPlanMode(
 	if run != nil {
 		denials = run.PlanModeDenials
 	}
-	for {
+	for unitDenials := 0; ; {
+		if err := ctx.Err(); err != nil {
+			return agentruntime.RunResult{}, err
+		}
 		result, err := engine.Run(ctx, request)
 		if err != nil {
+			var violation *agentruntime.InitialToolChoiceViolationError
+			if errors.As(err, &violation) && ctx.Err() == nil {
+				pending, stateErr := s.sessionRunnerPlanModePending(session, run)
+				if stateErr != nil {
+					return result, stateErr
+				}
+				if pending {
+					// Protocol repair exhausted one provider strategy, not the
+					// durable obligation to produce and obtain approval for a plan.
+					return result, sessionRunnerPlanApprovalRequired{}
+				}
+			}
+			return result, err
+		}
+		if err := ctx.Err(); err != nil {
 			return result, err
 		}
 		pending, err := s.sessionRunnerPlanModePending(session, run)
@@ -181,11 +221,8 @@ func (s *Server) runSessionAgentWithPlanMode(
 		if !pending {
 			return result, nil
 		}
-		if denials >= maxSessionRunnerPlanModeDenials {
-			log.Printf("plan-mode completion denial budget exhausted session=%q denials=%d", strings.TrimSpace(session.ID), denials)
-			return result, nil
-		}
 		denials++
+		unitDenials++
 		language := ""
 		if run != nil {
 			language = run.TaskIntent
@@ -202,12 +239,17 @@ func (s *Server) runSessionAgentWithPlanMode(
 				return result, err
 			}
 		}
+		if unitDenials >= maxSessionRunnerPlanModeUnitDenials {
+			return result, sessionRunnerPlanApprovalRequired{}
+		}
 		request.Messages = append(append([]agentruntime.Message(nil), result.Messages...), agentruntime.Message{
 			Role: "user", Content: correction,
 		})
-		// The reference Harness gates completion with a trusted correction; it
-		// does not replace the provider's tool-choice policy.
-		request.InitialToolChoice = nil
+		// A prose-only route has been rejected. Require an advertised action,
+		// leaving tool and arguments model-selected and all safety gates intact.
+		if len(request.Tools) > 0 {
+			request.InitialToolChoice = "required"
+		}
 	}
 }
 

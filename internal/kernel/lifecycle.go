@@ -14,6 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"synon-go/internal/executionprep"
 	"synon-go/internal/networktls"
 )
 
@@ -153,6 +154,12 @@ type SubmitRequest struct {
 	InterruptGrace     time.Duration
 	HostCalls          *HostCallPolicy
 	StartAuthorization <-chan error
+	// Host-only obligation. The existing identity/generation contract and
+	// execute lock bind this to one invocation, never a model parameter.
+	Observation *executionprep.Observation
+	// For a host-rendered Bash envelope, bind the generated interpreter source
+	// separately from Observation.SourceSHA256 (the original Bash command).
+	ObservationCodeSHA256 string
 }
 
 type ExecutionStarted struct {
@@ -179,6 +186,9 @@ type ExecutionOutcome struct {
 	StartedAt    time.Time
 	FinishedAt   time.Time
 	Generation   uint64
+	// Set only by the host for a proof-bearing request rejected before the
+	// execution acknowledgement. A guest response alone cannot set this bit.
+	ObservationRefused bool
 }
 
 type InterruptResult struct {
@@ -885,6 +895,7 @@ func (m *Manager) Submit(input SubmitRequest) (*ExecutionHandle, error) {
 }
 
 func normalizeSubmitRequest(input SubmitRequest) SubmitRequest {
+	input.Observation = input.Observation.Clone()
 	input.KernelID = strings.TrimSpace(input.KernelID)
 	input.OwnerID = strings.TrimSpace(input.OwnerID)
 	input.ProjectID = strings.TrimSpace(input.ProjectID)
@@ -1019,7 +1030,6 @@ func (execution *managedExecution) run() {
 	worker := execution.worker
 	worker.executeMu.Lock()
 	defer worker.executeMu.Unlock()
-
 	execution.mu.Lock()
 	if execution.status != "queued" {
 		execution.mu.Unlock()
@@ -1029,6 +1039,12 @@ func (execution *managedExecution) run() {
 	execution.startedAt = time.Now().UTC()
 	startedAt := execution.startedAt
 	execution.mu.Unlock()
+	if reason := worker.validateObservationExecution(execution.request); reason != "" {
+		execution.finish(ExecutionOutcome{Dequeued: true, ObservationRefused: true, Response: Response{
+			ID: execution.request.ExecID, Preflight: executionprep.ObservationDeclined(reason),
+		}})
+		return
+	}
 	execution.state.mu.Lock()
 	execution.workingDir = execution.request.WorkingDir
 	if execution.workingDir == "" {
@@ -1055,6 +1071,8 @@ func (execution *managedExecution) run() {
 		ToolName:     execution.request.ToolName,
 		WorkspaceDir: worker.workspaceDir, WorkingDir: execution.workingDir,
 		HostEnabled: execution.request.HostCalls != nil, Fresh: execution.request.Fresh,
+		Observation:           execution.request.Observation,
+		ObservationCodeSHA256: observationExecutionDigest(execution.request),
 	})
 	if err != nil {
 		execution.finish(ExecutionOutcome{Err: err, StartedAt: startedAt})
@@ -1076,7 +1094,11 @@ func (execution *managedExecution) run() {
 	policy := normalizeHostCallPolicy(execution.request.HostCalls)
 	hostCallCount := 0
 	hostCompletions := make(chan hostCallCompletion, 1)
+	hostResultWrites := make(chan error, 1)
 	hostCallPending := false
+	hostResultWriting := false
+	var nextHostCall *HostCall
+	var pendingHostResponse *Response
 	select {
 	case <-worker.done:
 		execution.finish(ExecutionOutcome{Err: worker.stoppedError(), StartedAt: startedAt})
@@ -1089,6 +1111,9 @@ func (execution *managedExecution) run() {
 		return
 	}
 	defer worker.unbindExecutionStart(execution.request.ExecID)
+	if execution.request.Observation == nil {
+		worker.observationTainted = true
+	}
 	if err := worker.writeProtocol(payload); err != nil {
 		execution.finish(ExecutionOutcome{Err: fmt.Errorf("write kernel request: %w", err), StartedAt: startedAt})
 		return
@@ -1248,9 +1273,29 @@ func (execution *managedExecution) run() {
 	}
 
 	for {
+		incomingHostCalls := hostCalls
+		drainingHostCall := nextHostCall != nil && !hostCallPending
+		if drainingHostCall {
+			incomingHostCalls = make(chan HostCall, 1)
+			incomingHostCalls <- *nextHostCall
+		}
 		select {
-		case call := <-hostCalls:
+		case call := <-incomingHostCalls:
+			if drainingHostCall {
+				nextHostCall = nil
+			}
+			// Python can emit its next synchronous request as soon as it reads
+			// the terminal frame, before the writer goroutine publishes completion.
+			// Queue that one request without admitting concurrent handlers.
+			if hostResultWriting && nextHostCall == nil {
+				nextHostCall = &call
+				continue
+			}
 			hostCallCount++
+			if hostContext.Err() != nil {
+				_ = worker.writeHostResult(call, nil, hostContext.Err())
+				continue
+			}
 			if hostCallPending {
 				_ = worker.writeHostResult(call, nil, NewHostCallError("concurrent_call", "only one synchronous host call may be active per cell"))
 				continue
@@ -1270,13 +1315,34 @@ func (execution *managedExecution) run() {
 			hostCallPending = true
 			go executeHostCall(hostContext, policy, call, hostCompletions)
 		case completed := <-hostCompletions:
+			// Keep cancellation, execution deadlines and worker exit observable
+			// while a large successful result is flowing through the host pipe.
+			hostResultWriting = true
+			go func() {
+				hostResultWrites <- worker.writeHostResultContext(hostContext, completed.call, completed.result, completed.err)
+			}()
+		case err := <-hostResultWrites:
 			hostCallPending = false
-			if err := worker.writeHostResult(completed.call, completed.result, completed.err); err != nil {
-				execution.finish(ExecutionOutcome{Err: fmt.Errorf("write kernel host result: %w", err), TimedOut: execution.isTimedOut(), StartedAt: startedAt})
+			hostResultWriting = false
+			if err != nil {
+				finish(ExecutionOutcome{Err: fmt.Errorf("write kernel host result: %w", err), TimedOut: execution.isTimedOut(), StartedAt: startedAt})
+				return
+			}
+			if pendingHostResponse != nil {
+				response := execution.withUserStopReason(*pendingHostResponse)
+				finish(ExecutionOutcome{Response: response, TimedOut: execution.isTimedOut(), StartedAt: startedAt})
 				return
 			}
 		case response := <-worker.responses:
 			if response.ID != execution.request.ExecID {
+				continue
+			}
+			if hostResultWriting {
+				// Python can consume the terminal result and finish the cell
+				// before its host writer publishes completion. Settling here
+				// cancels hostContext and can kill a healthy persistent worker.
+				// Retain the response while cancellation/exit remain observable.
+				pendingHostResponse = &response
 				continue
 			}
 			response = execution.withUserStopReason(response)
@@ -1440,6 +1506,11 @@ func (execution *managedExecution) isTimedOut() bool {
 
 func (execution *managedExecution) finish(outcome ExecutionOutcome) {
 	execution.finishOnce.Do(func() {
+		if execution.request.Observation != nil && outcome.StartedAt.IsZero() &&
+			executionprep.IsObservationDeclined(outcome.Response.Preflight) &&
+			outcome.Response.Stdout == "" && outcome.Response.Stderr == "" && outcome.Response.Error == "" {
+			outcome.ObservationRefused = true
+		}
 		finishedAt := time.Now().UTC()
 		if !outcome.Dequeued {
 			afterFiles := snapshotWorkspaceFiles(execution.worker.workspaceDir, execution.workingDir)

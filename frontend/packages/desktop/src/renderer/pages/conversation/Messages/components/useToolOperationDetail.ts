@@ -2,24 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ipcBridge } from '@/common';
 import type { NormalizedToolCall, ToolMessage } from '@/common/chat/normalizeToolCall';
 import { normalizeToolMessages } from '@/common/chat/normalizeToolCall';
+import { parseLargeToolResultReference } from '@/common/chat/largeToolResultReference';
 import { withTransientHistoryRetry } from '@/renderer/services/synonBiomedHistoryRetry';
 import { getSelectedSynonBiomedBranch } from '@/renderer/services/synonBiomedConversationBranches';
 import { getRendererAccountScopeToken } from '@/renderer/services/rendererAccountScope';
 import { mergePublicToolOutputEvidence } from '../toolSummaryGroupingModel';
 
 const MAX_HYDRATED_TOOL_OUTPUT_BYTES = 8 * 1024 * 1024;
-const LARGE_TOOL_RESULT_CONTENT_URL = /^\/api\/artifacts\/large-tool-result-[a-f0-9]+\/versions\/ltr-[a-f0-9-]+$/iu;
-
-function largeToolResultContentUrl(output: string | undefined): string | null {
-  if (!output) return null;
-  try {
-    const envelope = JSON.parse(output) as { content_url?: unknown; truncated?: unknown };
-    const contentUrl = typeof envelope.content_url === 'string' ? envelope.content_url.trim() : '';
-    return envelope.truncated === true && LARGE_TOOL_RESULT_CONTENT_URL.test(contentUrl) ? contentUrl : null;
-  } catch {
-    return null;
-  }
-}
 
 type LargeToolResultHydration = { output: string | null; remote: boolean; contentUrl?: string };
 
@@ -27,7 +16,7 @@ async function hydrateLargeToolResultOutput(
   output: string | undefined,
   signal: AbortSignal
 ): Promise<LargeToolResultHydration> {
-  const contentUrl = largeToolResultContentUrl(output);
+  const contentUrl = parseLargeToolResultReference(output)?.contentUrl;
   if (!contentUrl) return { output: null, remote: false };
   const head = await fetch(contentUrl, { method: 'HEAD', credentials: 'include', signal });
   if (!head.ok) throw new Error(`large tool result metadata request failed with status ${head.status}`);

@@ -34,6 +34,32 @@ vi.mock('react-i18next', () => ({
 }));
 
 describe('MessageToolGroupSummary', () => {
+  it('shows recoverable source unavailability from the native receipt without a completed-evidence claim', () => {
+    const messages = [
+      {
+        id: 'unavailable-source',
+        conversation_id: 'retrieval-task',
+        type: 'tool_call',
+        content: {
+          call_id: 'unavailable-source',
+          name: 'web_fetch',
+          status: 'completed',
+          args: { url: 'https://example.org/source' },
+          output: JSON.stringify({
+            ok: true,
+            result: { sourceUnavailable: true, statusCode: 403, bytesRead: 146, complete: true },
+          }),
+        },
+      },
+    ] as ToolMessage[];
+    render(<MessageToolGroupSummary messages={messages} />);
+    expect(screen.getByTestId('tool-chip')).toHaveTextContent('Source unavailable');
+    expect(screen.getByTestId('tool-chip')).not.toHaveTextContent('Completed');
+    fireEvent.click(screen.getByTestId('tool-chip'));
+    expect(
+      screen.getByText('This response is not usable source evidence. The task can retry or use another source.')
+    ).toBeVisible();
+  });
   it('retains file subjects in collapsed groups and never opens evidence on progress', () => {
     const messages = ['data.csv', 'study.md'].map((path, index) => ({
       id: `subject-${index}`,
@@ -1159,105 +1185,124 @@ describe('MessageToolGroupSummary', () => {
     expect(document.body).not.toHaveTextContent('old owner private evidence');
   });
 
-  it('hydrates a durable large search result before rendering its source disclosure', async () => {
-    const contentUrl =
-      '/api/artifacts/large-tool-result-b99bbabc3daa06ffac144155ec2d9118/versions/ltr-acfa9b05-f3ed-45ec-b8da-9d6f8f45ee83';
-    const hydratedOutput = JSON.stringify({
-      ok: true,
-      result: {
-        query: 'sotorasib brain metastasis',
-        sources: [
-          { title: 'Primary study', url: 'https://example.org/primary' },
-          {
-            title: 'Independent study',
-            url: 'https://example.org/independent',
-          },
-        ],
-      },
-    });
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(hydratedOutput, {
-        status: 200,
-        headers: {
-          'content-length': String(new TextEncoder().encode(hydratedOutput).byteLength),
-        },
-      })
-    );
-    vi.stubGlobal('fetch', fetchMock);
-
-    try {
-      const invoke = vi.mocked(ipcBridge.database.getConversationMessage.invoke);
-      invoke.mockReset();
-      invoke.mockResolvedValue({
-        id: 'message-large-search',
-        conversation_id: 'conversation-1',
-        type: 'tool_call',
-        content: {
-          call_id: 'tool-large-search',
-          name: 'web_search',
-          status: 'completed',
-          output: JSON.stringify({
-            artifact_id: 'large-tool-result-b99bbabc3daa06ffac144155ec2d9118',
-            content_url: contentUrl,
-            truncated: true,
-          }),
-        },
-      } as unknown as TMessage);
-
-      render(
-        <MessageToolGroupSummary
-          messages={[
+  it.each([true, false])(
+    'hydrates a durable large search result (history compact marker: %s)',
+    async (historyCompact) => {
+      const contentUrl =
+        '/api/artifacts/large-tool-result-b99bbabc3daa06ffac144155ec2d9118/versions/ltr-acfa9b05-f3ed-45ec-b8da-9d6f8f45ee83';
+      const hydratedOutput = JSON.stringify({
+        ok: true,
+        result: {
+          query: 'sotorasib brain metastasis',
+          sources: [
+            { title: 'Primary study', url: 'https://example.org/primary' },
             {
-              id: 'message-large-search',
-              conversation_id: 'conversation-1',
-              type: 'tool_call',
-              content: {
-                call_id: 'tool-large-search',
-                name: 'web_search',
-                status: 'completed',
-                output: '{"preview":"partial"}',
-                _compact: {
-                  truncated: true,
-                  original_size: 60000,
-                  result_count: 2,
+              title: 'Independent study',
+              url: 'https://example.org/independent',
+            },
+          ],
+        },
+      });
+      const descriptor = JSON.stringify({
+        artifact_id: 'large-tool-result-b99bbabc3daa06ffac144155ec2d9118',
+        version_id: 'ltr-acfa9b05-f3ed-45ec-b8da-9d6f8f45ee83',
+        content_url: contentUrl,
+        truncated: true,
+        outcome: 'succeeded',
+        preview: JSON.stringify({
+          view_format: 'search-results-display-lines',
+          source_version_id: 'ltr-acfa9b05-f3ed-45ec-b8da-9d6f8f45ee83',
+          source_count: 2,
+          content: '1\tQuery: public evidence',
+        }),
+      });
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(hydratedOutput, {
+          status: 200,
+          headers: {
+            'content-length': String(new TextEncoder().encode(hydratedOutput).byteLength),
+          },
+        })
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      try {
+        const invoke = vi.mocked(ipcBridge.database.getConversationMessage.invoke);
+        invoke.mockReset();
+        invoke.mockResolvedValue({
+          id: 'message-large-search',
+          conversation_id: 'conversation-1',
+          type: 'tool_call',
+          content: {
+            call_id: 'tool-large-search',
+            name: 'web_search',
+            status: 'completed',
+            output: descriptor,
+          },
+        } as unknown as TMessage);
+
+        render(
+          <MessageToolGroupSummary
+            messages={[
+              {
+                id: 'message-large-search',
+                conversation_id: 'conversation-1',
+                type: 'tool_call',
+                content: {
+                  call_id: 'tool-large-search',
+                  name: 'web_search',
+                  status: 'completed',
+                  output: historyCompact ? '{"preview":"partial"}' : descriptor,
+                  ...(historyCompact
+                    ? {
+                        _compact: {
+                          truncated: true,
+                          original_size: 60000,
+                          result_count: 2,
+                        },
+                      }
+                    : {}),
                 },
-              },
-            } as unknown as ToolMessage,
-          ]}
-        />
-      );
+              } as unknown as ToolMessage,
+            ]}
+          />
+        );
 
-      fireEvent.click(screen.getByRole('button', { name: /Search sources.*2 results/ }));
+        expect(invoke).not.toHaveBeenCalled();
+        expect(fetchMock).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: /Search sources.*2 results/ }));
+        expect(document.querySelector('.tool-research-sources__empty')).toBeNull();
 
-      expect(await screen.findByRole('link', { name: 'Primary study' })).toHaveAttribute(
-        'href',
-        'https://example.org/primary'
-      );
-      expect(screen.getByRole('link', { name: 'Independent study' })).toBeInTheDocument();
-      expect(fetchMock).toHaveBeenNthCalledWith(
-        1,
-        contentUrl,
-        expect.objectContaining({
-          method: 'HEAD',
-          credentials: 'include',
-          signal: expect.anything(),
-        })
-      );
-      expect(fetchMock).toHaveBeenNthCalledWith(
-        2,
-        contentUrl,
-        expect.objectContaining({
-          credentials: 'include',
-          signal: expect.anything(),
-        })
-      );
-      expect(
-        screen.queryByText('No usable sources were found. Refine the query or use another public database.')
-      ).not.toBeInTheDocument();
-    } finally {
-      vi.unstubAllGlobals();
+        expect(await screen.findByRole('link', { name: 'Primary study' })).toHaveAttribute(
+          'href',
+          'https://example.org/primary'
+        );
+        expect(screen.getByRole('link', { name: 'Independent study' })).toBeInTheDocument();
+        expect(fetchMock).toHaveBeenNthCalledWith(
+          1,
+          contentUrl,
+          expect.objectContaining({
+            method: 'HEAD',
+            credentials: 'include',
+            signal: expect.anything(),
+          })
+        );
+        expect(fetchMock).toHaveBeenNthCalledWith(
+          2,
+          contentUrl,
+          expect.objectContaining({
+            credentials: 'include',
+            signal: expect.anything(),
+          })
+        );
+        expect(
+          screen.queryByText('No usable sources were found. Refine the query or use another public database.')
+        ).not.toBeInTheDocument();
+      } finally {
+        vi.unstubAllGlobals();
+      }
     }
-  });
+  );
 
   it('switches an oversized durable result to the authenticated paged detail tree', async () => {
     const contentUrl =

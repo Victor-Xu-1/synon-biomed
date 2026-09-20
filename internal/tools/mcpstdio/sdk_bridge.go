@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 	"time"
@@ -75,8 +76,6 @@ func startSDKBridgeSession(ctx context.Context, root string, config ServerConfig
 		_ = process.close()
 		return nil, err
 	}
-	scanner := bufio.NewScanner(stdout)
-	scanner.Buffer(make([]byte, 64*1024), maxScannerTokenBytes)
 	sess := &sdkSession{
 		serverName: config.sdkServerName(),
 		command:    command,
@@ -85,7 +84,7 @@ func startSDKBridgeSession(ctx context.Context, root string, config ServerConfig
 		stdin:      stdin,
 		stdout:     stdout,
 		stderrPipe: stderr,
-		scanner:    scanner,
+		reader:     bufio.NewReaderSize(stdout, mcpResponseBufferBytes),
 		encoder:    json.NewEncoder(stdin),
 		stderr:     &limitedBuffer{},
 	}
@@ -106,10 +105,20 @@ func (s *session) request(ctx context.Context, id int, method string, params any
 		}
 		return nil, err
 	}
-	for s.scanner.Scan() {
-		var msg rpcMessage
-		if err := json.Unmarshal(s.scanner.Bytes(), &msg); err != nil {
-			continue
+	for {
+		msg, err := readMCPStdioMessage(ctx, s.reader, false)
+		if err != nil {
+			if contextErr := contextError(ctx); contextErr != nil {
+				return nil, contextErr
+			}
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			var syntax *json.SyntaxError
+			if errors.As(err, &syntax) {
+				continue
+			} // Ignore non-protocol stdout lines.
+			return nil, fmt.Errorf("read MCP response from %s: %w; stderr: %s", s.command, err, s.stderr.String())
 		}
 		if msg.Method != "" && msg.ID != nil {
 			_ = s.respondToServerRequest(msg)
@@ -125,9 +134,6 @@ func (s *session) request(ctx context.Context, id int, method string, params any
 	}
 	if contextErr := contextError(ctx); contextErr != nil {
 		return nil, contextErr
-	}
-	if err := s.scanner.Err(); err != nil {
-		return nil, fmt.Errorf("read MCP response from %s: %w; stderr: %s", s.command, err, s.stderr.String())
 	}
 	return nil, fmt.Errorf("MCP server %s closed stdout before %s response (possible request timeout or upstream outage); retry the call after a short delay; stderr: %s", s.command, method, s.stderr.String())
 }
@@ -194,13 +200,16 @@ func (s *sdkSession) request(ctx context.Context, id int, method string, params 
 		}
 		return nil, err
 	}
-	for s.scanner.Scan() {
-		msg, ok, err := decodeSDKBridgeLine(s.scanner.Bytes())
+	for {
+		msg, err := readMCPStdioMessage(ctx, s.reader, true)
 		if err != nil {
+			if contextErr := contextError(ctx); contextErr != nil {
+				return nil, contextErr
+			}
+			if errors.Is(err, io.EOF) {
+				break
+			}
 			return nil, err
-		}
-		if !ok {
-			continue
 		}
 		if msg.Method != "" && msg.ID != nil {
 			_ = s.respondToServerRequest(msg)
@@ -216,9 +225,6 @@ func (s *sdkSession) request(ctx context.Context, id int, method string, params 
 	}
 	if contextErr := contextError(ctx); contextErr != nil {
 		return nil, contextErr
-	}
-	if err := s.scanner.Err(); err != nil {
-		return nil, fmt.Errorf("read SDK MCP bridge response from %s: %w; stderr: %s", s.command, err, s.stderr.String())
 	}
 	return nil, fmt.Errorf("SDK MCP bridge %s closed stdout before %s response (possible request timeout or upstream outage); retry the call after a short delay; stderr: %s", s.command, method, s.stderr.String())
 }
@@ -239,13 +245,16 @@ func (s *sdkSession) notify(ctx context.Context, method string, params any) erro
 		}
 		return err
 	}
-	for s.scanner.Scan() {
-		decoded, ok, err := decodeSDKBridgeLine(s.scanner.Bytes())
+	for {
+		decoded, err := readMCPStdioMessage(ctx, s.reader, true)
 		if err != nil {
+			if contextErr := contextError(ctx); contextErr != nil {
+				return contextErr
+			}
+			if errors.Is(err, io.EOF) {
+				break
+			}
 			return err
-		}
-		if !ok {
-			continue
 		}
 		if decoded.Method != "" && decoded.ID != nil {
 			_ = s.respondToServerRequest(decoded)
@@ -258,9 +267,6 @@ func (s *sdkSession) notify(ctx context.Context, method string, params any) erro
 	}
 	if contextErr := contextError(ctx); contextErr != nil {
 		return contextErr
-	}
-	if err := s.scanner.Err(); err != nil {
-		return fmt.Errorf("read SDK MCP bridge notification response from %s: %w; stderr: %s", s.command, err, s.stderr.String())
 	}
 	return fmt.Errorf("SDK MCP bridge %s closed stdout before %s notification response; stderr: %s", s.command, method, s.stderr.String())
 }

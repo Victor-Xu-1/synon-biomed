@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"synon-go/internal/agentruntime"
+	"synon-go/internal/executionprep"
 	"synon-go/internal/toolcontract"
 	"synon-go/internal/toolgateway"
 )
@@ -305,7 +306,7 @@ func serverAgentRuntimeGatewayPreflight(invocation *toolgateway.Invocation) {
 	// check here prevents a second execution path from bypassing loaded Skill
 	// contracts when an older checkpoint falls outside the model replay window.
 	if preflight == nil {
-		preflight = gateway.agentRuntimeSkillExecutionContractPreflight(name, invocation.Input)
+		preflight = gateway.agentRuntimeSkillExecutionContractPreflight(name, invocation.Input, invocation.Context)
 	}
 	if preflight != nil {
 		invocation.CompleteForAudit(preflight, "completed", "", nil)
@@ -459,6 +460,14 @@ func serverAgentRuntimeGatewayExecute(invocation *toolgateway.Invocation) {
 	execution := serverAgentRuntimeExecution(invocation)
 	gateway := execution.gateway
 	name := invocation.CanonicalName
+	// Rebind the final source after all earlier stages, including approved
+	// resumes. The proof stays in a private host context, never tool arguments.
+	if boundary := gateway.agentRuntimeImplementationExecutionChoicePreflight(name, invocation.Input, invocation.Context); boundary != nil {
+		invocation.CompleteForAudit(boundary, "completed", "", nil)
+		return
+	}
+	invocation.Context = executionprep.WithObservation(invocation.Context,
+		gateway.agentRuntimeDiagnosticObservation(invocation.Context, name, invocation.Input))
 	if name == "wait_for_notification" {
 		result, err := gateway.server.executeAgentKernelNotificationWait(
 			invocation.Context, gateway.kernel, execution.call.ID, invocation.Input,

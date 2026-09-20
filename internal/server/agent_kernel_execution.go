@@ -13,7 +13,9 @@ import (
 	"github.com/google/uuid"
 
 	"synon-go/internal/agentruntime"
+	"synon-go/internal/executionprep"
 	kernelruntime "synon-go/internal/kernel"
+	"synon-go/internal/kernelcontract"
 
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
@@ -86,8 +88,25 @@ func (s *Server) executeAgentKernelToolInternal(
 	// other confinement transform (working directory, artifact references, and
 	// runtime launcher generation).
 	authorityInput, input := agentKernelAuthorityAndExecutionInputs(publicName, input)
+	observation := executionprep.ObservationFromContext(ctx)
+	if observation != nil {
+		source := stringValue(input["code"])
+		if publicName == "bash" {
+			source = stringValue(input["command"])
+		}
+		if !observation.Matches(publicName, source) {
+			return executionprep.ObservationDeclined("diagnostic_source_binding_mismatch"), nil
+		}
+	}
 	containerBacked := localcontainer.IsEnvironmentName(strings.TrimSpace(stringValue(input["environment"])))
-	if preflight := agentExecutionPreparationPreflight(publicName, input, identity, s.kernelManager); preflight != nil {
+	if observation != nil && containerBacked {
+		return executionprep.ObservationDeclined("diagnostic_runtime_contract_unavailable"), nil
+	}
+	preflight := agentExecutionPreparationPreflight(ctx, publicName, input, identity, s.kernelManager)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if preflight != nil {
 		return preflight, nil
 	}
 	if preflight := agentKernelOptionalFormatterPreflight(publicName, input); preflight != nil {
@@ -186,6 +205,9 @@ func (s *Server) executeAgentKernelToolInternal(
 	} else if publicName == "bash" {
 		command := input["command"].(string)
 		code, err = agentBashPythonWrapper(command)
+		if err == nil && observation != nil {
+			code, err = kernelcontract.BashObservationPythonWrapper(command, observation)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -430,6 +452,10 @@ func (s *Server) executeAgentKernelToolInternal(
 		ExecID: execID, ToolUseID: toolUseID, ToolName: publicName, Code: code, Origin: "agent",
 		WorkingDir: workingDir, Background: background, Fresh: fresh,
 		Timeout: executionTimeout, HostCalls: hostCalls,
+		Observation: observation,
+	}
+	if observation != nil {
+		submitRequest.ObservationCodeSHA256 = executionprep.SourceSHA256(code)
 	}
 	var handle *kernelruntime.ExecutionHandle
 	var kernelOperation *workspace.KernelLocalOperation
@@ -533,6 +559,10 @@ func (s *Server) executeAgentKernelToolInternal(
 	}
 	if earlyOutcome != nil {
 		if kernelOperation == nil {
+			if earlyOutcome.ObservationRefused {
+				_, exitStatus := kernelOutcomeStatus(*earlyOutcome)
+				return agentKernelObservationRefusal(*earlyOutcome, exitStatus)
+			}
 			if earlyOutcome.Err != nil {
 				return nil, earlyOutcome.Err
 			}

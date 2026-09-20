@@ -8,8 +8,7 @@ import (
 	"strings"
 )
 
-// toolCallRejection is the model-facing equivalent of Codex's
-// RespondToModel tool error. It closes the exact call ID without executing the
+// toolCallRejection closes the exact call ID without executing the
 // tool, then leaves the next action to the model instead of imposing a private
 // repair sequence in the Harness.
 type toolCallRejection struct {
@@ -24,11 +23,49 @@ type toolCallRejection struct {
 const maxModelVisibleRejectionFamilyAttempts = 3
 
 func collectToolCallRejections(
+	ctx context.Context,
 	calls []ToolCall,
 	advertised []ToolSchema,
 	admission ToolCallAdmissionChecker,
 	preflight ToolCallPreflightDiagnostics,
-) map[int]toolCallRejection {
+) (map[int]toolCallRejection, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	var diagnostics map[int]string
+	if preflight != nil {
+		// Preserve the original admission order: unavailable tools and malformed
+		// provider calls never reach task-scoped preflight. Map the filtered batch
+		// back to original indices so every rejection closes the exact call ID.
+		eligible := make([]ToolCall, 0, len(calls))
+		indices := make([]int, 0, len(calls))
+		for index, call := range calls {
+			if (len(advertised) > 0 && !toolCallNameAdvertised(call.Name, advertised)) ||
+				boundedToolCallDiagnostic(call.ProviderProtocolDiagnostic) != "" {
+				continue
+			}
+			eligible = append(eligible, call)
+			indices = append(indices, index)
+		}
+		var batchDiagnostics map[int]string
+		var err error
+		if len(eligible) > 0 {
+			batchDiagnostics, err = preflight.ToolCallPreflightDiagnostics(ctx, eligible)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("tool batch preflight: %w", err)
+		}
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		diagnostics = make(map[int]string, len(batchDiagnostics))
+		for index, diagnostic := range batchDiagnostics {
+			if index < 0 || index >= len(eligible) {
+				return nil, fmt.Errorf("tool batch preflight returned an invalid call index")
+			}
+			diagnostics[indices[index]] = diagnostic
+		}
+	}
 	rejections := make(map[int]toolCallRejection)
 	for index, call := range calls {
 		if len(advertised) > 0 && !toolCallNameAdvertised(call.Name, advertised) {
@@ -66,7 +103,7 @@ func collectToolCallRejections(
 			continue
 		}
 		if preflight != nil {
-			if diagnostic := boundedToolCallDiagnostic(preflight.ToolCallPreflightDiagnostic(call)); diagnostic != "" {
+			if diagnostic := boundedToolCallDiagnostic(diagnostics[index]); diagnostic != "" {
 				rejection := rejectionFromDiagnostic(
 					"tool_call_preflight_rejected",
 					"The tool call was rejected before execution by the current runtime contract.",
@@ -91,7 +128,7 @@ func collectToolCallRejections(
 			rejections[index] = rejection
 		}
 	}
-	return rejections
+	return rejections, nil
 }
 
 func privatePreflightRepairMessages(
@@ -179,7 +216,7 @@ func applyToolCallRejectionFamilyBudget(
 			continue
 		}
 		rejection.Retryable = false
-		rejection.Recovery = "The same tool failure family exhausted its correction budget for this turn. Stop calling this tool for this task segment; choose another advertised route or continue with the evidence already available."
+		rejection.Recovery = "This invalid proposal family exhausted its private correction window. Use the retained diagnostic to satisfy its condition, or select another valid route; the tool remains available for corrected inputs."
 		rejections[index] = rejection
 	}
 }
@@ -192,16 +229,44 @@ func applyToolCallRejectionFamilyBudget(
 // while allowing a genuinely corrected target or method to proceed.
 func toolCallRejectionFamily(call ToolCall, rejection toolCallRejection) string {
 	tool := runtimeToolSchemaKey(call.Name)
+	target := semanticToolFailureTarget(call.Name, call.Arguments)
 	code := strings.ToLower(strings.TrimSpace(rejection.Code))
 	if tool == "" && code == "" {
 		return "\x00"
 	}
 	scope := strings.ToLower(strings.TrimSpace(firstNonEmpty(rejection.Diagnostic, rejection.Message, rejection.Recovery)))
 	if scope == "" {
-		return tool + "\x00" + code
+		return tool + "\x00" + target + "\x00" + code
 	}
 	digest := sha256.Sum256([]byte(scope))
-	return fmt.Sprintf("%s\x00%s\x00%x", tool, code, digest[:12])
+	return fmt.Sprintf("%s\x00%s\x00%s\x00%x", tool, target, code, digest[:12])
+}
+
+func clearResolvedToolRejectionFamilies(calls []ToolCall, receipts []Message, attempts map[string]int) {
+	byCall := make(map[string]Message, len(receipts))
+	for _, receipt := range receipts {
+		if receipt.Role == "tool" {
+			byCall[receipt.ToolCallID] = receipt
+		}
+	}
+	resolved := make(map[string]bool)
+	for _, call := range calls {
+		receipt, found := byCall[call.ID]
+		if !found || receipt.noProgress {
+			continue
+		}
+		var value map[string]any
+		if json.Unmarshal([]byte(receipt.Content), &value) != nil || value["executed"] == false || ClassifyToolResult(value) != ToolResultSucceeded {
+			continue
+		}
+		resolved[runtimeToolSchemaKey(call.Name)+"\x00"+semanticToolFailureTarget(call.Name, call.Arguments)] = true
+	}
+	for family := range attempts {
+		parts := strings.SplitN(family, "\x00", 3)
+		if len(parts) == 3 && resolved[parts[0]+"\x00"+parts[1]] {
+			delete(attempts, family)
+		}
+	}
 }
 
 func stringValueFromMap(value map[string]any, key string) string {
@@ -230,7 +295,7 @@ func modelVisibleToolRejectionMessage(call ToolCall, rejection toolCallRejection
 	if err != nil {
 		return Message{}, err
 	}
-	return Message{Role: "tool", ToolCallID: call.ID, Content: string(encoded)}, nil
+	return Message{Role: "tool", ToolCallID: call.ID, Content: string(encoded), noProgress: true}, nil
 }
 
 func (e Engine) executeToolCallRoundWithRejections(
@@ -240,7 +305,7 @@ func (e Engine) executeToolCallRoundWithRejections(
 	mediaPolicy MediaPolicy,
 	mediaBytesUsed int64,
 ) (ToolBatchExecution, error) {
-	result := ToolBatchExecution{MediaBytesUsed: mediaBytesUsed}
+	result := ToolBatchExecution{MediaBytesUsed: mediaBytesUsed, NoProgress: len(calls) > 0}
 	pendingParts := []ContentPart{}
 	for index, call := range calls {
 		if rejection, rejected := rejections[index]; rejected {
@@ -260,6 +325,7 @@ func (e Engine) executeToolCallRoundWithRejections(
 			continue
 		}
 		toolMessage, toolErr := e.executeTool(ctx, call)
+		result.NoProgress = result.NoProgress && toolMessage.noProgress
 		if toolMessage.Role != "" {
 			pendingParts = append(pendingParts, toolMessage.pending...)
 			toolMessage.pending = nil

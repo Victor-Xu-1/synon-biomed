@@ -129,14 +129,13 @@ func TestEngineBoundsCosmeticIdempotentUpdates(t *testing.T) {
 	if !errors.As(err, &noProgress) || noProgress.Limit != 3 {
 		t.Fatalf("cosmetic idempotent updates error=%v", err)
 	}
-	if len(noProgress.Calls) != 3 {
-		t.Fatalf("no-progress recovery lost bounded execution identities: %#v", noProgress.Calls)
+	if len(noProgress.Calls) != 1 {
+		t.Fatalf("cosmetic labels duplicated the same recovery identity: %#v", noProgress.Calls)
 	}
 	fingerprint := ExecutionCallFingerprint(noProgress.Calls[0].Name, noProgress.Calls[0].Arguments)
-	for _, call := range noProgress.Calls[1:] {
-		if ExecutionCallFingerprint(call.Name, call.Arguments) != fingerprint {
-			t.Fatalf("presentation-only labels changed semantic execution identity: %#v", noProgress.Calls)
-		}
+	wantFingerprint := ExecutionCallFingerprint("state_transition", json.RawMessage(`{"step":"current-step","status":"in_progress"}`))
+	if fingerprint != wantFingerprint {
+		t.Fatalf("presentation label changed the retained execution identity: %#v", noProgress.Calls)
 	}
 	if model.requests != 3 || gateway.calls != 3 {
 		t.Fatalf("cosmetic idempotent updates requests=%d gateway_calls=%d", model.requests, gateway.calls)

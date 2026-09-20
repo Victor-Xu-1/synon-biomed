@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"strings"
 
@@ -29,6 +30,14 @@ func (m *Manager) PrepareExecutionSource(ctx context.Context, request executionp
 				return nil, err
 			}
 			arguments = []string{"--vanilla", "-e", executionprep.RParser}
+		} else if language == "powershell" {
+			var err error
+			executable, err = executionprep.NativePowerShell()
+			if err != nil {
+				return nil, err
+			}
+			arguments = []string{"-NoProfile", "-NonInteractive", "-Command", executionprep.PowerShellParser()}
+			source = base64.StdEncoding.EncodeToString([]byte(source))
 		} else if language != "python" {
 			return nil, errors.New("source parser language unavailable")
 		}
@@ -46,4 +55,40 @@ func (m *Manager) PrepareExecutionSource(ctx context.Context, request executionp
 		}
 		return facts, decodeErr
 	})
+}
+
+// Called only while executeMu is held, after the existing session identity and
+// generation checks. It never queries a possibly polluted guest namespace.
+func (w *Worker) validateObservationExecution(request SubmitRequest) string {
+	plan := request.Observation
+	if plan == nil {
+		return ""
+	}
+	if w.observationTainted {
+		return "runtime_binding_provenance_unproved"
+	}
+	source := request.Code
+	if plan.Language == "bash" {
+		// The server's one canonical Bash renderer binds its generated code to
+		// the proven original command. Do not reverse-parse the Python envelope
+		// here or import the server-facing kernel contract back into the kernel.
+		if request.KernelKind != "bash" || request.ToolName != "bash" || request.Language != "python" ||
+			request.ObservationCodeSHA256 == "" || request.ObservationCodeSHA256 != executionprep.SourceSHA256(request.Code) {
+			return "diagnostic_shell_startup_unproved"
+		}
+		return ""
+	} else if plan.Language != request.Language || (plan.Language != "python" && plan.Language != "r") {
+		return "diagnostic_language_binding_mismatch"
+	}
+	if !plan.Matches(plan.Language, source) {
+		return "diagnostic_source_binding_mismatch"
+	}
+	return ""
+}
+
+func observationExecutionDigest(request SubmitRequest) string {
+	if request.Observation == nil {
+		return ""
+	}
+	return executionprep.SourceSHA256(request.Code)
 }

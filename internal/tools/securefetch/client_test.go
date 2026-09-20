@@ -192,6 +192,30 @@ func TestClientFetchesExactPrefixForLegacyPartialVerification(t *testing.T) {
 	}
 }
 
+func TestClientReadsExactPrefixWhenRangeIsIgnored(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Range") != "bytes=0-4" {
+			t.Errorf("prefix range=%q", r.Header.Get("Range"))
+		}
+		w.Header().Set("Content-Type", "chemical/x-pdb")
+		w.Header().Set("Content-Length", "10")
+		w.Header().Set("ETag", `"fixed"`)
+		_, _ = io.WriteString(w, "1234567890")
+	}))
+	defer server.Close()
+	client, target, policy := testClient(t, server)
+	policy.MaxBytes, policy.PrefixBytes = 10, 5
+	response, err := client.Fetch(context.Background(), target+"/source.pdb", policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := io.ReadAll(response.Body)
+	if err != nil || string(body) != "12345" || response.ContentLength != 10 {
+		t.Fatalf("prefix=%q full_length=%d error=%v", body, response.ContentLength, err)
+	}
+}
+
 func TestClientRejectsInvalidResumeRangeResponse(t *testing.T) {
 	for _, test := range []struct {
 		name         string

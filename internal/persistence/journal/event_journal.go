@@ -46,6 +46,9 @@ type Entry struct {
 	// SourceEventType is trusted in-memory projection provenance. It is never
 	// accepted from or serialized into the legacy journal JSON surface.
 	SourceEventType string `json:"-"`
+	// RuntimeProjection carries typed read-side data derived from canonical
+	// storage. It is neither accepted from nor written to journal/model JSON.
+	RuntimeProjection any `json:"-"`
 }
 
 // ReadCursor is an append-only journal position. It lets live projections

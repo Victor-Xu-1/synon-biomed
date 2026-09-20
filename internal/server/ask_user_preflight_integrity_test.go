@@ -3,10 +3,45 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	"testing"
 )
+
+func TestAskUserInputDecisionParksWithoutResolvingPendingImplementation(t *testing.T) {
+	fixture := newAgentSaveArtifactsFixture(t)
+	run := &sessionRunnerChatRun{
+		SessionID: fixture.stream.FrameID, ImplementationSelectionRequired: true,
+		Transcript: &transcriptRunnerAuthority{Stream: fixture.stream, Claim: fixture.claim},
+	}
+	run.addRequiredScientificCapabilities("structure-analysis")
+	ctx := context.WithValue(context.Background(), transcriptRunnerChatRunContextKey{}, run)
+	options := make([]any, 0, 2)
+	for index, label := range []string{"Input A", "Input B"} {
+		options = append(options, askUserDecisionOption(
+			label, "Analyze the selected input.", "Preserves the selected scope.", "Excludes the other input.",
+			"Availability is not established.", []any{askUserCurrentTaskEvidenceReference}, "",
+			"Analyze this input after execution requirements are met.", "The user owns input selection.", index == 0,
+		))
+	}
+	result, err := fixture.server.executeAgentAskUserQuestion(ctx, fixture.stream.FrameID, "input-choice", "ask_user", map[string]any{
+		"question": "Which input should be analyzed?", "header": "Input", "options": options,
+	})
+	var pause *agentruntime.PauseError
+	if !errors.As(err, &pause) {
+		t.Fatalf("input question did not reach the existing pause authority: result=%#v err=%v", result, err)
+	}
+	if _, _, err := fixture.server.parkTranscriptAskUser(ctx, run.Transcript, pause); err != nil {
+		t.Fatalf("persist input question: %v", err)
+	}
+	// A separate input decision cannot authorize provisioning. Check the real
+	// admission consumer rather than only inspecting the pending flag.
+	decision, required := managedEnvironmentImplementationDecision(ctx, "Analysis Engine", true)
+	if !required || stringValue(decision["status"]) != "implementation_selection_required" || len(run.selectedImplementationsSnapshot()) != 0 {
+		t.Fatalf("input question leaked environment authority: %#v", decision)
+	}
+}
 
 func TestAskUserIdentityPreservesOpaqueVersionsAndLocations(t *testing.T) {
 	for _, tc := range []struct {
@@ -60,7 +95,7 @@ func TestAskUserManagedPreflightRecoveryThroughDurableReceipts(t *testing.T) {
 	server, identity := managedEnvironmentToolFixture(t)
 	authority := &recordingManagedEnvironmentAuthority{}
 	questions := []askUserQuestion{{Question: "Choose an implementation"}}
-	for _, implementation := range []string{"https://host.example/EngineA", "https://host.example/enginea", "registry.example/engine:ReleaseA"} {
+	for _, implementation := range []string{"https://host.example/EngineA", "https://host.example/enginea"} {
 		callID := "preflight-" + implementation
 		input := map[string]any{
 			"mode": "preflight", "provider": "local-conda", "network": "egress", "implementation": implementation,

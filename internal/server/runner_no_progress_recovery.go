@@ -35,14 +35,15 @@ type sessionRunnerNoProgressRecovery struct {
 }
 
 type sessionRunnerRecoveryProjection struct {
-	Correction    recoveredRunnerCorrection
-	HasCorrection bool
-	NoProgress    sessionRunnerNoProgressRecovery
+	Correction           recoveredRunnerCorrection
+	HasCorrection        bool
+	NoProgress           sessionRunnerNoProgressRecovery
+	CorrectionRepetition runnerCorrectionRepetition
 }
 
 func runnerRecoveryObligationFingerprint(
 	authority *transcriptRunnerAuthority,
-	reason, detail string,
+	correction transcriptstore.RunnerInterruptionCause,
 ) string {
 	parts := []string{"legacy", "", "0", "0"}
 	if authority != nil {
@@ -53,7 +54,7 @@ func runnerRecoveryObligationFingerprint(
 			strconv.FormatInt(authority.Claim.ClaimedInputRevision, 10),
 		}
 	}
-	parts = append(parts, runnerRecoveryConditionFingerprint(reason, detail))
+	parts = append(parts, runnerCorrectionFingerprint(correction))
 	digest := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	return hex.EncodeToString(digest[:])
 }
@@ -127,8 +128,7 @@ func (state *sessionRunnerNoProgressRecovery) recordNoProgress(calls []agentrunt
 	}
 }
 
-func (state sessionRunnerNoProgressRecovery) quarantines(tool string, arguments json.RawMessage) bool {
-	fingerprint := agentruntime.ExecutionCallFingerprint(tool, arguments)
+func (state sessionRunnerNoProgressRecovery) containsFingerprint(fingerprint string) bool {
 	for _, action := range state.ClosedActions {
 		if action.Fingerprint == fingerprint {
 			return true
@@ -192,7 +192,7 @@ func runnerNoProgressRecoveryFromEntries(
 	entries []eventjournal.Entry,
 	authority *transcriptRunnerAuthority,
 ) sessionRunnerNoProgressRecovery {
-	state := newSessionRunnerNoProgressRecovery(runnerRecoveryObligationFingerprint(authority, "", ""))
+	state := newSessionRunnerNoProgressRecovery(runnerRecoveryObligationFingerprint(authority, transcriptstore.RunnerInterruptionCause{}))
 	for _, entry := range entries {
 		state.observeEntry(entry, authority)
 	}
@@ -207,7 +207,7 @@ func (state *sessionRunnerNoProgressRecovery) observeEntry(
 		return
 	}
 	message := entry.Message
-	logicalScope := runnerRecoveryObligationFingerprint(authority, "", "")
+	logicalScope := runnerRecoveryObligationFingerprint(authority, transcriptstore.RunnerInterruptionCause{})
 	if runnerEntryStartsNewLogicalTask(entry) {
 		state.resetScope(logicalScope)
 		return
@@ -219,10 +219,8 @@ func (state *sessionRunnerNoProgressRecovery) observeEntry(
 		state.resetMaterialProgress()
 		return
 	}
-	reason := firstNonEmpty(
-		strings.TrimSpace(stringValue(message["reason_code"])),
-		strings.TrimSpace(stringValue(message["reasonCode"])),
-	)
+	cause := runnerCheckpointRecoveryCondition(entry)
+	reason, detail := cause.ReasonCode, cause.Detail
 	if runnerCorrectionReasonStartsNewRepairScope(reason) {
 		// A protocol failure while another substantive repair is open is not a
 		// new obligation. It records failure to execute the existing route.
@@ -230,11 +228,7 @@ func (state *sessionRunnerNoProgressRecovery) observeEntry(
 			state.ObligationFingerprint != logicalScope {
 			return
 		}
-		detail := firstNonEmpty(
-			strings.TrimSpace(stringValue(message["resume_detail"])),
-			strings.TrimSpace(stringValue(message["resumeDetail"])),
-		)
-		scope := runnerRecoveryObligationFingerprint(authority, reason, detail)
+		scope := runnerRecoveryObligationFingerprint(authority, cause)
 		if scope != state.ObligationFingerprint {
 			state.resetScope(scope)
 		}
@@ -244,10 +238,6 @@ func (state *sessionRunnerNoProgressRecovery) observeEntry(
 		reason != sessionRunnerToolRoundNoProgressExhaustedReasonCode {
 		return
 	}
-	detail := firstNonEmpty(
-		strings.TrimSpace(stringValue(message["resume_detail"])),
-		strings.TrimSpace(stringValue(message["resumeDetail"])),
-	)
 	persisted, found := parseSessionRunnerNoProgressRecoveryDetail(detail)
 	if found {
 		if persisted.ObligationFingerprint != state.ObligationFingerprint {
@@ -267,6 +257,7 @@ type sessionRunnerRecoveryProjectionAccumulator struct {
 	protocolCorrection  recoveredRunnerCorrection
 	hasProtocolFallback bool
 	noProgress          sessionRunnerNoProgressRecovery
+	repetition          runnerCorrectionRepetition
 }
 
 func newSessionRunnerRecoveryProjectionAccumulator(
@@ -275,7 +266,7 @@ func newSessionRunnerRecoveryProjectionAccumulator(
 	return sessionRunnerRecoveryProjectionAccumulator{
 		authority: authority,
 		noProgress: newSessionRunnerNoProgressRecovery(
-			runnerRecoveryObligationFingerprint(authority, "", ""),
+			runnerRecoveryObligationFingerprint(authority, transcriptstore.RunnerInterruptionCause{}),
 		),
 	}
 }
@@ -291,14 +282,23 @@ func (accumulator *sessionRunnerRecoveryProjectionAccumulator) observe(entry eve
 		accumulator.hasProtocolFallback = false
 	}
 	accumulator.noProgress.observeEntry(entry, accumulator.authority)
+	accumulator.repetition.observe(entry)
 	correction, found := latestRunnerCorrection([]eventjournal.Entry{entry})
 	if !found {
+		if accumulator.hasCorrection {
+			accumulator.correction.observeRead(entry)
+		} else if accumulator.hasProtocolFallback {
+			accumulator.protocolCorrection.observeRead(entry)
+		}
 		return
 	}
 	if correction.ReasonCode == sessionRunnerRequiredToolChoiceUnsatisfiedReasonCode {
 		accumulator.protocolCorrection = correction
 		accumulator.hasProtocolFallback = true
 		return
+	}
+	if accumulator.hasCorrection && correction.Condition != nil && accumulator.correction.Condition != nil && correction.Condition.ContentID() == accumulator.correction.Condition.ContentID() {
+		correction.ReadCoverage = accumulator.correction.ReadCoverage
 	}
 	accumulator.correction = correction
 	accumulator.hasCorrection = true
@@ -311,6 +311,7 @@ func (accumulator sessionRunnerRecoveryProjectionAccumulator) result() sessionRu
 	}
 	return sessionRunnerRecoveryProjection{
 		Correction: correction, HasCorrection: found, NoProgress: accumulator.noProgress,
+		CorrectionRepetition: accumulator.repetition,
 	}
 }
 
@@ -321,13 +322,38 @@ func (s *Server) loadSessionRunnerRecoveryProjection(
 	if s == nil || s.transcriptStore == nil || authority == nil {
 		return sessionRunnerRecoveryProjection{}, nil
 	}
+	accumulator := newSessionRunnerRecoveryProjectionAccumulator(authority)
+	err := s.scanSessionRunnerRecoveryEntries(ctx, authority, func(entry eventjournal.Entry) error {
+		accumulator.observe(entry)
+		return nil
+	})
+	if err != nil {
+		return sessionRunnerRecoveryProjection{}, err
+	}
+	return accumulator.result(), nil
+}
+
+// Recovery summaries and targeted admission consume the same fenced event
+// projection. The visitor retains only its own bounded derived state.
+func (s *Server) scanSessionRunnerRecoveryEntries(
+	ctx context.Context,
+	authority *transcriptRunnerAuthority,
+	visit func(eventjournal.Entry) error,
+) error {
+	if s == nil || s.transcriptStore == nil || authority == nil {
+		return fmt.Errorf("runner recovery requires transcript authority")
+	}
 	snapshot, err := s.transcriptStore.GetProjectionSnapshot(ctx, authority.Stream.UID, authority.Stream.OwnerID)
 	if err != nil {
-		return sessionRunnerRecoveryProjection{}, fmt.Errorf("load runner recovery projection snapshot: %w", err)
+		return fmt.Errorf("load runner recovery projection snapshot: %w", err)
 	}
-	accumulator := newSessionRunnerRecoveryProjectionAccumulator(authority)
-	err = s.scanTranscriptProjection(ctx, snapshot, authority.Stream.OwnerID, snapshot.ThroughPublicationSequence, func(projected transcriptstore.ProjectedEvent) error {
+	var conditions transcriptstore.RunnerCorrectionAssembler
+	return s.scanTranscriptProjection(ctx, snapshot, authority.Stream.OwnerID, snapshot.ThroughPublicationSequence, func(projected transcriptstore.ProjectedEvent) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		message := eventjournal.Message{}
+		var runtimeProjection any
 		if len(projected.ResolvedPayloadJSON) > 0 {
 			if err := json.Unmarshal(projected.ResolvedPayloadJSON, &message); err != nil {
 				return fmt.Errorf("decode runner recovery event %d: %w", projected.Event.EventID, err)
@@ -341,6 +367,22 @@ func (s *Server) loadSessionRunnerRecoveryProjection(
 			message["type"] = "message"
 			message["role"] = "assistant"
 		case "runner_checkpoint":
+			if chunk, err := conditions.Observe(message); err != nil {
+				return fmt.Errorf("decode runner correction evidence at event %d: %w", projected.Event.EventID, err)
+			} else if chunk {
+				return nil
+			}
+			cause, present, err := transcriptstore.ParseRunnerInterruptionCause(message)
+			if err != nil {
+				return fmt.Errorf("decode runner recovery cause at event %d: %w", projected.Event.EventID, err)
+			}
+			if present {
+				cause, err = conditions.Resolve(cause)
+				if err != nil {
+					return fmt.Errorf("resolve runner correction evidence at event %d: %w", projected.Event.EventID, err)
+				}
+				runtimeProjection = cause
+			}
 			message["type"] = "runner_checkpoint"
 		case "runner_finished":
 			message["type"] = "runner_finished"
@@ -350,16 +392,12 @@ func (s *Server) loadSessionRunnerRecoveryProjection(
 		if projected.Event.RunnerAttempt != nil {
 			message["runnerAttempt"] = *projected.Event.RunnerAttempt
 		}
-		accumulator.observe(eventjournal.Entry{
+		return visit(eventjournal.Entry{
 			SessionID: authority.Stream.SessionID, EventID: projected.Event.EventID,
 			Message: message, SourceEventType: projected.Event.Type,
+			RuntimeProjection: runtimeProjection,
 		})
-		return nil
 	})
-	if err != nil {
-		return sessionRunnerRecoveryProjection{}, err
-	}
-	return accumulator.result(), nil
 }
 
 func sessionRunnerNoProgressRecoveryFromReplay(entries []eventjournal.Entry) (sessionRunnerNoProgressRecovery, bool) {
@@ -384,7 +422,7 @@ func (run *sessionRunnerChatRun) restoreNoProgressRecovery(state sessionRunnerNo
 	if run == nil {
 		return
 	}
-	expected := runnerRecoveryObligationFingerprint(run.Transcript, run.CorrectionReason, run.CorrectionDetail)
+	expected := runnerRecoveryObligationFingerprint(run.Transcript, run.correctionCause())
 	if state.Schema != sessionRunnerNoProgressRecoverySchema || state.ObligationFingerprint != expected {
 		state = newSessionRunnerNoProgressRecovery(expected)
 	}
@@ -395,7 +433,7 @@ func (run *sessionRunnerChatRun) recordNoProgress(calls []agentruntime.ToolCall)
 	if run == nil {
 		return sessionRunnerNoProgressRecovery{}
 	}
-	expected := runnerRecoveryObligationFingerprint(run.Transcript, run.CorrectionReason, run.CorrectionDetail)
+	expected := runnerRecoveryObligationFingerprint(run.Transcript, run.correctionCause())
 	if run.NoProgressRecovery == nil || run.NoProgressRecovery.ObligationFingerprint != expected {
 		state := newSessionRunnerNoProgressRecovery(expected)
 		run.NoProgressRecovery = &state
@@ -409,27 +447,6 @@ func (run *sessionRunnerChatRun) recordMaterialProgress() {
 		return
 	}
 	run.NoProgressRecovery.resetMaterialProgress()
-}
-
-func (run *sessionRunnerChatRun) noProgressRoutePreflight(
-	requestedName string,
-	requestedArguments json.RawMessage,
-	canonicalName string,
-	normalizedInput map[string]any,
-) map[string]any {
-	if run == nil || run.NoProgressRecovery == nil || len(run.NoProgressRecovery.ClosedActions) == 0 {
-		return nil
-	}
-	normalizedArguments, _ := json.Marshal(normalizedInput)
-	if !run.NoProgressRecovery.quarantines(requestedName, requestedArguments) &&
-		!run.NoProgressRecovery.quarantines(canonicalName, normalizedArguments) {
-		return nil
-	}
-	return map[string]any{
-		"ok": false, "status": "durable_no_progress_route_closed", "executed": false,
-		"message":  "This exact tool execution already completed without changing authoritative state in the current recovery obligation.",
-		"recovery": "Use completed receipts and choose materially different arguments or another advertised capability; if no further evidence is needed, finish the task.",
-	}
 }
 
 func sessionRunnerNoProgressRecoveryContext(state sessionRunnerNoProgressRecovery) string {

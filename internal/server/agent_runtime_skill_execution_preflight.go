@@ -19,6 +19,7 @@ import (
 func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflight(
 	publicName string,
 	input map[string]any,
+	parents ...context.Context,
 ) map[string]any {
 	if g.server == nil || g.server.skillCatalog == nil || g.taskRun == nil {
 		return nil
@@ -33,7 +34,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflig
 	if preflight := g.agentRuntimeImplementationProvisioningSkillPreflight(name, input); preflight != nil {
 		return preflight
 	}
-	if preflight := g.agentRuntimeImplementationExecutionChoicePreflight(name, input); preflight != nil {
+	if preflight := g.agentRuntimeImplementationExecutionChoicePreflight(name, input, parents...); preflight != nil {
 		return preflight
 	}
 	if preflight := g.agentRuntimeSelectedImplementationEnvironmentPreflight(name, input); preflight != nil {
@@ -98,6 +99,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflig
 func (g serverAgentRuntimeToolGateway) agentRuntimeImplementationExecutionChoicePreflight(
 	publicName string,
 	input map[string]any,
+	parents ...context.Context,
 ) map[string]any {
 	switch publicName {
 	case "bash", "python", "r", "powershell":
@@ -114,6 +116,15 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeImplementationExecutionChoice
 	}
 	capabilities := semanticManagedEnvironmentCapabilities(g.taskRun.requiredScientificCapabilitiesSnapshot())
 	if len(capabilities) == 0 {
+		return nil
+	}
+	parent := context.Background()
+	if len(parents) > 0 && parents[0] != nil {
+		parent = parents[0]
+	}
+	if g.agentRuntimeDiagnosticObservation(parent, publicName, input) != nil {
+		// This only prepares a conditional exemption. The host must carry its
+		// binding obligations to the real executor; durable choice is unchanged.
 		return nil
 	}
 	selected := g.taskRun.selectedImplementationsSnapshot()
@@ -149,6 +160,57 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeImplementationExecutionChoice
 		return implementationExecutionSkillRequiredResult(dedicated, selected)
 	}
 	return nil
+}
+
+// Only a positive, full-source effect contract can prepare this exemption. The
+// execution gateway obtains it again from the final arguments after hooks and
+// approval; no model field or previously prepared source can supply it.
+func (g serverAgentRuntimeToolGateway) agentRuntimeDiagnosticObservation(parent context.Context, language string, input map[string]any) *executionprep.Observation {
+	if g.server == nil || g.server.kernelManager == nil || g.taskRun == nil ||
+		len(semanticManagedEnvironmentCapabilities(g.taskRun.requiredScientificCapabilitiesSnapshot())) == 0 {
+		return nil
+	}
+	// Do not impose a diagnostic obligation on ordinarily authorized code after
+	// the selection and dedicated Skill contracts have already been satisfied.
+	selected := g.taskRun.selectedImplementationsSnapshot()
+	pending := len(selected) == 0
+	if !pending && g.server.skillCatalog != nil {
+		for _, implementation := range selected {
+			if skill, found := dedicatedSkillForImplementation(g.server.skillCatalog, implementation); found && !g.taskRunHasExecutedSkill(skill.Name) {
+				pending = true
+				break
+			}
+		}
+	}
+	if !pending {
+		return nil
+	}
+	switch language {
+	case "python", "r", "bash", "powershell":
+	default:
+		return nil
+	}
+	if _, found := g.server.canonicalManagedExecutionPack(language, input); found {
+		return nil
+	}
+	if len(selected) == 0 {
+		if dedicated, found := g.taskExplicitDedicatedImplementationSkill(); found && g.taskRunHasExecutedSkill(dedicated.Name) {
+			return nil
+		}
+	}
+	source := stringValue(input["code"])
+	if language == "bash" || language == "powershell" {
+		source = stringValue(input["command"])
+	}
+	ctx, cancel := context.WithTimeout(parent, 8*time.Second)
+	defer cancel()
+	result, err := g.server.kernelManager.PrepareExecutionSource(ctx, executionprep.Request{
+		Language: language, Source: source, Environment: stringValue(input["environment"]),
+	})
+	if err != nil || !result.Observation.Matches(language, source) {
+		return nil
+	}
+	return result.Observation
 }
 
 func (g serverAgentRuntimeToolGateway) taskExplicitDedicatedImplementationSkill() (skills.Skill, bool) {

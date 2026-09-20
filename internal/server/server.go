@@ -55,66 +55,68 @@ import (
 )
 
 type Options struct {
-	Capabilities            capabilities.Report
-	SynonLink               *synonlink.Service
-	SynonLinkAuth           SynonLinkAuthOptions
-	WebAuth                 WebAuthOptions
-	LinkPackagePath         string
-	Tools                   *registry.Registry
-	Operations              *registry.Registry
-	Plugins                 *pluginhost.Host
-	FileRoot                string
-	RuntimeAssetsDir        string
-	ComputeRemoteDialer     compute.RemoteDialer
-	ComputeProviderDial     kernelruntime.ProviderProxyDialFunc
-	ProviderOperationRunner kernelruntime.ProviderOperationRunner
-	HostGPUDetector         func(context.Context) compute.GPUInfo
-	ModalConfigPath         string
-	SkillDirectories        []string
-	SkillCatalog            *skills.Catalog
-	ScienceCapabilities     *sciencecapability.Catalog
-	AgentCatalog            *agentruntime.AgentCatalog
-	AgentCatalogRoot        string
-	AgentManifestPath       string
-	FeishuDeviceQR          *adapterfeishu.DeviceQRLoginManager
-	WeChatQR                *adapterwechat.QRLoginManager
-	HTTPClient              *http.Client
-	WebFetchOptions         webfetch.Options
-	WebSearchOptions        websearch.Options
-	VerifierToken           string
-	Feedback                FeedbackOptions
-	CompactSummarizer       SessionRunnerChatOptions
-	RunnerDiagnostics       RunnerDiagnostics
-	AdapterDiagnostics      AdapterDiagnostics
-	IMOutbound              adaptercommon.SessionOutboundSink
-	Workspace               *workspace.Store
-	RuntimeStore            *runtimekv.Store
-	Transcript              *transcriptstore.Repository
-	TranscriptWebReadModel  *transcriptstore.WebReadModelRepository
-	MemoryConfig            *memoryconfig.Config
-	MCPDirectory            *mcpdirectory.Service
-	RCSBFiles               RCSBFileFetcher
-	RCSBSearch              RCSBStructureSearcher
-	PublicScientificFiles   PublicScientificFileFetcher
-	KernelManager           *kernelruntime.Manager
-	KernelExecutionBackend  kernelruntime.ExecutionBackend
-	DataDirSource           string
-	DataDirControlPath      string
-	DefaultDataDir          string
-	CondaHome               string
-	CondaEnvsPath           string
-	ConfigAllowedDomains    []string
-	ConfigDeniedDomains     []string
-	ConfigNetworkProxy      string
-	MCPX509Posture          func() mcpstdio.TLSPosture
-	RestartRuntime          func(reason string) error
-	RuntimeUpdate           RuntimeUpdateOptions
-	StartBackgroundServices bool
-	HostDirectoryPicker     func(context.Context) (string, error)
-	VMRestart               *vmrestart.Manager
-	VMResources             *vmresources.Controller
-	CloudFactory            cloudstore.ClientFactory
-	WebUI                   http.Handler
+	Capabilities                          capabilities.Report
+	SynonLink                             *synonlink.Service
+	SynonLinkAuth                         SynonLinkAuthOptions
+	WebAuth                               WebAuthOptions
+	LinkPackagePath                       string
+	Tools                                 *registry.Registry
+	Operations                            *registry.Registry
+	Plugins                               *pluginhost.Host
+	FileRoot                              string
+	RuntimeAssetsDir                      string
+	ComputeRemoteDialer                   compute.RemoteDialer
+	ComputeProviderDial                   kernelruntime.ProviderProxyDialFunc
+	ProviderOperationRunner               kernelruntime.ProviderOperationRunner
+	HostGPUDetector                       func(context.Context) compute.GPUInfo
+	ModalConfigPath                       string
+	SkillDirectories                      []string
+	SkillCatalog                          *skills.Catalog
+	ScienceCapabilities                   *sciencecapability.Catalog
+	AgentCatalog                          *agentruntime.AgentCatalog
+	AgentCatalogRoot                      string
+	AgentManifestPath                     string
+	FeishuDeviceQR                        *adapterfeishu.DeviceQRLoginManager
+	WeChatQR                              *adapterwechat.QRLoginManager
+	HTTPClient                            *http.Client
+	WebFetchOptions                       webfetch.Options
+	WebSearchOptions                      websearch.Options
+	PublicScientificResponseHeaderTimeout time.Duration
+	PublicScientificTransferIdleTimeout   time.Duration
+	VerifierToken                         string
+	Feedback                              FeedbackOptions
+	CompactSummarizer                     SessionRunnerChatOptions
+	RunnerDiagnostics                     RunnerDiagnostics
+	AdapterDiagnostics                    AdapterDiagnostics
+	IMOutbound                            adaptercommon.SessionOutboundSink
+	Workspace                             *workspace.Store
+	RuntimeStore                          *runtimekv.Store
+	Transcript                            *transcriptstore.Repository
+	TranscriptWebReadModel                *transcriptstore.WebReadModelRepository
+	MemoryConfig                          *memoryconfig.Config
+	MCPDirectory                          *mcpdirectory.Service
+	RCSBFiles                             RCSBFileFetcher
+	RCSBSearch                            RCSBStructureSearcher
+	PublicScientificFiles                 PublicScientificFileFetcher
+	KernelManager                         *kernelruntime.Manager
+	KernelExecutionBackend                kernelruntime.ExecutionBackend
+	DataDirSource                         string
+	DataDirControlPath                    string
+	DefaultDataDir                        string
+	CondaHome                             string
+	CondaEnvsPath                         string
+	ConfigAllowedDomains                  []string
+	ConfigDeniedDomains                   []string
+	ConfigNetworkProxy                    string
+	MCPX509Posture                        func() mcpstdio.TLSPosture
+	RestartRuntime                        func(reason string) error
+	RuntimeUpdate                         RuntimeUpdateOptions
+	StartBackgroundServices               bool
+	HostDirectoryPicker                   func(context.Context) (string, error)
+	VMRestart                             *vmrestart.Manager
+	VMResources                           *vmresources.Controller
+	CloudFactory                          cloudstore.ClientFactory
+	WebUI                                 http.Handler
 }
 
 type RunnerDiagnostics struct {
@@ -156,168 +158,170 @@ type Server struct {
 	synonLinkAuth *synonLinkAuthenticator
 	loginLimiter  *loginRateLimiter
 	webAuthenticationState
-	accountManagementReader          account.ManagementReader
-	linkPackagePath                  string
-	tools                            *registry.Registry
-	operations                       *registry.Registry
-	plugins                          *pluginhost.Host
-	fileRoot                         string
-	runtimeAssetsDir                 string
-	settingsStore                    *settingsstore.Store
-	secretStore                      *secretstore.Store
-	sessionStore                     *sessionstore.Store
-	computeRemoteDialer              compute.RemoteDialer
-	computeProviderDial              kernelruntime.ProviderProxyDialFunc
-	computeProviderProvisionWake     chan string
-	computeProviderJobWake           chan struct{}
-	providerOperationRunner          kernelruntime.ProviderOperationRunner
-	computeProviderJobsMu            sync.Mutex
-	computeProviderJobs              map[string]bool
-	computeProviderHandleMu          sync.Mutex
-	computeSubmitMu                  sync.Mutex
-	computeRunsMu                    sync.Mutex
-	computeRuns                      map[string]context.CancelFunc
-	hostGPUDetector                  func(context.Context) compute.GPUInfo
-	modalConfigPath                  string
-	eventJournal                     *eventjournal.EventJournal
-	taskStore                        *taskstore.Store
-	taskRunStore                     *taskruns.Store
-	pairingStore                     *pairingstore.Store
-	runtimeStore                     *runtimekv.Store
-	runtimeStoreOwned                bool
-	usageScanner                     *runtimecontrol.Scanner
-	kernelManager                    *kernelruntime.Manager
-	kernelExecutionBackend           kernelruntime.ExecutionBackend
-	kernelDiscoveryErr               error
-	kernelConfinement                func(bool) kernelruntime.ConfinementEvidence
-	dataDirectoryController          *datadir.Controller
-	dataDirectorySource              string
-	defaultDataDirectory             string
-	condaHome                        string
-	condaEnvsPath                    string
-	configAllowedDomains             []string
-	configDeniedDomains              []string
-	configNetworkProxy               string
-	mcpX509Posture                   func() mcpstdio.TLSPosture
-	allowedDomainsMu                 sync.Mutex
-	hostGrantKernelMu                sync.Mutex
-	hostGrantKernelFences            map[string]bool
-	kernelLocalExecMu                sync.Mutex
-	kernelLocalExecWaiters           map[string]kernelLocalExecWaiterAuthority
-	detachedKernelObserverMu         sync.Mutex
-	detachedKernelObservers          map[string]context.CancelFunc
-	detachedKernelObserversDone      chan struct{}
-	detachedKernelObserversDraining  bool
-	kernelOperationBootID            string
-	approvalDecisionMu               *sync.Mutex
-	restartRuntime                   func(reason string) error
-	runtimeUpdate                    *runtimeUpdateController
-	hostDirectoryPicker              func(context.Context) (string, error)
-	vmRestart                        *vmrestart.Manager
-	vmResources                      *vmresources.Controller
-	cloudFactory                     cloudstore.ClientFactory
-	workspaceStore                   *workspace.Store
-	transcriptStore                  *transcriptstore.Repository
-	transcriptWebReadModel           *transcriptstore.WebReadModelRepository
-	memoryConfig                     memoryconfig.Config
-	memoryExtraction                 *memoryExtractionRuntime
-	transcriptContractErr            error
-	transcriptDeliveryMu             sync.Mutex
-	transcriptDeliveryStop           context.CancelFunc
-	transcriptDeliveryDone           chan struct{}
-	transcriptDeliveryWake           chan struct{}
-	dataLifecycleStop                context.CancelFunc
-	dataLifecycleDone                chan struct{}
-	frameResumeDispatchWakeMu        sync.Mutex
-	frameResumeDispatchWake          chan struct{}
-	mcpDirectory                     *mcpdirectory.Service
-	mcpDirectoryOwned                bool
-	mcpApps                          *mcpAppBroker
-	backgroundServicesStarted        bool
-	scientificRuntimeWarmupMu        sync.RWMutex
-	scientificRuntimeWarmups         map[string]scientificRuntimeWarmupStatus
-	scientificRuntimeWarmupWake      chan string
-	runtimeStartedAt                 time.Time
-	mcpDiscoverySlots                chan struct{}
-	rcsbFiles                        RCSBFileFetcher
-	rcsbSearch                       RCSBStructureSearcher
-	publicScientificFiles            PublicScientificFileFetcher
-	publicScientificDownloadSlots    chan struct{}
-	mcpAppResourceTickets            *mcpAppResourceTicketStore
-	workspaceEvents                  *workspaceEventHub
-	compatEvents                     *compatEventHub
-	httpClient                       *http.Client
-	speechClientForURL               func(context.Context, string, *http.Client) (*http.Client, error)
-	localSpeechRuntime               *localSpeechRuntime
-	webImageClientForURL             func(context.Context, string, *http.Client) (*http.Client, error)
-	verifierToken                    string
-	feedback                         FeedbackOptions
-	feishuDeviceQR                   *adapterfeishu.DeviceQRLoginManager
-	wechatQR                         *adapterwechat.QRLoginManager
-	messageChannelQRMu               sync.Mutex
-	messageChannelQRBindings         map[string]messageChannelQRBinding
-	sessionSockets                   *sessionWebSocketHub
-	sessionRunsMu                    sync.Mutex
-	sessionRuns                      map[string]*activeSessionRun
-	sessionRunsDraining              bool
-	manualReviewMu                   sync.Mutex
-	visualReviewChallengeToken       func() (string, error)
-	runtimeComponentsMu              sync.RWMutex
-	runtimeComponents                map[string]struct{}
-	kernelPeerPendingMu              sync.Mutex
-	kernelPeerPending                map[string]int
-	kernelPeerReservations           map[string]string
-	agentKernelForegroundWaitTimeout time.Duration
-	kernelIdleNow                    func() time.Time
-	feishuDedup                      *adaptercommon.MessageDedup
-	wechatDedup                      *adaptercommon.MessageDedup
-	skillCatalog                     *skills.Catalog
-	scienceCapabilities              *sciencecapability.Catalog
-	skillErrors                      []skills.LoadError
-	skillDirectories                 []string
-	skillMutationMu                  sync.Mutex
-	agentCatalog                     *agentruntime.AgentCatalog
-	agentCatalogError                error
-	csrfToken                        string
-	compactSummarizer                SessionRunnerChatOptions
-	runnerDiagnostics                RunnerDiagnostics
-	adapterDiagnostics               AdapterDiagnostics
-	imOutbound                       adaptercommon.SessionOutboundSink
-	transcriptIMMu                   sync.Mutex
-	transcriptIMClaims               map[transcriptIMClaimKey]transcriptstore.DeliveryClaim
-	transcriptIMRoutes               map[string]string
-	imInboundMu                      sync.Mutex
-	imInboundLocks                   map[string]*imInboundSessionLock
-	imProjectionHook                 func()
-	compatRequestMu                  sync.Mutex
-	agentToolApprovalMu              sync.Mutex
-	sessionSubmissionMu              sync.Mutex
-	readStateMu                      sync.Mutex
-	readState                        map[string]fileReadSnapshot
-	readCursorCache                  canonicalReadCursorCache
-	transcriptWebCache               transcriptWebProjectionCache
-	streamingCacheMu                 sync.Mutex
-	streamingCache                   map[string]*frameStreamingCacheEntry
-	projectionRetryMu                sync.Mutex
-	projectionRetryAt                map[string]time.Time
-	transcriptWebCatchupMu           sync.Mutex
-	transcriptWebCatchups            map[transcriptWebCatchupKey]*transcriptWebCatchupFlight
-	streamingCacheClock              uint64
-	backgroundShellMu                sync.Mutex
-	backgroundShells                 map[string]*shellops.RunningCommand
-	webResearchMu                    sync.Mutex
-	webResearchSessions              map[string]*webResearchSessionState
-	webZipMu                         sync.Mutex
-	webZipCancels                    map[string]context.CancelFunc
-	webSnapshotMu                    sync.Mutex
-	webSnapshots                     map[string]*webFSSnapshot
-	webPreviewHistoryMu              sync.Mutex
-	webOfficeMu                      sync.Mutex
-	provenanceCensusCache            provenanceCensusCache
-	webOfficeWatches                 map[string]*webOfficeWatch
-	webShellLauncher                 webShellLauncher
-	webUI                            http.Handler
-	httpMetrics                      *observability.HTTPRegistry
+	accountManagementReader               account.ManagementReader
+	linkPackagePath                       string
+	tools                                 *registry.Registry
+	operations                            *registry.Registry
+	plugins                               *pluginhost.Host
+	fileRoot                              string
+	runtimeAssetsDir                      string
+	settingsStore                         *settingsstore.Store
+	secretStore                           *secretstore.Store
+	sessionStore                          *sessionstore.Store
+	computeRemoteDialer                   compute.RemoteDialer
+	computeProviderDial                   kernelruntime.ProviderProxyDialFunc
+	computeProviderProvisionWake          chan string
+	computeProviderJobWake                chan struct{}
+	providerOperationRunner               kernelruntime.ProviderOperationRunner
+	computeProviderJobsMu                 sync.Mutex
+	computeProviderJobs                   map[string]bool
+	computeProviderHandleMu               sync.Mutex
+	computeSubmitMu                       sync.Mutex
+	computeRunsMu                         sync.Mutex
+	computeRuns                           map[string]context.CancelFunc
+	hostGPUDetector                       func(context.Context) compute.GPUInfo
+	modalConfigPath                       string
+	eventJournal                          *eventjournal.EventJournal
+	taskStore                             *taskstore.Store
+	taskRunStore                          *taskruns.Store
+	pairingStore                          *pairingstore.Store
+	runtimeStore                          *runtimekv.Store
+	runtimeStoreOwned                     bool
+	usageScanner                          *runtimecontrol.Scanner
+	kernelManager                         *kernelruntime.Manager
+	kernelExecutionBackend                kernelruntime.ExecutionBackend
+	kernelDiscoveryErr                    error
+	kernelConfinement                     func(bool) kernelruntime.ConfinementEvidence
+	dataDirectoryController               *datadir.Controller
+	dataDirectorySource                   string
+	defaultDataDirectory                  string
+	condaHome                             string
+	condaEnvsPath                         string
+	configAllowedDomains                  []string
+	configDeniedDomains                   []string
+	configNetworkProxy                    string
+	mcpX509Posture                        func() mcpstdio.TLSPosture
+	allowedDomainsMu                      sync.Mutex
+	hostGrantKernelMu                     sync.Mutex
+	hostGrantKernelFences                 map[string]bool
+	kernelLocalExecMu                     sync.Mutex
+	kernelLocalExecWaiters                map[string]kernelLocalExecWaiterAuthority
+	detachedKernelObserverMu              sync.Mutex
+	detachedKernelObservers               map[string]context.CancelFunc
+	detachedKernelObserversDone           chan struct{}
+	detachedKernelObserversDraining       bool
+	kernelOperationBootID                 string
+	approvalDecisionMu                    *sync.Mutex
+	restartRuntime                        func(reason string) error
+	runtimeUpdate                         *runtimeUpdateController
+	hostDirectoryPicker                   func(context.Context) (string, error)
+	vmRestart                             *vmrestart.Manager
+	vmResources                           *vmresources.Controller
+	cloudFactory                          cloudstore.ClientFactory
+	workspaceStore                        *workspace.Store
+	transcriptStore                       *transcriptstore.Repository
+	transcriptWebReadModel                *transcriptstore.WebReadModelRepository
+	memoryConfig                          memoryconfig.Config
+	memoryExtraction                      *memoryExtractionRuntime
+	transcriptContractErr                 error
+	transcriptDeliveryMu                  sync.Mutex
+	transcriptDeliveryStop                context.CancelFunc
+	transcriptDeliveryDone                chan struct{}
+	transcriptDeliveryWake                chan struct{}
+	dataLifecycleStop                     context.CancelFunc
+	dataLifecycleDone                     chan struct{}
+	frameResumeDispatchWakeMu             sync.Mutex
+	frameResumeDispatchWake               chan struct{}
+	mcpDirectory                          *mcpdirectory.Service
+	mcpDirectoryOwned                     bool
+	mcpApps                               *mcpAppBroker
+	backgroundServicesStarted             bool
+	scientificRuntimeWarmupMu             sync.RWMutex
+	scientificRuntimeWarmups              map[string]scientificRuntimeWarmupStatus
+	scientificRuntimeWarmupWake           chan string
+	runtimeStartedAt                      time.Time
+	mcpDiscoverySlots                     chan struct{}
+	rcsbFiles                             RCSBFileFetcher
+	rcsbSearch                            RCSBStructureSearcher
+	publicScientificFiles                 PublicScientificFileFetcher
+	publicScientificResponseHeaderTimeout time.Duration
+	publicScientificTransferIdleTimeout   time.Duration
+	publicScientificDownloadSlots         chan struct{}
+	mcpAppResourceTickets                 *mcpAppResourceTicketStore
+	workspaceEvents                       *workspaceEventHub
+	compatEvents                          *compatEventHub
+	httpClient                            *http.Client
+	speechClientForURL                    func(context.Context, string, *http.Client) (*http.Client, error)
+	localSpeechRuntime                    *localSpeechRuntime
+	webImageClientForURL                  func(context.Context, string, *http.Client) (*http.Client, error)
+	verifierToken                         string
+	feedback                              FeedbackOptions
+	feishuDeviceQR                        *adapterfeishu.DeviceQRLoginManager
+	wechatQR                              *adapterwechat.QRLoginManager
+	messageChannelQRMu                    sync.Mutex
+	messageChannelQRBindings              map[string]messageChannelQRBinding
+	sessionSockets                        *sessionWebSocketHub
+	sessionRunsMu                         sync.Mutex
+	sessionRuns                           map[string]*activeSessionRun
+	sessionRunsDraining                   bool
+	manualReviewMu                        sync.Mutex
+	visualReviewChallengeToken            func() (string, error)
+	runtimeComponentsMu                   sync.RWMutex
+	runtimeComponents                     map[string]struct{}
+	kernelPeerPendingMu                   sync.Mutex
+	kernelPeerPending                     map[string]int
+	kernelPeerReservations                map[string]string
+	agentKernelForegroundWaitTimeout      time.Duration
+	kernelIdleNow                         func() time.Time
+	feishuDedup                           *adaptercommon.MessageDedup
+	wechatDedup                           *adaptercommon.MessageDedup
+	skillCatalog                          *skills.Catalog
+	scienceCapabilities                   *sciencecapability.Catalog
+	skillErrors                           []skills.LoadError
+	skillDirectories                      []string
+	skillMutationMu                       sync.Mutex
+	agentCatalog                          *agentruntime.AgentCatalog
+	agentCatalogError                     error
+	csrfToken                             string
+	compactSummarizer                     SessionRunnerChatOptions
+	runnerDiagnostics                     RunnerDiagnostics
+	adapterDiagnostics                    AdapterDiagnostics
+	imOutbound                            adaptercommon.SessionOutboundSink
+	transcriptIMMu                        sync.Mutex
+	transcriptIMClaims                    map[transcriptIMClaimKey]transcriptstore.DeliveryClaim
+	transcriptIMRoutes                    map[string]string
+	imInboundMu                           sync.Mutex
+	imInboundLocks                        map[string]*imInboundSessionLock
+	imProjectionHook                      func()
+	compatRequestMu                       sync.Mutex
+	agentToolApprovalMu                   sync.Mutex
+	sessionSubmissionMu                   sync.Mutex
+	readStateMu                           sync.Mutex
+	readState                             map[string]fileReadSnapshot
+	readCursorCache                       canonicalReadCursorCache
+	transcriptWebCache                    transcriptWebProjectionCache
+	streamingCacheMu                      sync.Mutex
+	streamingCache                        map[string]*frameStreamingCacheEntry
+	projectionRetryMu                     sync.Mutex
+	projectionRetryAt                     map[string]time.Time
+	transcriptWebCatchupMu                sync.Mutex
+	transcriptWebCatchups                 map[transcriptWebCatchupKey]*transcriptWebCatchupFlight
+	streamingCacheClock                   uint64
+	backgroundShellMu                     sync.Mutex
+	backgroundShells                      map[string]*shellops.RunningCommand
+	webResearchMu                         sync.Mutex
+	webResearchSessions                   map[string]*webResearchSessionState
+	webZipMu                              sync.Mutex
+	webZipCancels                         map[string]context.CancelFunc
+	webSnapshotMu                         sync.Mutex
+	webSnapshots                          map[string]*webFSSnapshot
+	webPreviewHistoryMu                   sync.Mutex
+	webOfficeMu                           sync.Mutex
+	provenanceCensusCache                 provenanceCensusCache
+	webOfficeWatches                      map[string]*webOfficeWatch
+	webShellLauncher                      webShellLauncher
+	webUI                                 http.Handler
+	httpMetrics                           *observability.HTTPRegistry
 }
 
 func New(options Options) *Server {
@@ -498,7 +502,7 @@ func New(options Options) *Server {
 	kernelManager := options.KernelManager
 	var kernelDiscoveryErr error
 	if kernelManager == nil && options.StartBackgroundServices {
-		kernelManager, kernelDiscoveryErr = kernelruntime.DiscoverManagerWithPaths(options.CondaHome, options.CondaEnvsPath)
+		kernelManager, kernelDiscoveryErr = kernelruntime.DiscoverManagerWithPaths(options.CondaHome, options.CondaEnvsPath, options.ConfigNetworkProxy)
 	}
 	if providerOperationRunner == nil && kernelManager != nil {
 		providerOperationRunner = kernelManager
@@ -544,113 +548,115 @@ func New(options Options) *Server {
 			settings: settings, allowedDomains: options.ConfigAllowedDomains,
 			deniedDomains: options.ConfigDeniedDomains, mcpConfigured: mcpDirectory != nil,
 		}),
-		linkPackagePath:                  options.LinkPackagePath,
-		tools:                            tools,
-		operations:                       operations,
-		plugins:                          plugins,
-		fileRoot:                         options.FileRoot,
-		runtimeAssetsDir:                 cleanExistingDirectory(options.RuntimeAssetsDir),
-		settingsStore:                    settings,
-		secretStore:                      secrets,
-		sessionStore:                     sessions,
-		eventJournal:                     journal,
-		taskStore:                        tasks,
-		taskRunStore:                     taskRuns,
-		pairingStore:                     pairing,
-		runtimeStore:                     runtime,
-		runtimeStoreOwned:                runtimeOwned,
-		usageScanner:                     usage,
-		computeRemoteDialer:              remoteDialer,
-		computeProviderDial:              options.ComputeProviderDial,
-		computeProviderProvisionWake:     make(chan string, 8),
-		computeProviderJobWake:           make(chan struct{}, 1),
-		providerOperationRunner:          providerOperationRunner,
-		computeProviderJobs:              map[string]bool{},
-		computeRuns:                      map[string]context.CancelFunc{},
-		hostGPUDetector:                  hostGPUDetector,
-		kernelManager:                    kernelManager,
-		kernelExecutionBackend:           options.KernelExecutionBackend,
-		kernelDiscoveryErr:               kernelDiscoveryErr,
-		kernelConfinement:                kernelConfinement,
-		modalConfigPath:                  modalConfigPath,
-		dataDirectoryController:          dataDirectoryController,
-		dataDirectorySource:              options.DataDirSource,
-		defaultDataDirectory:             options.DefaultDataDir,
-		condaHome:                        options.CondaHome,
-		condaEnvsPath:                    options.CondaEnvsPath,
-		configAllowedDomains:             append([]string(nil), options.ConfigAllowedDomains...),
-		configDeniedDomains:              append([]string(nil), options.ConfigDeniedDomains...),
-		configNetworkProxy:               strings.TrimSpace(options.ConfigNetworkProxy),
-		mcpX509Posture:                   options.MCPX509Posture,
-		hostGrantKernelFences:            map[string]bool{},
-		detachedKernelObservers:          map[string]context.CancelFunc{},
-		detachedKernelObserversDone:      nil,
-		kernelOperationBootID:            newCSRFToken(),
-		approvalDecisionMu:               approvalDecisionMu,
-		restartRuntime:                   options.RestartRuntime,
-		runtimeUpdate:                    newRuntimeUpdateController(options.RuntimeUpdate),
-		hostDirectoryPicker:              options.HostDirectoryPicker,
-		vmRestart:                        options.VMRestart,
-		vmResources:                      options.VMResources,
-		cloudFactory:                     cloudFactory,
-		workspaceStore:                   options.Workspace,
-		transcriptStore:                  options.Transcript,
-		transcriptWebReadModel:           options.TranscriptWebReadModel,
-		memoryConfig:                     runtimeMemoryConfig,
-		transcriptContractErr:            transcriptContractErr,
-		workspaceEvents:                  newWorkspaceEventHub(),
-		compatEvents:                     newCompatEventHub(),
-		mcpDirectory:                     mcpDirectory,
-		mcpDirectoryOwned:                mcpDirectoryOwned,
-		mcpApps:                          newMCPAppBroker(),
-		backgroundServicesStarted:        options.StartBackgroundServices,
-		scientificRuntimeWarmups:         map[string]scientificRuntimeWarmupStatus{},
-		scientificRuntimeWarmupWake:      make(chan string, len(scientificRuntimeWarmupDefinitions())),
-		runtimeStartedAt:                 time.Now().UTC(),
-		mcpDiscoverySlots:                processMCPDiscoverySlots,
-		rcsbFiles:                        defaultRCSBFileFetcher(options.RCSBFiles),
-		rcsbSearch:                       defaultRCSBStructureSearcher(options.RCSBSearch),
-		publicScientificFiles:            defaultPublicScientificFileFetcher(options.PublicScientificFiles, options.ConfigNetworkProxy),
-		publicScientificDownloadSlots:    make(chan struct{}, agentPublicScientificDownloadConcurrency),
-		httpClient:                       httpClient,
-		speechClientForURL:               mcpdirectory.SecureHTTPClient,
-		localSpeechRuntime:               newLocalSpeechRuntime(options.FileRoot, httpClient),
-		webImageClientForURL:             mcpdirectory.SecureHTTPClient,
-		verifierToken:                    strings.TrimSpace(options.VerifierToken),
-		feedback:                         options.Feedback,
-		feishuDeviceQR:                   feishuDeviceQR,
-		wechatQR:                         wechatQR,
-		messageChannelQRBindings:         map[string]messageChannelQRBinding{},
-		sessionSockets:                   newSessionWebSocketHub(),
-		sessionRuns:                      map[string]*activeSessionRun{},
-		agentKernelForegroundWaitTimeout: defaultAgentKernelForegroundWaitTimeout,
-		kernelIdleNow:                    time.Now,
-		runtimeComponents:                map[string]struct{}{},
-		feishuDedup:                      adaptercommon.NewMessageDedup(30*time.Minute, 20000),
-		wechatDedup:                      adaptercommon.NewMessageDedup(30*time.Minute, 20000),
-		skillCatalog:                     skillCatalog,
-		scienceCapabilities:              scienceCapabilities,
-		skillErrors:                      skillErrors,
-		skillDirectories:                 skillDirectories,
-		agentCatalog:                     agentCatalog,
-		agentCatalogError:                agentCatalogErr,
-		csrfToken:                        newCSRFToken(),
-		compactSummarizer:                options.CompactSummarizer,
-		runnerDiagnostics:                options.RunnerDiagnostics,
-		adapterDiagnostics:               options.AdapterDiagnostics,
-		imOutbound:                       options.IMOutbound,
-		transcriptIMClaims:               map[transcriptIMClaimKey]transcriptstore.DeliveryClaim{},
-		transcriptIMRoutes:               map[string]string{},
-		imInboundLocks:                   map[string]*imInboundSessionLock{},
-		readState:                        map[string]fileReadSnapshot{},
-		backgroundShells:                 map[string]*shellops.RunningCommand{},
-		webResearchSessions:              map[string]*webResearchSessionState{},
-		webZipCancels:                    map[string]context.CancelFunc{},
-		webSnapshots:                     map[string]*webFSSnapshot{},
-		webOfficeWatches:                 map[string]*webOfficeWatch{},
-		mcpAppResourceTickets:            newMCPAppResourceTicketStore(),
-		webUI:                            options.WebUI,
-		httpMetrics:                      observability.NewHTTPRegistry(),
+		linkPackagePath:                       options.LinkPackagePath,
+		tools:                                 tools,
+		operations:                            operations,
+		plugins:                               plugins,
+		fileRoot:                              options.FileRoot,
+		runtimeAssetsDir:                      cleanExistingDirectory(options.RuntimeAssetsDir),
+		settingsStore:                         settings,
+		secretStore:                           secrets,
+		sessionStore:                          sessions,
+		eventJournal:                          journal,
+		taskStore:                             tasks,
+		taskRunStore:                          taskRuns,
+		pairingStore:                          pairing,
+		runtimeStore:                          runtime,
+		runtimeStoreOwned:                     runtimeOwned,
+		usageScanner:                          usage,
+		computeRemoteDialer:                   remoteDialer,
+		computeProviderDial:                   options.ComputeProviderDial,
+		computeProviderProvisionWake:          make(chan string, 8),
+		computeProviderJobWake:                make(chan struct{}, 1),
+		providerOperationRunner:               providerOperationRunner,
+		computeProviderJobs:                   map[string]bool{},
+		computeRuns:                           map[string]context.CancelFunc{},
+		hostGPUDetector:                       hostGPUDetector,
+		kernelManager:                         kernelManager,
+		kernelExecutionBackend:                options.KernelExecutionBackend,
+		kernelDiscoveryErr:                    kernelDiscoveryErr,
+		kernelConfinement:                     kernelConfinement,
+		modalConfigPath:                       modalConfigPath,
+		dataDirectoryController:               dataDirectoryController,
+		dataDirectorySource:                   options.DataDirSource,
+		defaultDataDirectory:                  options.DefaultDataDir,
+		condaHome:                             options.CondaHome,
+		condaEnvsPath:                         options.CondaEnvsPath,
+		configAllowedDomains:                  append([]string(nil), options.ConfigAllowedDomains...),
+		configDeniedDomains:                   append([]string(nil), options.ConfigDeniedDomains...),
+		configNetworkProxy:                    strings.TrimSpace(options.ConfigNetworkProxy),
+		mcpX509Posture:                        options.MCPX509Posture,
+		hostGrantKernelFences:                 map[string]bool{},
+		detachedKernelObservers:               map[string]context.CancelFunc{},
+		detachedKernelObserversDone:           nil,
+		kernelOperationBootID:                 newCSRFToken(),
+		approvalDecisionMu:                    approvalDecisionMu,
+		restartRuntime:                        options.RestartRuntime,
+		runtimeUpdate:                         newRuntimeUpdateController(options.RuntimeUpdate),
+		hostDirectoryPicker:                   options.HostDirectoryPicker,
+		vmRestart:                             options.VMRestart,
+		vmResources:                           options.VMResources,
+		cloudFactory:                          cloudFactory,
+		workspaceStore:                        options.Workspace,
+		transcriptStore:                       options.Transcript,
+		transcriptWebReadModel:                options.TranscriptWebReadModel,
+		memoryConfig:                          runtimeMemoryConfig,
+		transcriptContractErr:                 transcriptContractErr,
+		workspaceEvents:                       newWorkspaceEventHub(),
+		compatEvents:                          newCompatEventHub(),
+		mcpDirectory:                          mcpDirectory,
+		mcpDirectoryOwned:                     mcpDirectoryOwned,
+		mcpApps:                               newMCPAppBroker(),
+		backgroundServicesStarted:             options.StartBackgroundServices,
+		scientificRuntimeWarmups:              map[string]scientificRuntimeWarmupStatus{},
+		scientificRuntimeWarmupWake:           make(chan string, len(scientificRuntimeWarmupDefinitions())),
+		runtimeStartedAt:                      time.Now().UTC(),
+		mcpDiscoverySlots:                     processMCPDiscoverySlots,
+		rcsbFiles:                             defaultRCSBFileFetcher(options.RCSBFiles),
+		rcsbSearch:                            defaultRCSBStructureSearcher(options.RCSBSearch),
+		publicScientificFiles:                 defaultPublicScientificFileFetcher(options.PublicScientificFiles, options.ConfigNetworkProxy),
+		publicScientificResponseHeaderTimeout: options.PublicScientificResponseHeaderTimeout,
+		publicScientificTransferIdleTimeout:   options.PublicScientificTransferIdleTimeout,
+		publicScientificDownloadSlots:         make(chan struct{}, agentPublicScientificDownloadConcurrency),
+		httpClient:                            httpClient,
+		speechClientForURL:                    mcpdirectory.SecureHTTPClient,
+		localSpeechRuntime:                    newLocalSpeechRuntime(options.FileRoot, httpClient),
+		webImageClientForURL:                  mcpdirectory.SecureHTTPClient,
+		verifierToken:                         strings.TrimSpace(options.VerifierToken),
+		feedback:                              options.Feedback,
+		feishuDeviceQR:                        feishuDeviceQR,
+		wechatQR:                              wechatQR,
+		messageChannelQRBindings:              map[string]messageChannelQRBinding{},
+		sessionSockets:                        newSessionWebSocketHub(),
+		sessionRuns:                           map[string]*activeSessionRun{},
+		agentKernelForegroundWaitTimeout:      defaultAgentKernelForegroundWaitTimeout,
+		kernelIdleNow:                         time.Now,
+		runtimeComponents:                     map[string]struct{}{},
+		feishuDedup:                           adaptercommon.NewMessageDedup(30*time.Minute, 20000),
+		wechatDedup:                           adaptercommon.NewMessageDedup(30*time.Minute, 20000),
+		skillCatalog:                          skillCatalog,
+		scienceCapabilities:                   scienceCapabilities,
+		skillErrors:                           skillErrors,
+		skillDirectories:                      skillDirectories,
+		agentCatalog:                          agentCatalog,
+		agentCatalogError:                     agentCatalogErr,
+		csrfToken:                             newCSRFToken(),
+		compactSummarizer:                     options.CompactSummarizer,
+		runnerDiagnostics:                     options.RunnerDiagnostics,
+		adapterDiagnostics:                    options.AdapterDiagnostics,
+		imOutbound:                            options.IMOutbound,
+		transcriptIMClaims:                    map[transcriptIMClaimKey]transcriptstore.DeliveryClaim{},
+		transcriptIMRoutes:                    map[string]string{},
+		imInboundLocks:                        map[string]*imInboundSessionLock{},
+		readState:                             map[string]fileReadSnapshot{},
+		backgroundShells:                      map[string]*shellops.RunningCommand{},
+		webResearchSessions:                   map[string]*webResearchSessionState{},
+		webZipCancels:                         map[string]context.CancelFunc{},
+		webSnapshots:                          map[string]*webFSSnapshot{},
+		webOfficeWatches:                      map[string]*webOfficeWatch{},
+		mcpAppResourceTickets:                 newMCPAppResourceTicketStore(),
+		webUI:                                 options.WebUI,
+		httpMetrics:                           observability.NewHTTPRegistry(),
 	}
 	if mcpDirectory != nil {
 		mcpDirectory.SetConnectorUsageRecorder(func(ctx context.Context, userID string, connector mcpdirectory.RuntimeConnector, toolName string, callErr error) {

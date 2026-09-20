@@ -604,7 +604,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	}
 	taskContract := buildSessionRunnerTaskContract(taskIntent, taskIntentID, taskIntentRevision)
 	if correction, found := latestRunnerCorrection(entries); found {
-		staleAdvisory := sessionRunnerRecoveredCorrectionIsAdvisory(correction.ReasonCode, correction.Detail)
+		staleAdvisory := sessionRunnerRecoveredCorrectionIsAdvisory(correction.ReasonCode, correction.repairDetail())
 		if staleAdvisory {
 			// This correction was emitted before the explicit review policy was
 			// resolved. Drop only the synthetic correction context; replayed user,
@@ -615,22 +615,19 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		}
 		if run != nil {
 			if staleAdvisory {
-				run.CorrectionReason = ""
-				run.CorrectionDetail = ""
+				run.restoreCorrection(nil)
 			} else {
-				run.CorrectionReason = correction.ReasonCode
-				run.CorrectionDetail = correction.Detail
+				run.restoreCorrection(&correction)
 			}
 		}
 	} else if run != nil {
-		run.CorrectionReason = ""
-		run.CorrectionDetail = ""
+		run.restoreCorrection(nil)
 	}
 	if run != nil {
 		state, found := sessionRunnerNoProgressRecoveryFromReplay(entries)
 		if !found {
 			state = newSessionRunnerNoProgressRecovery(
-				runnerRecoveryObligationFingerprint(run.Transcript, run.CorrectionReason, run.CorrectionDetail),
+				runnerRecoveryObligationFingerprint(run.Transcript, run.correctionCause()),
 			)
 		}
 		run.restoreNoProgressRecovery(state)
@@ -756,6 +753,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	publicProgressStream := &sessionRunnerCandidateStreamBuffer{}
 	publicProgressBlockID := ""
 	progressDeduper := &sessionRunnerPublicProgressDeduper{}
+	progressOutcomeAuthority := newSessionRunnerProgressOutcomeAuthority(agentRuntimeMessagesFromChat(messages))
 	progressSegmentPublished := false
 	publicNarrationBytes := 0
 	communicationSchedule, scheduleErr := s.loadSessionRunnerCommunicationSchedule(deltaContext, run)
@@ -776,7 +774,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	}
 	publishProgress := func(blockID, delta string) error {
 		delta = sessionRunnerPublicProgressNarration(delta)
-		if delta == "" {
+		if delta == "" || !progressOutcomeAuthority.allows(delta) {
 			return nil
 		}
 		shouldPublish, err := progressDeduper.shouldPublish(blockID, delta)
@@ -856,6 +854,11 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 			}
 		}
 		switch event.Type {
+		case agentruntime.EventPresentationDiagnostic:
+			s.recordSessionRunnerCommunicationAudit(run, map[string]any{
+				"decision": "progress_presentation_discarded", "failure_code": event.Message,
+			})
+			return nil
 		case agentruntime.EventModelResponse:
 			defer communicationObserver.recordBoundary(len(event.ToolCalls) > 0)
 			if len(event.ToolCalls) > 0 {
@@ -920,6 +923,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 					return fmt.Errorf("persist communication cadence: %w", err)
 				}
 			}
+			progressOutcomeAuthority.observe(event)
 			return nil
 		}
 		return nil
@@ -979,7 +983,8 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		},
 	}
 	engine.AllowToolPreamble = func(text string) bool {
-		return !progressSegmentPublished && strings.TrimSpace(text) != "" && sessionRunnerPublicProgressNarration(text) == strings.TrimSpace(text)
+		safe := sessionRunnerPublicProgressNarration(text)
+		return !progressSegmentPublished && safe != "" && safe == strings.TrimSpace(text) && progressOutcomeAuthority.allows(safe)
 	}
 	result, err := s.runVerifiedSessionAgent(
 		withTranscriptRunnerChatRun(evidenceContext, run), session, options, engine, runRequest, taskContract, run,
@@ -1051,10 +1056,10 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 			Detail: "the model completed its tool rounds without producing a user-visible final answer",
 		}
 	}
-	if remaining, err := s.incompleteGeneratedPlanStepTitles(intakeFrameID); err != nil {
+	if remaining, err := s.incompleteGeneratedPlanCondition(intakeFrameID); err != nil {
 		return "", err
-	} else if len(remaining) > 0 {
-		return "", sessionRunnerPlanStepsIncomplete{steps: remaining}
+	} else if remaining != nil {
+		return "", *remaining
 	}
 	// The candidate has passed every structural, task-contract, and optional
 	// review gate; evidence-quality advisories remain attached to their durable

@@ -1670,7 +1670,7 @@ func TestAgentSaveArtifactsPinnedRootRejectsIntermediateDirectorySwap(t *testing
 		source.close()
 		t.Fatal(err)
 	}
-	snapshot, _, _, snapshotErr := snapshotAgentSavedArtifact(context.Background(), source, 1024)
+	snapshot, _, _, snapshotErr := snapshotAgentSavedArtifact(context.Background(), source)
 	source.close()
 	if snapshot != nil {
 		path := snapshot.Name()
@@ -1686,7 +1686,7 @@ func TestAgentSaveArtifactsPinnedRootRejectsIntermediateDirectorySwap(t *testing
 	}
 }
 
-func TestAgentSaveArtifactsBatchLimitConstrainsSnapshotBeforeCopy(t *testing.T) {
+func TestAgentSaveArtifactsCancelledSnapshotDoesNotLeaveTemporaryContent(t *testing.T) {
 	fixture := newAgentSaveArtifactsFixture(t)
 	writeAgentSaveArtifactsFile(t, fixture.projectPath, "out/eight.bin", "12345678")
 	source, err := fixture.server.resolveAgentSavedArtifactSource(
@@ -1695,21 +1695,23 @@ func TestAgentSaveArtifactsBatchLimitConstrainsSnapshotBeforeCopy(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	limit, err := agentSavedArtifactSnapshotLimit(agentSavedArtifactCheckpointLimit, agentSavedArtifactBatchLimit-7)
-	if err != nil || limit != 7 {
-		source.close()
-		t.Fatalf("snapshot limit=%d err=%v", limit, err)
-	}
-	snapshot, _, _, snapshotErr := snapshotAgentSavedArtifact(context.Background(), source, limit)
+	snapshotDirectory := t.TempDir()
+	t.Setenv("TMPDIR", snapshotDirectory)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	snapshot, _, _, snapshotErr := snapshotAgentSavedArtifact(ctx, source)
 	source.close()
 	if snapshot != nil {
 		path := snapshot.Name()
 		_ = snapshot.Close()
 		_ = os.Remove(path)
 	}
-	var tooLarge *workspace.ArtifactContentTooLargeError
-	if !errors.As(snapshotErr, &tooLarge) || tooLarge.Limit != 7 {
+	if !errors.Is(snapshotErr, context.Canceled) {
 		t.Fatalf("snapshot error=%v", snapshotErr)
+	}
+	entries, err := os.ReadDir(snapshotDirectory)
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("cancelled snapshot residue=%v err=%v", entries, err)
 	}
 }
 
@@ -1793,9 +1795,9 @@ func TestAgentSaveArtifactsNormalizesEmptyOptionalEnvironment(t *testing.T) {
 	}
 }
 
-func TestAgentSaveArtifactsRequiresCheckpointFlagForObservedLargeFile(t *testing.T) {
+func TestAgentSaveArtifactsRejectsInvalidLargeFileContent(t *testing.T) {
 	fixture := newAgentSaveArtifactsFixture(t)
-	path := filepath.Join(fixture.projectPath, "out", "sadefeldman_processed.h5ad")
+	path := filepath.Join(fixture.projectPath, "out", "corrupt-large.cif")
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -1807,11 +1809,14 @@ func TestAgentSaveArtifactsRequiresCheckpointFlagForObservedLargeFile(t *testing
 		_ = file.Close()
 		t.Fatal(err)
 	}
+	if _, err := file.WriteAt([]byte("%PDF-1.7\n"), 0); err != nil {
+		t.Fatal(err)
+	}
 	if err := file.Close(); err != nil {
 		t.Fatal(err)
 	}
 	input := map[string]any{
-		"files": []any{"out/sadefeldman_processed.h5ad"}, "language": "python", "environment": "scanpy",
+		"files": []any{"out/corrupt-large.cif"}, "language": "python", "environment": "scanpy",
 		"human_description": "Saving processed dataset",
 	}
 	result, err := fixture.server.executeAgentSaveArtifacts(
@@ -1821,17 +1826,17 @@ func TestAgentSaveArtifactsRequiresCheckpointFlagForObservedLargeFile(t *testing
 		t.Fatalf("regular large result=%#v err=%v", result, err)
 	}
 	errorsFound := agentSaveArtifactFailures(t, result)
-	if len(errorsFound) != 1 || errorsFound[0]["path"] != "out/sadefeldman_processed.h5ad" || errorsFound[0]["code"] != "file_too_large" {
+	if len(errorsFound) != 1 || errorsFound[0]["path"] != "out/corrupt-large.cif" || errorsFound[0]["code"] != "file_content_type_mismatch" {
 		t.Fatalf("regular large errors=%#v", result["errors"])
 	}
 }
 
 func TestAgentSaveArtifactsObservedLargeCheckpoint(t *testing.T) {
 	if os.Getenv("SYNON_TEST_LARGE_ARTIFACT") != "1" {
-		t.Skip("set SYNON_TEST_LARGE_ARTIFACT=1 for the observed 321,003,928-byte Claude checkpoint gate")
+		t.Skip("set SYNON_TEST_LARGE_ARTIFACT=1 for the 321,003,928-byte checkpoint persistence test")
 	}
 	fixture := newAgentSaveArtifactsFixture(t)
-	path := filepath.Join(fixture.projectPath, "out", "sadefeldman_processed.h5ad")
+	path := filepath.Join(fixture.projectPath, "out", "intermediate-checkpoint.bin")
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -1847,8 +1852,8 @@ func TestAgentSaveArtifactsObservedLargeCheckpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 	input := map[string]any{
-		"files": []any{"out/sadefeldman_processed.h5ad"}, "language": "python", "environment": "scanpy",
-		"checkpoints": []any{"out/sadefeldman_processed.h5ad"}, "human_description": "Saving processed checkpoint",
+		"files": []any{"out/intermediate-checkpoint.bin"}, "language": "python", "environment": "scanpy",
+		"checkpoints": []any{"out/intermediate-checkpoint.bin"}, "human_description": "Saving processed checkpoint",
 	}
 	result, err := fixture.server.executeAgentSaveArtifacts(
 		fixture.toolContext(t, "save-call-large", input), fixture.identity, "save-call-large", input,

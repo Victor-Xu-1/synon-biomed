@@ -114,7 +114,7 @@ func (s *Server) agentToolApprovalBatchResult(
 		(stringValue(value["sessionId"]) != "" && stringValue(value["sessionId"]) != frameID) {
 		return nil, "", approvalID, true, errors.New("agent tool approval identity conflicts with the durable batch")
 	}
-	state = strings.ToLower(strings.TrimSpace(stringValue(value["status"])))
+	state = agentRuntimeApprovalStatus(stringValue(value["status"]), value["result"])
 	switch state {
 	case "completed":
 		result, ok := value["result"]

@@ -10,6 +10,7 @@ import (
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
+	"synon-go/internal/toolcontract"
 )
 
 const sessionRunnerDurableEvidencePageSize = 1000
@@ -300,9 +301,21 @@ func validSessionRunnerMCPDurableCheckpoint(checkpoint sessionRunnerDurableToolC
 	}
 	input := bytes.TrimSpace(sessionRunnerDurableExecutedToolInput(checkpoint))
 	result := bytes.TrimSpace(checkpoint.ToolResult)
+	resultSHA := kernelMCPEvidenceSHA256(result)
+	if checkpoint.Schema == "synon.kernel_mcp_evidence.v1" {
+		// The committed nested MCP receipt retains the original result digest.
+		// Its full contents are restored and scope/hash-checked by the normal
+		// durable evidence reader before any scientific consumer receives them.
+		if descriptor, _, externalized, err := toolcontract.DecodeExternalizedResult(result); externalized {
+			if err != nil || descriptor.Outcome != string(agentruntime.ToolResultSucceeded) {
+				return false
+			}
+			resultSHA = descriptor.SHA256
+		}
+	}
 	return json.Valid(input) && json.Valid(result) &&
 		kernelMCPEvidenceSHA256(input) == checkpoint.RequestSHA256 &&
-		kernelMCPEvidenceSHA256(result) == checkpoint.ResultSHA256
+		resultSHA == checkpoint.ResultSHA256
 }
 
 func sessionRunnerDurableExecutedToolInput(checkpoint sessionRunnerDurableToolCheckpoint) json.RawMessage {

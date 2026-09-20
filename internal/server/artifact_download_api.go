@@ -94,7 +94,7 @@ func (s *Server) handleArtifactDownload(w http.ResponseWriter, r *http.Request) 
 	if override := strings.TrimSpace(r.URL.Query().Get("filename")); override != "" {
 		filename = override
 	}
-	serveArtifactVersion(w, r, artifact, version, filename, metadata.ContentType, "attachment", content)
+	serveArtifactVersion(w, r, artifact, version, filename, metadata.ContentType, "attachment", content, passiveArtifactHTMLSource(store, version.ID, metadata.ContentType))
 }
 
 func (s *Server) handleExactArtifactVersionDownload(
@@ -151,7 +151,7 @@ func (s *Server) handleExactArtifactVersionDownload(
 	if inlineArtifactVersionContentType.MatchString(strings.TrimSpace(metadata.ContentType)) {
 		disposition = "inline"
 	}
-	serveArtifactVersion(w, r, artifact, version, filename, metadata.ContentType, disposition, content)
+	serveArtifactVersion(w, r, artifact, version, filename, metadata.ContentType, disposition, content, passiveArtifactHTMLSource(store, version.ID, metadata.ContentType))
 }
 
 func (s *Server) handleArtifactVersionDownload(w http.ResponseWriter, r *http.Request) {
@@ -211,10 +211,21 @@ func (s *Server) handleArtifactVersionDownload(w http.ResponseWriter, r *http.Re
 	if inlineArtifactVersionContentType.MatchString(strings.TrimSpace(metadata.ContentType)) {
 		disposition = "inline"
 	}
-	serveArtifactVersion(w, r, artifact, version, filename, metadata.ContentType, disposition, content)
+	serveArtifactVersion(w, r, artifact, version, filename, metadata.ContentType, disposition, content, passiveArtifactHTMLSource(store, version.ID, metadata.ContentType))
 }
 
-func serveArtifactVersion(w http.ResponseWriter, r *http.Request, artifact workspace.Artifact, version workspace.ArtifactVersion, filename, contentType, disposition string, content io.ReadSeeker) {
+func passiveArtifactHTMLSource(store *workspace.Store, versionID, contentType string) bool {
+	media, _, _ := mime.ParseMediaType(contentType)
+	if media != "text/html" && media != "application/xhtml+xml" {
+		return false
+	}
+	record, found, err := store.GetArtifactVersionLineageRecord(versionID, false)
+	// Source metadata only adds restrictions; generated HTML is still isolated
+	// from the app origin by the renderer regardless of a producer's language.
+	return err != nil || !found || record.IsUserUpload || record.Language == nil || *record.Language == agentPublicScientificArtifactLanguage
+}
+
+func serveArtifactVersion(w http.ResponseWriter, r *http.Request, artifact workspace.Artifact, version workspace.ArtifactVersion, filename, contentType, disposition string, content io.ReadSeeker, passiveSource ...bool) {
 	filename = safeArchiveFilename(filename, artifact.ID)
 	contentType = strings.TrimSpace(contentType)
 	if contentType == "" || !strings.Contains(contentType, "/") {
@@ -230,6 +241,23 @@ func serveArtifactVersion(w http.ResponseWriter, r *http.Request, artifact works
 	w.Header().Set("X-Artifact-Id", artifact.ID)
 	w.Header().Set("X-Artifact-Version-Id", version.ID)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	mediaType, _, _ := mime.ParseMediaType(contentType)
+	if mediaType == "text/html" || mediaType == "application/xhtml+xml" {
+		// Source documents may contain arbitrary active markup. Apply the same
+		// passive boundary to every artifact route, including explicit inline
+		// callers, so a saved page never acquires the application's origin.
+		w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
+		mode := "isolated"
+		if len(passiveSource) == 0 || passiveSource[0] {
+			mode = "passive"
+		} else {
+			// Generated interactive documents may execute in their own opaque
+			// origin. They never receive allow-same-origin, even after a source
+			// is copied and its producer metadata changes.
+			w.Header().Set("Content-Security-Policy", "sandbox allow-scripts; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
+		}
+		w.Header().Set("X-Synon-HTML-Preview", mode)
+	}
 	http.ServeContent(w, r, filename, version.CreatedAt, content)
 }
 

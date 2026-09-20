@@ -25,17 +25,10 @@ import (
 	kernelruntime "synon-go/internal/kernel"
 	runtimekv "synon-go/internal/persistence/runtimekv"
 	workspace "synon-go/internal/persistence/workspace"
+	"synon-go/internal/runtimecontrol"
 )
 
-const (
-	maxAgentSavedArtifacts         = 256
-	agentSavedArtifactRegularLimit = int64(50 << 20)
-	// The reference 0.1.20 runtime proves a 321,003,928-byte checkpoint succeeds but
-	// does not expose its upper bound. One GiB is Synon's explicit safety cap,
-	// not a claim about Claude's undocumented maximum.
-	agentSavedArtifactCheckpointLimit = int64(1 << 30)
-	agentSavedArtifactBatchLimit      = int64(1 << 30)
-)
+const maxAgentSavedArtifacts = 256
 
 var (
 	errAgentSavedArtifactNotRegular         = errors.New("saved artifact is not a regular file")
@@ -43,7 +36,7 @@ var (
 	errAgentSavedArtifactPathAmbiguous      = errors.New("saved artifact path is ambiguous")
 	errAgentSavedArtifactVersionInvalid     = errors.New("saved artifact version reference is invalid")
 	errAgentSavedArtifactProjection         = errors.New("saved artifact compatibility projection failed")
-	errAgentSavedArtifactBatchLimit         = errors.New("saved artifact batch byte limit exceeded")
+	errAgentSavedArtifactSourceChanged      = errors.New("saved artifact source changed during snapshot")
 	errAgentSaveArtifactsNoResults          = errors.New("save_artifacts did not publish any files")
 	errAgentSavedArtifactJSONInvalid        = errors.New("saved JSON artifact is invalid")
 	errAgentSavedArtifactPythonInvalid      = errors.New("saved Python artifact is invalid")
@@ -199,7 +192,6 @@ func (s *Server) executeAgentSaveArtifacts(
 	for _, failure := range request.Failures {
 		failures = append(failures, failure)
 	}
-	var batchBytes int64
 	for index, relativePath := range request.Files {
 		if request.RejectedPaths[relativePath] {
 			continue
@@ -216,23 +208,9 @@ func (s *Server) executeAgentSaveArtifacts(
 			failures = append(failures, agentSaveArtifactFailure(relativePath, resolveErr))
 			continue
 		}
-		fileLimit := agentSavedArtifactRegularLimit
-		if request.Checkpoints[relativePath] {
-			fileLimit = agentSavedArtifactCheckpointLimit
-		}
-		snapshotLimit, limitErr := agentSavedArtifactSnapshotLimit(fileLimit, batchBytes)
-		if limitErr != nil {
-			source.close()
-			failures = append(failures, agentSaveArtifactFailure(relativePath, errAgentSavedArtifactBatchLimit))
-			continue
-		}
-		snapshot, sizeBytes, contentSHA, snapshotErr := snapshotAgentSavedArtifact(ctx, source, snapshotLimit)
+		snapshot, sizeBytes, contentSHA, snapshotErr := snapshotAgentSavedArtifact(ctx, source)
 		source.close()
 		if snapshotErr != nil {
-			var tooLarge *workspace.ArtifactContentTooLargeError
-			if snapshotLimit < fileLimit && errors.As(snapshotErr, &tooLarge) {
-				snapshotErr = errAgentSavedArtifactBatchLimit
-			}
 			failures = append(failures, agentSaveArtifactFailure(relativePath, snapshotErr))
 			continue
 		}
@@ -243,7 +221,7 @@ func (s *Server) executeAgentSaveArtifacts(
 			failures = append(failures, agentSaveArtifactFailure(relativePath, validationErr))
 			continue
 		}
-		normalizedReferences, normalizationErr := s.normalizeAgentSavedArtifactReferences(snapshot, relativePath, stream.ProjectID)
+		normalizedReferences, normalizationErr := s.normalizeAgentSavedArtifactReferences(ctx, snapshot, relativePath, stream.ProjectID)
 		if normalizationErr != nil {
 			_ = snapshot.Close()
 			_ = os.Remove(snapshotPath)
@@ -259,13 +237,13 @@ func (s *Server) executeAgentSaveArtifacts(
 				continue
 			}
 		}
-		if validationErr := validateAgentSavedArtifactTemplates(relativePath, snapshot); validationErr != nil {
+		if validationErr := validateAgentSavedArtifactTemplates(ctx, relativePath, snapshot); validationErr != nil {
 			_ = snapshot.Close()
 			_ = os.Remove(snapshotPath)
 			failures = append(failures, agentSaveArtifactFailure(relativePath, validationErr))
 			continue
 		}
-		if validationErr := validateAgentSavedArtifactJSON(relativePath, snapshot); validationErr != nil {
+		if validationErr := validateAgentSavedArtifactJSON(ctx, relativePath, snapshot); validationErr != nil {
 			_ = snapshot.Close()
 			_ = os.Remove(snapshotPath)
 			failures = append(failures, agentSaveArtifactFailure(relativePath, validationErr))
@@ -324,7 +302,7 @@ func (s *Server) executeAgentSaveArtifacts(
 			}
 		case agentSavedArtifactEvidenceCitations:
 			checkCitations := s.agentSavedArtifactCitationIntegrityRequired(ctx)
-			structuredEvidence, structuredEvidenceErr := agentSavedArtifactContainsStructuredEvidence(relativePath, snapshot)
+			structuredEvidence, structuredEvidenceErr := agentSavedArtifactContainsStructuredEvidence(ctx, relativePath, snapshot)
 			if structuredEvidenceErr != nil {
 				_ = snapshot.Close()
 				_ = os.Remove(snapshotPath)
@@ -348,8 +326,8 @@ func (s *Server) executeAgentSaveArtifacts(
 			if evidenceMessagesUnavailable {
 				break
 			}
-			if evidenceErr := s.validateAgentSavedArtifactEvidenceForPathWithPolicy(
-				relativePath, snapshot, evidenceMessages, checkCitations,
+			if evidenceErr := s.validateAgentSavedArtifactEvidenceStream(
+				ctx, relativePath, snapshot, evidenceMessages, checkCitations,
 			); evidenceErr != nil {
 				warning := agentSaveArtifactFailure(relativePath, evidenceErr)
 				annotateAgentSavedArtifactEvidenceAdvisory(warning)
@@ -386,7 +364,7 @@ func (s *Server) executeAgentSaveArtifacts(
 				workspace.WithMutationIdempotencyKey(ctx, mutationID),
 				workspace.WriteArtifactVersionInput{
 					ArtifactID: artifactID, ProjectID: stream.ProjectID, Name: filepath.Base(relativePath),
-					ContentType: contentType, Content: snapshot, MaxBytes: fileLimit,
+					ContentType: contentType, Content: snapshot, MaxBytes: max(sizeBytes, 1),
 					CreatedBy: claim.RunnerID, ParentVersionID: parentVersionID,
 					RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
 					TranscriptAssociation: &workspace.ArtifactTranscriptAssociation{
@@ -453,7 +431,6 @@ func (s *Server) executeAgentSaveArtifacts(
 			continue
 		}
 
-		batchBytes += sizeBytes
 		parentVersionID := ""
 		if priorVersion, found := priorVersions[relativePath]; found {
 			parentVersionID = priorVersion.ID
@@ -640,17 +617,6 @@ func carryForwardRCSBArtifactRuntimeMetadata(
 		projection["rcsbDownload"] = rcsbDownload
 	}
 	return nil
-}
-
-func agentSavedArtifactSnapshotLimit(fileLimit, batchBytes int64) (int64, error) {
-	if fileLimit <= 0 || batchBytes < 0 || batchBytes >= agentSavedArtifactBatchLimit {
-		return 0, errAgentSavedArtifactBatchLimit
-	}
-	remaining := agentSavedArtifactBatchLimit - batchBytes
-	if remaining < fileLimit {
-		return remaining, nil
-	}
-	return fileLimit, nil
 }
 
 func parseAgentSaveArtifactsRequest(input map[string]any) (agentSaveArtifactsRequest, error) {
@@ -1164,95 +1130,6 @@ func agentSavedArtifactFileWrites(raw any) []kernelruntime.FileWrite {
 	}
 }
 
-type agentSavedArtifactContextReader struct {
-	ctx    context.Context
-	reader io.Reader
-}
-
-func (r *agentSavedArtifactContextReader) Read(buffer []byte) (int, error) {
-	if err := r.ctx.Err(); err != nil {
-		return 0, err
-	}
-	return r.reader.Read(buffer)
-}
-
-func snapshotAgentSavedArtifact(
-	ctx context.Context,
-	artifactSource agentSavedArtifactSource,
-	maxBytes int64,
-) (*os.File, int64, string, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if artifactSource.rootHandle == nil {
-		return nil, 0, "", errors.New("saved artifact root authority is unavailable")
-	}
-	source, err := artifactSource.rootHandle.Open(artifactSource.relativePath)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, 0, "", err
-		}
-		return nil, 0, "", errors.Join(errAgentSavedArtifactPathUnauthorized, err)
-	}
-	defer source.Close()
-	info, err := source.Stat()
-	if err != nil {
-		return nil, 0, "", err
-	}
-	if !info.Mode().IsRegular() {
-		return nil, 0, "", errAgentSavedArtifactNotRegular
-	}
-	if maxBytes <= 0 {
-		return nil, 0, "", errors.New("saved artifact byte limit is unavailable")
-	}
-	if info.Size() > maxBytes {
-		return nil, 0, "", &workspace.ArtifactContentTooLargeError{Limit: maxBytes}
-	}
-	snapshot, err := os.CreateTemp("", "synon-save-artifact-*")
-	if err != nil {
-		return nil, 0, "", err
-	}
-	keep := false
-	defer func() {
-		if !keep {
-			_ = snapshot.Close()
-			_ = os.Remove(snapshot.Name())
-		}
-	}()
-	hasher := sha256.New()
-	reader := &agentSavedArtifactContextReader{ctx: ctx, reader: source}
-	written, err := io.Copy(io.MultiWriter(snapshot, hasher), io.LimitReader(reader, maxBytes+1))
-	if err != nil {
-		return nil, 0, "", err
-	}
-	if written > maxBytes {
-		return nil, 0, "", &workspace.ArtifactContentTooLargeError{Limit: maxBytes}
-	}
-	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
-		return nil, 0, "", err
-	}
-	keep = true
-	return snapshot, written, hex.EncodeToString(hasher.Sum(nil)), nil
-}
-
-func digestAgentSavedArtifactSnapshot(snapshot *os.File) (int64, string, error) {
-	if snapshot == nil {
-		return 0, "", errors.New("saved artifact snapshot is unavailable")
-	}
-	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
-		return 0, "", err
-	}
-	hasher := sha256.New()
-	sizeBytes, err := io.Copy(hasher, snapshot)
-	if err != nil {
-		return 0, "", err
-	}
-	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
-		return 0, "", err
-	}
-	return sizeBytes, hex.EncodeToString(hasher.Sum(nil)), nil
-}
-
 func detectAgentSavedArtifactMIME(path string, snapshot *os.File) string {
 	if inferred := strings.TrimSpace(mime.TypeByExtension(strings.ToLower(filepath.Ext(path)))); inferred != "" {
 		if mediaType, _, err := mime.ParseMediaType(inferred); err == nil && strings.TrimSpace(mediaType) != "" {
@@ -1274,8 +1151,8 @@ func detectAgentSavedArtifactMIME(path string, snapshot *os.File) string {
 // validateAgentSavedArtifactJSON accepts machine-readable user deliverables
 // while preventing malformed .json/.jsonl files from becoming canonical
 // artifacts. The snapshot has already passed the normal path, authorization,
-// and size limits; this function never interprets JSON as runtime protocol.
-func validateAgentSavedArtifactJSON(path string, snapshot *os.File) error {
+// and snapshot checks; this function never interprets JSON as runtime protocol.
+func validateAgentSavedArtifactJSON(ctx context.Context, path string, snapshot *os.File) (resultErr error) {
 	extension := strings.ToLower(filepath.Ext(strings.TrimSpace(path)))
 	if extension != ".json" && extension != ".jsonl" {
 		return nil
@@ -1286,15 +1163,27 @@ func validateAgentSavedArtifactJSON(path string, snapshot *os.File) error {
 	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
-	reader := bufio.NewReader(snapshot)
+	defer func() { _, err := snapshot.Seek(0, io.SeekStart); resultErr = errors.Join(resultErr, err) }()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	reader := bufio.NewReader(&contextReader{ctx: ctx, reader: snapshot})
 	if extension == ".json" {
 		decoder := json.NewDecoder(reader)
-		var value any
-		if err := decoder.Decode(&value); err != nil {
-			return fmt.Errorf("%w", errAgentSavedArtifactJSONInvalid)
+		token, err := decoder.Token()
+		if err == nil {
+			err = skipRunnerSourceJSONValue(decoder, token, func(string) {})
 		}
-		var trailing any
-		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		if err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			return errors.Join(errAgentSavedArtifactJSONInvalid, err)
+		}
+		if _, err := decoder.Token(); !errors.Is(err, io.EOF) {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			return fmt.Errorf("%w", errAgentSavedArtifactJSONInvalid)
 		}
 	} else {
@@ -1327,8 +1216,7 @@ func validateAgentSavedArtifactJSON(path string, snapshot *os.File) error {
 			return errAgentSavedArtifactJSONInvalid
 		}
 	}
-	_, err := snapshot.Seek(0, io.SeekStart)
-	return err
+	return nil
 }
 
 func validateAgentSavedArtifactJSONBytes(path string, data []byte) error {
@@ -1394,8 +1282,10 @@ func agentSaveArtifactFailure(path string, err error) map[string]any {
 		code = "unresolved_template_marker"
 	} else if errors.Is(err, errAgentSavedArtifactProjection) {
 		code = "projection_failed"
-	} else if errors.Is(err, errAgentSavedArtifactBatchLimit) {
-		code = "batch_limit_exceeded"
+	} else if errors.Is(err, errAgentSavedArtifactSourceChanged) {
+		code = "source_changed_during_save"
+	} else if errors.Is(err, runtimecontrol.ErrInsufficientDiskSpace) {
+		code = "insufficient_disk_space"
 	} else if errors.Is(err, errInvalidScientificArtifact) {
 		code = "invalid_scientific_artifact"
 	} else if errors.Is(err, errScientificArtifactValidationUnavailable) {
@@ -1434,6 +1324,7 @@ func agentSaveArtifactFailure(path string, err error) map[string]any {
 	if code == "invalid_delimited_artifact" || code == "invalid_json_artifact" {
 		failure["validation_detail"] = strings.TrimSpace(err.Error())
 	}
+	addScientificArtifactFailureFeedback(failure, err)
 	return failure
 }
 
@@ -1444,6 +1335,18 @@ func agentSaveArtifactFailurePayload(path, code string, unsupported []string, un
 		"retry":  "do_not_retry_unchanged_input",
 	}
 	switch code {
+	case "invalid_scientific_artifact":
+		recovery["action"] = "inspect_the_parser_diagnosis_and_repair_the_file_before_retrying"
+		recovery["diagnostic"] = "validation_code identifies the parser failure; validation counts summarize records, not line numbers; validate the complete repaired file"
+	case "scientific_validator_unavailable":
+		recovery["action"] = "restore_the_managed_scientific_validator_before_retrying"
+		recovery["data_policy"] = "validator failure is not evidence of invalid file content; preserve the file"
+	case "source_changed_during_save":
+		retryable = true
+		recovery["action"] = "wait_for_the_producer_to_finish_then_save_the_stable_file"
+	case "insufficient_disk_space":
+		recovery["action"] = "restore_available_storage_then_retry_only_the_unsaved_file"
+		recovery["data_policy"] = "retain_existing_artifacts_and_do_not_delete_user_data_automatically"
 	case "path_must_be_relative":
 		recovery["action"] = "replace_with_workspace_relative_path"
 		recovery["files"] = "use a relative path inside the current workspace"

@@ -81,6 +81,10 @@ func TestVisualArtifactCompletionGateRequiresExactPassedImageHash(t *testing.T) 
 		if !errors.As(err, &required) || len(required.Artifacts) != 1 || required.Artifacts[0] != "ranking.png" {
 			t.Fatalf("unreviewed image error=%#v", err)
 		}
+		condition := required.runnerCorrection().Condition
+		if condition == nil || condition.Visual == nil || len(condition.Visual.Artifacts) != 1 || condition.Visual.Artifacts[0].VersionID != artifact.VersionID || condition.Visual.Artifacts[0].SHA256 != digest {
+			t.Fatal("visual correction lost immutable version/digest")
+		}
 	}
 
 	manifest, err := json.Marshal(map[string]any{

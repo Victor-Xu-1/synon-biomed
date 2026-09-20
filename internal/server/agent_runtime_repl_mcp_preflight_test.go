@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -318,7 +319,7 @@ func TestGatewayUsesREPLMCPPreflightFromLiveToolSnapshot(t *testing.T) {
 	call := agentruntime.ToolCall{ID: "mcp", Name: "repl", Arguments: json.RawMessage(
 		`{"code":"detail = host.mcp(\"pubmed\", \"get_article_metadata\", {\"pmid\": \"1\"})","human_description":"Checking metadata"}`,
 	)}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "mcp_schema_preflight_required") || !strings.Contains(diagnostic, "pmids") {
 		t.Fatalf("gateway MCP diagnostic=%s", diagnostic)
 	}
@@ -354,7 +355,7 @@ print(type(result), list(result))`,
 		call := agentruntime.ToolCall{ID: "source", Name: "repl", Arguments: json.RawMessage(
 			`{"code":` + string(mustJSONMarshal(t, code)) + `,"human_description":"Inspecting an authoritative record"}`,
 		)}
-		if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+		if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 			t.Fatalf("valid source-repair call was blocked by a competing gate: %s", diagnostic)
 		}
 	}
@@ -362,7 +363,7 @@ print(type(result), list(result))`,
 	invalid := agentruntime.ToolCall{ID: "source-invalid", Name: "repl", Arguments: json.RawMessage(
 		`{"code":"record = host.mcp(\"literature\", \"openalex_get_work\", {\"doi\":\"10.1000/example\"})","human_description":"Inspecting an authoritative record"}`,
 	)}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(invalid)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), invalid)
 	if !strings.Contains(diagnostic, "mcp_schema_preflight_required") ||
 		!strings.Contains(diagnostic, "work_id") {
 		t.Fatalf("live schema boundary did not diagnose invalid input: %s", diagnostic)
@@ -439,7 +440,7 @@ func TestGatewayAppliesTaskScopedMCPSourceRequirementBeforeREPLExecution(t *test
 	call := agentruntime.ToolCall{ID: "rewrite", Name: "repl", Arguments: json.RawMessage(
 		`{"code":"print(\"rewriting sources.csv\")","human_description":"Updating the source table"}`,
 	)}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "mcp_schema_preflight_required") || !strings.Contains(diagnostic, "host.mcp") {
 		t.Fatalf("task-scoped source requirement was not enforced: %s", diagnostic)
 	}

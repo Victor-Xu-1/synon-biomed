@@ -821,7 +821,7 @@ func (s *Server) publishTranscriptTerminal(
 	} else if projection.TerminalStatus == "cancelled" {
 		turnStatus = "cancelled"
 	}
-	if err := s.publishWebMessageStream(frameContext, baseID+":terminal", map[string]any{
+	terminalPayload := map[string]any{
 		"type": projection.StreamType, "terminal_status": projection.TerminalStatus, "data": projection.Detail,
 		"msg_id": messageID, "turn_id": projection.SessionID, "conversation_id": projection.SessionID,
 		"created_at": projection.CreatedAt.UnixMilli(), "position": "left", "status": messageStatus,
@@ -829,20 +829,28 @@ func (s *Server) publishTranscriptTerminal(
 		"artifact_refs":               refs,
 		"source_publication_sequence": sourcePublicationSequence,
 		"publication_boundary_id":     publicationBoundaryID,
-	}); err != nil {
+	}
+	if projection.ReasonCode != "" {
+		terminalPayload["terminal_reason_code"] = projection.ReasonCode
+	}
+	if err := s.publishWebMessageStream(frameContext, baseID+":terminal", terminalPayload); err != nil {
 		return err
 	}
-	if err := s.publishWebFrameEvent(frameContext, baseID+":runtime", "runtime.statusChanged", map[string]any{
+	runtimePayload := map[string]any{
 		"resource": "acp_tool", "resource_id": frameContext.Frame.AgentName,
 		"scope": map[string]any{"kind": "conversation", "id": projection.SessionID},
 		"phase": phase, "terminal_status": projection.TerminalStatus, "message": projection.Detail,
 		"artifact_refs":               refs,
 		"source_publication_sequence": sourcePublicationSequence,
 		"publication_boundary_id":     publicationBoundaryID,
-	}); err != nil {
+	}
+	if projection.ReasonCode != "" {
+		runtimePayload["reason_code"] = projection.ReasonCode
+	}
+	if err := s.publishWebFrameEvent(frameContext, baseID+":runtime", "runtime.statusChanged", runtimePayload); err != nil {
 		return err
 	}
-	return s.publishWebFrameEvent(frameContext, baseID+":turn", "turn.completed", map[string]any{
+	turnPayload := map[string]any{
 		"session_id": projection.SessionID, "turn_id": projection.SessionID, "conversation_id": projection.SessionID,
 		"status": turnStatus, "terminal_status": projection.TerminalStatus, "state": state, "detail": projection.Detail,
 		"can_send_message": true, "artifact_refs": refs,
@@ -852,7 +860,11 @@ func (s *Server) publishTranscriptTerminal(
 			"task_status": turnStatus, "is_processing": false, "pending_confirmations": 0, "turn_id": nil},
 		"last_message": map[string]any{"id": messageID, "type": "content", "content": projection.Detail,
 			"status": messageStatus, "created_at": projection.CreatedAt.UnixMilli(), "artifact_refs": refs},
-	})
+	}
+	if projection.ReasonCode != "" {
+		turnPayload["reason_code"] = projection.ReasonCode
+	}
+	return s.publishWebFrameEvent(frameContext, baseID+":turn", "turn.completed", turnPayload)
 }
 
 func transcriptPayloadObject(raw []byte) (map[string]any, error) {

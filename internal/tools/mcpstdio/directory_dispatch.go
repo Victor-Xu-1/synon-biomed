@@ -336,7 +336,7 @@ func callRemoteWebSocketServer(ctx context.Context, config ServerConfig, method 
 	if err != nil {
 		return nil, err
 	}
-	conn.SetReadLimit(maxRemoteResponseBytes)
+	conn.SetReadLimit(-1) // Streaming receiver enforces actual disk capacity.
 	defer conn.Close(websocket.StatusNormalClosure, "synon-go mcp request complete")
 	ws := &remoteWebSocketSession{conn: conn, secrets: remoteMCPSecretValues(config, headers)}
 	if _, err := ws.request(ctx, 1, "initialize", map[string]any{

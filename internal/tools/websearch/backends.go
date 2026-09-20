@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -14,8 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"synon-go/internal/buildinfo"
-	"synon-go/internal/httptext"
+	"synon-go/internal/httpreliability"
 )
 
 func searchHTTPBackends(ctx context.Context, input Input, maxResults int, options Options) ([]Hit, map[string]any, error) {
@@ -29,9 +27,9 @@ func searchHTTPBackends(ctx context.Context, input Input, maxResults int, option
 	if len(backends) == 1 {
 		diagnostics["httpEndpoint"] = backends[0].Endpoint
 	}
-	timeout := options.Timeout
+	timeout := options.HeaderTimeout
 	if timeout <= 0 {
-		timeout = 8 * time.Second
+		timeout = httpreliability.DefaultHeaderTimeout
 	}
 	clientForURL := options.ClientForURL
 	if clientForURL == nil {
@@ -40,7 +38,7 @@ func searchHTTPBackends(ctx context.Context, input Input, maxResults int, option
 	results := make(chan httpSearchBackendResult, len(backends))
 	for index, backend := range backends {
 		go func() {
-			result := searchOneHTTPBackend(ctx, input, candidateLimit, timeout, index, backend, clientForURL)
+			result := searchOneHTTPBackend(ctx, input, candidateLimit, options, index, backend, clientForURL)
 			results <- result
 		}()
 	}
@@ -53,11 +51,16 @@ func searchHTTPBackends(ctx context.Context, input Input, maxResults int, option
 	providerStates := make([]map[string]any, 0, len(collected))
 	providerTotals := make(map[string]any)
 	providerContinuations := make(map[string]string)
+	completedBackends := 0
 	for _, result := range collected {
 		state := map[string]any{
 			"name": result.Name, "status": result.StatusCode, "rawResults": result.RawResults,
 			"returnedResults": len(result.Hits), "requestedLimit": result.RequestedLimit,
 			"request": result.RequestState.mapValue(),
+		}
+		state["outcome"], state["attempts"] = result.Outcome, result.Attempts
+		if result.Err == nil {
+			completedBackends++
 		}
 		if result.TotalKnown {
 			state["providerTotalKnown"] = true
@@ -74,6 +77,8 @@ func searchHTTPBackends(ctx context.Context, input Input, maxResults int, option
 		providerStates = append(providerStates, state)
 	}
 	diagnostics["httpBackends"] = providerStates
+	diagnostics["completedBackends"] = completedBackends
+	diagnostics["failedBackends"] = len(backends) - completedBackends
 	if len(providerTotals) > 0 {
 		diagnostics["providerTotals"] = providerTotals
 	}
@@ -92,8 +97,8 @@ func searchHTTPBackends(ctx context.Context, input Input, maxResults int, option
 		}
 	}
 	diagnostics["providerPageMayBeTruncated"] = providerPageMayBeTruncated
-	if len(hits) == 0 {
-		return nil, diagnostics, errors.New("all Go HTTP search backends returned no usable links")
+	if len(hits) == 0 && completedBackends < len(backends) {
+		return nil, diagnostics, fmt.Errorf("%d of %d HTTP search backends did not complete", len(backends)-completedBackends, len(backends))
 	}
 	return hits, diagnostics, nil
 }
@@ -229,7 +234,7 @@ func newWebSearchHTTPClient(timeout time.Duration, optionalBase ...*http.Client)
 		transport.DialContext = func(dialCtx context.Context, _ string, address string) (net.Conn, error) {
 			return dialer.DialContext(dialCtx, "tcp4", address)
 		}
-		return &http.Client{Transport: transport, Timeout: timeout}, nil
+		return &http.Client{Transport: transport}, nil
 	}
 }
 
@@ -241,97 +246,6 @@ func resolveHTTPBackends(options Options) []httpSearchBackend {
 		return []httpSearchBackend{{Name: "configured", Endpoint: endpoint}}
 	}
 	return append([]httpSearchBackend(nil), defaultHTTPBackends...)
-}
-
-func searchOneHTTPBackend(
-	ctx context.Context,
-	input Input,
-	maxResults int,
-	timeout time.Duration,
-	index int,
-	backend httpSearchBackend,
-	clientForURL func(context.Context, string) (*http.Client, error),
-) httpSearchBackendResult {
-	result := httpSearchBackendResult{Index: index, Name: backend.Name}
-	backendLimit := httpBackendRequestLimit(backend, maxResults)
-	result.RequestedLimit = backendLimit
-	targetURL, requestState, err := searchHTTPBackendTarget(input, backend, backendLimit)
-	result.RequestState = requestState
-	if err != nil {
-		result.Err = err
-		return result
-	}
-	requestCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	client, err := clientForURL(requestCtx, targetURL)
-	if err != nil {
-		result.Err = fmt.Errorf("destination rejected: %w", err)
-		return result
-	}
-	req, err := http.NewRequestWithContext(requestCtx, http.MethodGet, targetURL, nil)
-	if err != nil {
-		result.Err = err
-		return result
-	}
-	identity := buildinfo.Release()
-	// Public search pages commonly return bot interstitials or unrelated
-	// geo-localized results to machine-only user agents. Keep the product
-	// identity while presenting an ordinary browser-compatible request shape.
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 "+identity.MachineSlug+"-web-search/"+identity.Version)
-	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
-	switch strings.TrimSpace(backend.Format) {
-	case searchFormatMediaWikiOpenSearch, searchFormatCrossref, searchFormatEuropePMC:
-		req.Header.Set("Accept", "application/json")
-	default:
-		req.Header.Set("Accept", "text/html,application/xhtml+xml")
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		result.Err = err
-		return result
-	}
-	defer resp.Body.Close()
-	result.StatusCode = resp.StatusCode
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		result.Err = fmt.Errorf("HTTP status %d", resp.StatusCode)
-		return result
-	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxHTTPResponseBytes+1))
-	if err != nil {
-		result.Err = err
-		return result
-	}
-	if len(body) > maxHTTPResponseBytes {
-		result.Err = fmt.Errorf("response exceeds %d bytes", maxHTTPResponseBytes)
-		return result
-	}
-	contentType := resp.Header.Get("Content-Type")
-	if contentType == "" && (backend.Format == "" || backend.Format == searchFormatHTML) {
-		contentType = "text/html"
-	}
-	decoded, decodeErr := httptext.Decode(body, contentType, false)
-	if decodeErr != nil {
-		result.Err = fmt.Errorf("decode search response: %w", decodeErr)
-		return result
-	}
-	parsed, parseErr := parseHTTPBackendResponse(backend, []byte(decoded))
-	if parseErr != nil {
-		result.Err = parseErr
-		return result
-	}
-	result.RawResults = len(parsed.Results)
-	result.TotalResults = parsed.TotalResults
-	result.TotalKnown = parsed.TotalKnown
-	result.NextCursor = parsed.NextCursor
-	selectionInput := input
-	if len(backend.BlockedResultDomains) > 0 {
-		selectionInput.BlockedDomains = append(append([]string(nil), input.BlockedDomains...), backend.BlockedResultDomains...)
-	}
-	result.Hits = selectRelevantHits(parsed.Results, selectionInput, backendLimit)
-	if len(result.Hits) == 0 {
-		result.Err = errors.New("no usable links")
-	}
-	return result
 }
 
 func parseHTTPBackendResults(backend httpSearchBackend, body []byte) ([]scriptResult, error) {

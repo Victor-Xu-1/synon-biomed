@@ -789,7 +789,11 @@ func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 		m.setManagedPythonProvisioningPhase("installing-bundled-generation")
 		arguments := []string{"--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath}
 		command := newWorkerProcessCommand(ctx, m.config.Micromamba, arguments...)
-		command.Env = m.managedEnvironmentInstallerEnv()
+		environment, err := m.managedEnvironmentInstallerEnv()
+		if err != nil {
+			return err
+		}
+		command.Env = environment
 		output := newTailBuffer(maxDiagnosticBytes)
 		command.Stdout, command.Stderr = output, output
 		if err := runWorkerProcess(command); err != nil {

@@ -19,11 +19,11 @@ const (
 var condaEnvironmentName = regexp.MustCompile(`^[A-Za-z0-9_.@+-]+$`)
 
 type UsageSection struct {
-	TotalBytes int64 `json:"totalBytes"`
+	TotalBytes *int64 `json:"totalBytes"`
 }
 
 type ArtifactUsageSection struct {
-	TotalBytes int64         `json:"totalBytes"`
+	TotalBytes *int64        `json:"totalBytes"`
 	ByProject  []ProjectSize `json:"byProject"`
 }
 
@@ -162,12 +162,12 @@ func (s *Scanner) DiskUsage(ctx context.Context, refresh bool) (DiskUsage, error
 		paths []string
 		set   func(int64)
 	}{
-		{[]string{s.artifactsRoot}, func(size int64) { report.Artifacts.TotalBytes = size }},
-		{[]string{s.condaRoot, s.condaEnvsRoot}, func(size int64) { report.Conda.TotalBytes = size }},
-		{[]string{filepath.Join(s.root, "workspace")}, func(size int64) { report.Workspace.TotalBytes = size }},
-		{[]string{s.toolResultsRoot}, func(size int64) { report.ToolResults.TotalBytes = size }},
-		{[]string{s.logsRoot}, func(size int64) { report.Logs.TotalBytes = size }},
-		{[]string{s.tempRoot}, func(size int64) { report.Temp.TotalBytes = size }},
+		{[]string{s.artifactsRoot}, func(size int64) { report.Artifacts.TotalBytes = &size }},
+		{[]string{s.condaRoot, s.condaEnvsRoot}, func(size int64) { report.Conda.TotalBytes = &size }},
+		{[]string{filepath.Join(s.root, "workspace")}, func(size int64) { report.Workspace.TotalBytes = &size }},
+		{[]string{s.toolResultsRoot}, func(size int64) { report.ToolResults.TotalBytes = &size }},
+		{[]string{s.logsRoot}, func(size int64) { report.Logs.TotalBytes = &size }},
+		{[]string{s.tempRoot}, func(size int64) { report.Temp.TotalBytes = &size }},
 	}
 	type scanResult struct {
 		index int
@@ -192,6 +192,8 @@ func (s *Scanner) DiskUsage(ctx context.Context, refresh bool) (DiskUsage, error
 	for index, item := range paths {
 		if scans[index].err != nil {
 			report.Warnings = append(report.Warnings, scans[index].err.Error())
+			// A partial byte count is not a measured category total.
+			continue
 		}
 		item.set(scans[index].size)
 	}
@@ -272,6 +274,13 @@ func (s *Scanner) CondaDiskUsage(ctx context.Context, refresh bool) (CondaDiskUs
 }
 
 func cloneDiskUsage(value DiskUsage) DiskUsage {
+	for _, total := range []**int64{&value.Artifacts.TotalBytes, &value.Conda.TotalBytes,
+		&value.Workspace.TotalBytes, &value.ToolResults.TotalBytes, &value.Logs.TotalBytes, &value.Temp.TotalBytes} {
+		if *total != nil {
+			copied := **total
+			*total = &copied
+		}
+	}
 	value.Artifacts.ByProject = append([]ProjectSize{}, value.Artifacts.ByProject...)
 	value.Warnings = append([]string(nil), value.Warnings...)
 	if value.AvailableBytes != nil {

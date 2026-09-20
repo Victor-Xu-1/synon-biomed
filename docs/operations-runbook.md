@@ -72,6 +72,9 @@ it does not follow activation links or claim that every measured environment is
 active. These details must not be summed as reclaimable storage. Available capacity refers to
 the data volume, which may differ from the host volume in a VM or container.
 Symlinks are not traversed. Partial scans are explicitly marked.
+If any entry in a category cannot be measured, its `totalBytes` is `null` and
+the UI excludes that unknown category from the measured subtotal. A successfully
+scanned empty or absent category still reports zero.
 
 The authenticated data-directory read accepts `includeUsage=false` for lightweight
 status; its default full read retains the conservative per-entry migration copy

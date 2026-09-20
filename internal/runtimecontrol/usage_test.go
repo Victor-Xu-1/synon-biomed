@@ -26,13 +26,14 @@ func TestScannerRefreshCancellationAndCacheIsolation(t *testing.T) {
 		t.Fatal("missing scan timestamp")
 	}
 	*first.AvailableBytes = 0
+	*first.Artifacts.TotalBytes = 999
 	first.Artifacts.ByProject = append(first.Artifacts.ByProject, ProjectSize{ProjectID: "untrusted"})
 	writeUsageFile(t, filepath.Join(root, "artifacts", "b"), 7)
 	cached := mustDiskUsage(t, scanner, false)
-	if cached.Artifacts.TotalBytes != 5 || *cached.AvailableBytes == 0 || len(cached.Artifacts.ByProject) != 0 {
+	if *cached.Artifacts.TotalBytes != 5 || *cached.AvailableBytes == 0 || len(cached.Artifacts.ByProject) != 0 {
 		t.Fatalf("cache leaked caller mutation: %#v", cached)
 	}
-	if refreshed := mustDiskUsage(t, scanner, true); refreshed.Artifacts.TotalBytes != 12 {
+	if refreshed := mustDiskUsage(t, scanner, true); *refreshed.Artifacts.TotalBytes != 12 {
 		t.Fatalf("explicit refresh used stale values: %#v", refreshed)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -43,7 +44,7 @@ func TestScannerRefreshCancellationAndCacheIsolation(t *testing.T) {
 	if _, err := scanner.CondaDiskUsage(ctx, true); !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancel details: %v", err)
 	}
-	if usage := mustDiskUsage(t, scanner, false); usage.Artifacts.TotalBytes != 12 {
+	if usage := mustDiskUsage(t, scanner, false); *usage.Artifacts.TotalBytes != 12 {
 		t.Fatal("cancel corrupted cache")
 	}
 }
@@ -57,7 +58,7 @@ func TestScannerConfiguredLogsTempAndNestedRoots(t *testing.T) {
 	scanner := NewScanner(root, conda, time.Minute)
 	scanner.SetStorageRoots(StorageRoots{Logs: filepath.Join(root, "custom", "logs"), Temp: filepath.Join(root, "custom", "temp")})
 	usage := mustDiskUsage(t, scanner, false)
-	if usage.Conda.TotalBytes != 11 || usage.Logs.TotalBytes != 13 || usage.Temp.TotalBytes != 17 {
+	if *usage.Conda.TotalBytes != 11 || *usage.Logs.TotalBytes != 13 || *usage.Temp.TotalBytes != 17 {
 		t.Fatalf("configured and nested roots: %#v", usage)
 	}
 	size, err := scanDirectoryBytes(context.Background(), true, conda, filepath.Join(conda, "envs"), conda)
@@ -92,8 +93,8 @@ func TestScannerCountsHardLinksOnceButPreservesMigrationCopyEstimate(t *testing.
 		t.Skipf("hard links unavailable: %v", err)
 	}
 	usage := mustDiskUsage(t, NewScanner(root, conda, time.Minute), false)
-	if usage.Conda.TotalBytes != 31 {
-		t.Fatalf("display usage counts one file more than once: %d", usage.Conda.TotalBytes)
+	if *usage.Conda.TotalBytes != 31 {
+		t.Fatalf("display usage counts one file more than once: %d", *usage.Conda.TotalBytes)
 	}
 	copyBytes, _, err := PathUsage(conda)
 	if err != nil || copyBytes != 62 {
@@ -119,8 +120,8 @@ func TestScannerDiskUsageUsesRealFilesAndExpiresCache(t *testing.T) {
 	scanner := NewScanner(root, condaRoot, time.Minute)
 	scanner.now = func() time.Time { return now }
 	first := mustDiskUsage(t, scanner, false)
-	if first.Artifacts.TotalBytes != 7 || first.Workspace.TotalBytes != 11 ||
-		first.ToolResults.TotalBytes != 13 || first.Conda.TotalBytes != 36 ||
+	if *first.Artifacts.TotalBytes != 7 || *first.Workspace.TotalBytes != 11 ||
+		*first.ToolResults.TotalBytes != 13 || *first.Conda.TotalBytes != 36 ||
 		first.AvailableBytes == nil || *first.AvailableBytes == 0 || len(first.Warnings) != 0 ||
 		first.Artifacts.ByProject == nil {
 		t.Fatalf("first disk usage = %#v", first)
@@ -128,12 +129,12 @@ func TestScannerDiskUsageUsesRealFilesAndExpiresCache(t *testing.T) {
 
 	writeUsageFile(t, filepath.Join(root, "artifacts", "new.bin"), 5)
 	cached := mustDiskUsage(t, scanner, false)
-	if cached.Artifacts.TotalBytes != 7 {
+	if *cached.Artifacts.TotalBytes != 7 {
 		t.Fatalf("cache was not reused = %#v", cached)
 	}
 	now = now.Add(time.Minute + time.Second)
 	refreshed := mustDiskUsage(t, scanner, false)
-	if refreshed.Artifacts.TotalBytes != 12 {
+	if *refreshed.Artifacts.TotalBytes != 12 {
 		t.Fatalf("expired cache was not refreshed = %#v", refreshed)
 	}
 }
@@ -190,7 +191,7 @@ func TestScannerDiskUsageUsesConfiguredStorageRoots(t *testing.T) {
 		root, condaRoot, filepath.Join(condaRoot, "envs"), artifactsRoot, toolResultsRoot, time.Minute,
 	)
 	usage := mustDiskUsage(t, scanner, false)
-	if usage.Artifacts.TotalBytes != 7 || usage.ToolResults.TotalBytes != 13 {
+	if *usage.Artifacts.TotalBytes != 7 || *usage.ToolResults.TotalBytes != 13 {
 		t.Fatalf("configured storage usage = %#v", usage)
 	}
 
@@ -200,7 +201,7 @@ func TestScannerDiskUsageUsesConfiguredStorageRoots(t *testing.T) {
 	writeUsageFile(t, filepath.Join(nextToolResultsRoot, "result.bin"), 19)
 	scanner.SetStorageRoots(StorageRoots{Artifacts: nextArtifactsRoot, ToolResults: nextToolResultsRoot})
 	updated := mustDiskUsage(t, scanner, false)
-	if updated.Artifacts.TotalBytes != 17 || updated.ToolResults.TotalBytes != 19 {
+	if *updated.Artifacts.TotalBytes != 17 || *updated.ToolResults.TotalBytes != 19 {
 		t.Fatalf("updated configured storage usage = %#v", updated)
 	}
 }

@@ -711,7 +711,11 @@ tools are absent from new model snapshots.
 Execution effect preparation and registered-entrypoint admission use the same
 Shell grammar. A static single-command argv may contain comments, continued
 lines and trailing newlines; substitutions, redirections, pipelines and extra
-commands cannot inherit that entrypoint's authority. Runtime-owned arguments
+commands cannot inherit that entrypoint's authority. One redundant leading
+`cd` is removed only when its resolved target is the exact task workspace and
+the remaining command already matches one registered execution-pack entrypoint;
+different directories, activation commands and any additional operation remain
+fail-closed. Runtime-owned arguments
 are appended to the parsed argv and quoted as data, not concatenated after a
 comment. Python preparation tracks witnessed HTTP response chunks through
 iterator bindings, file contexts and called helper parameters into file writes

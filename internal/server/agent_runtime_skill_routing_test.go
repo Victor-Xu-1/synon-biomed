@@ -222,6 +222,24 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 	}); allowed != nil {
 		t.Fatalf("reviewed preferred entrypoint was blocked: %#v", allowed)
 	}
+	redundantCWD := `cd "` + workspace + `" && ` + canonicalCommand
+	normalized := gateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{"command": redundantCWD})
+	if normalized["command"] != canonicalCommand {
+		t.Fatalf("exact task-directory prefix was not normalized: %#v", normalized)
+	}
+	if allowed := gateway.agentRuntimeSkillExecutionContractPreflight("bash", normalized); allowed != nil {
+		t.Fatalf("normalized reviewed entrypoint was blocked: %#v", allowed)
+	}
+	for name, command := range map[string]string{
+		"different directory": `cd "` + filepath.Dir(workspace) + `" && ` + canonicalCommand,
+		"extra operation":     redundantCWD + ` && printf unexpected`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := gateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{"command": command}); got["command"] != command {
+				t.Fatalf("unsafe compound command was normalized: %#v", got)
+			}
+		})
+	}
 	for name, input := range map[string]map[string]any{
 		"python result text": {"code": `print("example-cli")`},
 		"shell result text":  {"command": `printf '%s\n' example-cli`},

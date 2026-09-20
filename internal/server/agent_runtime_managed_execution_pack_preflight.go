@@ -183,6 +183,7 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 	publicName string,
 	input map[string]any,
 ) map[string]any {
+	input = g.normalizeManagedExecutionTaskDirectory(publicName, input)
 	if publicName != "bash" || g.server == nil || g.server.skillCatalog == nil ||
 		g.server.scienceCapabilities == nil || g.taskRun == nil {
 		return input
@@ -235,6 +236,70 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 			}
 			normalized := copyMapAny(input)
 			normalized["command"] = normalizedCommand
+			return normalized
+		}
+	}
+	return input
+}
+
+// normalizeManagedExecutionTaskDirectory removes only a redundant `cd` to the
+// exact task workspace in front of an otherwise canonical registered pack
+// command. Bash already starts in that directory. Retaining the prefix would
+// make the same reviewed entrypoint look like a competing compound command;
+// any different directory, extra shell operation, or unregistered suffix is
+// left unchanged and remains fail-closed.
+func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionTaskDirectory(
+	publicName string,
+	input map[string]any,
+) map[string]any {
+	if publicName != "bash" || g.kernel == nil || strings.TrimSpace(g.kernel.workspaceDir) == "" ||
+		g.server == nil || g.server.skillCatalog == nil || g.server.scienceCapabilities == nil || g.taskRun == nil {
+		return input
+	}
+	command := strings.TrimSpace(stringValue(input["command"]))
+	separator := strings.Index(command, "&&")
+	if separator < 0 || strings.Contains(command[separator+2:], "&&") {
+		return input
+	}
+	prefix := strings.TrimSpace(command[:separator])
+	suffix := strings.TrimSpace(command[separator+2:])
+	prefixTokens, ok := managedExecutionSingleShellCommandTokens(prefix)
+	if !ok || len(prefixTokens) != 2 || !strings.EqualFold(prefixTokens[0], "cd") || suffix == "" {
+		return input
+	}
+	workspace, err := filepath.Abs(filepath.Clean(g.kernel.workspaceDir))
+	if err != nil {
+		return input
+	}
+	workspace, err = filepath.EvalSymlinks(workspace)
+	if err != nil {
+		return input
+	}
+	target := strings.TrimSpace(prefixTokens[1])
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(workspace, target)
+	}
+	target, err = filepath.Abs(filepath.Clean(target))
+	if err != nil {
+		return input
+	}
+	target, err = filepath.EvalSymlinks(target)
+	if err != nil || target != workspace {
+		return input
+	}
+	skillNames := g.taskRun.executedSkillNamesSnapshot()
+	for _, implementation := range g.taskRun.selectedImplementationsSnapshot() {
+		if skill, found := dedicatedSkillForImplementation(g.server.skillCatalog, implementation); found {
+			skillNames = append(skillNames, skill.Name)
+		}
+	}
+	for _, skillName := range uniqueSortedFolded(skillNames) {
+		for _, engine := range g.server.scienceCapabilities.LocalExecutionPacksForSkill(skillName) {
+			if !commandExecutesManagedExecutionPack(skillName, engine.ExecutionPack, suffix) {
+				continue
+			}
+			normalized := copyMapAny(input)
+			normalized["command"] = suffix
 			return normalized
 		}
 	}

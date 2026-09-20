@@ -50,6 +50,7 @@ const (
 
 var (
 	agentPublicScientificHrefPattern                 = regexp.MustCompile(`(?i)\bhref\s*=\s*["']([^"'<>]+)["']`)
+	agentPublicScientificDisplayLinkPattern          = regexp.MustCompile(`<((?:https|ftp)://[^<>\s]+)>`)
 	agentPublicScientificVersionedModelSuffixPattern = regexp.MustCompile(`(?i)(\.(?:ckpt|pt|pth))(?:[-._][a-z0-9]+)+$`)
 )
 
@@ -795,11 +796,16 @@ func (s *Server) validateAgentPublicScientificSourceURL(
 			}
 			var checkpoint sessionRunnerDurableToolCheckpoint
 			if json.Unmarshal(payload, &checkpoint) != nil ||
-				!strings.EqualFold(strings.TrimSpace(checkpoint.ToolPhase), "completed") ||
-				!s.sessionRunnerDurableCheckpointEvidenceTool(checkpoint) {
+				!strings.EqualFold(strings.TrimSpace(checkpoint.ToolPhase), "completed") {
 				continue
 			}
 			content, err := s.agentPublicScientificSourceResult(ctx, ownerID, checkpoint.ToolResult)
+			if err == nil && agentPublicScientificReadWindowAuthorizesDownload(checkpoint, content, request.SourceURL) {
+				return agentPublicScientificSourceBinding{ToolCallID: checkpoint.ToolCallID}, nil
+			}
+			if !s.sessionRunnerDurableCheckpointEvidenceTool(checkpoint) {
+				continue
+			}
 			if err != nil || !agentPublicScientificResultAuthorizesDownload(content, request.SourceURL) {
 				continue
 			}
@@ -833,6 +839,50 @@ func (s *Server) validateAgentPublicScientificSourceURL(
 		windowEnd = windowStart
 	}
 	return agentPublicScientificSourceBinding{}, errAgentPublicScientificFileSource
+}
+
+func agentPublicScientificReadWindowAuthorizesDownload(
+	checkpoint sessionRunnerDurableToolCheckpoint,
+	value any,
+	expectedURL string,
+) bool {
+	if !strings.EqualFold(strings.TrimSpace(checkpoint.ToolName), "read_file") || strings.TrimSpace(checkpoint.ToolCallID) == "" {
+		return false
+	}
+	result, ok := value.(map[string]any)
+	if !ok || result["source_content_included"] != true ||
+		strings.TrimSpace(stringValue(result["view_format"])) != "html-readable-display-lines" ||
+		strings.TrimSpace(stringValue(result["file_path_scope"])) != "original_source" ||
+		!validSHA256Hex(stringValue(result["source_body_sha256"])) {
+		return false
+	}
+	sourceVersionID := strings.TrimSpace(stringValue(result["source_version_id"]))
+	if !strings.HasPrefix(sourceVersionID, "ltr-") {
+		return false
+	}
+	var input struct {
+		VersionID string `json:"version_id"`
+	}
+	if json.Unmarshal(sessionRunnerDurableExecutedToolInput(checkpoint), &input) != nil ||
+		strings.TrimSpace(input.VersionID) != sourceVersionID ||
+		strings.TrimSpace(stringValue(mapValue(result["raw_read_with"])["version_id"])) != sourceVersionID {
+		return false
+	}
+	sourceURL, sourceValid := agentPublicScientificSourceBaseURL(stringValue(result["source_url"]))
+	expected, expectedValid := agentPublicScientificSourceBaseURL(expectedURL)
+	if !sourceValid || !expectedValid || !agentPublicScientificSameSite(sourceURL, expected) {
+		return false
+	}
+	content := stringValue(result["content"])
+	if content == "" || len(content) > agentPublicScientificSourceHTMLScanLimit {
+		return false
+	}
+	for _, match := range agentPublicScientificDisplayLinkPattern.FindAllStringSubmatch(content, -1) {
+		if len(match) == 2 && agentPublicScientificURLsEquivalent(strings.TrimSpace(match[1]), expectedURL) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) agentPublicScientificSourceResult(

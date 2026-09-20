@@ -310,7 +310,11 @@ the final response. The original executed WebFetch input binds redirect hosts.
 A successful HTML source may additionally authorize an exact structured file
 link on an HTTPS sibling host only when both hosts share the same effective
 registrable domain; unrelated external links, arbitrary prose URLs and
-connector claims cannot widen that source authority. The existing downloader
+connector claims cannot widen that source authority. The same exact link
+remains recognizable after compaction when a host-generated
+`html-readable-display-lines` read is bound to the immutable large-result
+version and source-body SHA; ordinary artifact text and mismatched versions do
+not inherit download authority. The existing downloader
 re-requests the canonical URL, allowing signed
 destinations to rotate within the attested host set while retaining TLS,
 public-address checks, bounded redirects, resume validation and atomic staging.

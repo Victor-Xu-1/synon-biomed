@@ -1265,6 +1265,52 @@ func TestAgentPublicScientificFileDownloadAuthorizesSameSiteHTMLFileLink(t *test
 	}
 }
 
+func TestAgentPublicScientificReadWindowAuthorizesSameSiteImmutableSourceLink(t *testing.T) {
+	checkpoint := sessionRunnerDurableToolCheckpoint{
+		ToolName: "read_file", ToolCallID: "read-source-window", ToolPhase: "completed",
+		ExecutedToolInput: json.RawMessage(`{"version_id":"ltr-source-window"}`),
+	}
+	value := map[string]any{
+		"content":                 "107\\tCoordinates <https://files.example.org/download/TEST1.cif>\n108\\tLegacy PDB <https://files.example.org/download/TEST1.pdb>",
+		"file_path_scope":         "original_source",
+		"raw_read_with":           map[string]any{"version_id": "ltr-source-window"},
+		"source_body_sha256":      strings.Repeat("a", 64),
+		"source_content_included": true,
+		"source_url":              "https://www.example.org/structure/TEST1",
+		"source_version_id":       "ltr-source-window",
+		"view_format":             "html-readable-display-lines",
+	}
+	if !agentPublicScientificReadWindowAuthorizesDownload(
+		checkpoint, value, "https://files.example.org/download/TEST1.pdb",
+	) {
+		t.Fatal("immutable source line window did not authorize its exact same-site file link")
+	}
+	for name, mutate := range map[string]func(map[string]any){
+		"unrelated site": func(candidate map[string]any) {
+			candidate["content"] = "108\\tLegacy PDB <https://files.unrelated.test/download/TEST1.pdb>"
+		},
+		"wrong source version": func(candidate map[string]any) {
+			candidate["source_version_id"] = "ltr-other"
+		},
+		"missing digest": func(candidate map[string]any) {
+			delete(candidate, "source_body_sha256")
+		},
+		"ordinary text view": func(candidate map[string]any) {
+			candidate["view_format"] = "text-lines"
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			candidate := copyMapAny(value)
+			mutate(candidate)
+			if agentPublicScientificReadWindowAuthorizesDownload(
+				checkpoint, candidate, "https://files.example.org/download/TEST1.pdb",
+			) {
+				t.Fatalf("untrusted read window authorized download: %#v", candidate)
+			}
+		})
+	}
+}
+
 func TestAgentPublicScientificFileDownloadRejectsUnattestedURLBeforeNetwork(t *testing.T) {
 	for _, test := range []struct {
 		name      string

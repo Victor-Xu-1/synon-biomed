@@ -931,6 +931,41 @@ func TestFailedDelimitedArtifactSaveUsesWriterBeforeRetry(t *testing.T) {
 	}
 }
 
+func TestFailedScientificArtifactSaveUsesWriterBeforeRetry(t *testing.T) {
+	run := &sessionRunnerChatRun{TaskIntent: "Repair and save the molecule set"}
+	saveCall := agentruntime.Message{Role: "assistant", ToolCalls: []agentruntime.ToolCall{{
+		ID: "save-scientific", Name: "save_artifacts",
+		Arguments: json.RawMessage(`{"files":["ligands.smi"]}`),
+	}}}
+	saveResult := agentruntime.Message{Role: "tool", ToolCallID: "save-scientific", Content: `{
+		"ok":false,"code":"artifact_save_requires_correction",
+		"errors":[{"code":"invalid_scientific_artifact","path":"ligands.smi",
+		"validation_code":"invalid_smiles_records","validation_records":4,
+		"validation_parsed_records":3,"validation_invalid_records":1}]
+	}`}
+	tools := []agentruntime.ToolSchema{
+		{Name: "edit_file", Capabilities: []string{"artifact-write", "artifact-edit"}},
+		{Name: "manage_environments", Capabilities: []string{"environment-management"}},
+		{Name: "save_artifacts", Capabilities: []string{"artifact-publication"}},
+	}
+	messages := []agentruntime.Message{saveCall, saveResult}
+	choice, _ := sessionRunnerCorrectionRequiredToolChoice(run, messages, tools).(map[string]any)
+	if choice["name"] != "edit_file" {
+		t.Fatalf("invalid scientific artifact did not require its writer: %#v", choice)
+	}
+
+	editCall := agentruntime.Message{Role: "assistant", ToolCalls: []agentruntime.ToolCall{{
+		ID: "edit-scientific", Name: "edit_file",
+		Arguments: json.RawMessage(`{"file_path":"ligands.smi","old_string":"invalid","new_string":"CC"}`),
+	}}}
+	editResult := agentruntime.Message{Role: "tool", ToolCallID: "edit-scientific", Content: `{"ok":true,"changed":true}`}
+	messages = append(messages, editCall, editResult)
+	choice, _ = sessionRunnerCorrectionRequiredToolChoice(run, messages, tools).(map[string]any)
+	if choice["name"] != "save_artifacts" {
+		t.Fatalf("scientific repair did not advance to publication: %#v", choice)
+	}
+}
+
 func TestPartialArtifactSaveRequiresAnotherToolBeforeCompletion(t *testing.T) {
 	run := &sessionRunnerChatRun{TaskIntent: "Save the requested report and structure"}
 	saveCall := agentruntime.Message{Role: "assistant", ToolCalls: []agentruntime.ToolCall{{

@@ -440,7 +440,7 @@ func runnerArtifactSaveFileRepairPaths(result map[string]any) []string {
 	for _, raw := range anySliceValue(result["errors"]) {
 		failure := mapValue(raw)
 		switch strings.TrimSpace(stringValue(failure["code"])) {
-		case "invalid_delimited_artifact", "invalid_json_artifact", "unresolved_template_marker":
+		case "invalid_delimited_artifact", "invalid_json_artifact", "invalid_scientific_artifact", "unresolved_template_marker":
 			if path := strings.TrimSpace(stringValue(failure["path"])); path != "" {
 				paths = append(paths, path)
 			}

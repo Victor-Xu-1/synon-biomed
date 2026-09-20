@@ -78,21 +78,9 @@ func applyRegisteredExecutionPackEnvironmentContract(
 	if provider != "" && provider != strings.ToLower(strings.TrimSpace(request.Provider)) {
 		return fmt.Errorf("registered execution pack requires provider %s", provider)
 	}
-	condaPackages := make([]string, 0, len(pack.Packages))
-	pipPackages := make([]string, 0, len(pack.Packages))
-	for _, requirement := range pack.Packages {
-		spec := strings.TrimSpace(requirement.Spec)
-		if spec == "" {
-			return errors.New("registered execution pack contains an empty package requirement")
-		}
-		switch strings.ToLower(strings.TrimSpace(requirement.Manager)) {
-		case "conda":
-			condaPackages = append(condaPackages, spec)
-		case "pip":
-			pipPackages = append(pipPackages, spec)
-		default:
-			return fmt.Errorf("registered execution pack uses unsupported package manager %q", requirement.Manager)
-		}
+	condaPackages, pipPackages, err := registeredExecutionPackPackageSpecs(pack)
+	if err != nil {
+		return err
 	}
 	request.Language = strings.ToLower(strings.TrimSpace(pack.Language))
 	request.PythonVersion = ""
@@ -107,6 +95,28 @@ func applyRegisteredExecutionPackEnvironmentContract(
 	request.Channels = append([]string(nil), pack.Channels...)
 	request.ImportNames = append([]string(nil), pack.Imports...)
 	return nil
+}
+
+func registeredExecutionPackPackageSpecs(
+	pack sciencecapability.ExecutionPack,
+) (condaPackages, pipPackages []string, resultErr error) {
+	condaPackages = make([]string, 0, len(pack.Packages))
+	pipPackages = make([]string, 0, len(pack.Packages))
+	for _, requirement := range pack.Packages {
+		spec := strings.TrimSpace(requirement.Spec)
+		if spec == "" {
+			return nil, nil, errors.New("registered execution pack contains an empty package requirement")
+		}
+		switch strings.ToLower(strings.TrimSpace(requirement.Manager)) {
+		case "conda":
+			condaPackages = append(condaPackages, spec)
+		case "pip":
+			pipPackages = append(pipPackages, spec)
+		default:
+			return nil, nil, fmt.Errorf("registered execution pack uses unsupported package manager %q", requirement.Manager)
+		}
+	}
+	return condaPackages, pipPackages, nil
 }
 
 func registeredExecutionPackEnvironmentContractResult(

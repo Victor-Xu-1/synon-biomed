@@ -43,6 +43,9 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflig
 	if preflight := g.agentRuntimeSelectedImplementationMaterializedSkillPreflight(name, input); preflight != nil {
 		return preflight
 	}
+	if preflight := g.agentRuntimeCanonicalPackEnvironmentPreflight(name, input, parents...); preflight != nil {
+		return preflight
+	}
 	if preflight := g.agentRuntimeControlledEvidenceDerivationPreflight(name, input); preflight != nil {
 		return preflight
 	}
@@ -89,6 +92,62 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflig
 		}
 	}
 	return nil
+}
+
+func (g serverAgentRuntimeToolGateway) agentRuntimeCanonicalPackEnvironmentPreflight(
+	publicName string,
+	input map[string]any,
+	parents ...context.Context,
+) map[string]any {
+	if g.server == nil || g.server.kernelManager == nil {
+		return nil
+	}
+	engine, found := g.server.canonicalManagedExecutionPack(publicName, input)
+	if !found {
+		return nil
+	}
+	pack := engine.ExecutionPack
+	condaPackages, pipPackages, err := registeredExecutionPackPackageSpecs(pack)
+	if err != nil {
+		return map[string]any{
+			"ok": false, "status": "execution_pack_environment_contract_invalid", "executed": false,
+			"execution_pack_id": pack.ID,
+			"message":           "The registered execution pack has an invalid environment contract.",
+			"recovery":          "Repair the registered execution-pack environment contract before retrying the same entrypoint.",
+		}
+	}
+	packageSpecs := append([]string(nil), condaPackages...)
+	for _, spec := range pipPackages {
+		packageSpecs = append(packageSpecs, "pip::"+spec)
+	}
+	dependencies, _ := managedEnvironmentPreflightDependencyNames(packageSpecs)
+	parent := context.Background()
+	if len(parents) > 0 && parents[0] != nil {
+		parent = parents[0]
+	}
+	ctx, cancel := context.WithTimeout(parent, 5*time.Second)
+	defer cancel()
+	candidates, listErr := g.server.kernelManager.ListManagedEnvironments(ctx, kernelruntime.ManagedEnvironmentQuery{
+		Language: strings.TrimSpace(pack.Language), Dependencies: dependencies,
+		IncludePackages: true,
+	})
+	if listErr == nil {
+		rankManagedEnvironmentPreflightCandidates(candidates, strings.TrimSpace(stringValue(input["environment"])))
+		for _, candidate := range candidates[:min(len(candidates), maxManagedEnvironmentPreflightAlternatives)] {
+			if err := g.server.kernelManager.VerifyManagedEnvironmentImports(ctx, candidate.Name, pack.Imports); err != nil {
+				continue
+			}
+			input["environment"] = candidate.Name
+			return nil
+		}
+	}
+	return map[string]any{
+		"ok": false, "status": "execution_pack_environment_preflight_required", "executed": false,
+		"execution_pack_id": pack.ID, "requested_environment": strings.TrimSpace(stringValue(input["environment"])),
+		"required_packages": packageSpecs, "required_imports": append([]string(nil), pack.Imports...),
+		"message":  "No ready managed environment satisfies the registered execution pack's complete package and import contract.",
+		"recovery": "Use manage_environments preflight with the same implementation. Reuse the returned compatible environment, or create one immutable environment from the registered package contract before retrying this exact entrypoint.",
+	}
 }
 
 // agentRuntimeImplementationExecutionChoicePreflight prevents a historical

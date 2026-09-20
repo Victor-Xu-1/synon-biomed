@@ -170,6 +170,7 @@ func TestAutoDockVinaSkillUsesTheManagedHarnessExecutionContract(t *testing.T) {
 		"do not author quantitative Markdown with `edit_file`", "openbabel", "CDX", "primary_pose_manifest.csv",
 		"Never split `ranked_poses.pdbqt`", "pack-generated readable report",
 		"raw apo receptor", "P2Rank resolver",
+		"SMI/SMILES inputs",
 	} {
 		if !strings.Contains(text, requiredMarker) {
 			t.Errorf("governed execution marker is missing: %s", requiredMarker)
@@ -181,6 +182,8 @@ func TestAutoDockVinaSkillUsesTheManagedHarnessExecutionContract(t *testing.T) {
 		"docking_pose_scores.csv", "docking_pose_samples.csv", "pose_count_fidelity", "POSE 1",
 		"select_primary_pose", "repeat_count", "primary_pose_selection", "convert_ligand_source",
 		"write_primary_pose_artifacts", "primary_pose_manifest.csv", "write_docking_report",
+		"read_smiles_records",
+		"normalize_dockable_fragment",
 	} {
 		if !strings.Contains(string(implementationSource), requiredScriptMarker) {
 			t.Errorf("governed execution script is missing receptor preparation marker: %s", requiredScriptMarker)

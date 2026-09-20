@@ -16,7 +16,7 @@ import gemmi
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from autodock_vina_inputs import convert_ligand_source
+from autodock_vina_inputs import convert_ligand_source, read_smiles_records
 from autodock_vina_outputs import write_docking_report, write_primary_pose_artifacts
 from autodock_vina_pockets import load_validated_pocket_selection
 
@@ -246,6 +246,14 @@ def load_ligands(path: Path) -> list[Chem.Mol]:
     elif suffix == ".mol2":
         molecule = Chem.MolFromMol2File(str(path), removeHs=False)
         molecules = [molecule] if molecule is not None else []
+    elif suffix in {".smi", ".smiles"}:
+        molecules = []
+        for index, (smiles, name) in enumerate(read_smiles_records(path), start=1):
+            molecule = Chem.MolFromSmiles(smiles)
+            if molecule is None:
+                raise ValueError(f"invalid SMILES record {index}")
+            molecule.SetProp("_Name", name)
+            molecules.append(molecule)
     else:
         raise ValueError(f"unsupported ligand format: {suffix}")
     if not molecules:
@@ -253,13 +261,52 @@ def load_ligands(path: Path) -> list[Chem.Mol]:
     return molecules
 
 
-def normalize_ligands(source: Path, destination: Path, seed: int) -> list[str]:
+def normalize_dockable_fragment(
+    molecule: Chem.Mol,
+    candidate_id: str,
+    log: list[dict[str, object]],
+) -> Chem.Mol:
+    fragments = list(Chem.GetMolFrags(molecule, asMols=True, sanitizeFrags=True))
+    if len(fragments) <= 1:
+        return molecule
+    ranked: list[tuple[tuple[int, int, int], str, Chem.Mol]] = []
+    for fragment in fragments:
+        carbon_count = sum(1 for atom in fragment.GetAtoms() if atom.GetAtomicNum() == 6)
+        rank = (1 if carbon_count > 0 else 0, fragment.GetNumHeavyAtoms(), carbon_count)
+        ranked.append((rank, Chem.MolToSmiles(fragment, isomericSmiles=True), fragment))
+    ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    if len(ranked) > 1 and ranked[0][0] == ranked[1][0]:
+        raise ValueError(f"ligand {candidate_id} has ambiguous largest fragments")
+    selected = ranked[0]
+    log.append(
+        {
+            "operation": "normalize_ligand_fragments",
+            "candidate_id": candidate_id,
+            "source_fragment_count": len(ranked),
+            "selected_smiles": selected[1],
+            "removed_smiles": sorted(item[1] for item in ranked[1:]),
+        }
+    )
+    return selected[2]
+
+
+def normalize_ligands(
+    source: Path,
+    destination: Path,
+    seed: int,
+    log: list[dict[str, object]],
+) -> list[str]:
     molecules = load_ligands(source)
     candidate_ids: list[str] = []
     writer = Chem.SDWriter(str(destination))
     try:
         for index, original in enumerate(molecules, start=1):
-            molecule = Chem.AddHs(original, addCoords=True)
+            name = original.GetProp("_Name").strip() if original.HasProp("_Name") else ""
+            candidate_id = name or f"ligand-{index:04d}"
+            if candidate_id in candidate_ids:
+                raise ValueError(f"ligand input contains duplicate candidate ID: {candidate_id}")
+            molecule = normalize_dockable_fragment(original, candidate_id, log)
+            molecule = Chem.AddHs(molecule, addCoords=True)
             needs_conformer = molecule.GetNumConformers() == 0 or not molecule.GetConformer().Is3D()
             if needs_conformer:
                 parameters = AllChem.ETKDGv3()
@@ -267,10 +314,6 @@ def normalize_ligands(source: Path, destination: Path, seed: int) -> list[str]:
                 if AllChem.EmbedMolecule(molecule, parameters) != 0:
                     raise ValueError(f"3D conformer generation failed for ligand {index}")
                 AllChem.UFFOptimizeMolecule(molecule, maxIters=500)
-            name = molecule.GetProp("_Name").strip() if molecule.HasProp("_Name") else ""
-            candidate_id = name or f"ligand-{index:04d}"
-            if candidate_id in candidate_ids:
-                raise ValueError(f"ligand input contains duplicate candidate ID: {candidate_id}")
             molecule.SetProp("_Name", candidate_id)
             candidate_ids.append(candidate_id)
             writer.write(molecule)
@@ -816,7 +859,7 @@ def prepare_ligands(
         shutil.copyfile(source, destination)
         return [(source.stem, destination)], 1
     normalized = work / "normalized_ligands.sdf"
-    candidate_ids = normalize_ligands(source, normalized, seed)
+    candidate_ids = normalize_ligands(source, normalized, seed, log)
     count = len(candidate_ids)
     executable = shutil.which("mk_prepare_ligand.py")
     if executable is None:

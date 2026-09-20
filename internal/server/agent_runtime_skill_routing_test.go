@@ -445,6 +445,36 @@ func TestLoadedSkillRequiresCompatibleEnvironmentBeforeBundledScript(t *testing.
 	}
 }
 
+func TestCanonicalExecutionPackRequiresRegisteredEnvironmentWithoutLoadedSkillState(t *testing.T) {
+	scienceCatalog, err := sciencecapability.DefaultCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	skillCatalog := skills.NewCatalog()
+	skillCatalog.AddSkill(skills.Skill{
+		Name: "autodock-vina", ImplementationIdentities: []string{"AutoDock Vina"},
+		RequiredEnvironmentPackages: []string{"vina", "meeko", "rdkit", "gemmi", "prody", "biopython", "openbabel"},
+	})
+	environments := filepath.Join(t.TempDir(), "envs")
+	if err := os.MkdirAll(environments, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	gateway := serverAgentRuntimeToolGateway{
+		server: &Server{
+			skillCatalog: skillCatalog, scienceCapabilities: &scienceCatalog,
+			kernelManager: kernelruntime.NewManager(kernelruntime.Config{CondaEnvsPath: environments}),
+		},
+		taskRun: &sessionRunnerChatRun{TaskIntent: "Run AutoDock Vina docking."},
+	}
+	preflight := gateway.agentRuntimeSkillExecutionContractPreflight("bash", map[string]any{
+		"environment": "partial-vina",
+		"command":     `python "/workspace/.synon/runtime/skills/autodock-vina-72ca3834b505/36de78b8fd4ba9745e149f873a3904005be6b2b867e583ae1b0cafe3347c7b87/scripts/autodock_vina.py" --help`,
+	})
+	if preflight == nil || preflight["status"] != "execution_pack_environment_preflight_required" {
+		t.Fatalf("canonical pack environment preflight=%#v", preflight)
+	}
+}
+
 func TestLoadedSkillPackageContractDoesNotBlockControlPlaneInspection(t *testing.T) {
 	run := &sessionRunnerChatRun{TaskIntent: "inspect one loaded workflow before selecting an environment"}
 	run.addExecutedSkillNames("managed-workflow")

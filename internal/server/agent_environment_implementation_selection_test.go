@@ -103,6 +103,53 @@ func TestManagedEnvironmentExplicitUserImplementationDoesNotRequireAnotherQuesti
 	}
 }
 
+func TestExplicitPrimaryImplementationKeepsItsRegisteredPackBesideNamedResolver(t *testing.T) {
+	skillCatalog := skills.NewCatalog()
+	skillCatalog.AddSkill(skills.Skill{
+		Name: "docking-skill", ImplementationIdentities: []string{"AutoDock Vina"},
+	})
+	skillCatalog.AddSkill(skills.Skill{
+		Name: "pocket-skill", ImplementationIdentities: []string{"P2Rank"},
+	})
+	dockingPack := sciencecapability.ExecutionPack{
+		ID: "molecular-docking.vina", Mode: "local", Skill: "docking-skill",
+		Provider: "local-conda", Language: "python",
+		Packages: []sciencecapability.ExecutionPackage{
+			{Manager: "conda", Spec: "vina=1.2.7"},
+			{Manager: "conda", Spec: "gemmi=0.7.5"},
+		},
+		Imports: []string{"vina", "gemmi"},
+		EvidenceResolvers: []sciencecapability.ExecutionEvidenceResolver{{
+			EvidenceGroup: "binding-site-center", Skill: "pocket-skill", Implementation: "P2Rank",
+		}},
+	}
+	capabilityCatalog := &sciencecapability.Catalog{Capabilities: []sciencecapability.Definition{
+		{ID: "molecular-docking", AcceptedEngines: []sciencecapability.EngineDefinition{{
+			ID: "autodock-vina", ExecutionPack: dockingPack,
+		}}},
+		{ID: "binding-pocket-prediction", AcceptedEngines: []sciencecapability.EngineDefinition{{
+			ID: "p2rank", ExecutionPack: sciencecapability.ExecutionPack{
+				ID: "binding-pocket-prediction.p2rank", Mode: "local", Skill: "pocket-skill",
+				Packages: []sciencecapability.ExecutionPackage{{Manager: "conda", Spec: "openjdk=17"}},
+			},
+		}}},
+	}}
+	server := &Server{skillCatalog: skillCatalog, scienceCapabilities: capabilityCatalog}
+	run := &sessionRunnerChatRun{
+		TaskIntent:                     "Run AutoDock Vina with P2Rank pocket prediction.",
+		RequiredScientificCapabilities: []string{"molecular-docking", "binding-pocket-prediction"},
+	}
+	run.setSelectedEvidenceResolvers(sciencecapability.ExecutionEvidenceResolver{
+		EvidenceGroup: "binding-site-center", Skill: "pocket-skill", Implementation: "P2Rank",
+	})
+	pack, found := server.registeredManagedEnvironmentExecutionPack(
+		withTranscriptRunnerChatRun(context.Background(), run), "AutoDock Vina",
+	)
+	if !found || pack.ID != dockingPack.ID || len(run.selectedImplementationsSnapshot()) != 0 {
+		t.Fatalf("explicit primary pack=%#v found=%t selected=%v", pack, found, run.selectedImplementationsSnapshot())
+	}
+}
+
 func TestSelectedImplementationIdentityRepairsDescriptiveDecoration(t *testing.T) {
 	run := &sessionRunnerChatRun{}
 	run.setSelectedImplementations("DiffLinker")

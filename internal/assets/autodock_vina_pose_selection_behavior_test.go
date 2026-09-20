@@ -48,6 +48,88 @@ validate_output_target = module.validate_output_target
 promote_execution_output = module.promote_execution_output
 validated_internal_state_directory = module.validated_internal_state_directory
 pdb_reference_site_scores = module.pdb_reference_site_scores
+read_smiles_records = module.read_smiles_records
+normalize_dockable_fragment = module.normalize_dockable_fragment
+
+with tempfile.TemporaryDirectory() as temporary:
+    root = Path(temporary)
+    single = root / "ye6144.smi"
+    single.write_text("CCO\n", encoding="utf-8")
+    assert read_smiles_records(single) == [("CCO", "ye6144")]
+    library = root / "library.smiles"
+    library.write_text("# source comment\nCCO ethanol\n\nCCN\n", encoding="utf-8")
+    assert read_smiles_records(library) == [
+        ("CCO", "ethanol"),
+        ("CCN", "library-0002"),
+    ]
+    empty = root / "empty.smi"
+    empty.write_text("# no molecules\n", encoding="utf-8")
+    try:
+        read_smiles_records(empty)
+    except ValueError as error:
+        assert "no valid records" in str(error)
+    else:
+        raise AssertionError("empty SMILES input was accepted")
+
+class FragmentAtomFixture:
+    def __init__(self, atomic_number):
+        self.atomic_number = atomic_number
+    def GetAtomicNum(self):
+        return self.atomic_number
+
+class FragmentFixture:
+    def __init__(self, label, atomic_numbers):
+        self.label = label
+        self.atoms = [FragmentAtomFixture(number) for number in atomic_numbers]
+    def GetAtoms(self):
+        return self.atoms
+    def GetNumHeavyAtoms(self):
+        return len(self.atoms)
+
+class FragmentParentFixture:
+    def __init__(self, fragments):
+        self.fragments = fragments
+
+class FragmentChemFixture:
+    @staticmethod
+    def GetMolFrags(molecule, asMols, sanitizeFrags):
+        assert asMols and sanitizeFrags
+        return tuple(molecule.fragments)
+    @staticmethod
+    def MolToSmiles(fragment, isomericSmiles):
+        assert isomericSmiles
+        return fragment.label
+
+original_chem = module.Chem
+module.Chem = FragmentChemFixture
+try:
+    main_fragment = FragmentFixture("CCN", [6, 6, 7])
+    chloride = FragmentFixture("[Cl-]", [17])
+    fragment_log = []
+    selected = normalize_dockable_fragment(
+        FragmentParentFixture([chloride, main_fragment]), "candidate", fragment_log,
+    )
+    assert selected is main_fragment
+    assert fragment_log == [{
+        "operation": "normalize_ligand_fragments",
+        "candidate_id": "candidate",
+        "source_fragment_count": 2,
+        "selected_smiles": "CCN",
+        "removed_smiles": ["[Cl-]"],
+    }]
+    try:
+        normalize_dockable_fragment(
+            FragmentParentFixture([
+                FragmentFixture("CC", [6, 6]), FragmentFixture("NN", [6, 6]),
+            ]),
+            "ambiguous", [],
+        )
+    except ValueError as error:
+        assert "ambiguous largest fragments" in str(error)
+    else:
+        raise AssertionError("ambiguous ligand fragments were accepted")
+finally:
+    module.Chem = original_chem
 
 class EntityFixture:
     def __init__(self):

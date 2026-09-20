@@ -155,7 +155,7 @@
             ],
             "inputs": [
               {"kind": "receptor", "argument": "--receptor", "extensions": [".pdb", ".pdbqt", ".cif", ".mmcif"]},
-              {"kind": "ligand", "argument": "--ligand", "extensions": [".cdx", ".sdf", ".mol", ".mol2", ".pdbqt"]}
+              {"kind": "ligand", "argument": "--ligand", "extensions": [".cdx", ".sdf", ".mol", ".mol2", ".smi", ".smiles", ".pdbqt"]}
             ],
             "parameters": [
               {"name": "reference_ligand", "argument": "--reference-ligand", "type": "string", "required": false},

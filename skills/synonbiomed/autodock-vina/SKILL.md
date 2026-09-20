@@ -66,10 +66,15 @@ path.
    that do not ask for the latest qualifying entry.
 2. Supply a chemically prepared receptor or an evidence-backed receptor source,
    plus one ligand file containing the exact requested ligand set. PDBQT inputs
-   bypass preparation; PDB/mmCIF and CDX/SDF/MOL/MOL2 inputs are prepared by the
+   bypass preparation; PDB/mmCIF and CDX/SDF/MOL/MOL2/SMI/SMILES inputs are prepared by the
    pack's reviewed conversion and Meeko path. Pass CDX directly to the pack so
    its Open Babel conversion, molecule-count validation, and stable source-order
-   identifiers stay in the same execution receipt.
+   identifiers stay in the same execution receipt. Pass SMI/SMILES inputs directly
+   as well; the pack owns parsing, stable candidate IDs, and deterministic 3D
+   conformer generation. When a record contains disconnected salt/counterion
+   fragments, the pack selects the unique largest organic fragment and records
+   the selected and removed canonical fragments in `vina.log`; equally ranked
+   fragments fail as ambiguous instead of being silently discarded.
 3. For a raw PDB/mmCIF co-crystal, pass `--reference-ligand` and let the pack
    derive the docking center from that component's verified coordinates. When
    it is omitted, the pack may select one unambiguous bound organic component

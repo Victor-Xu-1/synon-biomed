@@ -120,6 +120,17 @@ func (s *Server) registeredManagedEnvironmentExecutionPack(
 		return selectedPack, selectedPack.ID != "" && len(selectedPack.Packages) > 0
 	}
 	selected := run.selectedImplementationsSnapshot()
+	if len(selected) == 0 && taskExplicitlyNamesImplementation(run.TaskIntent, implementation) {
+		skill, found := dedicatedSkillForImplementation(s.skillCatalog, implementation)
+		if !found {
+			return sciencecapability.ExecutionPack{}, false
+		}
+		engines := s.scienceCapabilities.LocalExecutionPacksForSkill(skill.Name)
+		if len(engines) != 1 || len(engines[0].ExecutionPack.Packages) == 0 {
+			return sciencecapability.ExecutionPack{}, false
+		}
+		return engines[0].ExecutionPack, true
+	}
 	if len(selected) != 1 || !askUserImplementationIdentityMatches(selected[0], implementation) {
 		return sciencecapability.ExecutionPack{}, false
 	}

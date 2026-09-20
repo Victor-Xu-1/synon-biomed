@@ -90,6 +90,24 @@ func TestSessionRunnerRequiresOnlyExplicitlyNamedOutputArtifacts(t *testing.T) {
 	}
 }
 
+func TestSessionRunnerRecognizesCreatedSMILESAsExactDeliverable(t *testing.T) {
+	for _, task := range []string{
+		"创建 molecules.smi，然后保存并验证。",
+		"Create molecules.smi, then save and validate it.",
+	} {
+		if got := sessionRunnerExplicitDeliverableNames(task); !reflect.DeepEqual(got, []string{"molecules.smi"}) {
+			t.Fatalf("task %q deliverables=%#v", task, got)
+		}
+		missing := missingSessionRunnerRequiredDeliverables(task, nil)
+		if len(missing) == 0 || missing[0] != "artifact molecules.smi" {
+			t.Fatalf("task %q missing=%#v", task, missing)
+		}
+		if missing := missingSessionRunnerRequiredDeliverables(task, []string{"molecules.smi"}); len(missing) != 0 {
+			t.Fatalf("task %q rejected molecules.smi: %#v", task, missing)
+		}
+	}
+}
+
 func TestSessionRunnerExplicitDeliverableNamesIgnoreInputsAndMentions(t *testing.T) {
 	task := "Read input_seed.csv and compare it with reference.json. Save the final table as results.csv."
 	if got := sessionRunnerExplicitDeliverableNames(task); !reflect.DeepEqual(got, []string{"results.csv"}) {

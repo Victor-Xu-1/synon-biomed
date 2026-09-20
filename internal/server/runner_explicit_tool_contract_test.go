@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -40,6 +41,145 @@ func TestSessionRunnerExplicitToolContractRequiresSuccessfulResults(t *testing.T
 	gaps := sessionRunnerExplicitToolContractGaps(task, messages)
 	if len(gaps) != 1 || !strings.Contains(gaps[0], "search_skills") || !strings.Contains(gaps[0], "successful") {
 		t.Fatalf("failed tool result satisfied explicit contract: %#v", gaps)
+	}
+}
+
+func TestSessionRunnerExplicitToolContractRequiresPostWriteReadOfNamedFile(t *testing.T) {
+	task := "创建 molecules.smi；最终保存成功后必须重新读取 molecules.smi，之后才能宣布完成。"
+	messages := []agentruntime.Message{
+		toolRoundWithInput("edit-invalid", "edit_file", `{"file_path":"molecules.smi"}`), toolResult("edit-invalid"),
+		toolRoundWithInput("read-early", "read_file", `{"file_path":"molecules.smi"}`), toolResult("read-early"),
+		toolRoundWithInput("edit-fixed", "edit_file", `{"file_path":"molecules.smi"}`), toolResult("edit-fixed"),
+		toolRoundWithInput("save-fixed", "save_artifacts", `{"files":["molecules.smi"]}`), toolResult("save-fixed"),
+	}
+	gaps := sessionRunnerExplicitToolContractGaps(task, messages)
+	if len(gaps) != 1 || !strings.Contains(gaps[0], "molecules.smi") || !strings.Contains(gaps[0], "read_file") {
+		t.Fatalf("post-write read gap=%#v", gaps)
+	}
+	messages = append(messages,
+		toolRoundWithInput("read-other", "read_file", `{"file_path":"other.smi"}`), toolResult("read-other"),
+	)
+	if gaps := sessionRunnerExplicitToolContractGaps(task, messages); len(gaps) != 1 {
+		t.Fatalf("unrelated read discharged named requirement: %#v", gaps)
+	}
+	messages = append(messages,
+		toolRoundWithInput("read-final", "read_file", `{"file_path":"molecules.smi"}`), toolResult("read-final"),
+	)
+	if gaps := sessionRunnerExplicitToolContractGaps(task, messages); len(gaps) != 0 {
+		t.Fatalf("post-write read receipt did not satisfy contract: %#v", gaps)
+	}
+}
+
+func TestSessionRunnerExplicitToolContractRecognizesEnglishReadBackWithoutInferringOrdinaryReads(t *testing.T) {
+	for _, task := range []string{
+		"Create result.csv, save it, then read result.csv back before completion.",
+		"Generate result.csv and re-read result.csv after saving it.",
+	} {
+		contract := buildSessionRunnerExplicitToolContract(task)
+		if !reflect.DeepEqual(contract.PostWriteReads, []string{"result.csv"}) {
+			t.Fatalf("task %q post-write reads=%#v", task, contract.PostWriteReads)
+		}
+	}
+	for _, task := range []string{
+		"Read input.csv and summarize it.",
+		"不要重新读取 result.csv；只需说明已知限制。",
+	} {
+		if targets := sessionRunnerExplicitPostWriteReadTargets(task); len(targets) != 0 {
+			t.Fatalf("task %q invented post-write read targets=%#v", task, targets)
+		}
+	}
+	if target := sessionRunnerExplicitFileTarget("result.csv.backup"); target != "" {
+		t.Fatalf("unsupported extension suffix became a target: %q", target)
+	}
+}
+
+func TestSessionRunnerExplicitToolContractRequiresFirstFailureCodeInFinalAnswer(t *testing.T) {
+	tasks := []string{
+		"最终只需简要报告首次失败代码、修复动作和最终产物。",
+		"In the final answer, report the first failure code and the repair.",
+	}
+	messages := []agentruntime.Message{{
+		Role: "tool", ToolCallID: "save-invalid",
+		Content: `{"ok":false,"code":"artifact_save_requires_correction","errors":[{"code":"invalid_scientific_artifact","validation_code":"invalid_smiles_records"}]}`,
+	}}
+	for _, task := range tasks {
+		contract := buildSessionRunnerExplicitToolContract(task)
+		if !contract.ReportFirstFailureCode {
+			t.Fatalf("task %q did not require the first failure code", task)
+		}
+		gaps := contract.finalGaps(messages, "The file was repaired and saved.")
+		if len(gaps) != 1 || !strings.Contains(gaps[0], "invalid_smiles_records") {
+			t.Fatalf("task %q final gaps=%#v", task, gaps)
+		}
+		if gaps := contract.finalGaps(messages, "首次失败代码：invalid_smiles_records；文件已修复并保存。"); len(gaps) != 0 {
+			t.Fatalf("task %q rejected reported code: %#v", task, gaps)
+		}
+	}
+	for _, task := range []string{
+		"Summarize the repair without internal details.",
+		"最终不要报告首次失败代码，只说明产物。",
+	} {
+		if buildSessionRunnerExplicitToolContract(task).ReportFirstFailureCode {
+			t.Fatalf("task %q invented a failure-code requirement", task)
+		}
+	}
+}
+
+func TestSessionRunnerExplicitToolContractDoesNotInventMissingFailureCode(t *testing.T) {
+	contract := buildSessionRunnerExplicitToolContract("最终报告首次失败代码。")
+	gaps := contract.finalGaps(nil, "任务完成。")
+	if len(gaps) != 1 || !strings.Contains(gaps[0], "no failed tool receipt") {
+		t.Fatalf("missing failure receipt gaps=%#v", gaps)
+	}
+}
+
+func TestSessionRunnerFailureCodeReportUsesLatestNoToolCandidate(t *testing.T) {
+	messages := []agentruntime.Message{
+		{
+			Role: "assistant", Content: "首次失败代码 invalid_smiles_records，准备修复。",
+			ToolCalls: []agentruntime.ToolCall{{ID: "repair", Name: "edit_file", Arguments: json.RawMessage(`{"file_path":"molecules.smi"}`)}},
+		},
+		{Role: "tool", ToolCallID: "repair", Content: `{"ok":true}`},
+		{Role: "assistant", Content: "文件已修复并保存。"},
+	}
+	candidate := sessionRunnerLatestFinalCandidateContent(messages, "invalid_smiles_records leaked through cumulative narration")
+	if candidate != "文件已修复并保存。" {
+		t.Fatalf("latest final candidate=%q", candidate)
+	}
+	contract := buildSessionRunnerExplicitToolContract("最终报告首次失败代码。")
+	failed := []agentruntime.Message{{
+		Role: "tool", ToolCallID: "save-invalid",
+		Content: `{"ok":false,"errors":[{"validation_code":"invalid_smiles_records"}]}`,
+	}}
+	if gaps := contract.finalGaps(failed, candidate); len(gaps) != 1 {
+		t.Fatalf("progress narration satisfied final-answer contract: %#v", gaps)
+	}
+}
+
+func TestSessionRunnerSMILESRepairCompletionRequiresEveryExplicitReceipt(t *testing.T) {
+	task := "创建 molecules.smi，保存失败后修复并再次保存。只有最终保存成功且能重新读取 molecules.smi 后才能宣布完成；最终报告首次失败代码、修复动作和最终产物。"
+	messages := []agentruntime.Message{
+		toolRoundWithInput("edit-invalid", "edit_file", `{"file_path":"molecules.smi"}`), toolResult("edit-invalid"),
+		toolRoundWithInput("save-invalid", "save_artifacts", `{"files":["molecules.smi"]}`),
+		{Role: "tool", ToolCallID: "save-invalid", Content: `{"ok":false,"code":"artifact_save_requires_correction","errors":[{"validation_code":"invalid_smiles_records"}]}`},
+		toolRoundWithInput("edit-fixed", "edit_file", `{"file_path":"molecules.smi"}`), toolResult("edit-fixed"),
+		toolRoundWithInput("save-fixed", "save_artifacts", `{"files":["molecules.smi"]}`), toolResult("save-fixed"),
+	}
+	contract := buildSessionRunnerExplicitToolContract(task)
+	if gaps := contract.gaps(messages); len(gaps) != 1 || !strings.Contains(gaps[0], "read_file") {
+		t.Fatalf("missing post-save read gaps=%#v", gaps)
+	}
+	if gaps := contract.finalGaps(messages, "文件已修复并保存。"); len(gaps) != 1 || !strings.Contains(gaps[0], "invalid_smiles_records") {
+		t.Fatalf("missing failure-code gaps=%#v", gaps)
+	}
+	messages = append(messages,
+		toolRoundWithInput("read-final", "read_file", `{"file_path":"molecules.smi"}`), toolResult("read-final"),
+	)
+	if gaps := contract.gaps(messages); len(gaps) != 0 {
+		t.Fatalf("complete receipt sequence rejected: %#v", gaps)
+	}
+	if gaps := contract.finalGaps(messages, "首次失败代码 invalid_smiles_records；文件已修复并保存。"); len(gaps) != 0 {
+		t.Fatalf("complete final report rejected: %#v", gaps)
 	}
 }
 
@@ -136,6 +276,46 @@ func TestSessionRunnerDurableExplicitToolContractUsesGovernedReceiptsWithoutProm
 	}
 	if len(evidence) != 0 {
 		t.Fatalf("ordinary explicit tool receipts became scientific evidence: %#v", evidence)
+	}
+}
+
+func TestSessionRunnerDurableExplicitToolContractPreservesPostWriteReadOrder(t *testing.T) {
+	fixture := newAgentSaveArtifactsFixture(t)
+	appendReceipt := func(id, name string, input map[string]any) {
+		t.Helper()
+		payload, err := json.Marshal(map[string]any{
+			"lifecyclePhase": "tool", "toolName": name, "toolPhase": "completed",
+			"toolCallId": id, "toolInput": input, "toolResult": map[string]any{"ok": true},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, _, _, err := fixture.repo.AppendRunnerCheckpoint(context.Background(), transcriptstore.AppendRunnerCheckpointInput{
+			Claim: fixture.claim, ClientMessageID: "explicit-file-receipt-" + id,
+			Phase: transcriptstore.RunnerPhaseExecuting, PayloadJSON: payload,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	appendReceipt("edit", "edit_file", map[string]any{"file_path": "molecules.smi"})
+	appendReceipt("read-early", "read_file", map[string]any{"file_path": "molecules.smi"})
+	appendReceipt("save", "save_artifacts", map[string]any{"files": []any{"molecules.smi"}})
+	run := &sessionRunnerChatRun{Transcript: &transcriptRunnerAuthority{Stream: fixture.stream, Claim: fixture.claim}}
+	messages, err := fixture.server.sessionRunnerDurableExplicitToolContractMessages(context.Background(), run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	task := "保存 molecules.smi 后重新读取 molecules.smi，再宣布完成。"
+	if gaps := sessionRunnerExplicitToolContractGaps(task, messages); len(gaps) != 1 {
+		t.Fatalf("early durable read satisfied post-save obligation: %#v", gaps)
+	}
+	appendReceipt("read-final", "read_file", map[string]any{"file_path": "molecules.smi"})
+	messages, err = fixture.server.sessionRunnerDurableExplicitToolContractMessages(context.Background(), run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gaps := sessionRunnerExplicitToolContractGaps(task, messages); len(gaps) != 0 {
+		t.Fatalf("durable post-save read did not satisfy obligation: %#v", gaps)
 	}
 }
 
@@ -243,4 +423,10 @@ func toolRound(id, name string) agentruntime.Message {
 
 func toolResult(id string) agentruntime.Message {
 	return agentruntime.Message{Role: "tool", ToolCallID: id, Content: `{"ok":true}`}
+}
+
+func toolRoundWithInput(id, name, input string) agentruntime.Message {
+	return agentruntime.Message{Role: "assistant", ToolCalls: []agentruntime.ToolCall{{
+		ID: id, Name: name, Arguments: json.RawMessage(input),
+	}}}
 }

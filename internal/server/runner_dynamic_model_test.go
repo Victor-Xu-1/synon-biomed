@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"synon-go/internal/agentruntime"
 	sessionstore "synon-go/internal/persistence/sessions"
@@ -337,36 +337,42 @@ func TestSessionRunnerModelFailureDetectsEveryCommittedSelectionRevision(t *test
 
 func TestSessionRunnerDynamicModelClientHandsOffTimedOutUnstartedCallAfterSwitch(t *testing.T) {
 	var switchSelection func() error
-	arkAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := switchSelection(); err != nil {
-			t.Errorf("switch model: %v", err)
-		}
-		select {
-		case <-r.Context().Done():
-			return
-		case <-time.After(100 * time.Millisecond):
-			_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"late ARK response"}}]}`))
-		}
-	}))
-	defer arkAPI.Close()
 	deepseekCalls := atomic.Int64{}
-	deepseekAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		deepseekCalls.Add(1)
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"continued after timeout"}}]}`))
-	}))
-	defer deepseekAPI.Close()
 	enabled := true
 	srv, store, projectID, frameID := newDynamicModelTestRuntime(t, "ark-code-latest", []workspace.ModelProviderInput{
-		{ID: "timeout-ark", UserID: "dynamic-user", Name: "ARK", Type: "openai-compatible", BaseURL: arkAPI.URL + "/v1", Model: "ark-code-latest", Enabled: &enabled},
-		{ID: "timeout-deepseek", UserID: "dynamic-user", Name: "DeepSeek", Type: "openai-compatible", BaseURL: deepseekAPI.URL + "/v1", Model: "deepseek-v4-flash", Enabled: &enabled},
+		{ID: "timeout-ark", UserID: "dynamic-user", Name: "ARK", Type: "openai-compatible", BaseURL: "https://ark.example.test/v1", Model: "ark-code-latest", Enabled: &enabled},
+		{ID: "timeout-deepseek", UserID: "dynamic-user", Name: "DeepSeek", Type: "openai-compatible", BaseURL: "https://deepseek.example.test/v1", Model: "deepseek-v4-flash", Enabled: &enabled},
 	})
 	switchSelection = func() error {
 		_, err := store.SetCompatibilityConversationModel(frameID, "deepseek-v4-flash")
 		return err
 	}
+	srv.httpClient = &http.Client{Transport: runnerStreamRoundTripFunc(func(request *http.Request) (*http.Response, error) {
+		switch request.URL.Hostname() {
+		case "ark.example.test":
+			if err := switchSelection(); err != nil {
+				t.Fatalf("switch model: %v", err)
+			}
+			// The provider-local deadline is observed only after the user's
+			// durable model selection has advanced. This removes scheduler and
+			// SQLite timing from the handoff contract under test.
+			return nil, context.DeadlineExceeded
+		case "deepseek.example.test":
+			deepseekCalls.Add(1)
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body: io.NopCloser(strings.NewReader(
+					`{"choices":[{"message":{"role":"assistant","content":"continued after timeout"}}]}`,
+				)),
+				Request: request,
+			}, nil
+		default:
+			t.Fatalf("unexpected provider host %q", request.URL.Hostname())
+			return nil, errors.New("unexpected provider host")
+		}
+	})}
 	client := newDynamicModelTestClient(srv, projectID, frameID)
-	client.resolutionInput.RequestTimeout = 25 * time.Millisecond
 	response, err := client.Complete(context.Background(), agentruntime.ModelRequest{
 		Messages: []agentruntime.Message{{Role: "user", Content: "continue the same task after provider timeout"}},
 	})

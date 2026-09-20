@@ -19,9 +19,11 @@ type sessionRunnerExplicitToolRequirement struct {
 // only when the user scopes both execution and the final answer to those named
 // operations. It never converts a scientific deliverable into a tool receipt.
 type sessionRunnerExplicitToolContract struct {
-	Requirements []sessionRunnerExplicitToolRequirement
-	RequireMCP   bool
-	ReceiptOnly  bool
+	Requirements           []sessionRunnerExplicitToolRequirement
+	PostWriteReads         []string
+	ReportFirstFailureCode bool
+	RequireMCP             bool
+	ReceiptOnly            bool
 }
 
 var (
@@ -75,6 +77,8 @@ func buildSessionRunnerExplicitToolContract(taskIntent string) sessionRunnerExpl
 	}
 	contract.RequireMCP = strings.Contains(normalized, "mcp") &&
 		(strings.Contains(normalized, "真实") || strings.Contains(normalized, "actual") || strings.Contains(normalized, "method") || strings.Contains(normalized, "方法"))
+	contract.PostWriteReads = sessionRunnerExplicitPostWriteReadTargets(taskIntent)
+	contract.ReportFirstFailureCode = sessionRunnerRequiresFirstFailureCodeReport(taskIntent)
 	contract.ReceiptOnly = len(contract.Requirements) > 0 &&
 		matchesSessionRunnerContractPattern(taskIntent, sessionRunnerToolOnlyExecutionPatterns) &&
 		matchesSessionRunnerContractPattern(taskIntent, sessionRunnerToolOnlyFinalPatterns) &&
@@ -95,7 +99,7 @@ func matchesSessionRunnerContractPattern(value string, patterns []*regexp.Regexp
 
 func (contract sessionRunnerExplicitToolContract) gaps(messages []agentruntime.Message) []string {
 	completed := sessionRunnerSuccessfulToolExecutionIndex(messages)
-	gaps := make([]string, 0, len(contract.Requirements)+1)
+	gaps := make([]string, 0, len(contract.Requirements)+len(contract.PostWriteReads)+1)
 	for _, requirement := range contract.Requirements {
 		actual := completed[requirement.Name]
 		if actual >= requirement.MinResults {
@@ -122,6 +126,7 @@ func (contract sessionRunnerExplicitToolContract) gaps(messages []agentruntime.M
 			gaps = append(gaps, "the explicitly requested real MCP method execution has no successful MCP tool result")
 		}
 	}
+	gaps = append(gaps, sessionRunnerExplicitPostWriteReadGaps(contract.PostWriteReads, messages)...)
 	// Data-domain coverage is semantic, not structural. A single connector can
 	// expose several independent sources (for example chemistry aggregators),
 	// while two methods on two connectors can still represent the same source.

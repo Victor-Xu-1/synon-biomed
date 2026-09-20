@@ -254,9 +254,12 @@ func (s *Server) runVerifiedSessionAgentStrict(
 	logicalTaskMessages = append(logicalTaskMessages, request.Messages...)
 	logicalTaskMessages = append(logicalTaskMessages, result.Messages...)
 	explicitToolContract := buildSessionRunnerExplicitToolContract(sessionRunnerTaskIntent(run))
-	if gaps := explicitToolContract.gaps(logicalTaskMessages); len(gaps) > 0 {
-		issues := make([]sessionRunnerReviewIssue, 0, len(gaps))
-		for _, gap := range gaps {
+	explicitToolGaps := explicitToolContract.gaps(logicalTaskMessages)
+	finalCandidateContent := sessionRunnerLatestFinalCandidateContent(result.Messages, result.FinalMessage.Content)
+	explicitToolGaps = append(explicitToolGaps, explicitToolContract.finalGaps(logicalTaskMessages, finalCandidateContent)...)
+	if len(explicitToolGaps) > 0 {
+		issues := make([]sessionRunnerReviewIssue, 0, len(explicitToolGaps))
+		for _, gap := range explicitToolGaps {
 			issues = append(issues, sessionRunnerReviewIssue{
 				MessageIndex: 0, Claim: gap, Verdict: "fail", Severity: "high", Evidence: gap,
 			})

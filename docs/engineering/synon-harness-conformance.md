@@ -552,7 +552,14 @@ tools are absent from new model snapshots.
     unrequested tool keeps the contract unsatisfied. Merely using
     `search_skills` or `skill` inside a substantive scientific workflow never
     weakens its authoritative-source, governed-compute, artifact, or delivery
-    requirements. Tool failures inside such workflows remain local evidence:
+    requirements. When the user explicitly requires a read-back or re-read of
+    a concrete output filename, completion requires a successful `read_file`
+    receipt after that file's latest successful edit or save; an earlier,
+    unrelated, failed or non-executing read cannot satisfy the obligation.
+    If the user explicitly asks the final answer to report the first failure
+    code, that answer must include a bounded machine code from the first failed
+    durable tool receipt; later success does not erase or summarize it away.
+    Tool failures inside such workflows remain local evidence:
     the model observes the concrete failure, makes a materially different
     repair, and continues the same logical task from its durable checkpoint.
 24. Plan progression preserves model action ownership. A request to start a

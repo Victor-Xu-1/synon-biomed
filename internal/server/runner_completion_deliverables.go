@@ -16,8 +16,10 @@ import (
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
 
-var sessionRunnerExplicitDeliverableNamePattern = regexp.MustCompile(`(?i)\b[a-z0-9][a-z0-9._-]{0,160}\.(?:csv|tsv|xlsx|parquet|json|jsonl|md|html?|pdf|docx|pptx?|sdf|pdb|pdbqt|cif|mmcif|py|r|ipynb)\b`)
-var sessionRunnerExplicitDeliverableFormatPattern = regexp.MustCompile(`(?i)\b(?:csv|tsv|xlsx|parquet|json|jsonl|markdown|md|html?|pdf|docx|pptx?|sdf|pdb|pdbqt|cif|mmcif|ipynb)\b`)
+const sessionRunnerExplicitDeliverableFilenameExpression = `[a-z0-9][a-z0-9._-]{0,160}\.(?:csv|tsv|xlsx|parquet|json|jsonl|md|html?|pdf|docx|pptx?|sdf|smi|pdb|pdbqt|cif|mmcif|py|r|ipynb)`
+
+var sessionRunnerExplicitDeliverableNamePattern = regexp.MustCompile(`(?i)\b` + sessionRunnerExplicitDeliverableFilenameExpression + `\b`)
+var sessionRunnerExplicitDeliverableFormatPattern = regexp.MustCompile(`(?i)\b(?:csv|tsv|xlsx|parquet|json|jsonl|markdown|md|html?|pdf|docx|pptx?|sdf|smi|pdb|pdbqt|cif|mmcif|ipynb)\b`)
 
 var sessionRunnerDurableArtifactIntentPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)\b(?:downloadable|export(?:ed)?\s+(?:as|to)\s+(?:a\s+)?file|save(?:d)?\s+(?:as|to)\s+(?:a\s+)?file|keep(?:ing)?\s+(?:the\s+)?(?:file|artifact|output)|deliverable\s+files?|file\s+attachments?)\b`),
@@ -121,8 +123,8 @@ func sessionRunnerExplicitDeliverableNames(taskIntent string) []string {
 		clauseStart := sessionRunnerDeliverableClauseStart(text[:start])
 		clausePrefix := strings.ToLower(text[clauseStart:start])
 		if !containsAny(clausePrefix, []string{
-			"output", "outputs", "deliver", "publish", "save", "write",
-			"输出", "交付", "发布", "保存", "生成", "产出",
+			"output", "outputs", "deliver", "publish", "save", "write", "create", "generate",
+			"输出", "交付", "发布", "保存", "生成", "产出", "创建",
 		}) {
 			continue
 		}

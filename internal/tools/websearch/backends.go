@@ -13,8 +13,15 @@ import (
 	"strings"
 	"time"
 
+	"synon-go/internal/buildinfo"
 	"synon-go/internal/httpreliability"
 )
+
+func webSearchUserAgent() string {
+	identity := buildinfo.Release()
+	return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 " +
+		identity.MachineSlug + "-web-search/" + identity.Version
+}
 
 func searchHTTPBackends(ctx context.Context, input Input, maxResults int, options Options) ([]Hit, map[string]any, error) {
 	backends := resolveHTTPBackends(options)

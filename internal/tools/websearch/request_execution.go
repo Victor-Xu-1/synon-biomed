@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"synon-go/internal/buildinfo"
 	"synon-go/internal/httpreliability"
 	"synon-go/internal/httptext"
 )
@@ -70,8 +69,7 @@ func searchHTTPBackendAttempt(ctx context.Context, input Input, maxResults int, 
 		result.Err, result.Outcome = err, "request_invalid"
 		return result
 	}
-	identity := buildinfo.Release()
-	request.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 "+identity.MachineSlug+"-web-search/"+identity.Version)
+	request.Header.Set("User-Agent", webSearchUserAgent())
 	request.Header.Set("Accept-Language", "en-US,en;q=0.9")
 	switch strings.TrimSpace(backend.Format) {
 	case searchFormatMediaWikiOpenSearch, searchFormatCrossref, searchFormatEuropePMC:

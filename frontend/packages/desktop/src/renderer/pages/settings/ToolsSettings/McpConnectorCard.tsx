@@ -142,7 +142,7 @@ export const McpConnectorCard: React.FC<{
             ? t('settings.synonBiomedMcpCustom')
             : t('settings.synonBiomedMcpRecommended')}
         </span>
-        <span>MCP · {server.transport}</span>
+        <span>{t('settings.synonBiomedMcpTransportSummary', { transport: server.transport })}</span>
       </div>
       <div className='synon-mcp-card__footer'>
         <div className='synon-mcp-card__usage' aria-label={usageSummary}>

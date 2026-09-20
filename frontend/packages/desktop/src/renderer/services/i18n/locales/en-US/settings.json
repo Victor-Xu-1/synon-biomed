@@ -1160,6 +1160,7 @@
   "synonBiomedMcpAuthorize": "Connect credentials",
   "synonBiomedMcpDisconnect": "Disconnect credentials",
   "synonBiomedMcpConfigure": "Configure",
+  "synonBiomedMcpTransportSummary": "MCP · {{transport}}",
   "synonBiomedMcpApiKeyLabel": "API Key",
   "synonBiomedMcpApiKeyPlaceholder": "Paste the provider-issued key",
   "synonBiomedMcpApiKeySecurityHint": "The key is encrypted and scoped to your account. It is never displayed again or sent to the model.",

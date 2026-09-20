@@ -5136,6 +5136,7 @@ export type I18nKey =
   | 'settings.synonBiomedMcpToggleEnabled'
   | 'settings.synonBiomedMcpTotal'
   | 'settings.synonBiomedMcpTransport'
+  | 'settings.synonBiomedMcpTransportSummary'
   | 'settings.synonBiomedMcpTrustWarning'
   | 'settings.synonBiomedMcpUnhealthy'
   | 'settings.synonBiomedMcpUpdated'

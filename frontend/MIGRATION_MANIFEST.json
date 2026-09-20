@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "3f24af2ccd650eea1f5eeee56d680cf3c0a54e746bb4b52ea678a70146deb570",
+  "adaptationFingerprintSHA256": "e27d16b5659c2aa9df328d000f2e793b8462c4f90b951c08e5a7e7c5a81ad451",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "cb345b9b94a775396f300127d0c98522494229ea3e131a227922cecf3464a2da",
+  "additionFingerprintSHA256": "a5e2c58c92adcaaae69a7973b3c6d8f3276a948cfb890d12144fc21414a711a5",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 406,
@@ -2362,8 +2362,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts",
       "sourceSHA256": "d46e67e7ae9b1a4c53252446bb8e2c6d12141deaac2d253b8c1922afa35ab5d9",
-      "targetSHA256": "731643ddec8a4a4c8e671202d937298bbdaf244e815381a9f2b974417e90a313",
-      "bytes": 237127,
+      "targetSHA256": "b11895bbf93a9ba473b542f64a088feb1d93cc700f719614a648805d0c0237e9",
+      "bytes": 237173,
       "reason": "Regenerate typed locale keys for the unified structure controls and first-run scientific-runtime catalog."
     },
     {
@@ -2446,8 +2446,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/settings.json",
       "sourceSHA256": "d7c89e27673b4245d2efeb4216c9768e08420beabd9294779d4d099207ea5e7a",
-      "targetSHA256": "6c54521820e61930760ad79e76064f311852e568c28e6e57dbb92d172db24d21",
-      "bytes": 129372,
+      "targetSHA256": "cbb847e618e9bf697e5b57b85517fe9dc828a6e424f6d125bedcbb7de1a2b134",
+      "bytes": 129432,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2537,8 +2537,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/settings.json",
       "sourceSHA256": "3afd2c67b5d1a42960c03d5e70dbdb23c3b6b1a3981665ac37919e199dc814c0",
-      "targetSHA256": "24f7ef64824a62501e9b35989b31c9ad8a954cea1536851cd381a0c142394ad6",
-      "bytes": 124767,
+      "targetSHA256": "fd7992bed7201acd05e3d59098a53b81965c5ad24491ff30404141da784e266d",
+      "bytes": 124827,
       "reason": "Replace obsolete bun start deployment guidance with Synon Go service guidance."
     },
     {
@@ -4511,8 +4511,8 @@
     {
       "path": "tests/web-e2e/synonbiomedMcpSettings.e2e.ts",
       "sourceSHA256": "1fae7510bbce47f749850cd36b38c56f796194e746b3ea2723c02e85dec2f1ab",
-      "targetSHA256": "90d8344ada708aa7114ab102138e63b1c31ec4e23a6a64a8fede9f81184106ae",
-      "bytes": 7112,
+      "targetSHA256": "16e3395bc6dad7c5f4a931c13acb092cb01bf46deedc7ae109da64dff5fbf98f",
+      "bytes": 8068,
       "reason": "Use configured credentials and verify the Go MCP settings flow in responsive Chromium."
     },
     {
@@ -4574,8 +4574,8 @@
     {
       "path": "tests/web-e2e/synonbiomedSkillsSettings.e2e.ts",
       "sourceSHA256": "8f0af0b23b4d4d07c439d9b3fac669b28ec33664a854619d7b79350c9c8dee17",
-      "targetSHA256": "87c6cdc032cfbb5e82da96fb0e5f9f1f25cde5312a7c02d0dbd35ed01de71661",
-      "bytes": 12341,
+      "targetSHA256": "17251bf97306b892096d420d355d60863021ed4336d1a05bcbaf7d721adf6b0b",
+      "bytes": 12394,
       "reason": "Use configured credentials and verify the Go Skill lifecycle in responsive Chromium."
     },
     {
@@ -7543,8 +7543,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpConnectorCard.tsx",
-      "sha256": "29d283f8afc471391f09c195469982d6382c462a9e57d3e90de51d00a766c97d",
-      "bytes": 10470,
+      "sha256": "44c4292a876a9dbea768aad22bf7b71ec6eef77f7e7690f653111da3b4611be7",
+      "bytes": 10524,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {

@@ -52,7 +52,7 @@ func (s *Server) sessionRunnerDurableEvidenceMessages(
 	run *sessionRunnerChatRun,
 ) ([]agentruntime.Message, error) {
 	return s.sessionRunnerDurableToolMessagesPage(
-		ctx, run, sessionRunnerDurableEvidencePageSize, s.sessionRunnerDurableCheckpointEvidenceTool,
+		ctx, run, sessionRunnerDurableEvidencePageSize, false, s.sessionRunnerDurableCheckpointEvidenceTool,
 	)
 }
 
@@ -61,19 +61,20 @@ func (s *Server) sessionRunnerDurableEvidenceMessagesPage(
 	run *sessionRunnerChatRun,
 	pageSize int,
 ) ([]agentruntime.Message, error) {
-	return s.sessionRunnerDurableToolMessagesPage(ctx, run, pageSize, s.sessionRunnerDurableCheckpointEvidenceTool)
+	return s.sessionRunnerDurableToolMessagesPage(ctx, run, pageSize, false, s.sessionRunnerDurableCheckpointEvidenceTool)
 }
 
-// sessionRunnerDurableExplicitToolContractMessages rebuilds only completed,
-// governed tool receipts for the current logical task. These receipts prove
-// that a user-named action ran; they are deliberately separate from scientific
-// source evidence and therefore never authorize claims or citations.
+// sessionRunnerDurableExplicitToolContractMessages rebuilds governed completed
+// and failed tool receipts for the current logical task. Successful receipts
+// prove that a user-named action ran; failed receipts preserve an explicitly
+// requested failure-code report. They are deliberately separate from
+// scientific source evidence and therefore never authorize claims or citations.
 func (s *Server) sessionRunnerDurableExplicitToolContractMessages(
 	ctx context.Context,
 	run *sessionRunnerChatRun,
 ) ([]agentruntime.Message, error) {
 	return s.sessionRunnerDurableToolMessagesPage(
-		ctx, run, sessionRunnerDurableEvidencePageSize, s.sessionRunnerDurableCheckpointExplicitTool,
+		ctx, run, sessionRunnerDurableEvidencePageSize, true, s.sessionRunnerDurableCheckpointExplicitTool,
 	)
 }
 
@@ -81,6 +82,7 @@ func (s *Server) sessionRunnerDurableToolMessagesPage(
 	ctx context.Context,
 	run *sessionRunnerChatRun,
 	pageSize int,
+	includeFailed bool,
 	accept func(sessionRunnerDurableToolCheckpoint) bool,
 ) ([]agentruntime.Message, error) {
 	if run == nil || run.Transcript == nil {
@@ -139,9 +141,11 @@ func (s *Server) sessionRunnerDurableToolMessagesPage(
 				payload = projected.Event.PayloadJSON
 			}
 			var checkpoint sessionRunnerDurableToolCheckpoint
-			if json.Unmarshal(payload, &checkpoint) != nil ||
-				!strings.EqualFold(strings.TrimSpace(checkpoint.ToolPhase), "completed") ||
-				!accept(checkpoint) {
+			if json.Unmarshal(payload, &checkpoint) != nil {
+				continue
+			}
+			phase := strings.ToLower(strings.TrimSpace(checkpoint.ToolPhase))
+			if phase != "completed" && (!includeFailed || phase != "failed") || !accept(checkpoint) {
 				continue
 			}
 			checkpoint.ToolCallID = strings.TrimSpace(checkpoint.ToolCallID)

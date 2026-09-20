@@ -319,6 +319,46 @@ func TestSessionRunnerDurableExplicitToolContractPreservesPostWriteReadOrder(t *
 	}
 }
 
+func TestSessionRunnerDurableExplicitToolContractPreservesFirstFailedReceipt(t *testing.T) {
+	fixture := newAgentSaveArtifactsFixture(t)
+	appendReceipt := func(id, phase string, result map[string]any) {
+		t.Helper()
+		payload, err := json.Marshal(map[string]any{
+			"lifecyclePhase": "tool", "toolName": "save_artifacts", "toolPhase": phase,
+			"toolCallId": id, "toolInput": map[string]any{"files": []any{"molecules.smi"}},
+			"toolResult": result,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, _, _, err := fixture.repo.AppendRunnerCheckpoint(context.Background(), transcriptstore.AppendRunnerCheckpointInput{
+			Claim: fixture.claim, ClientMessageID: "explicit-failure-receipt-" + id,
+			Phase: transcriptstore.RunnerPhaseExecuting, PayloadJSON: payload,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	appendReceipt("save-invalid", "failed", map[string]any{
+		"ok": false, "code": "artifact_save_requires_correction",
+		"errors": []any{map[string]any{
+			"code": "invalid_scientific_artifact", "validation_code": "invalid_smiles_records",
+		}},
+	})
+	appendReceipt("save-fixed", "completed", map[string]any{"ok": true})
+	run := &sessionRunnerChatRun{Transcript: &transcriptRunnerAuthority{Stream: fixture.stream, Claim: fixture.claim}}
+	messages, err := fixture.server.sessionRunnerDurableExplicitToolContractMessages(context.Background(), run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	contract := buildSessionRunnerExplicitToolContract("最终报告首次失败代码。")
+	if gaps := contract.finalGaps(messages, "文件已修复并保存。"); len(gaps) != 1 || !strings.Contains(gaps[0], "invalid_smiles_records") {
+		t.Fatalf("durable failed receipt was not enforced: %#v", gaps)
+	}
+	if gaps := contract.finalGaps(messages, "首次失败代码 invalid_smiles_records；文件已修复并保存。"); len(gaps) != 0 {
+		t.Fatalf("reported durable failure code was rejected: %#v", gaps)
+	}
+}
+
 func TestSessionRunnerDurableExplicitToolContractDoesNotCrossTaskIntent(t *testing.T) {
 	fixture := newAgentSaveArtifactsFixture(t)
 	oldPayload, err := json.Marshal(map[string]any{

@@ -134,7 +134,7 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 	if err := os.MkdirAll(filepath.Dir(script), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(script, []byte("import argparse\nif False:\n import examplelib\np=argparse.ArgumentParser()\np.add_argument('--engine')\np.add_argument('--x')\np.add_argument('--y')\np.add_argument('--z')\np.parse_args()\n"), 0o600); err != nil {
+	if err := os.WriteFile(script, []byte("import argparse\np=argparse.ArgumentParser()\np.add_argument('--engine')\np.add_argument('--x')\np.add_argument('--y')\np.add_argument('--z')\np.parse_args()\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	competing := filepath.Join(workspace, "competing.py")
@@ -182,6 +182,8 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 		},
 		"python import":           {"code": "from examplelib import Runner\nRunner().run()"},
 		"python argv indirection": {"code": "import subprocess\ncommand = ['example-cli', '--version']\nsubprocess.run(command)"},
+		"python subprocess pack path": {"code": `import subprocess, sys
+subprocess.run([sys.executable, "` + script + `", "--engine", "example-cli"], check=True)`},
 	} {
 		t.Run(name, func(t *testing.T) {
 			publicName := "bash"

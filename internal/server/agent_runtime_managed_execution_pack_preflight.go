@@ -147,8 +147,13 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 				return nil
 			}
 			identifiers := engine.ManagedExecutionIdentifiers()
-			identifier, matched := managedExecutionIdentifier(publicName, content, identifiers)
 			sourcePath := ""
+			identifier, matched := managedExecutionIdentifier(publicName, content, identifiers)
+			if referencedPath, referenced := managedExecutionMaterializedEntrypointReference(
+				content, skill.Name, entrypoint, g.kernel,
+			); referenced {
+				identifier, sourcePath, matched = engine.ExecutionPack.ID, referencedPath, true
+			}
 			if !matched {
 				identifier, sourcePath, matched = managedExecutionSourceIdentifier(content, identifiers, g.kernel)
 			}
@@ -340,7 +345,7 @@ func managedExecutionSourceIdentifier(
 	}
 	seen := map[string]bool{}
 	for _, token := range managedExecutionCommandTokens(content) {
-		token = strings.TrimSpace(token)
+		token = managedExecutionPathToken(token)
 		if !allowedExtensions[strings.ToLower(filepath.Ext(token))] {
 			continue
 		}
@@ -374,6 +379,65 @@ func managedExecutionSourceIdentifier(
 		}
 	}
 	return "", "", false
+}
+
+func managedExecutionMaterializedEntrypointReference(
+	content string,
+	skillName string,
+	entrypoint string,
+	kernel *agentKernelContext,
+) (string, bool) {
+	if kernel == nil || strings.TrimSpace(kernel.workspaceDir) == "" || strings.TrimSpace(entrypoint) == "" {
+		return "", false
+	}
+	root, err := filepath.Abs(kernel.workspaceDir)
+	if err != nil {
+		return "", false
+	}
+	resolvedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return "", false
+	}
+	wantSuffix := "/" + strings.ToLower(filepath.ToSlash(entrypoint))
+	seen := map[string]bool{}
+	for _, raw := range managedExecutionCommandTokens(content) {
+		token := managedExecutionPathToken(raw)
+		if !strings.EqualFold(filepath.Ext(token), filepath.Ext(entrypoint)) {
+			continue
+		}
+		path := token
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(root, path)
+		}
+		path, err = filepath.Abs(filepath.Clean(path))
+		if err != nil || seen[path] {
+			continue
+		}
+		seen[path] = true
+		resolvedPath, err := filepath.EvalSymlinks(path)
+		if err != nil {
+			continue
+		}
+		relative, err := filepath.Rel(resolvedRoot, resolvedPath)
+		if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+			continue
+		}
+		relative = filepath.ToSlash(relative)
+		if !skillRuntimeCommandReferences(skillName, filepath.ToSlash(resolvedPath)) ||
+			!strings.HasSuffix(strings.ToLower(relative), wantSuffix) {
+			continue
+		}
+		info, err := os.Stat(resolvedPath)
+		if err != nil || !info.Mode().IsRegular() || info.Size() <= 0 || info.Size() > 2<<20 {
+			continue
+		}
+		return relative, true
+	}
+	return "", false
+}
+
+func managedExecutionPathToken(value string) string {
+	return strings.Trim(strings.TrimSpace(value), "[](){},;")
 }
 
 func commandExecutesManagedExecutionPack(skillName string, pack sciencecapability.ExecutionPack, content string) bool {

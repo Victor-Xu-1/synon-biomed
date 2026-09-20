@@ -195,6 +195,15 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 		})
 	}
 	canonicalCommand := `python "` + script + `" --engine example-cli`
+	for _, code := range []string{
+		"import examplelib\nprint(dir(examplelib))",
+		"import examplelib as library\nprint(library.__version__)",
+		"import inspect\nfrom examplelib import Runner\nprint(inspect.signature(Runner))",
+	} {
+		if blocked := gateway.agentRuntimeSkillExecutionContractPreflight("python", map[string]any{"code": code}); blocked != nil {
+			t.Fatalf("read-only installed API inspection was blocked: %#v", blocked)
+		}
+	}
 	for _, command := range []string{canonicalCommand + "\n", "# reviewed entry\n" + canonicalCommand + "\n", canonicalCommand + " # execution\n"} {
 		if !commandExecutesManagedExecutionPack("managed-workflow", scienceCatalog.Capabilities[0].AcceptedEngines[0].ExecutionPack, command) {
 			t.Fatalf("single command formatting lost entrypoint identity: %q", command)

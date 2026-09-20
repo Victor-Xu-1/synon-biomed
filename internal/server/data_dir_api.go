@@ -25,7 +25,7 @@ func (s *Server) handleDataDirectory(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
-		s.handleGetDataDirectory(w, controller)
+		s.handleGetDataDirectory(w, r, controller)
 	case http.MethodPost:
 		s.handleSetDataDirectory(w, r, controller)
 	default:
@@ -33,16 +33,29 @@ func (s *Server) handleDataDirectory(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleGetDataDirectory(w http.ResponseWriter, controller *datadir.Controller) {
+func (s *Server) handleGetDataDirectory(w http.ResponseWriter, r *http.Request, controller *datadir.Controller) {
+	includeUsage, valid := storageReadBoolean(w, r, "includeUsage", true)
+	if !valid {
+		return
+	}
 	state, err := controller.Load()
 	if err != nil {
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
-	usageBytes, freeBytes, err := runtimecontrol.PathUsage(s.fileRoot)
-	var usageValue any = usageBytes
-	if err != nil {
-		usageValue = nil
+	// Status and migration controls must remain usable while a large runtime
+	// directory is being measured. Full reads keep the conservative copy estimate.
+	var usageValue any
+	freeBytes := runtimecontrol.AvailableBytes(s.fileRoot)
+	if includeUsage {
+		usageBytes, _, usageErr := runtimecontrol.PathUsageContext(r.Context(), s.fileRoot)
+		if r.Context().Err() != nil {
+			writeWorkspaceJSON(w, http.StatusRequestTimeout, map[string]any{"ok": false, "error": "storage estimate cancelled"})
+			return
+		}
+		if usageErr == nil {
+			usageValue = usageBytes
+		}
 	}
 	activeFrames, err := s.activeFrameCount()
 	if err != nil {
@@ -56,7 +69,7 @@ func (s *Server) handleGetDataDirectory(w http.ResponseWriter, controller *datad
 	writeWorkspaceJSON(w, http.StatusOK, map[string]any{
 		"current": s.fileRoot, "resolved": emptyStringAsNil(resolved),
 		"default": s.defaultDataDirectory, "source": s.dataDirectorySource,
-		"configPath": controller.Path(), "usageBytes": usageValue, "freeBytes": freeBytes,
+		"configPath": controller.Path(), "usageBytes": usageValue, "freeBytes": freeBytes, "usageIncluded": includeUsage,
 		"activeFrames": activeFrames, "lastMove": state.LastMove, "pendingMove": state.Pending,
 	})
 }

@@ -55,6 +55,62 @@ Installation, credential authorization and permission changes still require thei
 own explicit actions; opening the catalog does not install or authorize anything.
 Sync directory remains available next to the library filters.
 
+### Storage workspace
+
+Settings → Storage loads directory status, file placement rules, cloud connections,
+and size scans independently. A large environment scan does not block the directory
+controls. Refresh status reloads metadata; the usage panel's refresh explicitly
+rescans. Usage reports are cached for five minutes and show their scan time.
+Failed refreshes retain the previous values with an error; unknown sizes remain
+unknown rather than appearing as zero.
+
+Displayed sizes are logical file sizes, not allocated or reclaimable disk space.
+On supported Unix and Windows hosts, hard links count once within each category.
+Categories and individual environment rows can still share files. Environment
+storage groups physical directories and retained generations by environment name;
+it does not follow activation links or claim that every measured environment is
+active. These details must not be summed as reclaimable storage. Available capacity refers to
+the data volume, which may differ from the host volume in a VM or container.
+Symlinks are not traversed. Partial scans are explicitly marked.
+If any entry in a category cannot be measured, its `totalBytes` is `null` and
+the UI excludes that unknown category from the measured subtotal. A successfully
+scanned empty or absent category still reports zero.
+
+The authenticated data-directory read accepts `includeUsage=false` for lightweight
+status; its default full read retains the conservative per-entry migration copy
+estimate. Disk and environment usage reads accept `refresh=true` to bypass a
+cached report. Both query parameters accept only `true` or `false`.
+
+Changing the directory remains a separate confirmed action with the existing
+running-task, target, space and restart checks. Opening the dialog only estimates
+copy capacity; it does not move files. Completing a migration while keeping its
+source and permanently deleting the source use distinct confirmation dialogs.
+Save rules continue to use relative paths below the data root. No data-layout
+migration or new storage engine is required by this interface.
+
+### Local scientific software
+
+The Storage page also exposes the selected local scientific software queue.
+Saving a selection starts preparation in the background through the same managed
+environment controller used by tasks; opening the page or selection dialog does
+not install anything. Unselecting a queued item prevents it from starting, but
+does not uninstall existing software or cancel an installation already running.
+The page distinguishes queued, preparing, ready and failed states, refreshes
+while preparation is active, and offers an explicit retry for selected failed
+items. Progress is shown only when reported by the installer, not estimated
+from elapsed time. Ready means the managed environment passed its checks, not
+that a scientific task or result has been validated.
+
+Package caches and environment generations use the configured data/conda roots
+shown in Storage. Reopening or restarting the application reuses validated
+environments. A task discovers software through its existing tools and executes
+under the same managed environment authority; task outputs remain in the
+task/project artifact workflow, not in the software installation directory.
+The authenticated `/api/preferences/scientific-runtimes` endpoint provides
+status with GET, saves registered `enabled_ids` with PUT, and retries one selected
+registered environment with POST `{ "id": "..." }`. Mutations require the
+normal authenticated session and CSRF protection.
+
 ### Source startup
 
 The public community repository is `Victor-Xu-1/synon-biomed`.

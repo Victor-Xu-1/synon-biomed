@@ -90,6 +90,19 @@ func (s *Server) validateSessionRunnerCrossArtifactConsistency(
 			return nil, fmt.Errorf("runner cross-artifact version is unavailable: %s", commit.VersionID)
 		}
 		name := strings.TrimSpace(artifact.Name)
+		// Display names discard directories and are not repair addresses. Reuse
+		// the existing project-scoped artifact resolver so a correction targets
+		// the saved source, including when another file has the same basename.
+		resolution, resolved, resolveErr := s.resolveAgentSavedArtifactReference(commit.VersionID)
+		if resolveErr != nil {
+			_ = reader.Close()
+			return nil, resolveErr
+		}
+		if resolved && resolution.projectID == projectID {
+			if sourcePath, pathErr := normalizeAgentSavedArtifactPath(resolution.relativePath); pathErr == nil {
+				name = sourcePath
+			}
+		}
 		producedNames[strings.ToLower(filepath.Base(name))] = struct{}{}
 		lineage, lineageFound, lineageErr := s.workspaceStore.GetArtifactVersionLineageRecord(commit.VersionID, false)
 		if lineageErr != nil {

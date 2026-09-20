@@ -35,7 +35,16 @@ func (s *Server) handleDiskUsage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	writeWorkspaceJSON(w, http.StatusOK, scanner.DiskUsage())
+	refresh, valid := storageReadBoolean(w, r, "refresh", false)
+	if !valid {
+		return
+	}
+	usage, err := scanner.DiskUsage(r.Context(), refresh)
+	if err != nil {
+		writeWorkspaceJSON(w, http.StatusRequestTimeout, map[string]any{"ok": false, "error": "storage scan cancelled"})
+		return
+	}
+	writeWorkspaceJSON(w, http.StatusOK, usage)
 }
 
 func (s *Server) handleCondaDiskUsage(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +56,28 @@ func (s *Server) handleCondaDiskUsage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	writeWorkspaceJSON(w, http.StatusOK, scanner.CondaDiskUsage())
+	refresh, valid := storageReadBoolean(w, r, "refresh", false)
+	if !valid {
+		return
+	}
+	usage, err := scanner.CondaDiskUsage(r.Context(), refresh)
+	if err != nil {
+		writeWorkspaceJSON(w, http.StatusRequestTimeout, map[string]any{"ok": false, "error": "storage scan cancelled"})
+		return
+	}
+	writeWorkspaceJSON(w, http.StatusOK, usage)
+}
+
+func storageReadBoolean(w http.ResponseWriter, r *http.Request, name string, fallback bool) (bool, bool) {
+	values, present := r.URL.Query()[name]
+	if !present {
+		return fallback, true
+	}
+	if len(values) != 1 || (values[0] != "true" && values[0] != "false") {
+		writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": name + " must be true or false"})
+		return false, false
+	}
+	return values[0] == "true", true
 }
 
 func (s *Server) usageScannerForRequest(w http.ResponseWriter) (*runtimecontrol.Scanner, bool) {

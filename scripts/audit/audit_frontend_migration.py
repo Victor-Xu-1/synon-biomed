@@ -64,7 +64,7 @@ ALLOWED_ADAPTATIONS = {
     "packages/desktop/src/renderer/pages/settings/GovernanceSettings.tsx": "Condense governance copy for the migrated memory surface.",
     "packages/desktop/src/renderer/pages/settings/NetworkSettings.tsx": "Clarify the Go runtime network allowlist controls.",
     "packages/desktop/src/renderer/pages/settings/PermissionsSettings.tsx": "Clarify remembered permission review and revocation controls.",
-    "packages/desktop/src/renderer/pages/settings/StorageSettings.tsx": "Condense local and cloud storage copy without changing storage contracts.",
+    "packages/desktop/src/renderer/pages/settings/StorageSettings.tsx": "Compose independently loaded storage metadata, truthful usage, file rules, and cloud connections with safe mutation dialogs.",
     "packages/desktop/src/renderer/pages/settings/SynonBiomedExpertsSettings/ExpertWorkbench.tsx": "Improve responsive expert rows and compact long descriptions without dropping source detail.",
     "packages/desktop/src/renderer/pages/settings/SynonBiomedModelsSettings.tsx": "Condense model-provider settings copy for the migrated Web surface.",
     "packages/desktop/src/renderer/pages/settings/SynonBiomedSkillsSettings.tsx": "Unify installed Skill sources in one searchable library and consolidate acquisition into one action while preserving personal, import, toggle, and market workflows.",
@@ -500,9 +500,9 @@ ALLOWED_ADAPTATION_RULES = (
     ),
 )
 
-APPROVED_ADAPTATION_FINGERPRINT = "e27d16b5659c2aa9df328d000f2e793b8462c4f90b951c08e5a7e7c5a81ad451"
+APPROVED_ADAPTATION_FINGERPRINT = "c28662c608fddab845dfd6580d8d6ecc7d133407ac8d2a8785560064e1254973"
 APPROVED_REMOVAL_FINGERPRINT = "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4"
-APPROVED_ADDITION_FINGERPRINT = "a5e2c58c92adcaaae69a7973b3c6d8f3276a948cfb890d12144fc21414a711a5"
+APPROVED_ADDITION_FINGERPRINT = "cddb17bae12de34d2128180dcf2b085c1a823fdea56f9fb8d7261f8918d4778d"
 
 MANUAL_LICENSES = {
     "@nightingale-elements/nightingale-msa": {

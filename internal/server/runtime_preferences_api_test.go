@@ -63,7 +63,20 @@ func TestRuntimePreferencesReportRealFrameAndDiskUsage(t *testing.T) {
 	assertNestedTotalBytes(t, disk, "artifacts", 7)
 	assertNestedTotalBytes(t, disk, "workspace", 11)
 	assertNestedTotalBytes(t, disk, "toolResults", 13)
-	assertNestedTotalBytes(t, disk, "conda", 19)
+	writeSizedRuntimeFile(t, filepath.Join(root, "tool-results", "new.bin"), 5)
+	cached := getProjectControlJSON(t, app, "/api/preferences/disk-usage", http.StatusOK)
+	assertNestedTotalBytes(t, cached, "toolResults", 13)
+	refreshed := getProjectControlJSON(t, app, "/api/preferences/disk-usage?refresh=true", http.StatusOK)
+	assertNestedTotalBytes(t, refreshed, "toolResults", 18)
+	for _, query := range []string{"refresh=1", "refresh=", "refresh=true&refresh=false"} {
+		getProjectControlJSON(t, app, "/api/preferences/disk-usage?"+query, http.StatusBadRequest)
+		getProjectControlJSON(t, app, "/api/preferences/disk-usage/conda?"+query, http.StatusBadRequest)
+	}
+	// The configured environment directory can live outside CondaHome.
+	assertNestedTotalBytes(t, disk, "conda", 36)
+	if disk["scannedAt"] == "" || disk["accounting"] != "logical-unique-within-category" {
+		t.Fatalf("scan provenance = %#v", disk)
+	}
 	if available, ok := disk["availableBytes"].(float64); !ok || available <= 0 {
 		t.Fatalf("availableBytes = %#v", disk["availableBytes"])
 	}

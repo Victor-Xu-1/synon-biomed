@@ -197,17 +197,19 @@ describe('Credentials and Storage settings', () => {
     );
 
     expect(await screen.findAllByText('/data/current')).not.toHaveLength(0);
-    expect(screen.getByText('扫描中…')).toBeInTheDocument();
+    expect(screen.getByText('正在扫描文件… 其他设置仍可使用。')).toBeInTheDocument();
+    expect(mocks.loadDirectory).toHaveBeenCalledWith(expect.objectContaining({ includeUsage: false }));
     fireEvent.click(screen.getAllByRole('button', { name: '更改位置' }).at(-1)!);
     const location = await screen.findByLabelText('新位置');
     expect(location).toHaveValue('/data/current');
     fireEvent.change(location, { target: { value: '/data/new' } });
+    await waitFor(() => expect(screen.getAllByRole('button', { name: '更改位置' }).at(-1)!).not.toBeDisabled());
     fireEvent.click(screen.getAllByRole('button', { name: '更改位置' }).at(-1)!);
     await waitFor(() => expect(mocks.changeDirectory).toHaveBeenCalledWith({ path: '/data/new', migrate: true }));
 
     resolveUsage({ artifactsBytes: 10, workspaceBytes: 20, toolResultsBytes: 30, condaBytes: 40, availableBytes: 50 });
-    expect(await screen.findByText('总计 100 B')).toBeInTheDocument();
-    expect(screen.getByText('磁盘可用空间 50 B')).toBeInTheDocument();
+    expect(await screen.findByText('100 B')).toBeInTheDocument();
+    expect(screen.getByText('50 B')).toBeInTheDocument();
   });
 
   it('renders credentials and storage in English', async () => {

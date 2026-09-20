@@ -212,6 +212,29 @@ func TestDataDirectoryHTTPKeepsStatusAvailableWhenUsageCannotBeFullyRead(t *test
 	}
 }
 
+func TestDataDirectoryHTTPMetadataReadDoesNotScanUsage(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	if err := os.MkdirAll(source, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(source, "retained.dat"), []byte("retained data"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	app := New(Options{
+		FileRoot: source, DataDirSource: "default", DefaultDataDir: source,
+		DataDirControlPath: filepath.Join(root, "control", "data-dir.json"),
+	}).Handler()
+	status := getProjectControlJSON(t, app, "/api/settings/data-dir?includeUsage=false", http.StatusOK)
+	if status["current"] != source || status["usageBytes"] != nil || status["usageIncluded"] != false {
+		t.Fatalf("metadata must be independent of recursive size scans: %#v", status)
+	}
+	full := getProjectControlJSON(t, app, "/api/settings/data-dir", http.StatusOK)
+	if full["usageBytes"].(float64) < float64(len("retained data")) || full["usageIncluded"] != true {
+		t.Fatalf("default read must retain the full migration estimate: %#v", full)
+	}
+}
+
 func TestDataDirectoryHTTPRejectsSecondPendingChangeAsConflict(t *testing.T) {
 	root := t.TempDir()
 	source := filepath.Join(root, "source")

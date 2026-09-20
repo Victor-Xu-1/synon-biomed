@@ -779,14 +779,35 @@ completion.
 
 Hosted scientific MCPs that require an account use a user-owned credential;
 Synon Biomed does not bundle provider keys or run their compute workloads
-locally. Open **Settings -> Tools -> MCP**, then choose **Configure key** (or
-**Replace key**) on the connector. The current hosted credential contracts are:
+locally. Open **Settings -> Connectors**, then choose **Configure** on the
+connector. The configuration dialog separates the current connection state,
+official application/login links, account authorization and API Key / Token
+entry. Only supported methods are shown; provider account passwords are entered
+on the provider's own login page, never in Synon Biomed. The current contracts are:
 
 | Connector | Credential | Transport injection |
 |---|---|---|
 | Open Targets (Official) | None | Public hosted MCP endpoint |
+| Om (OMTX) | Provider account via OAuth | OAuth bearer token |
+| PatSnap Chemical Molecular | Open Platform API key | Server-side `apikey` query parameter |
+| Inductive Bio | Provider account via OAuth | OAuth bearer token |
+| Boltz API (Official) | OAuth sign-in or workspace API key | OAuth bearer token or `x-api-key` |
 | Tamarind Bio | Tamarind API key | `x-api-key` request header |
 | Adaptyv Cloud Lab | OAuth sign-in or Foundry token | OAuth bearer token or `Authorization: Bearer` |
+
+Use the application link to obtain provider access. For a key, paste only the
+credential value, without a header name or `Bearer` prefix, and select **Save
+and check connection**. For OAuth, select **Sign in and authorize**, complete
+the provider window, then refresh the dialog. Its status distinguishes missing
+keys, required/rejected authorization, connection errors and successful
+connections. A saved-key receipt is not proof of a successful connection. A
+failed status reload is shown as unavailable rather than retaining a stale
+success. Closing the dialog clears any unsaved key draft.
+
+Provider application URLs are optional `credentialUrl` entries in the canonical
+MCP upstream metadata. Older catalogs fall back to their provider homepage;
+unsafe or malformed links are not rendered. No new authentication endpoint or
+credential storage path is introduced.
 
 API keys are trimmed, required to be a single line, limited to 16 KiB, and
 stored in the encrypted owner-scoped secret store. Connector inventory, API

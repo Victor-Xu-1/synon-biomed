@@ -455,4 +455,20 @@ func TestBundledConnectorRosterMatchesVendoredMethodAuthority(t *testing.T) {
 	if !boltz.OAuthSupported || boltz.APIKeyHeader != "x-api-key" {
 		t.Fatalf("Boltz OAuth/API-key capability is missing: %#v", boltz)
 	}
+	for _, connector := range connectors {
+		if !connector.AuthRequired {
+			continue
+		}
+		if len(connector.Upstreams) == 0 {
+			t.Fatalf("credential-backed connector %q has no provider metadata", connector.ID)
+		}
+		link, err := url.Parse(connector.Upstreams[0].CredentialURL)
+		if err != nil || link.Scheme != "https" || link.Hostname() == "" || link.User != nil {
+			t.Fatalf("connector %q has no safe credential application link", connector.ID)
+		}
+		encoded, err := json.Marshal(connector.Upstreams)
+		if err != nil || !strings.Contains(string(encoded), `"credentialUrl":`) {
+			t.Fatalf("connector %q drops its credential URL at the API boundary", connector.ID)
+		}
+	}
 }

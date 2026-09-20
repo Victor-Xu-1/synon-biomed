@@ -9,6 +9,7 @@ import type {
 } from '@/renderer/services/synonBiomedCapabilities';
 import { resolveSynonBiomedMcpDescription } from '@/renderer/services/mcp/synonBiomedMcpDescriptions';
 import { McpConnectorVisualMark, resolveMcpConnectorVisual } from './mcpConnectorVisuals';
+import { connectorConfigurationState } from './mcpConnectorConfiguration';
 
 export const McpConnectorCard: React.FC<{
   server: SynonBiomedMcpServer;
@@ -16,8 +17,7 @@ export const McpConnectorCard: React.FC<{
   busy: boolean;
   onToggle: (server: SynonBiomedMcpServer, enabled: boolean) => void;
   onPermissions: (server: SynonBiomedMcpServer) => void;
-  onAuthorize: (server: SynonBiomedMcpServer) => void;
-  onConfigureKey: (server: SynonBiomedMcpServer) => void;
+  onConfigure: (server: SynonBiomedMcpServer) => void;
   onDisconnect: (server: SynonBiomedMcpServer) => void;
   onAttachAll: (server: SynonBiomedMcpServer) => void;
   onDetachAll: (server: SynonBiomedMcpServer) => void;
@@ -29,8 +29,7 @@ export const McpConnectorCard: React.FC<{
   busy,
   onToggle,
   onPermissions,
-  onAuthorize,
-  onConfigureKey,
+  onConfigure,
   onDisconnect,
   onAttachAll,
   onDetachAll,
@@ -48,29 +47,18 @@ export const McpConnectorCard: React.FC<{
   const displayDescription = localizedDescription?.trim();
   const connectorVisual = resolveMcpConnectorVisual(server.name, server.displayName);
   const connectionState = !server.enabled ? 'disabled' : connected ? 'connected' : 'attention';
-  const connectionLabel = !server.enabled
-    ? t('settings.synonBiomedMcpDisabled')
-    : connected
-      ? t('settings.synonBiomedMcpConnected')
-      : t('settings.synonBiomedMcpNeedsAttention');
+  const connectionLabel = t(`settings.mcpConfiguration.states.${connectorConfigurationState(server)}`);
   const usageDetails = formatMcpUsageDetails(server.usage, i18n.language, t);
   const usageSummary = `${usageDetails.lastUsed} · ${usageDetails.count}`;
   const primaryActionKind =
-    !authorized && server.oauthSupported && server.authState !== 'not-required'
-      ? 'authorize'
-      : server.apiKeyConfigurable && !server.oauthSupported
-        ? 'configure-key'
-        : 'permissions';
+    server.authRequired || server.oauthSupported || server.apiKeyConfigurable ? 'configure' : 'permissions';
   const primaryAction = () => {
-    if (primaryActionKind === 'authorize') onAuthorize(server);
-    else if (primaryActionKind === 'configure-key') onConfigureKey(server);
+    if (primaryActionKind === 'configure') onConfigure(server);
     else onPermissions(server);
   };
-  const canConfigureKeyInMenu = Boolean(server.apiKeyConfigurable && server.oauthSupported);
   const hasSecondaryActions =
     primaryActionKind !== 'permissions' ||
     (server.oauthSupported && authorized) ||
-    canConfigureKeyInMenu ||
     keyDisconnectAvailable ||
     Boolean(custom);
   const actionMenu = (
@@ -78,7 +66,6 @@ export const McpConnectorCard: React.FC<{
       onClickMenuItem={(key) => {
         if (key === 'permissions') onPermissions(server);
         else if (key === 'disconnect') onDisconnect(server);
-        else if (key === 'configure-key') onConfigureKey(server);
         else if (key === 'attach') {
           if (server.attachedAgents.length) onDetachAll(server);
           else onAttachAll(server);
@@ -94,13 +81,6 @@ export const McpConnectorCard: React.FC<{
       {server.oauthSupported && authorized ? (
         <Menu.Item key='disconnect' data-testid={`synon-biomed-mcp-disconnect-${normalizeTestId(server.name)}`}>
           {t('settings.synonBiomedMcpDisconnect')}
-        </Menu.Item>
-      ) : null}
-      {canConfigureKeyInMenu ? (
-        <Menu.Item key='configure-key' data-testid={`synon-biomed-mcp-configure-key-${normalizeTestId(server.name)}`}>
-          {server.apiKeyConfigured
-            ? t('settings.synonBiomedMcpReplaceApiKey')
-            : t('settings.synonBiomedMcpConfigureApiKey')}
         </Menu.Item>
       ) : null}
       {keyDisconnectAvailable ? (

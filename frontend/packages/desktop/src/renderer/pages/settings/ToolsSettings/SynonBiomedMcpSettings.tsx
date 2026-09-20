@@ -1,4 +1,4 @@
-import { Button, Empty, Input, Message, Modal, Spin, Tabs } from '@arco-design/web-react';
+import { Button, Empty, Message, Modal, Spin, Tabs } from '@arco-design/web-react';
 import { Refresh } from '@icon-park/react';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +27,7 @@ import { McpOptionalPanel } from './McpOptionalPanel';
 import { McpPermissionsModal } from './McpPermissionsModal';
 import { resolveSynonBiomedMcpDescription } from '@/renderer/services/mcp/synonBiomedMcpDescriptions';
 import { McpConnectorCard } from './McpConnectorCard';
+import { McpConnectorConfigurationModal } from './McpConnectorConfigurationModal';
 import { McpLibraryToolbar, type ConnectorFilter, type ConnectorBrowseView } from './McpLibraryToolbar';
 import SettingsPagination from '../components/SettingsPagination';
 
@@ -46,8 +47,6 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
   const [mutatingServerId, setMutatingServerId] = useState<string | null>(null);
   const [permissionServer, setPermissionServer] = useState<SynonBiomedMcpServer | null>(null);
   const [credentialServer, setCredentialServer] = useState<SynonBiomedMcpServer | null>(null);
-  const [credentialValue, setCredentialValue] = useState('');
-  const [credentialSaving, setCredentialSaving] = useState(false);
   const [editorVisible, setEditorVisible] = useState(false);
   const [editingServer, setEditingServer] = useState<SynonBiomedCustomMcpServer | null>(null);
   const [search, setSearch] = useState('');
@@ -142,7 +141,7 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
         if (success) Message.success(success);
         await loadServers();
       } catch (error) {
-        console.error('Failed to update Synon Biomed MCP connector:', error);
+        console.error('Failed to update Synon Biomed MCP connector.');
         Message.error(t('settings.synonBiomedMcpMutationError'));
         throw error;
       } finally {
@@ -188,9 +187,10 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
       const popup = window.open('about:blank', '_blank');
       if (!popup) {
         Message.error(t('settings.synonBiomedMcpPopupBlocked'));
-        return;
+        return false;
       }
       popup.opener = null;
+      let started = false;
       try {
         await mutate(server.id, async () => {
           const authorization = await authorizeSynonBiomedMcpConnector(server.id);
@@ -199,7 +199,9 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
             return;
           }
           popup.location.assign(normalizeAuthorizationUrl(authorization.authorizationUrl));
+          started = true;
         });
+        return started;
       } catch (error) {
         if (!popup.closed) popup.close();
         throw error;
@@ -208,29 +210,9 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
     [mutate, t]
   );
 
-  const saveAPIKey = useCallback(async () => {
-    const server = credentialServer;
-    const apiKey = credentialValue.trim();
-    if (!server || !apiKey) return;
-    setCredentialSaving(true);
-    try {
-      await mutate(
-        server.id,
-        () => configureSynonBiomedMcpConnectorAPIKey(server.id, apiKey),
-        t('settings.synonBiomedMcpApiKeySaved')
-      );
-      setCredentialServer(null);
-      setCredentialValue('');
-    } finally {
-      setCredentialSaving(false);
-    }
-  }, [credentialServer, credentialValue, mutate, t]);
-
-  const closeCredentialModal = useCallback(() => {
-    if (credentialSaving) return;
-    setCredentialServer(null);
-    setCredentialValue('');
-  }, [credentialSaving]);
+  const currentCredentialServer = credentialServer
+    ? (servers.find((server) => server.id === credentialServer.id) ?? credentialServer)
+    : null;
 
   const visibleServers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -359,11 +341,7 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
                   )
                 }
                 onPermissions={setPermissionServer}
-                onAuthorize={(server) => void authorize(server).catch(ignoreHandledMutationError)}
-                onConfigureKey={(server) => {
-                  setCredentialValue('');
-                  setCredentialServer(server);
-                }}
+                onConfigure={setCredentialServer}
                 onDisconnect={(server) =>
                   void mutate(server.id, () => disconnectSynonBiomedMcpConnector(server.id)).catch(
                     ignoreHandledMutationError
@@ -422,43 +400,25 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
         onSubmit={saveCustomServer}
       />
       <McpPermissionsModal server={permissionServer} onCancel={() => setPermissionServer(null)} />
-      <Modal
-        visible={credentialServer !== null}
-        title={t('settings.synonBiomedMcpApiKeyTitle', {
-          name: credentialServer?.displayName ?? '',
-        })}
-        okText={t('common.save')}
-        cancelText={t('common.cancel')}
-        confirmLoading={credentialSaving}
-        okButtonProps={{ disabled: credentialValue.trim().length === 0 }}
-        onOk={() => void saveAPIKey().catch(ignoreHandledMutationError)}
-        onCancel={closeCredentialModal}
-        unmountOnExit
-      >
-        <div className='flex flex-col gap-8px'>
-          <label className='text-12px font-600 text-t-primary' htmlFor='synon-biomed-mcp-api-key'>
-            {credentialServer?.apiKeyLabel || t('settings.synonBiomedMcpApiKeyLabel')}
-          </label>
-          <Input.Password
-            id='synon-biomed-mcp-api-key'
-            data-testid='synon-biomed-mcp-api-key-input'
-            value={credentialValue}
-            disabled={credentialSaving}
-            autoComplete='new-password'
-            placeholder={t('settings.synonBiomedMcpApiKeyPlaceholder')}
-            onChange={setCredentialValue}
-            onPressEnter={() => {
-              if (!credentialSaving && credentialValue.trim()) {
-                void saveAPIKey().catch(ignoreHandledMutationError);
-              }
-            }}
-          />
-          <p className='m-0 text-12px leading-5 text-t-tertiary'>{t('settings.synonBiomedMcpApiKeySecurityHint')}</p>
-          {credentialServer?.authHint ? (
-            <p className='m-0 text-12px leading-5 text-t-secondary'>{credentialServer.authHint}</p>
-          ) : null}
-        </div>
-      </Modal>
+      {currentCredentialServer ? (
+        <McpConnectorConfigurationModal
+          key={currentCredentialServer.id}
+          server={currentCredentialServer}
+          statusUnavailable={loadError}
+          onCancel={() => setCredentialServer(null)}
+          onSaveKey={async (apiKey) => {
+            await mutate(currentCredentialServer.id, () =>
+              configureSynonBiomedMcpConnectorAPIKey(currentCredentialServer.id, apiKey)
+            );
+          }}
+          onAuthorize={() => authorize(currentCredentialServer)}
+          onRefresh={loadServers}
+          onPermissions={() => {
+            setPermissionServer(currentCredentialServer);
+            setCredentialServer(null);
+          }}
+        />
+      ) : null}
       <Modal
         visible={browseView !== null}
         title={t('settings.synonBiomedMcpAddConnector')}
@@ -488,6 +448,7 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
 
 function normalizeAuthorizationUrl(value: string): string {
   const url = new URL(value);
-  if (url.protocol !== 'https:') throw new Error('Authorization URL must use HTTPS');
+  if (url.protocol !== 'https:' || url.username || url.password)
+    throw new Error('Authorization URL must use HTTPS without user information');
   return url.toString();
 }

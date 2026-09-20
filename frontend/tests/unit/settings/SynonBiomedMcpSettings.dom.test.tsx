@@ -268,6 +268,38 @@ describe('SynonBiomedMcpSettingsContent', () => {
     );
   });
 
+  it('clears unsaved credentials when closing and reopening configuration', async () => {
+    const fetchMock = vi.fn(
+      async (input: string) =>
+        new Response(
+          JSON.stringify(
+            input === '/api/mcp-servers/directory-health'
+              ? { directoryHealth: { ok: true } }
+              : [
+                  {
+                    ...connectorFixture('bundled:credential', 'credential', 'Credential Provider'),
+                    apiKeyConfigurable: true,
+                    apiKeyLabel: 'Provider key',
+                    authRequired: true,
+                  },
+                ]
+          ),
+          { status: 200 }
+        )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-credential'));
+    fireEvent.change(await screen.findByTestId('synon-biomed-mcp-api-key-input'), {
+      target: { value: 'unsaved-test-secret' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    await waitFor(() => expect(screen.queryByTestId('synon-biomed-mcp-api-key-input')).toBeNull());
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-configure-credential'));
+    expect(await screen.findByTestId('synon-biomed-mcp-api-key-input')).toHaveValue('');
+    expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/credential'))).toBe(false);
+  });
+
   it('starts credential authorization for connectors that require authentication', async () => {
     const assignMock = vi.fn();
     const popup = {
@@ -311,7 +343,10 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
-    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-authorize-clinical'));
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-clinical'));
+    expect(openMock).not.toHaveBeenCalled();
+    expect(await screen.findByText('Account sign-in')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('mcp-configuration-authorize'));
 
     expect(openMock).toHaveBeenCalledWith('about:blank', '_blank');
     expect(popup.opener).toBeNull();
@@ -355,7 +390,8 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
-    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-authorize-clinical'));
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-clinical'));
+    fireEvent.click(await screen.findByTestId('mcp-configuration-authorize'));
 
     await waitFor(() => expect(popup.close).toHaveBeenCalledTimes(1));
     expect(assignMock).not.toHaveBeenCalled();
@@ -396,12 +432,12 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
-    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-key-tamarind-bio'));
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-tamarind-bio'));
     const input = await screen.findByTestId('synon-biomed-mcp-api-key-input');
     expect(input).toHaveAttribute('type', 'password');
     expect(input).toHaveAttribute('autocomplete', 'new-password');
     fireEvent.change(input, { target: { value: 'provider-secret' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save and check connection' }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -409,9 +445,11 @@ describe('SynonBiomedMcpSettingsContent', () => {
         expect.objectContaining({ method: 'PUT', body: '{"apiKey":"provider-secret"}' })
       )
     );
-    await waitFor(() => expect(screen.queryByTestId('synon-biomed-mcp-api-key-input')).toBeNull());
+    await waitFor(() => expect(input).toHaveValue(''));
     expect(document.body).not.toHaveTextContent('provider-secret');
-    expect(screen.getByTestId('synon-biomed-mcp-configure-key-tamarind-bio')).toHaveTextContent('Configure');
+    expect(await screen.findByTestId('mcp-configuration-status')).toHaveTextContent('Connected');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    expect(screen.getByTestId('synon-biomed-mcp-configure-tamarind-bio')).toHaveTextContent('Configure');
 
     fireEvent.click(screen.getByTestId('synon-biomed-mcp-more-tamarind-bio'));
     fireEvent.click(await screen.findByTestId('synon-biomed-mcp-disconnect-tamarind-bio'));
@@ -422,7 +460,7 @@ describe('SynonBiomedMcpSettingsContent', () => {
       )
     );
     await waitFor(() =>
-      expect(screen.getByTestId('synon-biomed-mcp-configure-key-tamarind-bio')).toHaveTextContent('Configure')
+      expect(screen.getByTestId('synon-biomed-mcp-configure-tamarind-bio')).toHaveTextContent('Configure')
     );
     expect(screen.queryByTestId('synon-biomed-mcp-disconnect-tamarind-bio')).toBeNull();
   });
@@ -450,10 +488,12 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
-    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-authorize-clinical'));
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-clinical'));
+    fireEvent.click(await screen.findByTestId('mcp-configuration-authorize'));
 
     expect(openMock).toHaveBeenCalledWith('about:blank', '_blank');
     expect(Message.error).toHaveBeenCalledWith('Allow pop-ups for this site, then connect credentials again.');
+    await waitFor(() => expect(screen.getByTestId('mcp-configuration-authorize')).not.toBeDisabled());
     expect(fetchMock).not.toHaveBeenCalledWith(
       '/api/mcp-servers/connectors/remote%3Aclinical/authorize',
       expect.anything()

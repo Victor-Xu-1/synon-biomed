@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "51c1b3bea108cf4ecd06290247ee0026c50c6f2669776ba034ca3361ee21bb20",
+  "adaptationFingerprintSHA256": "3f24af2ccd650eea1f5eeee56d680cf3c0a54e746bb4b52ea678a70146deb570",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "283c461e1360152f96d289d8a0b50018ebcacf09159dd7f606b7a4873a338d3c",
+  "additionFingerprintSHA256": "cb345b9b94a775396f300127d0c98522494229ea3e131a227922cecf3464a2da",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 406,
     "adaptedSourceFiles": 659,
     "removedSourceFiles": 289,
-    "addedFiles": 616
+    "addedFiles": 621
   },
   "adaptations": [
     {
@@ -2201,8 +2201,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/SynonBiomedMcpSettings.tsx",
       "sourceSHA256": "9887b94995b2d8089326b63a078b0fe33e38505bffb7ce36e1ae61647278f939",
-      "targetSHA256": "dec5abfa14673ece78488f1f8a3066bb01dfd049f894a46e451157ed96913ac0",
-      "bytes": 18836,
+      "targetSHA256": "bd008d533464a4e470ac1d6c25978bc24b4f980de129e1753e8150aa485da333",
+      "bytes": 17249,
       "reason": "Improve MCP connector density, localization, and responsive control layout."
     },
     {
@@ -2362,8 +2362,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts",
       "sourceSHA256": "d46e67e7ae9b1a4c53252446bb8e2c6d12141deaac2d253b8c1922afa35ab5d9",
-      "targetSHA256": "7dec27f9acebd3b23a7485fac9e0ae8dad0ca13fb44f6c3d81fd3d3ea9b759a1",
-      "bytes": 235760,
+      "targetSHA256": "731643ddec8a4a4c8e671202d937298bbdaf244e815381a9f2b974417e90a313",
+      "bytes": 237127,
       "reason": "Regenerate typed locale keys for the unified structure controls and first-run scientific-runtime catalog."
     },
     {
@@ -2446,8 +2446,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/settings.json",
       "sourceSHA256": "d7c89e27673b4245d2efeb4216c9768e08420beabd9294779d4d099207ea5e7a",
-      "targetSHA256": "71e319bdd48405bd5cee1c527e2b596829496d191a1cbf5d2e1009593cc3d99e",
-      "bytes": 127379,
+      "targetSHA256": "6c54521820e61930760ad79e76064f311852e568c28e6e57dbb92d172db24d21",
+      "bytes": 129372,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2537,8 +2537,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/settings.json",
       "sourceSHA256": "3afd2c67b5d1a42960c03d5e70dbdb23c3b6b1a3981665ac37919e199dc814c0",
-      "targetSHA256": "8d242f71fd297917b6e0d55cf62d7de6382a271b0d00510df29bee4d5aaa71ec",
-      "bytes": 122865,
+      "targetSHA256": "24f7ef64824a62501e9b35989b31c9ad8a954cea1536851cd381a0c142394ad6",
+      "bytes": 124767,
       "reason": "Replace obsolete bun start deployment guidance with Synon Go service guidance."
     },
     {
@@ -4161,8 +4161,8 @@
     {
       "path": "tests/unit/settings/SynonBiomedMcpSettings.dom.test.tsx",
       "sourceSHA256": "e180f2ef876df521f08e312711d87b4b6c8409ec9ad229406d18e4810ca086fb",
-      "targetSHA256": "bba367f797c77eb5085ba07242f2b307d14a8cda0dcfe5204053f05e576109ea",
-      "bytes": 29026,
+      "targetSHA256": "2a74da879b3e0f56bbe6b40a85f792cf36f843fe4ac4412368d3c504502b0c6d",
+      "bytes": 31072,
       "reason": "Verify localized and compact MCP connector presentation."
     },
     {
@@ -7543,8 +7543,20 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpConnectorCard.tsx",
-      "sha256": "618a053bd1c9c911192bbd244870633725f44b96cc0bc6f20365ccf20531c119",
-      "bytes": 11271,
+      "sha256": "29d283f8afc471391f09c195469982d6382c462a9e57d3e90de51d00a766c97d",
+      "bytes": 10470,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
+      "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpConnectorConfigurationModal.css",
+      "sha256": "49d6d89e3b4c9fe95c181cce1fadc9cf8440d0693d5881293df1f5aa12e20714",
+      "bytes": 1273,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
+      "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpConnectorConfigurationModal.tsx",
+      "sha256": "0136de608f5fdbae21720aa4e9bec61a13764bd7e370b78d271aa415d45f3849",
+      "bytes": 6547,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7563,6 +7575,12 @@
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpOptionalPanel.tsx",
       "sha256": "48df135f74db92ecc5ffb03e9186881a84e5a2f0509122fb4222a11039536ff3",
       "bytes": 8712,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
+      "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/mcpConnectorConfiguration.ts",
+      "sha256": "47d03b76aff71c40e811b370bc608a87eecfc4f6f99d442dfd741666220b3578",
+      "bytes": 2067,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9444,6 +9462,12 @@
       "reason": "Verify the complete offline language catalog and persisted language switching."
     },
     {
+      "path": "tests/unit/settings/McpConnectorConfigurationModal.dom.test.tsx",
+      "sha256": "f6b644de3954d38cdbef7e4ba2233f3ca36e54af8b529fed4edda662a722fad5",
+      "bytes": 6538,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
+    },
+    {
       "path": "tests/unit/settings/McpMarketplacePanel.dom.test.tsx",
       "sha256": "51eb4fb476c6f16a8c60cb8ce86c5cfa605fc124f59306e9923e76ac81f25be4",
       "bytes": 2823,
@@ -9471,6 +9495,12 @@
       "path": "tests/unit/settings/SkillFilePreview.dom.test.tsx",
       "sha256": "8d8c46ea05e37bb79cb1493cf023d19029180c5f22d99e4c95dc1ae103098da9",
       "bytes": 1327,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
+    },
+    {
+      "path": "tests/unit/settings/mcpConnectorConfiguration.test.ts",
+      "sha256": "4c166fcd05fa3ca48ced76ca085631dd7d7b7fd63bd22db62dff7d046f8b5c22",
+      "bytes": 2951,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

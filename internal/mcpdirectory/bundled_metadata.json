@@ -189,7 +189,7 @@
     "config": {"type": "streamable-http", "url": "https://agents.omtx.ai/mcp", "permissionPolicy": "always-confirm"},
     "authRequired": true, "oauthSupported": true,
     "authHint": "Sign in to Om through the hosted MCP OAuth flow. Scoring, data access and molecule orders are account-scoped; review each launch or credit-consuming action before approval.",
-    "upstreams": [{"name": "Om / OMTX", "infoLabel": "Hosted MCP documentation", "infoUrl": "https://develop.omtx.ai/docs/api/mcp/quickstart", "homepageUrl": "https://develop.omtx.ai/", "termsUrl": "https://develop.omtx.ai/terms"}]
+    "upstreams": [{"name": "Om / OMTX", "infoLabel": "Hosted MCP documentation", "infoUrl": "https://develop.omtx.ai/use-case-flows", "homepageUrl": "https://develop.omtx.ai/", "credentialUrl": "https://omtx.ai/", "termsUrl": "https://develop.omtx.ai/terms"}]
   },
   {
     "id": "bundled:patsnap-chemical-molecular", "name": "patsnap-chemical-molecular", "displayName": "PatSnap Chemical Molecular",
@@ -198,7 +198,7 @@
     "authRequired": true,
     "apiKeyQueryParam": "apikey", "apiKeyLabel": "PatSnap Open Platform API Key",
     "authHint": "Create a PatSnap Open Platform API key and configure it here. The key is encrypted and injected only on the server side; PatSnap's documented Chemical Molecular MCP endpoint uses the apikey query parameter.",
-    "upstreams": [{"name": "PatSnap Chemical Molecular", "infoLabel": "Official MCP marketplace", "infoUrl": "https://open.patsnap.com/marketplace/mcp-servers/chemistry-small-molecule", "homepageUrl": "https://open.patsnap.com/", "termsUrl": "https://eureka.patsnap.com/terms"}]
+    "upstreams": [{"name": "PatSnap Chemical Molecular", "infoLabel": "Official MCP marketplace", "infoUrl": "https://open.patsnap.com/marketplace/mcp-servers/chemical-molecular", "homepageUrl": "https://open.patsnap.com/", "credentialUrl": "https://open.patsnap.com/devportal/guides/authentication", "termsUrl": "https://eureka.patsnap.com/terms"}]
   },
   {
     "id": "bundled:inductive-bio", "name": "inductive-bio", "displayName": "Inductive Bio",
@@ -206,7 +206,7 @@
     "config": {"type": "streamable-http", "url": "https://api.inductive.bio/mcp", "permissionPolicy": "always-confirm"},
     "authRequired": true, "oauthSupported": true,
     "authHint": "Sign in to Inductive Bio through the hosted MCP OAuth flow. Prediction inputs and account-scoped models remain subject to the provider's terms; review every external call before approval.",
-    "upstreams": [{"name": "Inductive Bio", "infoLabel": "Beacon-1 ADMET models", "infoUrl": "https://www.inductive.bio/beacon-1", "homepageUrl": "https://www.inductive.bio/"}]
+    "upstreams": [{"name": "Inductive Bio", "infoLabel": "Compass platform", "infoUrl": "https://www.inductive.bio/solutions/compass", "homepageUrl": "https://www.inductive.bio/", "credentialUrl": "https://app.inductive.bio/"}]
   },
   {
     "id": "bundled:boltz-api-official", "name": "boltz-api-official", "displayName": "Boltz API (Official)",
@@ -215,7 +215,7 @@
     "authRequired": true, "oauthSupported": true,
     "apiKeyHeader": "x-api-key", "apiKeyLabel": "Boltz API Key",
     "authHint": "Sign in to Boltz through OAuth or configure a workspace API key. Structure, screening and design jobs may consume credits and always require confirmation in Synon Biomed.",
-    "upstreams": [{"name": "Boltz", "infoLabel": "Official API documentation", "infoUrl": "https://api.boltz.bio/docs/guides/agent-integrations/", "homepageUrl": "https://boltz.bio/api", "termsUrl": "https://boltz.bio/terms"}]
+    "upstreams": [{"name": "Boltz", "infoLabel": "Official authentication documentation", "infoUrl": "https://api.boltz.bio/docs/api/guides/authentication/", "homepageUrl": "https://boltz.bio/api", "credentialUrl": "https://lab.boltz.bio/", "termsUrl": "https://boltz.bio/terms"}]
   },
   {
     "id": "bundled:open-targets-official", "name": "open-targets-official", "displayName": "Open Targets (Official)",
@@ -230,7 +230,7 @@
     "authRequired": true,
     "apiKeyHeader": "x-api-key", "apiKeyLabel": "Tamarind API Key",
     "authHint": "Create a Tamarind API key in your Tamarind account. Compute jobs can consume account credits and always require confirmation in Synon Biomed.",
-    "upstreams": [{"name": "Tamarind Bio", "infoLabel": "MCP documentation", "infoUrl": "https://app.tamarind.bio/api-docs/mcp-server", "homepageUrl": "https://www.tamarind.bio/"}]
+    "upstreams": [{"name": "Tamarind Bio", "infoLabel": "MCP documentation", "infoUrl": "https://app.tamarind.bio/api-docs/mcp-server", "homepageUrl": "https://www.tamarind.bio/", "credentialUrl": "https://app.tamarind.bio/api-docs/api-key"}]
   },
   {
     "id": "bundled:adaptyv-cloud-lab", "name": "adaptyv-cloud-lab", "displayName": "Adaptyv Cloud Lab",
@@ -239,7 +239,7 @@
     "authRequired": true, "oauthSupported": true,
     "apiKeyHeader": "Authorization", "apiKeyPrefix": "Bearer ", "apiKeyLabel": "Adaptyv Foundry Token",
     "authHint": "Sign in to Adaptyv Bio. Creating experiments, accepting quotes or making payments always requires confirmation in Synon Biomed.",
-    "upstreams": [{"name": "Adaptyv Bio", "infoLabel": "MCP documentation", "infoUrl": "https://docs.adaptyvbio.com/api-reference/mcp-server", "homepageUrl": "https://www.adaptyvbio.com/"}]
+    "upstreams": [{"name": "Adaptyv Bio", "infoLabel": "MCP documentation", "infoUrl": "https://docs.adaptyvbio.com/api-reference/mcp-server", "homepageUrl": "https://www.adaptyvbio.com/", "credentialUrl": "https://foundry.adaptyvbio.com/"}]
   },
   {
     "id": "bundled:ketcher-chemistry", "name": "ketcher-chemistry", "displayName": "Ketcher Chemistry",

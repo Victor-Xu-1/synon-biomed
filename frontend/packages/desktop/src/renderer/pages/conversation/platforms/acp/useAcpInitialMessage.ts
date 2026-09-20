@@ -17,6 +17,14 @@ import { getConversationRuntimeWorkspaceErrorMessage } from '../../utils/convers
 import { buildSendFailureError } from './buildSendFailureError';
 import { setSynonBiomedSessionComputeProvider } from '@/renderer/services/synonBiomedCompute';
 
+type DraftPrefillPayload = {
+  input: string;
+  files: string[];
+  artifactRefs: ArtifactReferenceWire[];
+  injectSkills: string[];
+  injectMcpServerIds: string[];
+};
+
 type UseAcpInitialMessageParams = {
   conversation_id: string;
   backend: string;
@@ -29,6 +37,7 @@ type UseAcpInitialMessageParams = {
   markSendFailed?: (reason: string) => void;
   checkAndUpdateTitle: (conversation_id: string, input: string) => void;
   addOrUpdateMessage: (message: TMessage, prepend?: boolean) => void;
+  onDraftPrefill?: (payload: DraftPrefillPayload) => void;
 };
 
 const initialMessageSendsInFlight = new Set<string>();
@@ -63,6 +72,7 @@ export const useAcpInitialMessage = ({
   markSendFailed,
   checkAndUpdateTitle,
   addOrUpdateMessage,
+  onDraftPrefill,
 }: UseAcpInitialMessageParams): void => {
   const { t } = useTranslation();
 
@@ -76,9 +86,63 @@ export const useAcpInitialMessage = ({
     if (initialMessageSendsInFlight.has(storageKey) || initialMessageFailures.has(storageKey)) return;
     initialMessageSendsInFlight.add(storageKey);
 
+    let parsed: Record<string, unknown> = {};
+    try {
+      const candidate = JSON.parse(storedMessage) as unknown;
+      if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+        parsed = candidate as Record<string, unknown>;
+      }
+    } catch (error) {
+      console.error('[useAcpInitialMessage] Invalid stored initial message:', error);
+      initialMessageSendsInFlight.delete(storageKey);
+      return;
+    }
+
+    if (parsed.draft_only === true) {
+      // A staged task never starts by itself: hand the payload to the composer
+      // and drop the queued message so nothing is sent until the user acts.
+      sessionStorage.removeItem(storageKey);
+      initialMessageSendsInFlight.delete(storageKey);
+      const input = typeof parsed.input === 'string' ? parsed.input : '';
+      const files = Array.isArray(parsed.files)
+        ? parsed.files.filter((file: unknown): file is string => typeof file === 'string')
+        : [];
+      const artifactRefs = Array.isArray(parsed.artifact_refs)
+        ? parsed.artifact_refs
+            .map((reference: unknown) => decodeArtifactReferences([reference])?.[0])
+            .filter(
+              (reference: ArtifactReferenceWire | undefined): reference is ArtifactReferenceWire =>
+                reference !== undefined
+            )
+        : [];
+      const computeProviders = Array.isArray(parsed.compute_providers)
+        ? parsed.compute_providers.filter(
+            (provider: unknown): provider is string => typeof provider === 'string' && provider.trim().length > 0
+          )
+        : [];
+      const injectSkills = normalizeInitialCapabilityIds(parsed.inject_skills) ?? [];
+      const injectMcpServerIds = normalizeInitialCapabilityIds(parsed.inject_mcp_server_ids) ?? [];
+      const applyDraft = async () => {
+        if (computeProviders.length > 0) {
+          try {
+            await Promise.all(
+              computeProviders.map((provider: string) =>
+                setSynonBiomedSessionComputeProvider(conversation_id, provider, true)
+              )
+            );
+          } catch (error) {
+            console.error('[useAcpInitialMessage] Failed to restore compute providers for the staged draft:', error);
+          }
+        }
+        onDraftPrefill?.({ input, files, artifactRefs, injectSkills, injectMcpServerIds });
+      };
+      void applyDraft();
+      return;
+    }
+
     const sendInitialMessage = async () => {
       try {
-        const initialMessage = JSON.parse(storedMessage);
+        const initialMessage = parsed;
         const input = typeof initialMessage.input === 'string' ? initialMessage.input : '';
         const files = Array.isArray(initialMessage.files) ? initialMessage.files : [];
         const artifact_refs = Array.isArray(initialMessage.artifact_refs)
@@ -93,7 +157,7 @@ export const useAcpInitialMessage = ({
         const inject_mcp_server_ids = normalizeInitialCapabilityIds(initialMessage.inject_mcp_server_ids);
         const rawSessionOptions =
           initialMessage.session_options && typeof initialMessage.session_options === 'object'
-            ? initialMessage.session_options
+            ? (initialMessage.session_options as Record<string, unknown>)
             : null;
         const sessionOptions = rawSessionOptions
           ? {
@@ -113,9 +177,11 @@ export const useAcpInitialMessage = ({
                 typeof rawSessionOptions.subagent_model === 'string' && rawSessionOptions.subagent_model.trim()
                   ? rawSessionOptions.subagent_model.trim()
                   : undefined,
-              effort: ['low', 'medium', 'high'].includes(rawSessionOptions.effort)
-                ? (rawSessionOptions.effort as 'low' | 'medium' | 'high')
-                : undefined,
+              effort:
+                typeof rawSessionOptions.effort === 'string' &&
+                ['low', 'medium', 'high'].includes(rawSessionOptions.effort)
+                  ? (rawSessionOptions.effort as 'low' | 'medium' | 'high')
+                  : undefined,
             }
           : undefined;
         const computeProviders = Array.isArray(initialMessage.compute_providers)
@@ -198,6 +264,7 @@ export const useAcpInitialMessage = ({
     markSendAccepted,
     markSendFailed,
     markSendStarted,
+    onDraftPrefill,
     resetState,
     setAiProcessing,
     streamReady,

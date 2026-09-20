@@ -17,8 +17,11 @@ import SendBox from '@/renderer/components/chat/SendBox';
 import ComposerContextChips from '@/renderer/components/chat/SendBox/ComposerContextChips';
 import {
   buildComposerCapabilityPayload,
+  normalizeComposerContextItems,
   removeComposerContextItem,
+  type ComposerContextItem,
 } from '@/renderer/components/chat/SendBox/composerCompositionModel';
+import type { ArtifactReferenceWire } from '@/common/adapter/messageStreamProtocol';
 import ThoughtDisplay from '@/renderer/components/chat/ThoughtDisplay';
 import FileAttachButton from '@/renderer/components/media/FileAttachButton';
 import GuidProjectFilesModal from '@/renderer/pages/guid/components/GuidProjectFilesModal';
@@ -439,6 +442,40 @@ const AcpSendBox: React.FC<{
   );
 
   // Check for and send initial message from guid page
+  const stageInitialDraft = useCallback(
+    (payload: {
+      input: string;
+      files: string[];
+      artifactRefs: ArtifactReferenceWire[];
+      injectSkills: string[];
+      injectMcpServerIds: string[];
+    }) => {
+      if (payload.input.trim()) setContent(payload.input);
+      if (payload.files.length > 0) setUploadFile(payload.files);
+      const stagedItems: ComposerContextItem[] = [
+        ...payload.artifactRefs.map(
+          (reference): ComposerContextItem => ({
+            kind: 'artifact',
+            artifactId: reference.artifact_id,
+            versionId: reference.version_id,
+            label: reference.filename || reference.artifact_id,
+            ...(reference.content_type ? { contentType: reference.content_type } : {}),
+            ...(reference.size_bytes === undefined ? {} : { sizeBytes: reference.size_bytes }),
+          })
+        ),
+        ...payload.injectSkills.map((name): ComposerContextItem => ({ kind: 'skill', name, label: name })),
+        ...payload.injectMcpServerIds.map(
+          (serverId): ComposerContextItem => ({ kind: 'mcp', serverId, label: serverId })
+        ),
+      ];
+      if (stagedItems.length > 0) {
+        setContextItems((current: ComposerContextItem[]) =>
+          normalizeComposerContextItems([...current, ...stagedItems])
+        );
+      }
+    },
+    [setContent, setUploadFile, setContextItems]
+  );
   useAcpInitialMessage({
     conversation_id: conversation_id,
     backend,
@@ -451,6 +488,7 @@ const AcpSendBox: React.FC<{
     markSendFailed: runtimeView.markSendFailed,
     checkAndUpdateTitle,
     addOrUpdateMessage: addOrUpdateMessageRef.current,
+    onDraftPrefill: stageInitialDraft,
   });
 
   const resolveCommandExecutionAuthority = useCallback(

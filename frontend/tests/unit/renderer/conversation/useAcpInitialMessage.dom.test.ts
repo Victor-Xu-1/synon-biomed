@@ -274,4 +274,86 @@ describe('useAcpInitialMessage', () => {
     expect(sessionStorage.getItem(storageKey)).toBe(stored);
     expect(params.addOrUpdateMessage).toHaveBeenCalledTimes(1);
   });
+
+  it('stages draft_only payloads into the composer without sending anything', async () => {
+    const conversationId = 'initial-staged-draft';
+    const storageKey = `acp_initial_message_${conversationId}`;
+    sessionStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        input: 'stage me, do not send',
+        files: ['workspace/notes.md'],
+        artifact_refs: [
+          {
+            artifact_id: 'artifact-stage',
+            version_id: 'version-stage',
+            relation: 'attached',
+            availability: 'available',
+            filename: 'cohort.csv',
+            size_bytes: 64,
+          },
+        ],
+        inject_skills: ['literature'],
+        inject_mcp_server_ids: ['bundled:pubmed'],
+        compute_providers: ['local'],
+        draft_only: true,
+      })
+    );
+    const params = createParams(conversationId);
+    const onDraftPrefill = vi.fn();
+
+    renderHook(() => useAcpInitialMessage({ ...params, onDraftPrefill }));
+
+    await vi.waitFor(() => expect(onDraftPrefill).toHaveBeenCalledTimes(1));
+    expect(onDraftPrefill).toHaveBeenCalledWith({
+      input: 'stage me, do not send',
+      files: ['workspace/notes.md'],
+      artifactRefs: [
+        {
+          artifact_id: 'artifact-stage',
+          version_id: 'version-stage',
+          relation: 'attached',
+          availability: 'available',
+          filename: 'cohort.csv',
+          size_bytes: 64,
+        },
+      ],
+      injectSkills: ['literature'],
+      injectMcpServerIds: ['bundled:pubmed'],
+    });
+    expect(sendMessageInvokeMock).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(storageKey)).toBeNull();
+    expect(params.markSendStarted).not.toHaveBeenCalled();
+    expect(params.setAiProcessing).not.toHaveBeenCalled();
+    expect(setComputeProviderMock).toHaveBeenCalledWith(conversationId, 'local', true);
+  });
+
+  it('still stages a draft-only payload when compute provider restoration fails', async () => {
+    const conversationId = 'initial-staged-provider-failure';
+    const storageKey = `acp_initial_message_${conversationId}`;
+    sessionStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        input: 'staged with failing compute',
+        draft_only: true,
+        compute_providers: ['broken'],
+      })
+    );
+    setComputeProviderMock.mockRejectedValueOnce(new Error('provider unavailable'));
+    const params = createParams(conversationId);
+    const onDraftPrefill = vi.fn();
+
+    renderHook(() => useAcpInitialMessage({ ...params, onDraftPrefill }));
+
+    await vi.waitFor(() => expect(onDraftPrefill).toHaveBeenCalledTimes(1));
+    expect(onDraftPrefill).toHaveBeenCalledWith({
+      input: 'staged with failing compute',
+      files: [],
+      artifactRefs: [],
+      injectSkills: [],
+      injectMcpServerIds: [],
+    });
+    expect(sendMessageInvokeMock).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(storageKey)).toBeNull();
+  });
 });

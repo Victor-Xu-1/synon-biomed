@@ -124,12 +124,37 @@
       },
       "personalizing": "Preparing three tasks from your research context and attachments…",
       "fallback": "Personalized suggestions are taking longer than expected. You can start with one of these tasks now.",
-      "customPlaceholder": "Describe the task you want to start"
+      "customPlaceholder": "Describe the task you want to start",
+      "draftHint": "Your selected task opens as a conversation draft; nothing starts until you send it."
+    },
+    "model": {
+      "title": "Configure the model",
+      "subtitle": "Connect a model that powers your research tasks. You can also skip this and finish later in Settings.",
+      "add": "Add model profile",
+      "save": "Save and activate",
+      "current": "Currently active",
+      "unconfigured": "Not configured",
+      "unconfiguredHint": "No model configured yet",
+      "skipHint": "Model setup is optional; you can enter the workspace without it and add one later in Settings.",
+      "provider": "Provider",
+      "modelId": "Model ID",
+      "baseUrl": "Base URL",
+      "apiKey": "API key",
+      "apiKeyPlaceholder": "Paste the provider API key",
+      "test": "Test",
+      "setActive": "Set active",
+      "saved": "Model profile saved",
+      "activated": "Set as the active model",
+      "testSuccess": "Connection succeeded: {{model}}",
+      "testFailed": "Connection failed. Check the configuration and key.",
+      "saveFailed": "Save failed. Check the configuration and retry.",
+      "actionFailed": "The action failed. Retry to continue.",
+      "loadError": "Failed to load model profiles. Retry to continue."
     },
     "actions": {
       "back": "Back",
       "continue": "Continue",
-      "start": "Start task",
+      "finish": "Enter workspace",
       "reviewCapabilities": "Review capabilities"
     },
     "error": {

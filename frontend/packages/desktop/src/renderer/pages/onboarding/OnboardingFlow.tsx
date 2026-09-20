@@ -2,7 +2,7 @@ import {
   classifyOnboardingLaunchFailure,
   createOnboardingProfileFile,
   ensureOnboardingProject,
-  launchOnboardingTask,
+  stageOnboardingTask,
   loadOnboardingSnapshot,
   prepareOnboardingSuggestionArtifacts,
   saveOnboardingCapabilities,
@@ -26,13 +26,14 @@ import { confirmOnboardingCompletion } from '@/renderer/services/onboardingCompl
 import { useAuth } from '@/renderer/hooks/context/AuthContext';
 import { rememberCurrentAuthRoute } from '@/renderer/services/authSession';
 import { Alert, Button, Input, Spin, Switch } from '@arco-design/web-react';
-import { ArrowLeft, ArrowRight, Brain, Check, Link, NetworkTree, Tool } from '@icon-park/react';
+import { ArrowLeft, ArrowRight, Brain, Check, Config, Link, NetworkTree, Tool } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { uuid } from '@/common/utils/utils';
 import OnboardingDropZone from './OnboardingDropZone';
 import OnboardingElicitCard from './OnboardingElicitCard';
+import OnboardingModelSetup from './OnboardingModelSetup';
 import {
   disabledNetworkGroupIds,
   initialEnabledState,
@@ -107,7 +108,7 @@ const OnboardingFlow: React.FC = () => {
   const launchArtifacts = useRef(new Map<File, OnboardingArtifactCacheEntry>());
   const pendingUploads = useRef(new Map<File, OnboardingPendingUpload>());
   const profileDocument = useRef<{ signature: string; file: File } | null>(null);
-  const launchIdentity = useRef<{ signature: string; loadingId: string; conversationId: string | null } | null>(null);
+  const launchIdentity = useRef<{ signature: string; conversationId: string | null } | null>(null);
   const currentOwner = useRef<string | null>(null);
   const loadedDraftOwner = useRef<string | null>(null);
   const capabilityStep = useRef<HTMLDivElement | null>(null);
@@ -513,6 +514,7 @@ const OnboardingFlow: React.FC = () => {
       'guid.onboarding.capabilities.title',
       'guid.onboarding.profile.title',
       'guid.onboarding.task.title',
+      'guid.onboarding.model.title',
     ][step]
   );
 
@@ -553,9 +555,9 @@ const OnboardingFlow: React.FC = () => {
     scientificRuntimeEnabled,
   };
 
-  const launch = async () => {
+  const finish = async () => {
     const ownerId = currentOwner.current;
-    if (!finalTask || !ownerId || launching) return;
+    if (!ownerId || launching) return;
     const generation = launchGeneration.current + 1;
     launchGeneration.current = generation;
     launchAbort.current?.abort();
@@ -575,7 +577,7 @@ const OnboardingFlow: React.FC = () => {
     try {
       const activeSuggestion = suggestionSession.current;
       const activeSuggestionFrame = suggestionFrameId.current;
-      if (activeSuggestion && suggestionViewRef.current === 'agent' && selectedTask === finalTask) {
+      if (finalTask && activeSuggestion && suggestionViewRef.current === 'agent' && selectedTask === finalTask) {
         await resolveOnboardingTaskSuggestion(activeSuggestion, finalTask, { fetchImpl, signal: controller.signal });
       } else if (activeSuggestionFrame) {
         await cancelOnboardingSuggestionFrame(activeSuggestionFrame, { fetchImpl, signal: controller.signal });
@@ -610,7 +612,6 @@ const OnboardingFlow: React.FC = () => {
         ownerId,
         projectId: project.projectId,
         assistantId: snapshot.assistantId,
-        assistantName: snapshot.assistantName,
         task: finalTask,
         profileSignature,
         files: files.map((file) => ({
@@ -621,14 +622,14 @@ const OnboardingFlow: React.FC = () => {
         })),
       });
       if (launchIdentity.current?.signature !== launchSignature) {
-        launchIdentity.current = { signature: launchSignature, loadingId: uuid(36), conversationId: null };
+        launchIdentity.current = { signature: launchSignature, conversationId: null };
       }
-      const result = await launchOnboardingTask(
+      const result = await stageOnboardingTask(
         {
           projectId: project.projectId,
+          projectName: project.name,
           assistantId: snapshot.assistantId ?? '',
           assistantName: snapshot.assistantName ?? '',
-          loadingId: launchIdentity.current.loadingId,
           task: finalTask,
           profile: { summary: profileSummary },
           files,
@@ -661,7 +662,11 @@ const OnboardingFlow: React.FC = () => {
       pendingUploads.current.clear();
       profileDocument.current = null;
       launchIdentity.current = null;
-      void navigate(`/conversation/${encodeURIComponent(result.conversationId)}`, { replace: true });
+      if (result.conversationId) {
+        void navigate(`/conversation/${encodeURIComponent(result.conversationId)}`, { replace: true });
+      } else {
+        void navigate('/guid', { replace: true });
+      }
     } catch (error) {
       if (!authorityCurrent()) return;
       const failure = classifyOnboardingLaunchFailure(error);
@@ -933,17 +938,29 @@ const OnboardingFlow: React.FC = () => {
                 setCustomTask(value);
               }}
             />
-            {launchError && (
-              <div className={styles.launchError}>
-                <Alert
-                  type='error'
-                  content={t(`guid.onboarding.error.${launchError}`)}
-                  data-testid='onboarding-launch-error'
-                />
-                {launchError === 'permissionDenied' && (
-                  <Button onClick={() => moveToStep(2)}>{t('guid.onboarding.actions.reviewCapabilities')}</Button>
-                )}
-              </div>
+            <p className={styles.suggestionStatus} data-testid='onboarding-task-draft-hint'>
+              {t('guid.onboarding.task.draftHint')}
+            </p>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className={styles.step} data-testid='onboarding-model'>
+            <StepHeading icon={<Config size={28} />} title={t('guid.onboarding.model.title')} />
+            <p>{t('guid.onboarding.model.subtitle')}</p>
+            <OnboardingModelSetup />
+          </div>
+        )}
+
+        {launchError && (
+          <div className={styles.launchError}>
+            <Alert
+              type='error'
+              content={t(`guid.onboarding.error.${launchError}`)}
+              data-testid='onboarding-launch-error'
+            />
+            {launchError === 'permissionDenied' && (
+              <Button onClick={() => moveToStep(2)}>{t('guid.onboarding.actions.reviewCapabilities')}</Button>
             )}
           </div>
         )}
@@ -956,7 +973,7 @@ const OnboardingFlow: React.FC = () => {
           ) : (
             <span />
           )}
-          {step < 4 ? (
+          {step < ONBOARDING_STEP_COUNT - 1 ? (
             <Button type='primary' icon={<ArrowRight />} onClick={() => moveToStep(nextOnboardingStep(step))}>
               {t('guid.onboarding.actions.continue')}
             </Button>
@@ -965,11 +982,11 @@ const OnboardingFlow: React.FC = () => {
               type='primary'
               icon={<Check />}
               loading={launching}
-              disabled={!finalTask || launching}
-              data-testid='onboarding-start'
-              onClick={() => void launch()}
+              disabled={launching}
+              data-testid='onboarding-finish'
+              onClick={() => void finish()}
             >
-              {t('guid.onboarding.actions.start')}
+              {t('guid.onboarding.actions.finish')}
             </Button>
           )}
         </footer>

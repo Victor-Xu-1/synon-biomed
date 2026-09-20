@@ -193,7 +193,6 @@ html body .settings-sider__item[aria-current='page'] .settings-sider__item-label
   html
     body
     .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']:is(
-      [data-settings-route='skills'],
       [data-settings-route='credentials'],
       [data-settings-route='storage'],
       [data-settings-route='general'],
@@ -208,7 +207,6 @@ html body .settings-sider__item[aria-current='page'] .settings-sider__item-label
   html
     body
     .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']:is(
-      [data-settings-route='skills'],
       [data-settings-route='credentials'],
       [data-settings-route='storage'],
       [data-settings-route='general'],

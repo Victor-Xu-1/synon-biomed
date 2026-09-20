@@ -29,6 +29,14 @@ and personal skill creation. The online market opens separately and does not
 replace the library or reset its search and filters. Filtering never disables
 or deletes a skill.
 
+The catalog scrolls independently; its pagination remains at the bottom of the
+workspace on full, filtered and final pages. Cards wrap full skill names and
+summaries at native text size, and category icons use the declared catalog field
+rather than name matching. The detail view uses the same localized summary and
+category. Source identifies where a skill was loaded from; it is not an assertion
+of authorship. Original Markdown instructions remain unchanged, and non-Markdown
+files are shown as source text.
+
 ### Source startup
 
 The public community repository is `Victor-Xu-1/synon-biomed`.

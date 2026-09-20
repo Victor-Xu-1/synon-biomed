@@ -1413,6 +1413,7 @@
     "sources": {
       "builtin": "Built-in",
       "recommended": "Recommended",
+      "imported": "Imported",
       "github": "GitHub",
       "personal": "Personal",
       "custom": "Custom"
@@ -1520,8 +1521,6 @@
         "fileContentLabel": "Skill file content",
         "details": "Details",
         "identifier": "Identifier",
-        "author": "Source",
-        "authorValue": "Synon Biomed",
         "category": "Category",
         "license": "License",
         "callableExperts": "Available to experts",

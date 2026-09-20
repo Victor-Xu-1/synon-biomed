@@ -8,23 +8,6 @@
  * container queries and grid breakpoints based on the real layout width.
  */
 @media (min-width: 1200px) and (max-height: 900px) {
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page {
-    transform: scale(0.72);
-    transform-origin: top left;
-    width: 138.889% !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    min-height: 700px !important;
-  }
-
-  /* Keep the 15-card sheet and its pager inside the shortest supported
-     desktop Chrome viewport instead of clipping the final row of controls. */
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-pagination {
-    margin-top: 10px !important;
-  }
-
   html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
     transform: scale(0.72);
     transform-origin: top left;
@@ -235,11 +218,6 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='experts'] .settings-experts-page {
-    transform: scale(0.72);
-    width: 138.889% !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page {
     transform: scale(0.72);
     width: 138.889% !important;
   }

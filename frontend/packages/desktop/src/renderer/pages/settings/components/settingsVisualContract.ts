@@ -98,7 +98,7 @@ export const SETTINGS_VISUAL_CONTRACTS = {
   skills: contract({
     route: 'skills',
     reference: {
-      desktop: SETTINGS_LOCKED_DESKTOP_REFERENCE_SRC.skills,
+      desktop: null,
       mobile: null,
     },
     rootTestId: 'synon-biomed-skills-section',
@@ -107,8 +107,9 @@ export const SETTINGS_VISUAL_CONTRACTS = {
       '.settings-skill-library-toolbar',
       '.settings-entity-grid',
       '.settings-entity-card',
+      '.settings-skill-library-footer',
     ],
-    grid: { desktopColumns: 5, mobileColumns: 1, cardMinHeight: 220 },
+    grid: { desktopColumns: 4, mobileColumns: 1, cardMinHeight: 236 },
     interactionSelectors: [
       '.settings-skill-library-toolbar select',
       '[data-testid="input-search-synon-biomed-skills"]',

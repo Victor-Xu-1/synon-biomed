@@ -256,7 +256,7 @@ describe('settings image-based visual contract', () => {
       expect(entry.primarySelectors.length).toBeGreaterThan(0);
       expect(entry.interactionSelectors.length).toBeGreaterThan(0);
       expect(entry.dynamicStates.length).toBeGreaterThan(0);
-      if (route === 'credentials' || route === 'experts') {
+      if (route === 'credentials' || route === 'experts' || route === 'skills') {
         expect(entry.reference.desktop).toBeNull();
       } else {
         expect(entry.reference.desktop).toBe(SETTINGS_LOCKED_DESKTOP_REFERENCE_SRC[route]);
@@ -266,7 +266,7 @@ describe('settings image-based visual contract', () => {
       if (entry.reference.mobile) mobileReferences.add(entry.reference.mobile);
     }
 
-    expect(desktopReferences.size).toBe(10);
+    expect(desktopReferences.size).toBe(9);
     expect(mobileReferences.size).toBe(0);
   });
 
@@ -280,26 +280,26 @@ describe('settings image-based visual contract', () => {
     expect(layoutCss).not.toContain('--settings-content-width');
   });
 
-  it('uses the locked five-column skill and four-column MCP card surfaces at the reference viewport', () => {
-    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.desktopColumns).toBe(5);
-    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(220);
+  it('uses readable fluid skill cards while retaining the MCP card contract', () => {
+    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.desktopColumns).toBe(4);
+    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(220);
     expect(componentsCss).toMatch(/--settings-entity-card-height:\s*256px/);
     expect(componentsCss).toMatch(/--settings-entity-card-title-size:\s*15px/);
     expect(componentsCss).toMatch(/--settings-entity-card-body-size:\s*13px/);
-    expect(componentsCss).toMatch(
-      /\.settings-skill-card[\s\S]*?height:\s*(?:var\(--settings-entity-card-height\)|220px)/
-    );
-    expect(componentsCss).toMatch(
-      /\.settings-skill-card__content > span[\s\S]*?font-size:\s*var\(--settings-entity-card-body-size\)/
-    );
+    expect(skillsCss).toMatch(/\.settings-skill-card\s*\{[^}]*min-height:\s*236px/);
+    expect(skillsCss).toMatch(/\.settings-skill-card__description[\s\S]*?font-size:\s*13px/);
+    expect(skillsCss).toMatch(/\.settings-skill-card__title[\s\S]*?overflow-wrap:\s*anywhere/);
+    expect(skillsCss).toMatch(/\.settings-skill-library-scroll[\s\S]*?overflow-y:\s*auto/);
+    expect(skillsCss).toMatch(/\.settings-skill-library-footer[\s\S]*?flex-shrink:\s*0/);
+    expect(skillsCss).not.toContain('settings-skill-card__artwork');
   });
 
-  it('keeps every real-Chrome compact surface proportional and the Skills sheet at five by three', () => {
+  it('keeps Skills at native size and retains unrelated compact surfaces', () => {
     expect(compactCss).toMatch(/@media \(min-width:\s*1200px\) and \(max-height:\s*900px\)/);
-    expect(compactCss).toMatch(/data-settings-route='skills'[\s\S]*?transform:\s*scale\(0\.72\)/);
-    expect(compactCss).toMatch(/data-settings-route='skills'[\s\S]*?repeat\(5,\s*minmax\(0,\s*1fr\)\)/);
+    expect(compactCss).not.toContain("data-settings-route='skills'");
+    expect(skillsCss).toContain('repeat(auto-fill, minmax(min(100%, 260px), 1fr))');
     expect(skillsCss).toContain('.settings-skill-library-toolbar');
     expect(skillsCss).toContain('grid-template-columns: minmax(0, 1fr) minmax(180px, 280px) auto');
     expect(skillsCss).toContain('@container (max-width: 600px)');
@@ -322,9 +322,7 @@ describe('settings image-based visual contract', () => {
       /data-settings-route='governance'[\s\S]*?memory-manager[\s\S]*?width:\s*100%\s*!important/
     );
     expect(compactCss).toMatch(/data-settings-route='tools'[\s\S]*?transform:\s*scale\(0\.72\)/);
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?settings-entity-grid[\s\S]*?min-height:\s*700px\s*!important/
-    );
+
     expect(compactCss).toMatch(
       /data-settings-route='tools'[\s\S]*?synon-mcp-grid[\s\S]*?min-height:\s*700px\s*!important/
     );
@@ -336,7 +334,6 @@ describe('settings image-based visual contract', () => {
 
   it('uses one compact route scale and removes unreadable account microcopy', () => {
     for (const route of [
-      'skills',
       'tools',
       'models',
       'governance',

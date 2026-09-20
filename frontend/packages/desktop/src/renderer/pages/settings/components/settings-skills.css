@@ -1,19 +1,92 @@
 /* Skills own one fluid toolbar; source and state live in a disclosure. */
-.settings-skills-page {
-  container-type: inline-size;
+/* The list owns scrolling; header and footer never depend on card count. */
+html body .settings-page-wrapper[data-settings-route='skills'] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skills-page .settings-page-header {
+html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-content {
+  display: flex;
+  flex: 1;
+  height: auto !important;
+  min-height: 0 !important;
+  padding-bottom: 12px;
+  overflow: hidden !important;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-page-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-skills-page {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+}
+
+.settings-skills-page > :not(.settings-skill-library-section) {
+  flex-shrink: 0;
+}
+
+.settings-skill-library-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.settings-skill-library-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 4px 4px 16px;
+}
+
+.settings-skill-library-footer {
+  flex-shrink: 0;
+  min-height: 48px;
+  padding-top: 10px;
+  border-top: 1px solid var(--settings-border);
+  background: var(--settings-canvas);
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skill-library-footer .settings-pagination {
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skills-page .settings-entity-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)) !important;
+  align-content: start;
+  gap: 16px !important;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-skills-page
+  .settings-page-header {
   padding-bottom: 0;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skills-page .settings-page-header__row {
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-skills-page
+  .settings-page-header__row {
   align-items: center;
   flex-wrap: nowrap;
   gap: 12px;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skills-page .settings-page-header__actions {
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-skills-page
+  .settings-page-header__actions {
   width: auto;
 }
 
@@ -187,91 +260,93 @@
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card {
   position: relative;
-  isolation: isolate;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  height: 220px;
-  min-height: 220px;
-  padding: 16px !important;
+  gap: 14px;
+  min-height: 236px;
+  padding: 18px !important;
+  text-align: left;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__artwork {
-  position: absolute !important;
-  z-index: 0 !important;
-  top: 64px;
-  right: 8px;
-  width: 132px;
-  height: 100px;
-  object-fit: contain;
-  opacity: 0.44;
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  user-select: none;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__heading {
+.settings-skill-card__content {
   display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__icon {
+.settings-skill-card__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.settings-skill-card__icon {
   display: inline-flex;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   align-items: center;
   justify-content: center;
-  border-radius: 11px;
+  border-radius: 8px;
   overflow: hidden;
-  background: transparent !important;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__icon-image {
+.settings-skill-card__icon-image {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  user-select: none;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__heading-copy {
+.settings-skill-card__title {
   min-width: 0;
+  align-self: center;
+  overflow-wrap: anywhere;
+  color: var(--settings-text);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 22px;
 }
 
-.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__heading-copy > span > span:first-child {
-  color: var(--settings-text) !important;
-  font-size: var(--settings-entity-card-title-size) !important;
-  font-weight: 650 !important;
-  line-height: var(--settings-entity-card-title-line) !important;
+.settings-skill-card__description {
+  display: block;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--settings-text-secondary);
+  font-size: 13px;
+  line-height: 21px;
 }
 
-.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__content > span {
-  color: var(--settings-text-secondary) !important;
-  font-size: var(--settings-entity-card-body-size) !important;
-  line-height: var(--settings-entity-card-body-line) !important;
+.settings-skill-card__metadata {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  color: var(--settings-text-tertiary);
+  font-size: 12px;
+  line-height: 19px;
+  overflow-wrap: anywhere;
 }
 
-.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__content > span {
-  min-height: 40px !important;
-  margin-top: 6px !important;
+.settings-skill-card__metadata .arco-tag {
+  flex-shrink: 0;
 }
 
-.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card > .border-t {
-  position: relative;
-  z-index: 1;
-  min-height: 44px;
-  padding-top: 8px;
+.settings-skill-card__footer {
+  flex-shrink: 0;
+  min-height: 40px;
+  margin-top: auto;
   border-color: var(--settings-border) !important;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card--draft {
-  min-height: 210px;
+@media (max-width: 767px) {
+  .settings-page-wrapper[data-settings-route='skills'] .settings-mobile-nav-row {
+    flex-shrink: 0;
+  }
+
+  .settings-skills-page {
+    gap: 12px;
+  }
 }

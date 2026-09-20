@@ -1,8 +1,8 @@
 import { ConfigProvider } from '@arco-design/web-react';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SkillDetailModal } from '@/renderer/pages/settings/skills/SynonBiomedSkillLibraryModals';
+import { SkillDetailModal, type SkillModalItem } from '@/renderer/pages/settings/skills/SynonBiomedSkillLibraryModals';
 import { renderWithSettingsI18n } from './settingsI18nTestUtils';
 
 const mocks = vi.hoisted(() => ({
@@ -76,7 +76,7 @@ describe('Synon Biomed skill library detail modal', () => {
     expect(await screen.findByTestId('skill-markdown')).toHaveTextContent('Detailed workflow.');
     expect(screen.queryByText('Internal metadata')).not.toBeInTheDocument();
     expect(screen.getByText('Predict protein structures with ColabFold.')).toBeInTheDocument();
-    expect(screen.getByText('Synon Biomed')).toBeInTheDocument();
+    expect(screen.getByText('内置')).toBeInTheDocument();
     expect(screen.getByText('Apache-2.0')).toBeInTheDocument();
     expect(screen.getByText('OPERON')).toBeInTheDocument();
     expect(screen.getByText(/AlphaFold2 · Google DeepMind/)).toBeInTheDocument();
@@ -103,6 +103,26 @@ describe('Synon Biomed skill library detail modal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('uses localized catalog copy and category without inventing authorship for imported skills', async () => {
+    mocks.loadContent.mockResolvedValue('<!-- provenance metadata -->\n# Workflow\n\nOriginal instructions.');
+    await renderModal({
+      skill: {
+        ...bundledSkill,
+        source: 'github',
+        category: 'structural-biology',
+        description_i18n: { 'zh-CN': '预测蛋白质结构。' },
+      } as SkillModalItem,
+      draft: false,
+      editable: false,
+    });
+    expect(await screen.findByTestId('skill-markdown')).toHaveTextContent('Original instructions.');
+    expect(screen.getByText('预测蛋白质结构。')).toBeInTheDocument();
+    expect(screen.getByText('结构生物学与蛋白质工程')).toBeInTheDocument();
+    expect(screen.queryByText('structural-biology')).not.toBeInTheDocument();
+    expect(screen.queryByText('Synon Biomed')).not.toBeInTheDocument();
+    expect(screen.queryByText(/provenance metadata/)).not.toBeInTheDocument();
+  });
+
   it('edits and saves a draft file with the backend old/new content contract', async () => {
     mocks.saveFile.mockResolvedValue({});
     await renderModal({ skill: { ...bundledSkill, source: 'personal-draft' }, draft: true, editable: true });
@@ -120,6 +140,39 @@ describe('Synon Biomed skill library detail modal', () => {
       )
     );
   });
+
+  it('keeps the selected file content when earlier reads finish out of order', async () => {
+    let finishEarlier!: (value: string) => void;
+    mocks.loadFiles.mockResolvedValue(['SKILL.md', 'notes.md', 'scripts/run.py']);
+    mocks.loadContent.mockImplementation(async (_name: string, path: string) => {
+      if (path === 'notes.md')
+        return new Promise<string>((resolve) => {
+          finishEarlier = resolve;
+        });
+      return path === 'SKILL.md' ? '# Workflow' : 'print("current source")';
+    });
+    await renderModal({ skill: bundledSkill, draft: false, editable: false });
+    await screen.findByRole('heading', { name: 'Workflow' });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Skill 文件' }));
+    fireEvent.click(await screen.findByText('notes.md', { exact: true }));
+    await waitFor(() => expect(mocks.loadContent).toHaveBeenCalledWith('alphafold2', 'notes.md'));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Skill 文件' }));
+    fireEvent.click(await screen.findByText('scripts/run.py', { exact: true }));
+    expect(await screen.findByTestId('skill-source-preview')).toHaveTextContent('current source');
+    await act(async () => {
+      finishEarlier('# Wrong earlier file');
+    });
+    expect(screen.getByTestId('skill-source-preview')).not.toHaveTextContent('Wrong earlier file');
+    expect(screen.getByTestId('skill-source-preview')).toHaveTextContent('current source');
+  });
+
+  it('does not allow a failed initial file read to be saved or published as an empty draft', async () => {
+    mocks.loadContent.mockRejectedValue(new Error('unavailable'));
+    await renderModal({ skill: bundledSkill, draft: true, editable: true });
+    await waitFor(() => expect(mocks.loadContent).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('button', { name: '保存' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '发布' })).toBeDisabled();
+  });
 });
 
 function renderModal({
@@ -129,7 +182,7 @@ function renderModal({
   onChanged = vi.fn(),
   onClose = vi.fn(),
 }: {
-  skill: typeof bundledSkill;
+  skill: SkillModalItem;
   draft: boolean;
   editable: boolean;
   onChanged?: () => void | Promise<void>;

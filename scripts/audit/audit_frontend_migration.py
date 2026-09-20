@@ -120,6 +120,9 @@ ALLOWED_ADAPTATIONS = {
 }
 
 ALLOWED_ADDITIONS = {
+    "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryCard.tsx": "Render installed and draft skills with complete readable copy, declared-category icons and isolated keyboard actions.",
+    "packages/desktop/src/renderer/pages/settings/skills/SkillFilePreview.tsx": "Render original Markdown and source files through distinct safe read-only previews.",
+    "packages/desktop/src/renderer/pages/settings/skills/skillSourceLabel.ts": "Share truthful localized source labels between library cards and detail views without claiming authorship.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryToolbar.tsx": "Provide one responsive search and research-field toolbar with accessible source/status refinement controls.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillMarketModal.tsx": "Reuse the existing pinned-import market in a bounded dialog without resetting the installed library search or filters.",
     "packages/desktop/src/renderer/pages/settings/AppearanceSettings/presets/warm.css": "Keep the warm palette under its visual family name while retaining the original import record.",
@@ -497,9 +500,9 @@ ALLOWED_ADAPTATION_RULES = (
     ),
 )
 
-APPROVED_ADAPTATION_FINGERPRINT = "1734efbc4585f166147fc418cd61772cd053e7df3acbc04a6da02987d780178f"
+APPROVED_ADAPTATION_FINGERPRINT = "8c7f49b9af9f1fba9e0ec8d9c118b78bee58400e69bf070e51ba589dcff9db29"
 APPROVED_REMOVAL_FINGERPRINT = "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4"
-APPROVED_ADDITION_FINGERPRINT = "318b9fe19cb37148a3c005b11a9aeb1bae3932ea97a2a3717def8dcf392a5bbb"
+APPROVED_ADDITION_FINGERPRINT = "5eb7d3114c1de3eb59aaa6b472da428ca90963f515b45d873a86782889f19e89"
 
 MANUAL_LICENSES = {
     "@nightingale-elements/nightingale-msa": {

@@ -14,10 +14,6 @@
     width: min(1188px, 100%) !important;
   }
 
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page {
-    width: min(1182px, 100%) !important;
-  }
-
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page {
     width: min(1180px, 100%) !important;
   }

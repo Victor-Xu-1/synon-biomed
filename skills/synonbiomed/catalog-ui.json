@@ -106,37 +106,37 @@
     "complexa-design": {
       "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "设计蛋白质—复合物结构方案并生成可验证的设计结果。"
+        "zh-CN": "使用 Proteina-Complexa 完成蛋白质生成、序列设计、重折叠与候选筛选。"
       }
     },
     "complexa-evaluate-pdbs": {
       "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "评估现有 PDB 结构，检查蛋白质—复合物建模质量。"
+        "zh-CN": "使用 Proteina-Complexa 重折叠并评估已有 PDB 设计的结构与界面质量。"
       }
     },
     "complexa-setup": {
       "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "准备 Protein—Complexa 建模环境、输入数据和运行依赖。"
+        "zh-CN": "准备 Proteina-Complexa 环境、模型权重与运行依赖，并检查执行就绪状态。"
       }
     },
     "complexa-slurm": {
       "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "在 Slurm 集群上提交、监控并收集 Protein—Complexa 任务结果。"
+        "zh-CN": "在 Slurm 集群上提交、监控并收集 Proteina-Complexa 设计或训练任务结果。"
       }
     },
     "complexa-sweep": {
       "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "批量扫描 Protein—Complexa 参数并比较结构建模结果。"
+        "zh-CN": "批量扫描 Proteina-Complexa 参数，比较设计质量、运行耗时与候选多样性。"
       }
     },
     "complexa-target": {
       "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "为 Protein—Complexa 任务准备目标结构和建模约束。"
+        "zh-CN": "注册和验证 Proteina-Complexa 的目标结构、配体、热点与设计约束。"
       }
     },
     "compound-sourcing": {
@@ -152,9 +152,9 @@
       }
     },
     "cuequivariance": {
-      "category": "drug-discovery",
+      "category": "compute-platform",
       "description_i18n": {
-        "zh-CN": "构建等变张量、不可约表示和群论多项式计算流程。"
+        "zh-CN": "使用 cuEquivariance 定义群与不可约表示，构建等变张量积和多项式。"
       }
     },
     "customize": {
@@ -220,13 +220,13 @@
     "evo2": {
       "category": "omics-bioinformatics",
       "description_i18n": {
-        "zh-CN": "分析和预测基因组序列中的功能信号与变异影响。"
+        "zh-CN": "使用 Evo 2 对 DNA 序列评分、提取嵌入并生成序列，辅助变异效应分析。"
       }
     },
     "evo2-nim": {
       "category": "omics-bioinformatics",
       "description_i18n": {
-        "zh-CN": "使用 Evo2 NIM 执行基因组序列建模和预测任务。"
+        "zh-CN": "使用 Evo 2 NIM 生成和分析 DNA 序列，支持托管服务或本地容器。"
       }
     },
     "fair-esm2": {
@@ -262,7 +262,7 @@
     "genomics-workflow-acceleration": {
       "category": "omics-bioinformatics",
       "description_i18n": {
-        "zh-CN": "加速基因组学工作流的数据准备、分析和结果整理。"
+        "zh-CN": "将现有基因组流程迁移到 Parabricks GPU 步骤，并比较运行性能与分析结果。"
       }
     },
     "indication-dossier": {
@@ -274,7 +274,7 @@
     "instrument-data-to-allotrope": {
       "category": "research-workflows",
       "description_i18n": {
-        "zh-CN": "将实验仪器数据转换为可追溯的 Allotrope 标准格式。"
+        "zh-CN": "将实验仪器导出数据解析为 Allotrope Simple Model JSON 与扁平化 CSV。"
       }
     },
     "kermt-add-cmim-pretrain": {
@@ -362,9 +362,9 @@
       }
     },
     "msa-structure-prediction-pipeline": {
-      "category": "omics-bioinformatics",
+      "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "从多序列比对到结构预测编排完整蛋白质建模流程。"
+        "zh-CN": "先检索多序列比对，再使用 OpenFold3 NIM 预测蛋白质结构。"
       }
     },
     "nextflow-development": {
@@ -400,13 +400,13 @@
     "openfold3": {
       "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "基于序列和复合物信息进行蛋白质结构预测。"
+        "zh-CN": "使用 OpenFold3 预测蛋白质、核酸及配体复合物的三维结构。"
       }
     },
     "openfold3-nim": {
       "category": "structural-biology",
       "description_i18n": {
-        "zh-CN": "使用 OpenFold3 NIM 执行可复现的蛋白质结构预测。"
+        "zh-CN": "使用 OpenFold3 NIM 预测蛋白质、核酸及配体复合物结构与置信度。"
       }
     },
     "paper-narrative": {
@@ -550,7 +550,7 @@
     "scientific-problem-selection": {
       "category": "research-workflows",
       "description_i18n": {
-        "zh-CN": "通过假设、风险和信息增益选择并去风险科研问题。"
+        "zh-CN": "基于可检验假设、风险评估和信息增益，筛选科研问题并规划验证路径。"
       }
     },
     "scvi-tools": {
@@ -586,7 +586,7 @@
     "stability-shelf-life": {
       "category": "cmc-manufacturing",
       "description_i18n": {
-        "zh-CN": "设计稳定性方案、趋势分析并形成货架期证据。"
+        "zh-CN": "设计药物稳定性研究，分析变化趋势并评估复验期和有效期。"
       }
     },
     "structure-based-molecule-generation": {

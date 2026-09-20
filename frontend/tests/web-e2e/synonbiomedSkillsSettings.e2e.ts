@@ -12,6 +12,54 @@ for (const viewport of viewports) {
   test.describe(viewport.name, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height } });
 
+    test('anchors pagination while every catalog page keeps complete readable cards', async ({ page }) => {
+      await login(page);
+      await page.goto('/#/settings/skills');
+      const pager = page.getByRole('navigation', { name: '技能列表分页' });
+      await expect(pager).toBeVisible();
+      const scroll = page.getByTestId('skill-library-scroll');
+      const footer = page.locator('.settings-skill-library-footer');
+      const initialBox = await footer.boundingBox();
+      expect(initialBox).not.toBeNull();
+      const pageButtons = pager.getByRole('button', { name: /^技能列表分页 \d+$/ });
+      const pageCount = await pageButtons.count();
+      for (let index = 0; index < pageCount; index += 1) {
+        await pageButtons.nth(index).click();
+        await expect(pageButtons.nth(index)).toHaveAttribute('aria-current', 'page');
+        await expect.poll(() => scroll.evaluate((element) => element.scrollTop)).toBe(0);
+        const box = await footer.boundingBox();
+        expect(Math.abs(box!.y - initialBox!.y)).toBeLessThanOrEqual(1);
+        await assertInsideViewport(footer, viewport);
+        const clipped = await page.locator('.settings-skill-card').evaluateAll((cards) =>
+          cards.flatMap((card) => {
+            const bounds = card.getBoundingClientRect();
+            return [
+              ...card.querySelectorAll(
+                '.settings-skill-card__title, .settings-skill-card__description, .settings-skill-card__footer'
+              ),
+            ]
+              .filter((element) => {
+                const child = element.getBoundingClientRect();
+                return (
+                  child.bottom > bounds.bottom + 1 ||
+                  child.right > bounds.right + 1 ||
+                  element.scrollHeight > element.clientHeight + 1
+                );
+              })
+              .map((element) => element.textContent);
+          })
+        );
+        expect(clipped).toEqual([]);
+        await scroll.evaluate((element) => {
+          element.scrollTop = element.scrollHeight;
+        });
+        expect(Math.abs((await footer.boundingBox())!.y - initialBox!.y)).toBeLessThanOrEqual(1);
+      }
+      await page.getByTestId('input-search-synon-biomed-skills').fill('alphafold');
+      expect(Math.abs((await footer.boundingBox())!.y - initialBox!.y)).toBeLessThanOrEqual(1);
+      await assertNoHorizontalPageOverflow(page);
+    });
+
     test('renders and operates the complete native Skills workspace', async ({ page }) => {
       await login(page);
       await page.goto('/#/settings/skills');
@@ -43,7 +91,8 @@ for (const viewport of viewports) {
       await expect(detailModal.getByRole('textbox', { name: 'Skill 文件内容' })).toHaveCount(0);
       const detailDialog = page.locator('.arco-modal').filter({ has: detailModal });
       await expect(detailDialog.getByRole('button', { name: '创建可编辑副本' })).toBeVisible();
-      await expect(detailDialog.getByText('Synon Biomed', { exact: true })).toBeVisible();
+      await expect(detailDialog.getByText('内置', { exact: true })).toBeVisible();
+      await expect(detailDialog.getByText('结构生物学与蛋白质工程', { exact: true })).toBeVisible();
       await assertInsideViewport(detailDialog, viewport);
       await assertModalPartsInsideViewport(detailDialog, viewport);
       await detailDialog.getByLabel('Close').click();

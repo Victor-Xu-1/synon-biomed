@@ -1413,6 +1413,7 @@
     "sources": {
       "builtin": "内置",
       "recommended": "推荐",
+      "imported": "已导入",
       "github": "GitHub",
       "personal": "个人",
       "custom": "自定义"
@@ -1520,8 +1521,6 @@
         "fileContentLabel": "Skill 文件内容",
         "details": "详情",
         "identifier": "标识",
-        "author": "作者",
-        "authorValue": "Synon Biomed",
         "category": "分类",
         "license": "许可证",
         "callableExperts": "可调用专家",

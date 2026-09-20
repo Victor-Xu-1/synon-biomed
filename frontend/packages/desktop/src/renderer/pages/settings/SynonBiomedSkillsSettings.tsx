@@ -4,20 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Button, Dropdown, Menu, Message, Modal, Spin, Switch, Tag } from '@arco-design/web-react';
+import { Button, Dropdown, Menu, Message, Modal, Spin } from '@arco-design/web-react';
 import { FileZip, Github, Refresh } from '@icon-park/react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from './components/SettingsPageHeader';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
-import {
-  SettingsGeneratedArtwork,
-  SettingsGeneratedIcon,
-  type SettingsGeneratedArtworkId,
-  type SettingsGeneratedIconId,
-} from './components/SettingsGeneratedAsset';
-import { compactSettingsDescription } from './components/settingsPresentation';
 import SettingsPagination from './components/SettingsPagination';
+import { SkillRow, SkillDraftRow, type SkillInfo } from './skills/SkillLibraryCard';
 import {
   CreatePersonalSkillModal,
   GitHubSkillImportModal,
@@ -28,7 +22,6 @@ import { SkillLibraryToolbar, type SkillSourceFilter, type SkillStatusFilter } f
 import { SkillMarketModal } from './skills/SkillMarketModal';
 import { loadAvailableSkillsWithSynonBiomed } from '@/renderer/services/skills/skillsCatalog';
 import {
-  getSynonBiomedSkillCategoryLabel,
   getSynonBiomedSkillCategoryOptions,
   resolveSynonBiomedSkillCategory,
   type SynonBiomedSkillCategorySelection,
@@ -47,77 +40,16 @@ import {
 import {
   findSynonBiomedSkillUsage,
   loadSynonBiomedSkillUsage,
-  type SynonBiomedSkillUsage,
   type SynonBiomedSkillUsageByName,
 } from '@/renderer/services/skills/synonBiomedSkillUsage';
-
-interface SkillInfo {
-  name: string;
-  displayName?: string;
-  description: string;
-  description_i18n?: Record<string, string>;
-  source?: string;
-  category?: string | null;
-  license?: string | null;
-  attachedAgents?: string[];
-  thirdParty?: Array<{
-    kind: string;
-    name: string;
-    provider?: string;
-    license?: string;
-    termsUrl?: string;
-    infoUrl?: string;
-  }>;
-  enabled?: boolean;
-}
 
 interface SynonBiomedSkillsSettingsProps {
   /** When false, renders without SettingsPageWrapper for route/tab embedding. */
   withWrapper?: boolean;
 }
 
-// Five compact columns by three rows keeps the review sheet balanced.
+// Keep page size stable across responsive layouts.
 const SKILLS_PAGE_SIZE = 15;
-
-function resolveSkillArtwork(skill: Pick<SkillInfo, 'name' | 'displayName' | 'category'>): SettingsGeneratedArtworkId {
-  const searchable = `${skill.name} ${skill.displayName || ''} ${skill.category || ''}`.toLowerCase();
-  if (/protein|alphafold|boltz|structure|binding/.test(searchable)) return 'protein';
-  if (/chem|molecule|drug|medicinal|dock/.test(searchable)) return 'chemistry';
-  if (/rna|transcript|expression/.test(searchable)) return 'rna';
-  if (/gene|dna|variant|genome|genetic/.test(searchable)) return 'dna';
-  if (/clinical|trial|patient|disease/.test(searchable)) return 'clinical';
-  if (/regulat|pathway|network/.test(searchable)) return 'regulation';
-  return 'book';
-}
-
-function resolveSkillIcon(skill: Pick<SkillInfo, 'name' | 'displayName' | 'category'>): SettingsGeneratedIconId {
-  const searchable = `${skill.name} ${skill.displayName || ''} ${skill.category || ''}`.toLowerCase();
-  if (/protein|alphafold|boltz|structure|binding/.test(searchable)) return 'connector-protein';
-  if (/chem|molecule|drug|medicinal|dock/.test(searchable)) return 'connector-molecule';
-  if (/rna|transcript|expression/.test(searchable)) return 'connector-rna';
-  if (/gene|dna|variant|genome|genetic/.test(searchable)) return 'connector-dna';
-  if (/clinical|trial|patient|disease/.test(searchable)) return 'connector-clipboard';
-  if (/regulat|pathway|network/.test(searchable)) return 'connector-regulation';
-  return 'connector-book';
-}
-
-const normalizeTestId = (name: string): string => name.replace(/[:/\s<>"'|?*]/g, '-');
-
-export function skillSourceLabel(source?: string, t?: ReturnType<typeof useTranslation>['t']): string {
-  if (!source) return '';
-  const normalized = source.trim().toLocaleLowerCase();
-  const labels: Record<string, string> = {
-    bundled: 'builtin',
-    synon_llm: 'builtin',
-    marketplace: 'recommended',
-    github: 'github',
-    personal: 'personal',
-    custom: 'custom',
-    user: 'personal',
-  };
-  const labelKey = labels[normalized];
-  return labelKey && t ? t(`settings.skillsSettings.sources.${labelKey}`) : source;
-}
 
 const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ withWrapper = true }) => {
   const { i18n, t } = useTranslation();
@@ -125,6 +57,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
   const messageRef = useRef(message);
   const translationRef = useRef(t);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const listScrollRef = useRef<HTMLDivElement>(null);
   const loadGenerationRef = useRef(0);
   messageRef.current = message;
   translationRef.current = t;
@@ -236,9 +169,18 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
     [filteredSkills, skillPage]
   );
 
+  useLayoutEffect(() => {
+    if (listScrollRef.current) listScrollRef.current.scrollTop = 0;
+  }, [skillPage, activeSection, categoryFilter, filter, searchQuery]);
+
   useEffect(() => {
     setSkillPage(1);
   }, [activeSection, categoryFilter, filter, searchQuery]);
+
+  const changeSkillPage = (page: number) => {
+    if (listScrollRef.current) listScrollRef.current.scrollTop = 0;
+    setSkillPage(page);
+  };
 
   useEffect(() => {
     if (skillPage > skillTotalPages) setSkillPage(skillTotalPages);
@@ -478,7 +420,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
     );
 
   const mainContent = (
-    <div className='settings-skills-page flex min-h-0 flex-col gap-24px'>
+    <div className='settings-skills-page'>
       {messageContext}
       <SettingsPageHeader
         data-testid='skills-header'
@@ -519,14 +461,16 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
           </Button>
         </div>
       ) : null}
-      <section data-testid='synon-biomed-skills-section' className='min-h-0'>
-        <div>
+      <section data-testid='synon-biomed-skills-section' className='settings-skill-library-section'>
+        <div ref={listScrollRef} className='settings-skill-library-scroll' data-testid='skill-library-scroll'>
           {list}
+        </div>
+        <div className='settings-skill-library-footer'>
           {filteredSkills.length > SKILLS_PAGE_SIZE ? (
             <SettingsPagination
               page={skillPage}
               totalPages={skillTotalPages}
-              onChange={setSkillPage}
+              onChange={changeSkillPage}
               label={t('settings.skillsSettings.paginationLabel')}
             />
           ) : null}
@@ -567,179 +511,6 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
 
   return withWrapper ? <SettingsPageWrapper>{mainContent}</SettingsPageWrapper> : mainContent;
 };
-
-function SkillRow({
-  skill,
-  pendingSkill,
-  personal,
-  usage,
-  usageAvailable,
-  onOpen,
-  onToggle,
-  onRemove,
-}: {
-  skill: SkillInfo;
-  pendingSkill: string | null;
-  personal: boolean;
-  usage: SynonBiomedSkillUsage | null;
-  usageAvailable: boolean;
-  onOpen: (skill: SkillInfo) => void;
-  onToggle: (skill: SkillInfo, enabled: boolean) => void | Promise<void>;
-  onRemove: (skill: SkillInfo) => void;
-}) {
-  const { i18n, t } = useTranslation();
-  const displayName = skill.displayName || skill.name;
-  const metadata = [getSynonBiomedSkillCategoryLabel(skill.category, i18n.language), skill.license]
-    .filter(Boolean)
-    .join(' · ');
-  const description = resolveSkillDescription(skill.name, skill.description, i18n.language, skill.description_i18n);
-  return (
-    <div
-      data-testid={`synon-biomed-skill-row-${normalizeTestId(skill.name)}`}
-      role='button'
-      tabIndex={0}
-      aria-label={t('settings.skillsSettings.viewNamed', { name: displayName })}
-      className='settings-entity-card settings-skill-card'
-      onClick={() => onOpen(skill)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onOpen(skill);
-        }
-      }}
-    >
-      <SettingsGeneratedArtwork id={resolveSkillArtwork(skill)} className='settings-skill-card__artwork' />
-      <div className='settings-skill-card__content min-w-0 flex-1'>
-        <div className='settings-skill-card__heading'>
-          <span className='settings-skill-card__icon' aria-hidden='true'>
-            <SettingsGeneratedIcon id={resolveSkillIcon(skill)} className='settings-skill-card__icon-image' />
-          </span>
-          <span className='settings-skill-card__heading-copy min-w-0 flex-1'>
-            <span className='flex min-w-0 items-start justify-between gap-8px'>
-              <span className='min-w-0 truncate text-14px font-medium text-t-primary'>{displayName}</span>
-              {skillSourceLabel(skill.source, t) ? (
-                <Tag size='small' color='gray' className='shrink-0'>
-                  {skillSourceLabel(skill.source, t)}
-                </Tag>
-              ) : null}
-            </span>
-          </span>
-        </div>
-        <span
-          className='mt-8px block line-clamp-3 min-h-54px text-12px leading-18px text-t-secondary'
-          title={description}
-        >
-          {compactSettingsDescription(description, { maxLength: 150 })}
-        </span>
-        {metadata ? <span className='mt-8px block truncate text-11px text-t-quaternary'>{metadata}</span> : null}
-      </div>
-      <div
-        className='flex min-w-0 items-center justify-between gap-8px border-t border-arco-2 pt-8px'
-        onClick={(event) => event.stopPropagation()}
-      >
-        <SkillUsageSummary skillName={skill.name} usage={usage} available={usageAvailable} />
-        <div className='flex shrink-0 items-center gap-4px'>
-          {personal ? (
-            <Button
-              type='text'
-              status='danger'
-              size='small'
-              aria-label={t('settings.skillsSettings.deleteNamed', { name: displayName })}
-              onClick={() => onRemove(skill)}
-            >
-              {t('common.delete')}
-            </Button>
-          ) : null}
-          <Switch
-            size='small'
-            checked={skill.enabled !== false}
-            loading={pendingSkill === skill.name}
-            disabled={pendingSkill !== null && pendingSkill !== skill.name}
-            aria-label={t('settings.skillsSettings.enableNamed', { name: displayName })}
-            onChange={(enabled) => void onToggle(skill, enabled)}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SkillUsageSummary({
-  skillName,
-  usage,
-  available,
-}: {
-  skillName: string;
-  usage: SynonBiomedSkillUsage | null;
-  available: boolean;
-}) {
-  const { i18n, t } = useTranslation();
-  const lastUsed = usage?.lastUsedAt
-    ? t('settings.skillsSettings.usageLastUsed', {
-        date: formatSkillUsageDate(usage.lastUsedAt, i18n.language),
-      })
-    : t('settings.skillsSettings.usageNever');
-
-  return (
-    <div
-      data-testid={`synon-biomed-skill-usage-${normalizeTestId(skillName)}`}
-      className='min-w-0 flex flex-col items-start gap-2px text-left text-11px text-t-tertiary'
-      title={
-        available
-          ? `${lastUsed} · ${t('settings.skillsSettings.usageCount', { count: usage?.invocationCount ?? 0 })}`
-          : t('settings.skillsSettings.usageUnavailable')
-      }
-    >
-      <span className='max-w-full truncate'>
-        {available ? lastUsed : t('settings.skillsSettings.usageUnavailable')}
-      </span>
-      <span className='tabular-nums'>
-        {available ? t('settings.skillsSettings.usageCount', { count: usage?.invocationCount ?? 0 }) : '—'}
-      </span>
-    </div>
-  );
-}
-
-function formatSkillUsageDate(value: string, language: string | undefined): string {
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) return value;
-  const locale = language?.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US';
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp));
-}
-
-function SkillDraftRow({
-  draft,
-  onOpen,
-}: {
-  draft: SynonBiomedSkillDraft;
-  onOpen: (draft: SynonBiomedSkillDraft) => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <button
-      type='button'
-      data-testid={`synon-biomed-skill-draft-${normalizeTestId(draft.name)}`}
-      className='settings-entity-card settings-skill-card settings-skill-card--draft'
-      onClick={() => onOpen(draft)}
-    >
-      <SettingsGeneratedArtwork id='book' className='settings-skill-card__artwork' />
-      <span className='settings-skill-card__icon' aria-hidden='true'>
-        <SettingsGeneratedIcon id='skills' className='settings-skill-card__icon-image' />
-      </span>
-      <span className='min-w-0 flex-1'>
-        <span className='flex items-start justify-between gap-8px'>
-          <span className='min-w-0 truncate text-14px font-medium text-t-primary'>{draft.displayName}</span>
-          <Tag size='small' color='orange'>
-            {t('settings.skillsSettings.draft')}
-          </Tag>
-        </span>
-        <span className='mt-8px block line-clamp-3 min-h-54px text-12px leading-18px text-t-secondary'>
-          {compactSettingsDescription(draft.description || draft.name, { maxLength: 150 })}
-        </span>
-      </span>
-    </button>
-  );
-}
 
 function ImportedSources({
   sources,
@@ -845,6 +616,7 @@ function toModalItem(skill: SkillInfo): SkillModalItem {
     name: skill.name,
     displayName: skill.displayName || skill.name,
     description: skill.description,
+    description_i18n: skill.description_i18n,
     source: skill.source || 'bundled',
     license: skill.license,
     category: skill.category,

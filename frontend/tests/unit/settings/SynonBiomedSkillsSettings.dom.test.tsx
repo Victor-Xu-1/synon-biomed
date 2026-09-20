@@ -151,6 +151,34 @@ describe('Synon Biomed Skills settings', () => {
     expect(screen.getByRole('button', { name: '添加技能' })).toBeInTheDocument();
   });
 
+  it('keeps pagination outside the scrolling catalog and resets that scroll on every page selection', async () => {
+    mocks.loadDrafts.mockResolvedValue([]);
+    mocks.loadSkills.mockResolvedValue(
+      Array.from({ length: 16 }, (_, index) => ({ ...skills[0], name: `skill-${index}` }))
+    );
+    await renderSettings();
+    await screen.findByTestId('synon-biomed-skill-row-skill-0');
+    const scroll = screen.getByTestId('skill-library-scroll');
+    const pager = screen.getByRole('navigation', { name: '技能列表分页' });
+    expect(scroll).not.toContainElement(pager);
+    scroll.scrollTop = 400;
+    fireEvent.click(screen.getByRole('button', { name: '技能列表分页 2' }));
+    expect(screen.getByTestId('synon-biomed-skill-row-skill-15')).toBeInTheDocument();
+    expect(scroll.scrollTop).toBe(0);
+    scroll.scrollTop = 120;
+    fireEvent.click(screen.getByRole('button', { name: '技能列表分页 2' }));
+    expect(scroll.scrollTop).toBe(0);
+  });
+
+  it('does not open skill details when an embedded switch handles keyboard input', async () => {
+    await renderSettings();
+    const toggle = await screen.findByRole('switch', { name: '启用 AlphaFold2' });
+    fireEvent.keyDown(toggle, { key: ' ' });
+    expect(screen.queryByTestId('skill-detail-modal')).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByTestId('synon-biomed-skill-row-alphafold2'), { key: 'Enter' });
+    expect(screen.getByTestId('skill-detail-modal')).toBeInTheDocument();
+  });
+
   it('combines field, source, enabled-state and search filters without mutating skills', async () => {
     await renderSettings();
     const alphaRow = await screen.findByTestId('synon-biomed-skill-row-alphafold2');

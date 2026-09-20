@@ -155,6 +155,9 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 			if !matched {
 				continue
 			}
+			if publicName == "python" && sourcePath == "" && isManagedPythonAPIInspection(stringValue(input["code"])) {
+				return nil
+			}
 			result := map[string]any{
 				"ok": false, "status": "skill_execution_entrypoint_required", "executed": false,
 				"skill": skill.Name, "execution_pack_id": engine.ExecutionPack.ID,

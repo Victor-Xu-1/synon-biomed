@@ -318,7 +318,7 @@ describe('settings image-based visual contract', () => {
       /max-height:\s*800px[\s\S]*?data-settings-route='compute'[\s\S]*?scale\(0\.68\)[\s\S]*?data-settings-route='network'[\s\S]*?scale\(0\.72\)/
     );
     expect(compactCss).toMatch(
-      /max-height:\s*800px[\s\S]*?data-settings-route='general'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='storage'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='plans-usage'[\s\S]*?scale\(0\.72\)/
+      /max-height:\s*800px[\s\S]*?data-settings-route='general'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='plans-usage'[\s\S]*?scale\(0\.72\)/
     );
     expect(compactCss).toMatch(
       /data-settings-route='general'[\s\S]*?general-preferences-grid[\s\S]*?width:\s*100%\s*!important/
@@ -338,18 +338,10 @@ describe('settings image-based visual contract', () => {
   });
 
   it('uses one compact route scale and removes unreadable account microcopy', () => {
-    for (const route of [
-      'models',
-      'governance',
-      'network',
-      'experts',
-      'account',
-      'plans-usage',
-      'storage',
-      'credentials',
-    ]) {
+    for (const route of ['models', 'governance', 'network', 'experts', 'account', 'plans-usage', 'credentials']) {
       expect(compactCss).toMatch(new RegExp(`data-settings-route='${route}'[\\s\\S]*?transform:\\s*scale\\(0\\.72\\)`));
     }
+    expect(compactCss).not.toContain("data-settings-route='storage'");
     expect(accountCss).not.toMatch(/font-size:\s*(?:9|10)px/);
   });
 

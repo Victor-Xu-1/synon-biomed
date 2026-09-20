@@ -1,8 +1,7 @@
 package runtimecontrol
 
 import (
-	"errors"
-	"io/fs"
+	"context"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -38,6 +37,10 @@ type DiskUsage struct {
 	Conda          UsageSection         `json:"conda"`
 	Workspace      UsageSection         `json:"workspace"`
 	ToolResults    UsageSection         `json:"toolResults"`
+	Logs           UsageSection         `json:"logs"`
+	Temp           UsageSection         `json:"temp"`
+	ScannedAt      time.Time            `json:"scannedAt"`
+	Accounting     string               `json:"accounting"`
 	AvailableBytes *uint64              `json:"availableBytes"`
 	Warnings       []string             `json:"warnings,omitempty"`
 }
@@ -48,10 +51,16 @@ type CondaEnvironmentUsage struct {
 }
 
 type CondaDiskUsage struct {
-	Envs      []CondaEnvironmentUsage `json:"envs"`
-	PkgsBytes int64                   `json:"pkgsBytes"`
-	Truncated bool                    `json:"truncated"`
-	Warnings  []string                `json:"warnings,omitempty"`
+	Envs       []CondaEnvironmentUsage `json:"envs"`
+	PkgsBytes  int64                   `json:"pkgsBytes"`
+	Truncated  bool                    `json:"truncated"`
+	Warnings   []string                `json:"warnings,omitempty"`
+	ScannedAt  time.Time               `json:"scannedAt"`
+	Accounting string                  `json:"accounting"`
+}
+
+type StorageRoots struct {
+	Artifacts, ToolResults, Logs, Temp string
 }
 
 type Scanner struct {
@@ -60,13 +69,15 @@ type Scanner struct {
 	condaEnvsRoot   string
 	artifactsRoot   string
 	toolResultsRoot string
+	logsRoot        string
+	tempRoot        string
 	ttl             time.Duration
 	now             func() time.Time
 
-	diskMu  sync.Mutex
+	diskMu  scanGate
 	diskAt  time.Time
 	disk    DiskUsage
-	condaMu sync.Mutex
+	condaMu scanGate
 	condaAt time.Time
 	conda   CondaDiskUsage
 }
@@ -94,16 +105,18 @@ func NewScannerWithStorageRoots(root, condaRoot, condaEnvsRoot, artifactsRoot, t
 		root: root, condaRoot: filepath.Clean(condaRoot),
 		condaEnvsRoot: filepath.Clean(condaEnvsRoot),
 		artifactsRoot: filepath.Clean(artifactsRoot), toolResultsRoot: filepath.Clean(toolResultsRoot),
+		logsRoot: filepath.Join(root, "shell_tasks"), tempRoot: filepath.Join(root, "tmp"),
 		ttl: ttl, now: time.Now,
 	}
 }
 
-func (s *Scanner) SetStorageRoots(artifactsRoot, toolResultsRoot string) {
+func (s *Scanner) SetStorageRoots(roots StorageRoots) {
 	if s == nil {
 		return
 	}
-	s.diskMu.Lock()
-	defer s.diskMu.Unlock()
+	_ = s.diskMu.lock(context.Background())
+	defer s.diskMu.unlock()
+	artifactsRoot, toolResultsRoot := roots.Artifacts, roots.ToolResults
 	if strings.TrimSpace(artifactsRoot) == "" {
 		artifactsRoot = filepath.Join(s.root, "artifacts")
 	}
@@ -112,6 +125,13 @@ func (s *Scanner) SetStorageRoots(artifactsRoot, toolResultsRoot string) {
 	}
 	s.artifactsRoot = filepath.Clean(artifactsRoot)
 	s.toolResultsRoot = filepath.Clean(toolResultsRoot)
+	s.logsRoot, s.tempRoot = filepath.Join(s.root, "shell_tasks"), filepath.Join(s.root, "tmp")
+	if roots.Logs != "" {
+		s.logsRoot = filepath.Clean(roots.Logs)
+	}
+	if roots.Temp != "" {
+		s.tempRoot = filepath.Clean(roots.Temp)
+	}
 	s.diskAt = time.Time{}
 	s.disk = DiskUsage{}
 }
@@ -127,22 +147,27 @@ func CondaRoot(root string) string {
 	return filepath.Join(root, "conda")
 }
 
-func (s *Scanner) DiskUsage() DiskUsage {
-	s.diskMu.Lock()
-	defer s.diskMu.Unlock()
+func (s *Scanner) DiskUsage(ctx context.Context, refresh bool) (DiskUsage, error) {
+	requestedAt := s.now()
+	if err := s.diskMu.lock(ctx); err != nil {
+		return DiskUsage{}, err
+	}
+	defer s.diskMu.unlock()
 	now := s.now()
-	if !s.diskAt.IsZero() && now.Sub(s.diskAt) < s.ttl {
-		return cloneDiskUsage(s.disk)
+	if !s.diskAt.IsZero() && ((!refresh && now.Sub(s.diskAt) < s.ttl) || s.diskAt.After(requestedAt)) {
+		return cloneDiskUsage(s.disk), nil
 	}
 	report := DiskUsage{Artifacts: ArtifactUsageSection{ByProject: []ProjectSize{}}}
 	paths := []struct {
-		path string
-		set  func(int64)
+		paths []string
+		set   func(int64)
 	}{
-		{s.artifactsRoot, func(size int64) { report.Artifacts.TotalBytes = size }},
-		{s.condaRoot, func(size int64) { report.Conda.TotalBytes = size }},
-		{filepath.Join(s.root, "workspace"), func(size int64) { report.Workspace.TotalBytes = size }},
-		{s.toolResultsRoot, func(size int64) { report.ToolResults.TotalBytes = size }},
+		{[]string{s.artifactsRoot}, func(size int64) { report.Artifacts.TotalBytes = size }},
+		{[]string{s.condaRoot, s.condaEnvsRoot}, func(size int64) { report.Conda.TotalBytes = size }},
+		{[]string{filepath.Join(s.root, "workspace")}, func(size int64) { report.Workspace.TotalBytes = size }},
+		{[]string{s.toolResultsRoot}, func(size int64) { report.ToolResults.TotalBytes = size }},
+		{[]string{s.logsRoot}, func(size int64) { report.Logs.TotalBytes = size }},
+		{[]string{s.tempRoot}, func(size int64) { report.Temp.TotalBytes = size }},
 	}
 	type scanResult struct {
 		index int
@@ -151,15 +176,18 @@ func (s *Scanner) DiskUsage() DiskUsage {
 	}
 	results := make(chan scanResult, len(paths))
 	for index, item := range paths {
-		go func(index int, path string) {
-			size, err := directoryBytes(path)
+		go func(index int, roots []string) {
+			size, err := scanDirectoryBytes(ctx, true, roots...)
 			results <- scanResult{index: index, size: size, err: err}
-		}(index, item.path)
+		}(index, item.paths)
 	}
 	scans := make([]scanResult, len(paths))
 	for range paths {
 		result := <-results
 		scans[result.index] = result
+	}
+	if err := ctx.Err(); err != nil {
+		return DiskUsage{}, err
 	}
 	for index, item := range paths {
 		if scans[index].err != nil {
@@ -168,42 +196,35 @@ func (s *Scanner) DiskUsage() DiskUsage {
 		item.set(scans[index].size)
 	}
 	report.AvailableBytes = availableBytes(s.root)
-	s.diskAt, s.disk = now, report
-	return cloneDiskUsage(report)
+	report.ScannedAt, report.Accounting = s.now().UTC(), usageAccounting
+	s.diskAt, s.disk = report.ScannedAt, report
+	return cloneDiskUsage(report), nil
 }
 
-func (s *Scanner) CondaDiskUsage() CondaDiskUsage {
-	s.condaMu.Lock()
-	defer s.condaMu.Unlock()
+func (s *Scanner) CondaDiskUsage(ctx context.Context, refresh bool) (CondaDiskUsage, error) {
+	requestedAt := s.now()
+	if err := s.condaMu.lock(ctx); err != nil {
+		return CondaDiskUsage{}, err
+	}
+	defer s.condaMu.unlock()
 	now := s.now()
-	if !s.condaAt.IsZero() && now.Sub(s.condaAt) < s.ttl {
-		return cloneCondaDiskUsage(s.conda)
+	if !s.condaAt.IsZero() && ((!refresh && now.Sub(s.condaAt) < s.ttl) || s.condaAt.After(requestedAt)) {
+		return cloneCondaDiskUsage(s.conda), nil
 	}
 	report := CondaDiskUsage{Envs: []CondaEnvironmentUsage{}}
-	entries, err := os.ReadDir(s.condaEnvsRoot)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		report.Warnings = append(report.Warnings, err.Error())
-	}
-	names := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() && entry.Type()&os.ModeSymlink == 0 && condaEnvironmentName.MatchString(entry.Name()) {
-			names = append(names, entry.Name())
-		}
-	}
-	sort.Strings(names)
-	if len(names) > maxCondaEnvironments {
-		report.Truncated = true
-		names = names[:maxCondaEnvironments]
-	}
+	roots, warnings := environmentUsageRoots(s.condaEnvsRoot)
+	report.Warnings = append(report.Warnings, warnings...)
+	names, truncated := boundedEnvironmentNames(roots)
+	report.Truncated = truncated
 	type scanTarget struct {
-		name string
-		path string
+		name  string
+		paths []string
 	}
 	targets := make([]scanTarget, 0, len(names)+1)
 	for _, name := range names {
-		targets = append(targets, scanTarget{name: name, path: filepath.Join(s.condaEnvsRoot, name)})
+		targets = append(targets, scanTarget{name: name, paths: roots[name]})
 	}
-	targets = append(targets, scanTarget{path: filepath.Join(s.condaRoot, "pkgs")})
+	targets = append(targets, scanTarget{paths: []string{filepath.Join(s.condaRoot, "pkgs")}})
 	type scanResult struct {
 		size int64
 		err  error
@@ -217,7 +238,7 @@ func (s *Scanner) CondaDiskUsage() CondaDiskUsage {
 		go func() {
 			defer workers.Done()
 			for index := range jobs {
-				results[index].size, results[index].err = directoryBytes(targets[index].path)
+				results[index].size, results[index].err = scanDirectoryBytes(ctx, true, targets[index].paths...)
 			}
 		}()
 	}
@@ -226,6 +247,9 @@ func (s *Scanner) CondaDiskUsage() CondaDiskUsage {
 	}
 	close(jobs)
 	workers.Wait()
+	if err := ctx.Err(); err != nil {
+		return CondaDiskUsage{}, err
+	}
 	for index, target := range targets {
 		if results[index].err != nil {
 			report.Warnings = append(report.Warnings, results[index].err.Error())
@@ -242,38 +266,9 @@ func (s *Scanner) CondaDiskUsage() CondaDiskUsage {
 		}
 		return report.Envs[i].Bytes > report.Envs[j].Bytes
 	})
-	s.condaAt, s.conda = now, report
-	return cloneCondaDiskUsage(report)
-}
-
-func directoryBytes(root string) (int64, error) {
-	var total int64
-	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			if errors.Is(walkErr, os.ErrNotExist) {
-				return nil
-			}
-			return walkErr
-		}
-		if entry.Type()&os.ModeSymlink != 0 {
-			if entry.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if entry.Type().IsRegular() {
-			info, err := entry.Info()
-			if err != nil {
-				return err
-			}
-			total += info.Size()
-		}
-		return nil
-	})
-	if errors.Is(err, os.ErrNotExist) {
-		return 0, nil
-	}
-	return total, err
+	report.ScannedAt, report.Accounting = s.now().UTC(), usageAccounting
+	s.condaAt, s.conda = report.ScannedAt, report
+	return cloneCondaDiskUsage(report), nil
 }
 
 func cloneDiskUsage(value DiskUsage) DiskUsage {

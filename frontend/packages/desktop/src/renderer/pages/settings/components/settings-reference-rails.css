@@ -30,8 +30,4 @@
     width: min(1184px, 100%) !important;
     margin-left: min(4px, 100%);
   }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page {
-    width: min(1193px, 100%) !important;
-  }
 }

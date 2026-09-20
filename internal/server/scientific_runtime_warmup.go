@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
 
 	"synon-go/internal/failurecontract"
 	"synon-go/internal/software"
+	"synon-go/internal/toolprogress"
 )
 
 var scientificRuntimeWarmupRetryDelays = []time.Duration{
@@ -29,6 +31,7 @@ type scientificRuntimeWarmupStatus struct {
 	Generation    string
 	LastErrorCode string
 	RetryAt       time.Time
+	Progress      *scientificRuntimeProgress
 }
 
 type scientificRuntimeWarmupResult struct {
@@ -164,6 +167,7 @@ func scientificRuntimeWarmupHealthValue(status scientificRuntimeWarmupStatus) ma
 	result := map[string]any{
 		"status": status.State,
 	}
+	appendScientificRuntimeProgress(result, status.Progress)
 	if status.Attempt > 0 {
 		result["attempt"] = status.Attempt
 	}
@@ -364,6 +368,9 @@ func (s *Server) RunScientificRuntimeWarmups(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case id := <-s.scientificRuntimeWarmupWake:
+			if !s.shouldRunScientificRuntimeWarmup(id) {
+				continue
+			}
 			definition, found := scientificRuntimeWarmupDefinitionByID(id)
 			if !found {
 				continue
@@ -372,7 +379,11 @@ func (s *Server) RunScientificRuntimeWarmups(ctx context.Context) error {
 				ctx,
 				scientificRuntimeWarmupRetryDelays,
 				func(runContext context.Context) (scientificRuntimeWarmupResult, error) {
-					return s.ensureScientificRuntimeDefinition(runContext, definition)
+					attempt := s.scientificRuntimeWarmupStatus(id).Attempt
+					progressContext := toolprogress.WithReporter(runContext, func(update toolprogress.Update) {
+						s.reportScientificRuntimeProgress(id, attempt, update)
+					})
+					return s.ensureScientificRuntimeDefinition(progressContext, definition)
 				},
 				func(current scientificRuntimeWarmupStatus) {
 					s.setScientificRuntimeWarmupStatus(id, current)
@@ -385,4 +396,22 @@ func (s *Server) RunScientificRuntimeWarmups(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+// Recheck the persisted selection at dequeue time. A stale queued request
+// must not install software that the user deselected before it started.
+func (s *Server) shouldRunScientificRuntimeWarmup(id string) bool {
+	if s.scientificRuntimeWarmupStatus(id).State == "ready" {
+		return false
+	}
+	selected, configured, err := s.loadScientificRuntimeWarmupSelection()
+	if err != nil {
+		s.setScientificRuntimeWarmupStatus(id, scientificRuntimeWarmupStatus{State: "failed", LastErrorCode: "runtime_selection_unavailable"})
+		return false
+	}
+	if !configured || !slices.Contains(selected, id) {
+		s.setScientificRuntimeWarmupStatus(id, scientificRuntimeWarmupStatus{State: "waiting_for_selection"})
+		return false
+	}
+	return true
 }

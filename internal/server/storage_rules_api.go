@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+
+	"synon-go/internal/runtimecontrol"
 )
 
 const storageRulesSettingKey = "storage.rules"
@@ -117,10 +119,12 @@ func (s *Server) configureStorageScanner(rules storageRules) {
 	if s == nil || s.usageScanner == nil || strings.TrimSpace(s.fileRoot) == "" {
 		return
 	}
-	s.usageScanner.SetStorageRoots(
-		filepath.Join(s.fileRoot, filepath.FromSlash(rules.TaskArtifacts)),
-		filepath.Join(s.fileRoot, filepath.FromSlash(rules.ToolResults)),
-	)
+	s.usageScanner.SetStorageRoots(runtimecontrol.StorageRoots{
+		Artifacts:   filepath.Join(s.fileRoot, filepath.FromSlash(rules.TaskArtifacts)),
+		ToolResults: filepath.Join(s.fileRoot, filepath.FromSlash(rules.ToolResults)),
+		Logs:        filepath.Join(s.fileRoot, filepath.FromSlash(rules.Logs)),
+		Temp:        filepath.Join(s.fileRoot, filepath.FromSlash(rules.Temp)),
+	})
 }
 
 func (s *Server) loadStorageRules() (storageRules, error) {

@@ -442,7 +442,7 @@ func New(options Options) *Server {
 			condaEnvsPath = filepath.Join(condaHome, "envs")
 		}
 		usage = runtimecontrol.NewScannerWithCondaEnvs(
-			options.FileRoot, condaHome, condaEnvsPath, 30*time.Second,
+			options.FileRoot, condaHome, condaEnvsPath, 5*time.Minute,
 		)
 	}
 	if mcpDirectory != nil && secrets != nil {

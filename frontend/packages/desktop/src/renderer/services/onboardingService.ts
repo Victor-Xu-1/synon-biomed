@@ -1,4 +1,9 @@
 import { ipcBridge } from '@/common';
+import {
+  loadScientificRuntimeSettings,
+  saveScientificRuntimeSelection,
+  type ScientificRuntimeOption,
+} from './scientificRuntimeSettings';
 import { BackendHttpError, isBackendHttpError } from '@/common/adapter/httpBridge';
 import type { ICreateConversationParams } from '@/common/adapter/ipcBridge';
 import type { ArtifactReferenceWire } from '@/common/adapter/messageStreamProtocol';
@@ -44,15 +49,7 @@ export type OnboardingScientificRuntimeSettings = {
   options: OnboardingScientificRuntimeOption[];
 };
 
-export type OnboardingScientificRuntimeOption = {
-  id: string;
-  estimatedInstallBytes: number;
-  estimatedInstallMB: number;
-  defaultEnabled: boolean;
-  selected: boolean;
-  available: boolean;
-  status: string;
-};
+export type OnboardingScientificRuntimeOption = ScientificRuntimeOption;
 
 export type OnboardingCapabilitySelection = {
   disabledNetworkGroupIds: string[];
@@ -235,42 +232,8 @@ export async function loadOnboardingSnapshot(options: OnboardingServiceOptions =
 export async function loadOnboardingScientificRuntimes(
   options: OnboardingServiceOptions = {}
 ): Promise<OnboardingScientificRuntimeSettings> {
-  const payload = await requestJson('/api/preferences/scientific-runtimes', {
-    fetchImpl: options.fetchImpl ?? fetch,
-    init: { signal: options.signal },
-  });
-  if (!isRecord(payload) || !Array.isArray(payload.options)) {
-    throw new Error('Scientific runtime settings are invalid');
-  }
-  const runtimeOptions = payload.options.map((item) => {
-    if (!isRecord(item)) throw new Error('Scientific runtime option is invalid');
-    const id = nonEmptyString(item.id);
-    const estimatedInstallBytes = positiveInteger(item.estimated_install_bytes);
-    const estimatedInstallMB = positiveInteger(item.estimated_install_mb);
-    const runtime = isRecord(item.runtime) ? item.runtime : null;
-    const status = runtime ? nonEmptyString(runtime.status) : null;
-    if (
-      !id ||
-      !estimatedInstallBytes ||
-      !estimatedInstallMB ||
-      typeof item.default_enabled !== 'boolean' ||
-      typeof item.selected !== 'boolean' ||
-      typeof item.available !== 'boolean' ||
-      !status
-    ) {
-      throw new Error('Scientific runtime option is invalid');
-    }
-    return {
-      id,
-      estimatedInstallBytes,
-      estimatedInstallMB,
-      defaultEnabled: item.default_enabled,
-      selected: item.selected,
-      available: item.available,
-      status,
-    };
-  });
-  return { options: runtimeOptions };
+  const value = await loadScientificRuntimeSettings(options);
+  return { options: value.options };
 }
 
 export async function loadOnboardingCompletion(options: OnboardingServiceOptions = {}): Promise<boolean> {
@@ -341,21 +304,7 @@ export async function saveOnboardingCapabilities(
   }
 }
 
-export async function saveOnboardingScientificRuntimes(
-  enabled: Record<string, boolean>,
-  options: OnboardingServiceOptions = {}
-): Promise<void> {
-  const enabledIDs = enabledKeys(enabled);
-  await requestJson('/api/preferences/scientific-runtimes', {
-    fetchImpl: options.fetchImpl ?? fetch,
-    init: {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled_ids: enabledIDs }),
-      signal: options.signal,
-    },
-  });
-}
+export const saveOnboardingScientificRuntimes = saveScientificRuntimeSelection;
 
 export async function launchOnboardingTask(
   input: OnboardingLaunchInput,

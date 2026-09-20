@@ -217,7 +217,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 			true,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "allotropy==0.1.55"},
-				{Manager: software.PackageManagerPip, Spec: "pandas==2.0.3"},
+				{Manager: software.PackageManagerPip, Spec: "pandas==2.2.3"},
 				{Manager: software.PackageManagerPip, Spec: "openpyxl==3.1.2"},
 				{Manager: software.PackageManagerPip, Spec: "pdfplumber==0.9.0"},
 			},

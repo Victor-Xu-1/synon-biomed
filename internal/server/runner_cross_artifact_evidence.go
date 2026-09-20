@@ -97,9 +97,6 @@ func runnerEvidenceLedgerRecords(
 }
 
 func runnerEvidenceLedgerHeaderShape(headers map[string]int) bool {
-	_, hasSource := firstRunnerEvidenceColumn(
-		headers, "source", "source_name", "sourcename", "reference", "citation", "来源", "证据来源", "参考来源", "文献来源/参考",
-	)
 	_, hasSummary := firstRunnerEvidenceColumn(
 		headers, "claim", "claims", "finding", "findings", "conclusion", "key_conclusion", "keyconclusion",
 		"evidence_summary", "evidencesummary", "evidence_excerpt", "evidenceexcerpt", "摘要", "证据摘要", "关键发现", "核心发现", "关键结论", "核心结论", "主要结论",
@@ -107,7 +104,12 @@ func runnerEvidenceLedgerHeaderShape(headers map[string]int) bool {
 	_, hasSourceType := firstRunnerEvidenceColumn(headers, "source_type", "sourcetype", "evidence_type", "evidencetype", "来源类型", "证据类型")
 	hasLocator := len(runnerEvidenceLocatorIndexes(headers)) > 0
 	hasIdentifier := len(runnerEvidenceDepthIdentifierIndexes(headers)) > 0
-	return hasLocator && (hasSource || hasSummary || hasSourceType || hasIdentifier)
+	// A generic source column is common in immutable computation manifests and
+	// is not enough to classify every row as a literature/evidence assertion.
+	// Require a separate claim, source-class, or identifier signal as well as a
+	// locator. This keeps evidence ledgers strict without making execution-pack
+	// output editable merely because it records an input filename in `source`.
+	return hasLocator && (hasSummary || hasSourceType || hasIdentifier)
 }
 
 func runnerEmbeddedMarkdownEvidenceTables(snapshot runnerCrossArtifactSnapshot) []runnerCrossArtifactTable {

@@ -12,7 +12,6 @@
 
   html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page,
   html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page,
-  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page,
   html body .settings-page-wrapper[data-settings-route='governance'] .settings-governance-page {
     display: flex !important;
     flex-direction: column !important;
@@ -31,10 +30,7 @@
   html body .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid > .settings-section,
   html body .settings-page-wrapper[data-settings-route='network'] .settings-network-page > section,
   html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid,
-  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page > .settings-section,
-  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page > .settings-section,
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid,
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid > .settings-section {
+  html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page > .settings-section {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;

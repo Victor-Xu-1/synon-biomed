@@ -1,189 +1,516 @@
-/* Route-scoped desktop geometry from the accepted settings visual contract. */
-
-@media (min-width: 768px) {
-  /* Storage: the location, policy/usage pair and cloud row are 164/382/160
-     measured blocks in the approved sheet. */
-  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page {
-    display: block !important;
-    gap: 0 !important;
-    row-gap: 0 !important;
+/* Intrinsic height keeps scans, long paths and disclosures readable. */
+.storage-runtime-list {
+  display: flex;
+  flex-direction: column;
+}
+.storage-runtime-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border-2);
+}
+.storage-runtime-row:last-child {
+  border-bottom: 0;
+}
+.storage-runtime-name {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.storage-runtime-name strong {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-1);
+}
+.storage-runtime-name span {
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--color-text-3);
+}
+.storage-runtime-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.storage-runtime-status[data-status='ready'] {
+  color: #38845a;
+}
+.storage-runtime-status[data-status='failed'] {
+  color: rgb(var(--danger-6));
+}
+.storage-runtime-status progress {
+  width: 80px;
+  height: 6px;
+  accent-color: #648f79;
+}
+.storage-runtime-selection {
+  display: flex;
+  flex-direction: column;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.storage-runtime-selection label {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-2);
+}
+.storage-runtime-selection label > span:nth-child(2) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+.storage-runtime-selection small {
+  color: var(--color-text-3);
+  font-size: 12px;
+  line-height: 20px;
+}
+@media (max-width: 600px) {
+  .storage-runtime-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
   }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .settings-storage-page
-    > .settings-section:first-of-type {
-    height: 164px !important;
-    min-height: 164px !important;
-    max-height: 164px !important;
-    margin-top: 37px !important;
+  .storage-runtime-selection label {
+    flex-wrap: wrap;
   }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__header {
-    height: 162px !important;
-    box-sizing: border-box;
-    align-items: flex-start !important;
-    padding: 36px 30px 0 !important;
+}
+.settings-storage-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1180px;
+  padding-bottom: 32px;
+}
+.settings-storage-workspace .settings-section {
+  min-width: 0;
+  border: 1px solid var(--color-border-2);
+  border-radius: 14px;
+  background: var(--color-bg-2);
+}
+.settings-storage-workspace .settings-section__header {
+  padding: 22px 24px 16px;
+  align-items: flex-start;
+  gap: 16px;
+}
+.settings-storage-workspace .settings-section__body {
+  padding: 0 24px 24px;
+}
+.settings-storage-workspace .settings-section__title {
+  font-size: 16px;
+  line-height: 24px;
+}
+.settings-storage-workspace .settings-section__description {
+  font-size: 13px;
+  line-height: 21px;
+  margin-top: 4px;
+}
+.storage-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.storage-location-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--color-fill-1);
+}
+.storage-location-icon {
+  display: flex;
+  padding: 10px;
+  color: rgb(var(--primary-6));
+  background: var(--color-bg-2);
+  border-radius: 10px;
+}
+.storage-location-main {
+  min-width: 0;
+  flex: 1;
+}
+.storage-location-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  color: var(--color-text-3);
+  font-size: 12px;
+}
+.storage-source-badge {
+  color: var(--color-text-2);
+  border: 1px solid var(--color-border-2);
+  border-radius: 5px;
+  padding: 2px 7px;
+  background: var(--color-bg-2);
+}
+.storage-path {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.storage-path code {
+  flex: 1;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--color-text-1);
+}
+.storage-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text-3);
+  cursor: pointer;
+}
+.storage-icon-button:hover {
+  background: var(--color-fill-3);
+  color: var(--color-text-1);
+}
+.storage-disclosure {
+  min-width: 0;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+.storage-disclosure summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 3px 0;
+}
+.storage-disclosure[open] > :not(summary) {
+  margin-top: 8px;
+}
+.storage-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.storage-loading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 60px;
+  padding: 12px 0;
+  color: var(--color-text-3);
+  font-size: 13px;
+}
+.storage-feedback {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  background: var(--color-fill-2);
+  font-size: 12px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.storage-feedback--error {
+  color: rgb(var(--danger-6));
+  background: rgb(var(--danger-1));
+}
+.storage-usage-summary {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 8px 0 18px;
+}
+.storage-eyebrow {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-3);
+  margin-bottom: 3px;
+}
+.storage-usage-summary strong {
+  font-size: 28px;
+  line-height: 36px;
+  letter-spacing: -0.6px;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.storage-scan-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--color-text-3);
+}
+.storage-usage-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--color-fill-2);
+  margin-bottom: 16px;
+}
+[data-storage-category='artifacts'] {
+  --storage-category: #648f79;
+}
+[data-storage-category='workspace'] {
+  --storage-category: #729ac2;
+}
+[data-storage-category='runtime'] {
+  --storage-category: #9181b8;
+}
+[data-storage-category='tools'] {
+  --storage-category: #cca365;
+}
+[data-storage-category='logs'] {
+  --storage-category: #b8858b;
+}
+[data-storage-category='temp'] {
+  --storage-category: #92a2aa;
+}
+.storage-usage-bar > span {
+  background: var(--storage-category);
+}
+.storage-usage-row,
+.storage-capacity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+.storage-usage-row strong,
+.storage-capacity-row strong {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.storage-category-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+button.storage-category-label {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.storage-category-label > i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  background: var(--storage-category);
+}
+.storage-category-label > span {
+  margin-left: 4px;
+  color: var(--color-text-3);
+}
+.storage-capacity-row {
+  margin-top: 12px;
+  border-top: 1px solid var(--color-border-2);
+  padding-top: 16px;
+}
+.storage-caption {
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--color-text-3);
+  margin: 8px 0 0;
+}
+.storage-environment-details {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-fill-1);
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--color-text-3);
+}
+.storage-environment-details > p {
+  margin: 0 0 10px;
+}
+.storage-environment-details > .settings-action-button {
+  margin-top: 12px;
+}
+.storage-environment-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  color: var(--color-text-2);
+}
+.storage-environment-row > :first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.storage-environment-row > :last-child {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.storage-rule-row {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--color-border-2);
+}
+.storage-rule-row:first-child {
+  padding-top: 6px;
+}
+.storage-rule-row h3 {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+.storage-rule-row p {
+  color: var(--color-text-3);
+  font-size: 12px;
+  line-height: 19px;
+  margin: 3px 0 7px;
+}
+.storage-relative-path {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  background: var(--color-fill-1);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 12px;
+  color: var(--color-text-2);
+}
+.storage-rule-row .storage-disclosure {
+  margin-top: 4px;
+}
+.storage-system-paths {
+  margin-top: 14px;
+}
+.storage-cloud-empty {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: var(--color-fill-1);
+  border-radius: 10px;
+  color: var(--color-text-3);
+}
+.storage-cloud-empty p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 22px;
+}
+.storage-cloud-connection + .storage-cloud-connection {
+  border-top: 1px solid var(--color-border-2);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+.storage-cloud-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.storage-cloud-name {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+}
+.storage-cloud-name strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.storage-cloud-name span {
+  color: var(--color-text-3);
+  font-size: 12px;
+}
+.storage-cloud-browser {
+  margin-top: 18px;
+}
+.storage-move-history {
+  padding-top: 14px;
+  font-size: 12px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+.storage-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.storage-field small {
+  color: var(--color-text-3);
+  line-height: 18px;
+}
+.storage-path-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.storage-dialog-notice {
+  color: var(--color-text-2);
+  line-height: 22px;
+  margin: 0 0 18px;
+}
+.settings-storage-workspace :is(button, summary):focus-visible {
+  outline: 2px solid rgb(var(--primary-6));
+  outline-offset: 3px;
+}
+@media (max-width: 1100px) {
+  .storage-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section,
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section {
-    position: relative !important;
+}
+@media (max-width: 600px) {
+  .settings-storage-workspace {
+    gap: 16px;
   }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__icon {
-    width: 88px !important;
-    height: 88px !important;
-    flex-basis: 88px !important;
-    border-radius: 14px !important;
+  .settings-storage-workspace .settings-section__header {
+    padding: 18px 16px 14px;
+    flex-wrap: wrap;
   }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__heading {
-    gap: 24px !important;
+  .settings-storage-workspace .settings-section__body {
+    padding: 0 16px 18px;
   }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .storage-location-section
-    .settings-section__heading
-    > div:last-child,
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .storage-secondary-grid
-    .settings-section__heading
-    > div:last-child,
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .storage-cloud-section
-    .settings-section__heading
-    > div:last-child {
-    margin-top: 4px !important;
+  .storage-location-body {
+    padding: 12px;
+    gap: 10px;
   }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__title,
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__title {
-    font-size: 16px !important;
-    line-height: 22px !important;
+  .storage-location-icon {
+    display: none;
   }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .storage-location-section
-    .settings-section__description,
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .storage-cloud-section
-    .settings-section__description {
-    margin-top: 5px !important;
-    font-size: 16px !important;
-    line-height: 24px !important;
+  .storage-usage-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__body {
-    position: absolute !important;
-    top: 108px !important;
-    left: 144px !important;
-    right: 24px !important;
-    z-index: 2;
-    padding: 0 !important;
+  .storage-scan-meta {
+    align-items: flex-start;
   }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .storage-location-section
-    .settings-section__body
-    > div:first-child {
-    padding: 0 !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-location-section .settings-section__actions {
-    margin-top: 23px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid {
-    height: 382px !important;
-    min-height: 382px !important;
-    max-height: 382px !important;
-    margin-top: 32px !important;
-    column-gap: 30px !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid > .settings-section {
-    height: 382px !important;
-    min-height: 382px !important;
-    max-height: 382px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid .settings-section__icon {
-    display: none !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid .settings-section__header {
-    min-height: 86px !important;
-    padding: 28px 28px 0 !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid .settings-section__title {
-    font-size: 16px !important;
-    line-height: 22px !important;
-  }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .storage-secondary-grid
-    .settings-section__description {
-    margin-top: 4px !important;
-    font-size: 16px !important;
-    line-height: 23px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid .settings-section__body {
-    padding: 10px 28px 22px !important;
-  }
-
-  html
-    body
-    .settings-page-wrapper[data-settings-route='storage']
-    .settings-storage-page
-    > .settings-section:last-of-type {
-    height: 160px !important;
-    min-height: 160px !important;
-    max-height: 160px !important;
-    margin-top: 30px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__header {
-    height: 158px !important;
-    box-sizing: border-box;
-    padding: 36px 30px 0 !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__icon {
-    width: 80px !important;
-    height: 80px !important;
-    flex-basis: 80px !important;
-    border-radius: 14px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__heading {
-    gap: 28px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-cloud-section .settings-section__body {
-    position: absolute !important;
-    top: 91px !important;
-    left: 136px !important;
-    right: 24px !important;
-    z-index: 2;
-    padding: 0 !important;
+  .storage-path-input {
+    flex-wrap: wrap;
   }
 }

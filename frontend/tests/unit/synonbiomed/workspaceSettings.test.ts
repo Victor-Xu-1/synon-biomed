@@ -34,6 +34,15 @@ function json(data: unknown, status = 200): Response {
 }
 
 describe('Synon Biomed workspace settings service', () => {
+  it('forwards scan cancellation through the real fetch boundary', async () => {
+    const controller = new AbortController();
+    const fetchImpl = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      expect(init?.signal).toBe(controller.signal);
+      return json({ artifacts: { totalBytes: 1 }, conda: { totalBytes: 0 } });
+    });
+    await loadSynonBiomedDiskUsage({ signal: controller.signal, fetchImpl });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
   it('loads and saves the project-file storage rules contract', async () => {
     const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       if (String(input).endsWith('/api/settings/storage-rules') && init?.method === 'PUT') {
@@ -334,6 +343,16 @@ describe('Synon Biomed workspace settings service', () => {
       '/api/settings/data-dir/last-move?deleteSource=0',
       expect.objectContaining({ method: 'DELETE' })
     );
+  });
+
+  it('keeps unavailable storage measurements distinct from an empty directory', async () => {
+    const fetchImpl = vi.fn(async () =>
+      json({ current: '/data', usageBytes: null, freeBytes: null, availableBytes: null })
+    );
+    const directory = await loadSynonBiomedDataDirectory({ fetchImpl });
+    expect(directory.usageBytes).toBeNull();
+    expect(directory.freeBytes).toBeNull();
+    expect((await loadSynonBiomedDiskUsage({ fetchImpl })).availableBytes).toBeNull();
   });
 
   it('projects and writes v1.1 authorization and contact settings', async () => {

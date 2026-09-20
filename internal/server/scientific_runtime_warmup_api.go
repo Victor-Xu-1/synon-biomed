@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"slices"
 )
 
 func (s *Server) handleScientificRuntimeWarmups(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +44,32 @@ func (s *Server) handleScientificRuntimeWarmups(w http.ResponseWriter, r *http.R
 			return
 		}
 		writeWorkspaceJSON(w, http.StatusOK, s.scientificRuntimeWarmupSelectionPayload(selected, true))
+	case http.MethodPost:
+		var input struct {
+			ID string `json:"id"`
+		}
+		if err := decodeWorkspaceJSON(r, &input); err != nil {
+			writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid runtime retry request"})
+			return
+		}
+		if _, found := scientificRuntimeWarmupDefinitionByID(input.ID); !found {
+			writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"detail": "runtime is not registered"})
+			return
+		}
+		selected, configured, err := s.loadScientificRuntimeWarmupSelection()
+		if err != nil {
+			writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"detail": "runtime selection is unavailable"})
+			return
+		}
+		if !configured || !slices.Contains(selected, input.ID) {
+			writeWorkspaceJSON(w, http.StatusConflict, map[string]any{"detail": "select this runtime before preparing it"})
+			return
+		}
+		if !s.ManagedEnvironmentSupervisorEnabled() || !s.queueScientificRuntimeWarmup(input.ID) {
+			writeWorkspaceJSON(w, http.StatusServiceUnavailable, map[string]any{"detail": "runtime preparation is unavailable"})
+			return
+		}
+		writeWorkspaceJSON(w, http.StatusAccepted, map[string]any{"id": input.ID, "runtime": scientificRuntimeWarmupHealthValue(s.scientificRuntimeWarmupStatus(input.ID))})
 	default:
 		writeWorkspaceJSON(w, http.StatusMethodNotAllowed, map[string]any{"detail": "method not allowed"})
 	}

@@ -3,7 +3,18 @@ import { readSynonBiomedFileImportResponse } from './synonBiomedFileImportError'
 export type SynonBiomedSettingsOptions = {
   baseUrl?: string;
   fetchImpl?: typeof fetch;
+  signal?: AbortSignal;
 };
+
+export class SynonBiomedSettingsRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = 'SynonBiomedSettingsRequestError';
+  }
+}
 
 export type SynonBiomedAllowlistGroup = {
   id: string;
@@ -74,9 +85,9 @@ export type SynonBiomedDataDirectory = {
   resolved: string | null;
   defaultPath: string;
   source: string;
-  usageBytes: number;
-  freeBytes: number;
-  activeFrames: number;
+  usageBytes: number | null;
+  freeBytes: number | null;
+  activeFrames: number | null;
   configPath: string;
   pendingMove: SynonBiomedDataDirectoryMove | null;
   lastMove: SynonBiomedDataDirectoryMove | null;
@@ -100,11 +111,24 @@ export type SynonBiomedStorageRules = {
 };
 
 export type SynonBiomedDiskUsage = {
-  artifactsBytes: number;
-  workspaceBytes: number;
-  toolResultsBytes: number;
-  condaBytes: number;
-  availableBytes: number;
+  artifactsBytes: number | null;
+  workspaceBytes: number | null;
+  toolResultsBytes: number | null;
+  condaBytes: number | null;
+  logsBytes: number | null;
+  tempBytes: number | null;
+  availableBytes: number | null;
+  scannedAt: string | null;
+  accounting: string;
+  warnings: string[];
+};
+
+export type SynonBiomedEnvironmentUsage = {
+  environments: Array<{ name: string; bytes: number | null }>;
+  packageCacheBytes: number | null;
+  scannedAt: string | null;
+  truncated: boolean;
+  warnings: string[];
 };
 
 export type SynonBiomedCloudCredential = {
@@ -293,18 +317,21 @@ export async function loadSynonBiomedStorageSettings(options: SynonBiomedSetting
 }
 
 export async function loadSynonBiomedDataDirectory(
-  options: SynonBiomedSettingsOptions = {}
+  options: SynonBiomedSettingsOptions & { includeUsage?: boolean } = {}
 ): Promise<SynonBiomedDataDirectory> {
-  const directoryPayload = await requestJson('/api/settings/data-dir', options);
+  const directoryPayload = await requestJson(
+    `/api/settings/data-dir${options.includeUsage === false ? '?includeUsage=false' : ''}`,
+    options
+  );
   const directory = asRecord(directoryPayload);
   return {
     current: stringValue(directory?.current),
     resolved: nullableString(directory?.resolved),
     defaultPath: stringValue(directory?.default),
     source: stringValue(directory?.source),
-    usageBytes: numberValue(directory?.usageBytes),
-    freeBytes: numberValue(directory?.freeBytes),
-    activeFrames: numberValue(directory?.activeFrames),
+    usageBytes: storageNumber(directory?.usageBytes),
+    freeBytes: storageNumber(directory?.freeBytes),
+    activeFrames: storageNumber(directory?.activeFrames),
     configPath: stringValue(directory?.configPath),
     pendingMove: toDataDirectoryMove(directory?.pendingMove),
     lastMove: toDataDirectoryMove(directory?.lastMove),
@@ -330,16 +357,46 @@ export async function saveSynonBiomedStorageRules(
 }
 
 export async function loadSynonBiomedDiskUsage(
-  options: SynonBiomedSettingsOptions = {}
+  options: SynonBiomedSettingsOptions & { refresh?: boolean } = {}
 ): Promise<SynonBiomedDiskUsage> {
-  const usage = asRecord(await requestJson('/api/preferences/disk-usage', options));
+  const usage = asRecord(
+    await requestJson(`/api/preferences/disk-usage${options.refresh ? '?refresh=true' : ''}`, options)
+  );
   return {
-    artifactsBytes: numberValue(asRecord(usage?.artifacts)?.totalBytes),
-    workspaceBytes: numberValue(asRecord(usage?.workspace)?.totalBytes),
-    toolResultsBytes: numberValue(asRecord(usage?.toolResults)?.totalBytes),
-    condaBytes: numberValue(asRecord(usage?.conda)?.totalBytes),
-    availableBytes: numberValue(usage?.availableBytes),
+    artifactsBytes: storageNumber(asRecord(usage?.artifacts)?.totalBytes),
+    workspaceBytes: storageNumber(asRecord(usage?.workspace)?.totalBytes),
+    toolResultsBytes: storageNumber(asRecord(usage?.toolResults)?.totalBytes),
+    condaBytes: storageNumber(asRecord(usage?.conda)?.totalBytes),
+    logsBytes: storageNumber(asRecord(usage?.logs)?.totalBytes),
+    tempBytes: storageNumber(asRecord(usage?.temp)?.totalBytes),
+    availableBytes: storageNumber(usage?.availableBytes),
+    scannedAt: nullableString(usage?.scannedAt),
+    accounting: stringValue(usage?.accounting),
+    warnings: stringArray(usage?.warnings),
   };
+}
+
+export async function loadSynonBiomedEnvironmentUsage(
+  options: SynonBiomedSettingsOptions & { refresh?: boolean } = {}
+): Promise<SynonBiomedEnvironmentUsage> {
+  const usage = asRecord(
+    await requestJson(`/api/preferences/disk-usage/conda${options.refresh ? '?refresh=true' : ''}`, options)
+  );
+  return {
+    environments: arrayValue(usage?.envs).flatMap((value) => {
+      const entry = asRecord(value);
+      const name = stringValue(entry?.name);
+      return name ? [{ name, bytes: storageNumber(entry?.bytes) }] : [];
+    }),
+    packageCacheBytes: storageNumber(usage?.pkgsBytes),
+    scannedAt: nullableString(usage?.scannedAt),
+    truncated: usage?.truncated === true,
+    warnings: stringArray(usage?.warnings),
+  };
+}
+
+function storageNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 }
 
 export async function loadSynonBiomedCloudCredentials(
@@ -421,6 +478,7 @@ export async function importSynonBiomedCloudObject(
 ): Promise<RecordValue> {
   const path = `/api/cloud-credentials/${encodeURIComponent(id)}/import`;
   const response = await (options.fetchImpl ?? fetch)(`${(options.baseUrl ?? '').replace(/\/+$/, '')}${path}`, {
+    signal: options.signal,
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ bucket: input.bucket, key: input.key, project_id: input.projectId }),
@@ -532,6 +590,7 @@ async function requestJson(
 ): Promise<unknown> {
   const response = await (options.fetchImpl ?? fetch)(`${(options.baseUrl ?? '').replace(/\/+$/, '')}${path}`, {
     ...init,
+    signal: options.signal,
     headers: {
       Accept: 'application/json',
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),
@@ -540,8 +599,9 @@ async function requestJson(
   });
   if (!response.ok) {
     const payload = asRecord(await response.json().catch((): null => null));
-    throw new Error(
-      stringValue(payload?.detail ?? payload?.error ?? payload?.message) || `Request failed: ${response.status}`
+    throw new SynonBiomedSettingsRequestError(
+      stringValue(payload?.detail ?? payload?.error ?? payload?.message) || `Request failed: ${response.status}`,
+      response.status
     );
   }
   if (response.status === 204) return null;

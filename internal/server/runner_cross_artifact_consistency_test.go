@@ -250,6 +250,22 @@ func TestRunnerEvidenceProvenanceRejectsCategoryWithoutStableLocator(t *testing.
 	}
 }
 
+func TestRunnerEvidenceProvenanceIgnoresImmutableComputationManifest(t *testing.T) {
+	snapshot := runnerCrossArtifactSnapshot{
+		name: "out/docking_components.csv",
+		text: "component_kind,candidate_id,rank,pose_rank,chain_id,residue_name,residue_number,best_affinity_kcal_mol,affinity_kcal_mol,sample_run,source_mode,reference_centroid_distance_angstrom,reference_axis_cosine,source\n" +
+			"protein,,,,A,,,,,,,,,selected_receptor.pdb\n" +
+			"reference_ligand,A1J8Z,0,0,Z,REF,1,,,,,,,A1J8Z:A:303\n" +
+			"docked_ligand,93597066,1,1,Z,D01,101,-6.831,-6.831,1,1,3.18,0.05,pose-0001-run-01.pdbqt\n",
+	}
+	if _, _, recognized := runnerEvidenceLedgerRecords(snapshot); recognized {
+		t.Fatal("quantitative execution manifest was classified as an evidence ledger")
+	}
+	if failures := runnerEvidenceProvenanceFailures(snapshot); len(failures) != 0 {
+		t.Fatalf("quantitative execution manifest received evidence findings: %#v", failures)
+	}
+}
+
 func TestRunnerEvidenceProvenanceAcceptsResolvableSourceColumns(t *testing.T) {
 	snapshot := runnerCrossArtifactSnapshot{
 		name: "source_evidence.tsv",

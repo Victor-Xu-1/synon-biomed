@@ -1,35 +1,208 @@
-/* The locked Skills sheet uses a single 46px control row; do not let the
-   generic toolbar padding inflate it to a two-line block. */
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar {
-  min-height: 48px !important;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
+/* Skills own one fluid toolbar; source and state live in a disclosure. */
+/* The list owns scrolling; header and footer never depend on card count. */
+html body .settings-page-wrapper[data-settings-route='skills'] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar > .flex {
-  justify-content: space-between;
+html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-content {
+  display: flex;
+  flex: 1;
+  height: auto !important;
+  min-height: 0 !important;
+  padding-bottom: 12px;
+  overflow: hidden !important;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-page-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-skills-page {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  height: 100%;
+  min-height: 0;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skills-toolbar__search {
-  width: 420px !important;
-  min-width: 420px;
-  flex: 0 0 420px;
-  margin-right: auto;
+.settings-skills-page > :not(.settings-skill-library-section) {
+  flex-shrink: 0;
+}
+
+.settings-skill-library-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.settings-skill-library-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 4px 4px 16px;
+}
+
+.settings-skill-library-footer {
+  flex-shrink: 0;
+  min-height: 48px;
+  padding-top: 10px;
+  border-top: 1px solid var(--settings-border);
+  background: var(--settings-canvas);
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skill-library-footer .settings-pagination {
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.settings-page-wrapper[data-settings-route='skills'] .settings-skills-page .settings-entity-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)) !important;
+  align-content: start;
+  gap: 16px !important;
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
-  [data-testid='synon-biomed-skills-filter'] {
-  width: 284px;
-  min-width: 284px;
-  flex: 0 0 284px;
+  .settings-skills-page
+  .settings-page-header {
+  padding-bottom: 0;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] [data-testid='add-skill-button'] {
-  width: 180px;
-  min-width: 180px;
-  flex: 0 0 180px;
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-skills-page
+  .settings-page-header__row {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
+  .settings-skills-page
+  .settings-page-header__actions {
+  width: auto;
+}
+
+.settings-skill-library-total {
+  margin-inline-start: 8px;
+  color: var(--settings-text-secondary);
+  font-size: 16px;
+  font-weight: 450;
+  vertical-align: middle;
+}
+
+.settings-skill-library-controls {
+  min-width: 0;
+}
+
+.settings-skill-library-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 280px) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-skill-library-toolbar > *,
+.settings-skill-filter-panel > * {
+  min-width: 0;
+}
+
+.settings-skill-library-toolbar .arco-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.settings-skill-library-select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--settings-border);
+  border-radius: 8px;
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.settings-skill-library-select:focus-visible {
+  outline: 2px solid var(--settings-accent);
+  outline-offset: 2px;
+}
+
+.settings-skill-filter-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--settings-border);
+  border-radius: 10px;
+  background: var(--settings-surface-subtle, var(--settings-surface));
+}
+
+.settings-skill-filter-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--settings-text-secondary);
+  font-size: 13px;
+}
+
+.settings-skill-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  min-height: 18px;
+  padding-inline: 4px;
+  border-radius: 99px;
+  background: var(--settings-accent-soft);
+  color: var(--settings-accent-strong);
+  font-size: 12px;
+}
+
+.settings-skill-market-dialog .arco-modal-content {
+  max-height: calc(100dvh - 150px);
+  overflow-y: auto;
+}
+
+.settings-skill-market-dialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+@container (max-width: 600px) {
+  .settings-skill-library-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .settings-skill-library-search {
+    grid-column: 1 / -1;
+  }
+
+  .settings-skill-filter-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-skill-filter-panel > .arco-btn {
+    justify-self: start;
+  }
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-summary-strip {
@@ -87,201 +260,93 @@
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card {
   position: relative;
-  isolation: isolate;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  height: 220px;
-  min-height: 220px;
-  padding: 16px !important;
+  gap: 14px;
+  min-height: 236px;
+  padding: 18px !important;
+  text-align: left;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__artwork {
-  position: absolute !important;
-  z-index: 0 !important;
-  top: 64px;
-  right: 8px;
-  width: 132px;
-  height: 100px;
-  object-fit: contain;
-  opacity: 0.44;
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  user-select: none;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__heading {
+.settings-skill-card__content {
   display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__icon {
+.settings-skill-card__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.settings-skill-card__icon {
   display: inline-flex;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   align-items: center;
   justify-content: center;
-  border-radius: 11px;
+  border-radius: 8px;
   overflow: hidden;
-  background: transparent !important;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__icon-image {
+.settings-skill-card__icon-image {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  user-select: none;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card__heading-copy {
+.settings-skill-card__title {
   min-width: 0;
+  align-self: center;
+  overflow-wrap: anywhere;
+  color: var(--settings-text);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 22px;
 }
 
-.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__heading-copy > span > span:first-child {
-  color: var(--settings-text) !important;
-  font-size: var(--settings-entity-card-title-size) !important;
-  font-weight: 650 !important;
-  line-height: var(--settings-entity-card-title-line) !important;
+.settings-skill-card__description {
+  display: block;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--settings-text-secondary);
+  font-size: 13px;
+  line-height: 21px;
 }
 
-.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__content > span {
-  color: var(--settings-text-secondary) !important;
-  font-size: var(--settings-entity-card-body-size) !important;
-  line-height: var(--settings-entity-card-body-line) !important;
+.settings-skill-card__metadata {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  color: var(--settings-text-tertiary);
+  font-size: 12px;
+  line-height: 19px;
+  overflow-wrap: anywhere;
 }
 
-.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__content > span {
-  min-height: 40px !important;
-  margin-top: 6px !important;
+.settings-skill-card__metadata .arco-tag {
+  flex-shrink: 0;
 }
 
-.settings-page-wrapper[data-settings-route='skills'] .settings-skill-card > .border-t {
-  position: relative;
-  z-index: 1;
-  min-height: 44px;
-  padding-top: 8px;
+.settings-skill-card__footer {
+  flex-shrink: 0;
+  min-height: 40px;
+  margin-top: auto;
   border-color: var(--settings-border) !important;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card--draft {
-  min-height: 210px;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .synon-skill-category-filter {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0 0 19px !important;
-  padding: 0 0 8px;
-  border: 0 !important;
-  border-bottom: 1px solid var(--settings-border) !important;
-  background: transparent !important;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .synon-skill-category-filter__title {
-  color: var(--settings-text) !important;
-  font-size: 14px;
-  font-weight: 620;
-  line-height: 20px;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .synon-skill-category-filter__options {
-  display: flex;
-  min-width: 0;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  gap: 10px;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
-  .synon-skill-category-filter__options::-webkit-scrollbar {
-  display: none;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .synon-skill-category-filter__option {
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 36px;
-  min-height: 36px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 14px;
-  border: 1px solid var(--settings-border) !important;
-  border-radius: 9px !important;
-  background: var(--settings-surface) !important;
-  color: var(--settings-text-secondary) !important;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 520;
-  white-space: nowrap;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
-  .synon-skill-category-filter__option[data-selected='true'] {
-  border-color: var(--settings-accent) !important;
-  background: var(--settings-accent-soft) !important;
-  color: var(--settings-accent-strong) !important;
-}
-
-/* Medium desktop widths keep the page title, so tabs and controls need two
-   explicit rows. Without this contract the fixed wide-sheet control widths
-   squeeze tab labels into vertical glyphs and push the add action off-screen. */
-@media (min-width: 768px) and (max-width: 1199px) {
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-row {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 10px !important;
-    margin-top: 18px !important;
+@media (max-width: 767px) {
+  .settings-page-wrapper[data-settings-route='skills'] .settings-mobile-nav-row {
+    flex-shrink: 0;
   }
 
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs {
-    width: 100% !important;
-    min-width: 0 !important;
-    flex: 0 0 auto !important;
-    align-items: flex-end !important;
-    gap: 20px !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    white-space: nowrap !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs > [role='tab'] {
-    flex: 0 0 auto !important;
-    white-space: nowrap !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-actions {
-    width: 100% !important;
-    min-width: 0 !important;
-    padding-bottom: 10px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-header__tabs-actions > .flex {
-    display: grid !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    grid-template-columns: minmax(0, 1fr) 160px 140px !important;
-    gap: 8px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-toolbar__search,
-  html body .settings-page-wrapper[data-settings-route='skills'] [data-testid='synon-biomed-skills-filter'],
-  html body .settings-page-wrapper[data-settings-route='skills'] [data-testid='add-skill-button'] {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    margin: 0 !important;
+  .settings-skills-page {
+    gap: 12px;
   }
 }

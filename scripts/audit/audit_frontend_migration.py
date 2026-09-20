@@ -67,7 +67,7 @@ ALLOWED_ADAPTATIONS = {
     "packages/desktop/src/renderer/pages/settings/StorageSettings.tsx": "Condense local and cloud storage copy without changing storage contracts.",
     "packages/desktop/src/renderer/pages/settings/SynonBiomedExpertsSettings/ExpertWorkbench.tsx": "Improve responsive expert rows and compact long descriptions without dropping source detail.",
     "packages/desktop/src/renderer/pages/settings/SynonBiomedModelsSettings.tsx": "Condense model-provider settings copy for the migrated Web surface.",
-    "packages/desktop/src/renderer/pages/settings/SynonBiomedSkillsSettings.tsx": "Localize Skill labels and improve dense responsive rows while preserving runtime authority controls.",
+    "packages/desktop/src/renderer/pages/settings/SynonBiomedSkillsSettings.tsx": "Unify installed Skill sources in one searchable library and consolidate acquisition into one action while preserving personal, import, toggle, and market workflows.",
     "packages/desktop/src/renderer/pages/settings/ToolsSettings/SynonBiomedMcpSettings.tsx": "Improve MCP connector density, localization, and responsive control layout.",
     "packages/desktop/src/renderer/pages/settings/ToolsSettings/index.tsx": "Clarify the expert MCP tool-management surface.",
     "packages/desktop/src/renderer/pages/guid/utils/assistantDefaults.ts": "Preserve owner-scoped connected MCP authority when an assistant uses automatic defaults and no explicit remembered selection exists.",
@@ -120,6 +120,11 @@ ALLOWED_ADAPTATIONS = {
 }
 
 ALLOWED_ADDITIONS = {
+    "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryCard.tsx": "Render installed and draft skills with complete readable copy, declared-category icons and isolated keyboard actions.",
+    "packages/desktop/src/renderer/pages/settings/skills/SkillFilePreview.tsx": "Render original Markdown and source files through distinct safe read-only previews.",
+    "packages/desktop/src/renderer/pages/settings/skills/skillSourceLabel.ts": "Share truthful localized source labels between library cards and detail views without claiming authorship.",
+    "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryToolbar.tsx": "Provide one responsive search and research-field toolbar with accessible source/status refinement controls.",
+    "packages/desktop/src/renderer/pages/settings/skills/SkillMarketModal.tsx": "Reuse the existing pinned-import market in a bounded dialog without resetting the installed library search or filters.",
     "packages/desktop/src/renderer/pages/settings/AppearanceSettings/presets/warm.css": "Keep the warm palette under its visual family name while retaining the original import record.",
     "packages/desktop/src/renderer/pages/settings/AppearanceSettings/presets/cool.css": "Keep the cool palette under its visual family name while retaining the original import record.",
     "packages/desktop/src/renderer/styles/workspace-theme.css": "Provide the shared visual shell under a product-neutral filename and CSS custom-property namespace.",
@@ -495,9 +500,9 @@ ALLOWED_ADAPTATION_RULES = (
     ),
 )
 
-APPROVED_ADAPTATION_FINGERPRINT = "f86586ee390c096ae3da3e8c8a47d5aeedd4cdf0054e315ffde96faeb4368f65"
+APPROVED_ADAPTATION_FINGERPRINT = "e27d16b5659c2aa9df328d000f2e793b8462c4f90b951c08e5a7e7c5a81ad451"
 APPROVED_REMOVAL_FINGERPRINT = "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4"
-APPROVED_ADDITION_FINGERPRINT = "b505be79329ee8737a612c53d6f1bf1def92370c6b503a3e13f57c468147df3c"
+APPROVED_ADDITION_FINGERPRINT = "a5e2c58c92adcaaae69a7973b3c6d8f3276a948cfb890d12144fc21414a711a5"
 
 MANUAL_LICENSES = {
     "@nightingale-elements/nightingale-msa": {

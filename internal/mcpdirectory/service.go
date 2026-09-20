@@ -98,13 +98,14 @@ type ConnectorHealth struct {
 }
 
 type ConnectorUpstream struct {
-	Name        string `json:"name"`
-	License     string `json:"license,omitempty"`
-	TermsURL    string `json:"termsUrl,omitempty"`
-	InfoLabel   string `json:"infoLabel,omitempty"`
-	InfoURL     string `json:"infoUrl,omitempty"`
-	HomepageURL string `json:"homepageUrl,omitempty"`
-	PrivacyURL  string `json:"privacyUrl,omitempty"`
+	Name          string `json:"name"`
+	License       string `json:"license,omitempty"`
+	TermsURL      string `json:"termsUrl,omitempty"`
+	InfoLabel     string `json:"infoLabel,omitempty"`
+	InfoURL       string `json:"infoUrl,omitempty"`
+	HomepageURL   string `json:"homepageUrl,omitempty"`
+	CredentialURL string `json:"credentialUrl,omitempty"`
+	PrivacyURL    string `json:"privacyUrl,omitempty"`
 }
 
 type ConnectorUsage struct {

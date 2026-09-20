@@ -13,7 +13,6 @@
   html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page,
   html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page,
   html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page,
-  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page,
   html body .settings-page-wrapper[data-settings-route='governance'] .settings-governance-page {
     display: flex !important;
     flex-direction: column !important;
@@ -35,8 +34,7 @@
   html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page > .settings-section,
   html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page > .settings-section,
   html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid,
-  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid > .settings-section,
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+  html body .settings-page-wrapper[data-settings-route='storage'] .storage-secondary-grid > .settings-section {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;

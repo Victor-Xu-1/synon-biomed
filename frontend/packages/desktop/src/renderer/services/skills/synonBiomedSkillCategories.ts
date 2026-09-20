@@ -115,12 +115,3 @@ export function getSynonBiomedSkillCategoryOptions(
   }
   return options;
 }
-
-export function getSynonBiomedSkillCategoryCopy(language?: string): { title: string; description: string } {
-  return language?.toLowerCase().startsWith('zh')
-    ? { title: '科研领域筛选', description: '按药物研发与科研工作的宽泛方向筛选已审核 Skills。' }
-    : {
-        title: 'Research area filter',
-        description: 'Filter reviewed Skills by broad drug-development and research area.',
-      };
-}

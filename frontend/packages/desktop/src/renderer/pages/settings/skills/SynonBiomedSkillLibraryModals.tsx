@@ -1,9 +1,10 @@
 import { Button, Checkbox, Input, Message, Modal, Select, Spin } from '@arco-design/web-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ReactMarkdown from 'react-markdown';
-import remarkBreaks from 'remark-breaks';
-import remarkGfm from 'remark-gfm';
+import { SkillFilePreview } from './SkillFilePreview';
+import { skillSourceLabel } from './skillSourceLabel';
+import { resolveSkillDescription } from '@/renderer/services/skills/synonBiomedSkillDescriptions';
+import { getSynonBiomedSkillCategoryLabel } from '@/renderer/services/skills/synonBiomedSkillCategories';
 import {
   deleteSynonBiomedSkillDraft,
   duplicateSynonBiomedSkill,
@@ -21,6 +22,7 @@ export type SkillModalItem = {
   name: string;
   displayName: string;
   description: string;
+  description_i18n?: Record<string, string>;
   source: string;
   license?: string | null;
   category?: string | null;
@@ -293,7 +295,7 @@ export function SkillDetailModal({
   onClose,
   onChanged,
 }: CommonModalProps & { skill: SkillModalItem | null; draft: boolean; editable: boolean }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [message, contextHolder] = Message.useMessage({ maxCount: 2 });
   const messageRef = useRef(message);
   const translationRef = useRef(t);
@@ -336,28 +338,40 @@ export function SkillDetailModal({
       .catch((error) => {
         console.error('Failed to load skill files:', error);
         if (generation.current === current) {
+          setPath('');
+          setContent('');
+          setOriginalContent('');
           messageRef.current.error(translationRef.current('settings.skillsSettings.modals.detail.fileLoadFailed'));
         }
       })
       .finally(() => {
         if (generation.current === current) setLoading(false);
       });
+    return () => {
+      generation.current += 1;
+    };
   }, [skill?.name, visible]);
 
   const selectFile = async (nextPath: string) => {
     if (!skill) return;
+    const current = ++generation.current;
     setPath(nextPath);
     setLoading(true);
+    setContent('');
+    setOriginalContent('');
     try {
       const nextContent = await loadSynonBiomedSkillFileContent(skill.name, nextPath);
+      if (generation.current !== current) return;
       setContent(nextContent);
       setOriginalContent(nextContent);
     } catch (error) {
+      if (generation.current !== current) return;
       console.error('Failed to load skill file content:', error);
       setContent('');
+      setPath('');
       messageRef.current.error(translationRef.current('settings.skillsSettings.modals.detail.fileLoadFailed'));
     } finally {
-      setLoading(false);
+      if (generation.current === current) setLoading(false);
     }
   };
 
@@ -438,10 +452,10 @@ export function SkillDetailModal({
       </Button>
       <div className='flex gap-8px'>
         <Button onClick={onClose}>{t('common.close')}</Button>
-        <Button loading={saving} disabled={!path} onClick={() => void save()}>
+        <Button loading={saving} disabled={loading || !path} onClick={() => void save()}>
           {t('common.save')}
         </Button>
-        <Button type='primary' loading={saving} disabled={!path} onClick={() => void publish()}>
+        <Button type='primary' loading={saving} disabled={loading || !path} onClick={() => void publish()}>
           {t('settings.skillsSettings.modals.detail.publish')}
         </Button>
       </div>
@@ -452,7 +466,7 @@ export function SkillDetailModal({
       <Button
         type='primary'
         loading={saving}
-        disabled={!path || content === originalContent}
+        disabled={loading || !path || content === originalContent}
         onClick={() => void save()}
       >
         {t('common.save')}
@@ -484,9 +498,11 @@ export function SkillDetailModal({
           {skill ? (
             <header className='border-b border-arco-2 pb-16px'>
               <div className='flex min-w-0 flex-wrap items-center gap-8px'>
-                <span className='text-20px font-semibold text-t-primary'>{skill.displayName}</span>
+                <span className='break-words text-20px font-semibold text-t-primary'>{skill.displayName}</span>
               </div>
-              <p className='mb-0 mt-8px text-13px leading-21px text-t-secondary'>{skill.description}</p>
+              <p className='mb-0 mt-8px text-13px leading-21px text-t-secondary'>
+                {resolveSkillDescription(skill.name, skill.description, i18n.language, skill.description_i18n)}
+              </p>
             </header>
           ) : null}
 
@@ -538,7 +554,7 @@ export function SkillDetailModal({
                 />
               ) : (
                 <div className='max-h-500px min-h-360px overflow-auto px-18px py-14px text-13px leading-21px'>
-                  <SkillMarkdownPreview content={content} />
+                  <SkillFilePreview content={content} path={path} />
                 </div>
               )}
             </div>
@@ -552,12 +568,14 @@ export function SkillDetailModal({
               <dl className='mt-10px grid grid-cols-[120px_minmax(0,1fr)] gap-x-16px gap-y-8px text-12px'>
                 <dt className='text-t-tertiary'>{t('settings.skillsSettings.modals.detail.identifier')}</dt>
                 <dd className='m-0 break-all font-mono text-t-primary'>{skill.name}</dd>
-                <dt className='text-t-tertiary'>{t('settings.skillsSettings.modals.detail.author')}</dt>
-                <dd className='m-0 text-t-primary'>{t('settings.skillsSettings.modals.detail.authorValue')}</dd>
+                <dt className='text-t-tertiary'>{t('settings.skillsSettings.sourceFilter')}</dt>
+                <dd className='m-0 text-t-primary'>{skillSourceLabel(skill.source, t)}</dd>
                 {skill.category ? (
                   <>
                     <dt className='text-t-tertiary'>{t('settings.skillsSettings.modals.detail.category')}</dt>
-                    <dd className='m-0 text-t-primary'>{skill.category}</dd>
+                    <dd className='m-0 text-t-primary'>
+                      {getSynonBiomedSkillCategoryLabel(skill.category, i18n.language)}
+                    </dd>
                   </>
                 ) : null}
                 {skill.license ? (
@@ -643,63 +661,6 @@ export function SkillDetailModal({
       </Modal>
     </>
   );
-}
-
-const SKILL_REMARK_PLUGINS = [remarkGfm, remarkBreaks];
-
-function SkillMarkdownPreview({ content }: { content: string }) {
-  return (
-    <div className='skill-markdown-preview break-words text-t-primary' data-testid='skill-markdown'>
-      <ReactMarkdown
-        remarkPlugins={SKILL_REMARK_PLUGINS}
-        components={{
-          h1: ({ children }) => <h1 className='mb-14px mt-0 text-22px font-semibold leading-30px'>{children}</h1>,
-          h2: ({ children }) => <h2 className='mb-10px mt-20px text-17px font-semibold leading-25px'>{children}</h2>,
-          h3: ({ children }) => <h3 className='mb-8px mt-16px text-15px font-semibold leading-23px'>{children}</h3>,
-          p: ({ children }) => <p className='my-10px leading-22px'>{children}</p>,
-          ul: ({ children }) => <ul className='my-10px pl-22px leading-22px'>{children}</ul>,
-          ol: ({ children }) => <ol className='my-10px pl-22px leading-22px'>{children}</ol>,
-          li: ({ children }) => <li className='my-4px'>{children}</li>,
-          blockquote: ({ children }) => (
-            <blockquote className='my-12px border-l-2 border-arco-3 pl-12px text-t-secondary'>{children}</blockquote>
-          ),
-          a: ({ children, href }) => (
-            <a href={href} target='_blank' rel='noreferrer' className='break-all text-link-6 hover:underline'>
-              {children}
-            </a>
-          ),
-          code: ({ children, className }) =>
-            className ? (
-              <code className={`${className} font-mono text-12px`}>{children}</code>
-            ) : (
-              <code className='rd-4px bg-fill-2 px-5px py-1px font-mono text-12px'>{children}</code>
-            ),
-          pre: ({ children }) => (
-            <pre className='my-12px max-w-full overflow-auto rd-6px bg-fill-2 px-12px py-10px font-mono text-12px leading-20px'>
-              {children}
-            </pre>
-          ),
-          table: ({ children }) => (
-            <div className='my-12px max-w-full overflow-x-auto'>
-              <table className='w-full border-collapse border border-arco-2 text-12px'>{children}</table>
-            </div>
-          ),
-          th: ({ children }) => (
-            <th className='border border-arco-2 bg-fill-1 px-8px py-6px text-left font-medium'>{children}</th>
-          ),
-          td: ({ children }) => <td className='border border-arco-2 px-8px py-6px align-top'>{children}</td>,
-          hr: () => <hr className='my-18px border-0 border-t border-arco-2' />,
-        }}
-      >
-        {stripSkillFrontmatter(content)}
-      </ReactMarkdown>
-    </div>
-  );
-}
-
-function stripSkillFrontmatter(content: string): string {
-  const normalized = content.replace(/^\uFEFF/, '').trimStart();
-  return normalized.replace(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '').trimStart();
 }
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {

@@ -16,6 +16,47 @@ authorize a release.
 
 ## Public community source checkout
 
+### Skills library
+
+Settings → Skills lists installed built-in, imported, and personal skills together.
+Search and the Research field selector refine the list; expand Filters to narrow
+by source or enabled state. Personal drafts appear under All sources or Personal
+when the enabled-state filter is All. Imported source update/removal controls
+remain available under the Imported source filter.
+
+Add skill is the single entry for the online market, GitHub import, file import,
+and personal skill creation. The online market opens separately and does not
+replace the library or reset its search and filters. Filtering never disables
+or deletes a skill.
+
+The catalog scrolls independently; its pagination remains at the bottom of the
+workspace on full, filtered and final pages. Cards wrap full skill names and
+summaries at native text size, and category icons use the declared catalog field
+rather than name matching. The detail view uses the same localized summary and
+category. Source identifies where a skill was loaded from; it is not an assertion
+of authorship. Original Markdown instructions remain unchanged, and non-Markdown
+files are shown as source text.
+
+### Connectors
+
+Settings → Connectors manages installed MCP services. Search uses the displayed
+localized descriptions; the filter selects connected, attention-needed or custom
+connectors. Cards preserve full names and descriptions, configuration, permissions
+and enable/disable controls. Pagination stays below the independently scrolling
+library. Wide desktop pages use four columns and three rows (12 connectors),
+with rows sharing the available height. Shorter windows scroll without clipping
+card text or controls; narrow windows keep the responsive layout. Usage and
+configuration share one card footer. Connection status is a service health signal, not proof of a completed
+scientific operation.
+
+Add connector opens custom configuration, the optional local catalog or the online
+market. Browsing these catalogs preserves the installed library's search and page.
+Installation, credential authorization and permission changes still require their
+own explicit actions; opening the catalog does not install or authorize anything.
+Sync directory remains available next to the library filters.
+
+### Source startup
+
 The public community repository is `Victor-Xu-1/synon-biomed`.
 Source version v0.1.1 does not itself designate a tagged or packaged GitHub
 Release. Do not present a workflow artifact, a source archive, or `make build`
@@ -738,14 +779,35 @@ completion.
 
 Hosted scientific MCPs that require an account use a user-owned credential;
 Synon Biomed does not bundle provider keys or run their compute workloads
-locally. Open **Settings -> Tools -> MCP**, then choose **Configure key** (or
-**Replace key**) on the connector. The current hosted credential contracts are:
+locally. Open **Settings -> Connectors**, then choose **Configure** on the
+connector. The configuration dialog separates the current connection state,
+official application/login links, account authorization and API Key / Token
+entry. Only supported methods are shown; provider account passwords are entered
+on the provider's own login page, never in Synon Biomed. The current contracts are:
 
 | Connector | Credential | Transport injection |
 |---|---|---|
 | Open Targets (Official) | None | Public hosted MCP endpoint |
+| Om (OMTX) | Provider account via OAuth | OAuth bearer token |
+| PatSnap Chemical Molecular | Open Platform API key | Server-side `apikey` query parameter |
+| Inductive Bio | Provider account via OAuth | OAuth bearer token |
+| Boltz API (Official) | OAuth sign-in or workspace API key | OAuth bearer token or `x-api-key` |
 | Tamarind Bio | Tamarind API key | `x-api-key` request header |
 | Adaptyv Cloud Lab | OAuth sign-in or Foundry token | OAuth bearer token or `Authorization: Bearer` |
+
+Use the application link to obtain provider access. For a key, paste only the
+credential value, without a header name or `Bearer` prefix, and select **Save
+and check connection**. For OAuth, select **Sign in and authorize**, complete
+the provider window, then refresh the dialog. Its status distinguishes missing
+keys, required/rejected authorization, connection errors and successful
+connections. A saved-key receipt is not proof of a successful connection. A
+failed status reload is shown as unavailable rather than retaining a stale
+success. Closing the dialog clears any unsaved key draft.
+
+Provider application URLs are optional `credentialUrl` entries in the canonical
+MCP upstream metadata. Older catalogs fall back to their provider homepage;
+unsafe or malformed links are not rendered. No new authentication endpoint or
+credential storage path is introduced.
 
 API keys are trimmed, required to be a single line, limited to 16 KiB, and
 stored in the encrypted owner-scoped secret store. Connector inventory, API
@@ -765,6 +827,31 @@ actions use the `confirm` permission policy by default and require an explicit
 approved policy override to run without a per-call prompt. Provider account,
 quota, billing, data-handling, and commercial terms remain the user's
 responsibility.
+
+### Remote MCP connection timeouts
+
+Public connectors such as Open Targets and Imaging Data Commons do not need
+API keys. A TLS handshake or connection timeout is a network-path failure,
+not evidence of missing credentials. If the deployment requires an outbound
+proxy, set `SYNON_NETWORK_PROXY` (an operator-trusted HTTP proxy origin) in the
+service's persistent startup environment, or set `network.proxy` in its startup
+configuration, then restart that service. A proxy exported only in an interactive
+shell does not configure an already-running service. The configured proxy must
+be reachable from the service's actual host/container/WSL network namespace.
+
+Keep HTTPS certificate verification, public-destination validation and
+per-call timeouts enabled. Verify a fresh MCP catalog and a read-only tool result;
+a successful HTTP response or a previously cached green status is insufficient.
+The opt-in acceptance tests use the same trusted TLS/proxy and public-address
+client boundary as the server. With the deployment's network environment set:
+
+```sh
+SYNON_RUN_REAL_REMOTE_MCP=1 go test ./internal/mcpdirectory -run 'TestOfficial(OpenTargetsHostedMCPCompletesRealEGFRResolution|IDCRemoteMCPExposesRealReadOnlyCatalog)' -count=1 -v
+```
+
+These checks query public data and do not configure credentials or submit paid
+jobs. They require external network access and must not be reported as passing
+when skipped or unavailable.
 
 ## Observability and diagnosis
 

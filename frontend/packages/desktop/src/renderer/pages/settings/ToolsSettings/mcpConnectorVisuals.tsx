@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  SettingsGeneratedArtwork,
-  SettingsGeneratedIcon,
-  type SettingsGeneratedArtworkId,
-  type SettingsGeneratedIconId,
-} from '../components/SettingsGeneratedAsset';
+import { SettingsGeneratedIcon, type SettingsGeneratedIconId } from '../components/SettingsGeneratedAsset';
 
 export type McpVisualTone = 'blue' | 'cyan' | 'teal' | 'green' | 'amber' | 'orange' | 'rose' | 'violet';
 
@@ -12,7 +7,6 @@ type VisualDefinition = {
   glyph: string;
   tone: McpVisualTone;
   iconAsset: SettingsGeneratedIconId;
-  artworkAsset: SettingsGeneratedArtworkId;
 };
 
 /**
@@ -22,134 +16,117 @@ type VisualDefinition = {
  * service logos while keeping the visual language consistent.
  */
 const KNOWN_VISUALS = {
-  biomart: { glyph: 'biomart', tone: 'teal', iconAsset: 'connector-database', artworkAsset: 'database' },
-  pubmed: { glyph: 'pubmed', tone: 'blue', iconAsset: 'connector-book', artworkAsset: 'book' },
+  biomart: { glyph: 'biomart', tone: 'teal', iconAsset: 'connector-database' },
+  pubmed: { glyph: 'pubmed', tone: 'blue', iconAsset: 'connector-book' },
   'clinical-trials': {
     glyph: 'clinical-trials',
     tone: 'cyan',
     iconAsset: 'connector-clipboard',
-    artworkAsset: 'clinical',
   },
-  chembl: { glyph: 'chembl', tone: 'violet', iconAsset: 'connector-molecule', artworkAsset: 'chemistry' },
-  biorxiv: { glyph: 'biorxiv', tone: 'rose', iconAsset: 'connector-book', artworkAsset: 'book' },
-  variants: { glyph: 'variants', tone: 'violet', iconAsset: 'connector-dna', artworkAsset: 'dna' },
+  chembl: { glyph: 'chembl', tone: 'violet', iconAsset: 'connector-molecule' },
+  biorxiv: { glyph: 'biorxiv', tone: 'rose', iconAsset: 'connector-book' },
+  variants: { glyph: 'variants', tone: 'violet', iconAsset: 'connector-dna' },
   'clinical-genomics': {
     glyph: 'clinical-genomics',
     tone: 'blue',
     iconAsset: 'connector-clipboard',
-    artworkAsset: 'clinical',
   },
-  expression: { glyph: 'expression', tone: 'green', iconAsset: 'connector-bars', artworkAsset: 'expression' },
-  regulation: { glyph: 'regulation', tone: 'orange', iconAsset: 'connector-regulation', artworkAsset: 'regulation' },
+  expression: { glyph: 'expression', tone: 'green', iconAsset: 'connector-bars' },
+  regulation: { glyph: 'regulation', tone: 'orange', iconAsset: 'connector-regulation' },
   'protein-annotation': {
     glyph: 'protein-annotation',
     tone: 'teal',
     iconAsset: 'connector-protein',
-    artworkAsset: 'protein',
   },
-  rna: { glyph: 'rna', tone: 'rose', iconAsset: 'connector-rna', artworkAsset: 'rna' },
+  rna: { glyph: 'rna', tone: 'rose', iconAsset: 'connector-rna' },
   'structures-interactions': {
     glyph: 'structures-interactions',
     tone: 'cyan',
     iconAsset: 'connector-cube',
-    artworkAsset: 'structures',
   },
-  'omics-archives': { glyph: 'omics-archives', tone: 'blue', iconAsset: 'storage', artworkAsset: 'database' },
+  'omics-archives': { glyph: 'omics-archives', tone: 'blue', iconAsset: 'storage' },
   'genes-ontologies': {
     glyph: 'genes-ontologies',
     tone: 'green',
     iconAsset: 'connector-regulation',
-    artworkAsset: 'regulation',
   },
   'drug-regulatory': {
     glyph: 'drug-regulatory',
     tone: 'orange',
     iconAsset: 'connector-regulation',
-    artworkAsset: 'regulation',
   },
   'research-resources': {
     glyph: 'research-resources',
     tone: 'amber',
     iconAsset: 'connector-book',
-    artworkAsset: 'book',
   },
   'cancer-models': {
     glyph: 'cancer-models',
     tone: 'rose',
     iconAsset: 'connector-protein',
-    artworkAsset: 'protein',
   },
-  chemistry: { glyph: 'chemistry', tone: 'violet', iconAsset: 'connector-molecule', artworkAsset: 'chemistry' },
-  'human-genetics': { glyph: 'human-genetics', tone: 'blue', iconAsset: 'connector-dna', artworkAsset: 'dna' },
-  literature: { glyph: 'literature', tone: 'amber', iconAsset: 'connector-book', artworkAsset: 'book' },
-  genomes: { glyph: 'genomes', tone: 'cyan', iconAsset: 'connector-dna', artworkAsset: 'dna' },
-  cellguide: { glyph: 'cellguide', tone: 'teal', iconAsset: 'connector-protein', artworkAsset: 'protein' },
-  zinc: { glyph: 'zinc', tone: 'violet', iconAsset: 'connector-molecule', artworkAsset: 'chemistry' },
+  chemistry: { glyph: 'chemistry', tone: 'violet', iconAsset: 'connector-molecule' },
+  'human-genetics': { glyph: 'human-genetics', tone: 'blue', iconAsset: 'connector-dna' },
+  literature: { glyph: 'literature', tone: 'amber', iconAsset: 'connector-book' },
+  genomes: { glyph: 'genomes', tone: 'cyan', iconAsset: 'connector-dna' },
+  cellguide: { glyph: 'cellguide', tone: 'teal', iconAsset: 'connector-protein' },
+  zinc: { glyph: 'zinc', tone: 'violet', iconAsset: 'connector-molecule' },
   'open-targets-official': {
     glyph: 'open-targets-official',
     tone: 'blue',
     iconAsset: 'connector-regulation',
-    artworkAsset: 'regulation',
   },
   'tamarind-bio': {
     glyph: 'tamarind-bio',
     tone: 'green',
     iconAsset: 'connector-protein',
-    artworkAsset: 'protein',
   },
   'adaptyv-cloud-lab': {
     glyph: 'adaptyv-cloud-lab',
     tone: 'cyan',
     iconAsset: 'connector-clipboard',
-    artworkAsset: 'clinical',
   },
   'ketcher-chemistry': {
     glyph: 'ketcher-chemistry',
     tone: 'violet',
     iconAsset: 'connector-molecule',
-    artworkAsset: 'chemistry',
   },
   'omtx-om': {
     glyph: 'omtx-om',
     tone: 'violet',
     iconAsset: 'connector-molecule',
-    artworkAsset: 'chemistry',
   },
   'patsnap-chemical-molecular': {
     glyph: 'patsnap-chemical-molecular',
     tone: 'violet',
     iconAsset: 'connector-molecule',
-    artworkAsset: 'chemistry',
   },
   'inductive-bio': {
     glyph: 'inductive-bio',
     tone: 'cyan',
     iconAsset: 'connector-bars',
-    artworkAsset: 'chemistry',
   },
   'boltz-api-official': {
     glyph: 'boltz-api-official',
     tone: 'blue',
     iconAsset: 'connector-protein',
-    artworkAsset: 'structures',
   },
   'renkin-local': {
     glyph: 'renkin-local',
     tone: 'orange',
     iconAsset: 'connector-regulation',
-    artworkAsset: 'chemistry',
   },
-  'rna-design-local': { glyph: 'rna-design-local', tone: 'rose', iconAsset: 'connector-rna', artworkAsset: 'rna' },
-  'idc-rest': { glyph: 'idc-rest', tone: 'cyan', iconAsset: 'connector-database', artworkAsset: 'clinical' },
+  'rna-design-local': { glyph: 'rna-design-local', tone: 'rose', iconAsset: 'connector-rna' },
+  'idc-rest': { glyph: 'idc-rest', tone: 'cyan', iconAsset: 'connector-database' },
 } as const satisfies Record<string, VisualDefinition>;
 
 const FALLBACK_VISUALS = [
-  { glyph: 'custom-orbit', tone: 'blue', iconAsset: 'connector-regulation', artworkAsset: 'regulation' },
-  { glyph: 'custom-grid', tone: 'teal', iconAsset: 'connector-clipboard', artworkAsset: 'clinical' },
-  { glyph: 'custom-wave', tone: 'violet', iconAsset: 'connector-rna', artworkAsset: 'rna' },
-  { glyph: 'custom-cube', tone: 'cyan', iconAsset: 'connector-cube', artworkAsset: 'structures' },
-  { glyph: 'custom-link', tone: 'green', iconAsset: 'connector-protein', artworkAsset: 'protein' },
-  { glyph: 'custom-spark', tone: 'amber', iconAsset: 'connector-book', artworkAsset: 'book' },
+  { glyph: 'custom-orbit', tone: 'blue', iconAsset: 'connector-regulation' },
+  { glyph: 'custom-grid', tone: 'teal', iconAsset: 'connector-clipboard' },
+  { glyph: 'custom-wave', tone: 'violet', iconAsset: 'connector-rna' },
+  { glyph: 'custom-cube', tone: 'cyan', iconAsset: 'connector-cube' },
+  { glyph: 'custom-link', tone: 'green', iconAsset: 'connector-protein' },
+  { glyph: 'custom-spark', tone: 'amber', iconAsset: 'connector-book' },
 ] as const satisfies readonly VisualDefinition[];
 
 export type McpVisualGlyph =
@@ -160,7 +137,6 @@ export type McpConnectorVisual = {
   glyph: McpVisualGlyph;
   tone: McpVisualTone;
   iconAsset: SettingsGeneratedIconId;
-  artworkAsset: SettingsGeneratedArtworkId;
 };
 
 export const KNOWN_MCP_CONNECTOR_VISUALS: Readonly<Record<string, McpConnectorVisual>> = KNOWN_VISUALS;
@@ -181,25 +157,15 @@ export function resolveMcpConnectorVisual(name: string, displayName = ''): McpCo
   return FALLBACK_VISUALS[stableHash(searchable || 'mcp') % FALLBACK_VISUALS.length]!;
 }
 
-export function McpConnectorVisualMark({
-  visual,
-  variant = 'badge',
-}: {
-  visual: McpConnectorVisual;
-  variant?: 'badge' | 'artwork';
-}) {
+export function McpConnectorVisualMark({ visual }: { visual: McpConnectorVisual }) {
   return (
     <span
-      className={`mcp-connector-visual mcp-connector-visual--${variant}`}
+      className='mcp-connector-visual mcp-connector-visual--badge'
       data-mcp-glyph={visual.glyph}
-      data-mcp-asset={variant === 'artwork' ? visual.artworkAsset : visual.iconAsset}
+      data-mcp-asset={visual.iconAsset}
       aria-hidden='true'
     >
-      {variant === 'artwork' ? (
-        <SettingsGeneratedArtwork id={visual.artworkAsset} className='mcp-connector-visual__image' />
-      ) : (
-        <SettingsGeneratedIcon id={visual.iconAsset} className='mcp-connector-visual__image' />
-      )}
+      <SettingsGeneratedIcon id={visual.iconAsset} className='mcp-connector-visual__image' />
     </span>
   );
 }

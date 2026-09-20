@@ -854,7 +854,8 @@ html body .synon-biomed-skill-detail-modal .arco-modal-footer {
 html body .synon-biomed-skill-detail-modal {
   display: inline-flex !important;
   flex-direction: column;
-  height: calc(100vh - 32px);
+  height: auto;
+  max-height: min(960px, calc(100dvh - 32px));
 }
 
 html body .synon-biomed-skill-detail-modal > [data-focus-lock-disabled] {

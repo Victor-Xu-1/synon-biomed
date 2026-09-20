@@ -45,6 +45,10 @@ const skillsCss = readFileSync(
   new URL('../../../packages/desktop/src/renderer/pages/settings/components/settings-skills.css', import.meta.url),
   'utf8'
 );
+const toolsCss = readFileSync(
+  new URL('../../../packages/desktop/src/renderer/pages/settings/components/settings-tools.css', import.meta.url),
+  'utf8'
+);
 const connectorsCss = readFileSync(
   new URL('../../../packages/desktop/src/renderer/pages/settings/components/settings-connectors.css', import.meta.url),
   'utf8'
@@ -195,7 +199,8 @@ describe('settings image-based visual contract', () => {
     expect(cardSurfacesCss).toMatch(/@media \(hover:\s*hover\) and \(pointer:\s*fine\)/);
     expect(cardSurfacesCss).toMatch(/transform:\s*translate3d\(0, -4px, 0\) scale\(1\.006\)/);
     expect(cardSurfacesCss).toMatch(/settings-skill-card:hover[\s\S]*?settings-skill-card__icon/);
-    expect(cardSurfacesCss).toMatch(/synon-mcp-card:hover[\s\S]*?mcp-connector-visual--artwork/);
+    expect(cardSurfacesCss).toMatch(/synon-mcp-card:hover[\s\S]*?synon-mcp-card__icon/);
+    expect(cardSurfacesCss).not.toContain('mcp-connector-visual--artwork');
     expect(cardSurfacesCss).toMatch(/expert-card:hover[\s\S]*?expert-card__artwork/);
     expect(cardSurfacesCss).toMatch(/settings-skill-card:focus-visible/);
     expect(cardSurfacesCss).toMatch(/synon-mcp-card:focus-within/);
@@ -256,7 +261,7 @@ describe('settings image-based visual contract', () => {
       expect(entry.primarySelectors.length).toBeGreaterThan(0);
       expect(entry.interactionSelectors.length).toBeGreaterThan(0);
       expect(entry.dynamicStates.length).toBeGreaterThan(0);
-      if (route === 'credentials' || route === 'experts') {
+      if (route === 'credentials' || route === 'experts' || route === 'skills') {
         expect(entry.reference.desktop).toBeNull();
       } else {
         expect(entry.reference.desktop).toBe(SETTINGS_LOCKED_DESKTOP_REFERENCE_SRC[route]);
@@ -266,7 +271,7 @@ describe('settings image-based visual contract', () => {
       if (entry.reference.mobile) mobileReferences.add(entry.reference.mobile);
     }
 
-    expect(desktopReferences.size).toBe(10);
+    expect(desktopReferences.size).toBe(9);
     expect(mobileReferences.size).toBe(0);
   });
 
@@ -280,52 +285,34 @@ describe('settings image-based visual contract', () => {
     expect(layoutCss).not.toContain('--settings-content-width');
   });
 
-  it('uses the locked five-column skill and four-column MCP card surfaces at the reference viewport', () => {
-    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.desktopColumns).toBe(5);
-    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(220);
+  it('uses readable fluid skill cards while aligning the connector card contract', () => {
+    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.desktopColumns).toBe(4);
+    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
-    expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(220);
+    expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(236);
     expect(componentsCss).toMatch(/--settings-entity-card-height:\s*256px/);
     expect(componentsCss).toMatch(/--settings-entity-card-title-size:\s*15px/);
     expect(componentsCss).toMatch(/--settings-entity-card-body-size:\s*13px/);
-    expect(componentsCss).toMatch(
-      /\.settings-skill-card[\s\S]*?height:\s*(?:var\(--settings-entity-card-height\)|220px)/
-    );
-    expect(componentsCss).toMatch(
-      /\.settings-skill-card__content > span[\s\S]*?font-size:\s*var\(--settings-entity-card-body-size\)/
-    );
+    expect(skillsCss).toMatch(/\.settings-skill-card\s*\{[^}]*min-height:\s*236px/);
+    expect(skillsCss).toMatch(/\.settings-skill-card__description[\s\S]*?font-size:\s*13px/);
+    expect(skillsCss).toMatch(/\.settings-skill-card__title[\s\S]*?overflow-wrap:\s*anywhere/);
+    expect(skillsCss).toMatch(/\.settings-skill-library-scroll[\s\S]*?overflow-y:\s*auto/);
+    expect(skillsCss).toMatch(/\.settings-skill-library-footer[\s\S]*?flex-shrink:\s*0/);
+    expect(skillsCss).not.toContain('settings-skill-card__artwork');
   });
 
-  it('keeps every real-Chrome compact surface proportional and the Skills sheet at five by three', () => {
+  it('keeps Skills at native size and retains unrelated compact surfaces', () => {
     expect(compactCss).toMatch(/@media \(min-width:\s*1200px\) and \(max-height:\s*900px\)/);
-    expect(compactCss).toMatch(/data-settings-route='skills'[\s\S]*?transform:\s*scale\(0\.72\)/);
-    expect(compactCss).toMatch(/data-settings-route='skills'[\s\S]*?repeat\(5,\s*minmax\(0,\s*1fr\)\)/);
+    expect(compactCss).not.toContain("data-settings-route='skills'");
+    expect(skillsCss).toContain('repeat(auto-fill, minmax(min(100%, 260px), 1fr))');
+    expect(skillsCss).toContain('.settings-skill-library-toolbar');
+    expect(skillsCss).toContain('grid-template-columns: minmax(0, 1fr) minmax(180px, 280px) auto');
+    expect(skillsCss).toContain('@container (max-width: 600px)');
+    expect(skillsCss).not.toContain('synon-skill-category-filter__options');
+    expect(compactCss).not.toContain('settings-page-header__tabs-actions');
+    expect(compactCss).not.toContain("[data-testid='synon-biomed-skills-filter']");
     expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?settings-page-header__tabs-row[\s\S]*?height:\s*46px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?settings-skills-toolbar__search[\s\S]*?width:\s*248px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?add-skill-button[\s\S]*?width:\s*232px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?tabs-actions > \.flex[\s\S]*?gap:\s*96px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?synon-skill-category-filter__options[\s\S]*?gap:\s*6px\s*!important[\s\S]*?overflow:\s*visible\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?synon-skill-category-filter__option[\s\S]*?padding-inline:\s*8px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?settings-pagination[\s\S]*?margin-top:\s*10px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?synon-biomed-skills-filter[\s\S]*?display:\s*none\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /@media \(min-width:\s*1200px\) and \(min-height:\s*768px\) and \(max-height:\s*800px\)[\s\S]*?data-settings-route='account'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='experts'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='tools'[\s\S]*?scale\(0\.72\)/
+      /@media \(min-width:\s*1200px\) and \(min-height:\s*768px\) and \(max-height:\s*800px\)[\s\S]*?data-settings-route='account'[\s\S]*?scale\(0\.72\)[\s\S]*?data-settings-route='experts'[\s\S]*?scale\(0\.72\)/
     );
     expect(compactCss).toMatch(
       /max-height:\s*800px[\s\S]*?data-settings-route='compute'[\s\S]*?scale\(0\.68\)[\s\S]*?data-settings-route='network'[\s\S]*?scale\(0\.72\)/
@@ -339,23 +326,19 @@ describe('settings image-based visual contract', () => {
     expect(compactCss).toMatch(
       /data-settings-route='governance'[\s\S]*?memory-manager[\s\S]*?width:\s*100%\s*!important/
     );
-    expect(compactCss).toMatch(/data-settings-route='tools'[\s\S]*?transform:\s*scale\(0\.72\)/);
-    expect(compactCss).toMatch(
-      /data-settings-route='skills'[\s\S]*?settings-entity-grid[\s\S]*?min-height:\s*700px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='tools'[\s\S]*?synon-mcp-grid[\s\S]*?min-height:\s*700px\s*!important/
-    );
-    expect(compactCss).toMatch(
-      /data-settings-route='tools'[\s\S]*?synon-mcp-card__description[\s\S]*?min-height:\s*54px\s*!important[\s\S]*?text-align:\s*justify\s*!important/
-    );
+    expect(compactCss).not.toContain("data-settings-route='tools'");
+    expect(toolsCss).toMatch(/\.mcp-library-scroll[\s\S]*?overflow-y:\s*auto/);
+    expect(toolsCss).toContain('.mcp-library-footer');
+    expect(toolsCss).not.toContain('visibility: hidden');
+    expect(connectorsCss).toContain('repeat(auto-fill, minmax(min(100%, 260px), 1fr))');
+    expect(toolsCss).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
+    expect(toolsCss).toContain('grid-template-rows: repeat(3, minmax(min-content, 1fr))');
+    expect(connectorsCss).toContain('.synon-mcp-card__footer');
     expect(compactCss).toMatch(/details:not\(\[open\]\)\s*>\s*div[\s\S]*?display:\s*none\s*!important/);
   });
 
   it('uses one compact route scale and removes unreadable account microcopy', () => {
     for (const route of [
-      'skills',
-      'tools',
       'models',
       'governance',
       'network',
@@ -370,14 +353,13 @@ describe('settings image-based visual contract', () => {
     expect(accountCss).not.toMatch(/font-size:\s*(?:9|10)px/);
   });
 
-  it('stacks the Skills tabs above a complete toolbar on medium desktop widths', () => {
-    expect(skillsCss).toMatch(/@media \(min-width:\s*768px\) and \(max-width:\s*1199px\)/);
-    expect(skillsCss).toMatch(
-      /settings-page-header__tabs-row[\s\S]*?flex-direction:\s*column\s*!important[\s\S]*?align-items:\s*stretch\s*!important/
-    );
-    expect(skillsCss).toMatch(
-      /settings-page-header__tabs-actions\s*>\s*\.flex[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s*160px\s*140px\s*!important/
-    );
+  it('reflows Skills controls by available content width without squeezing or hiding actions', () => {
+    expect(skillsCss).toMatch(/settings-skills-page[\s\S]*?container-type:\s*inline-size/);
+    expect(skillsCss).toMatch(/@container \(max-width:\s*600px\)/);
+    expect(skillsCss).toMatch(/settings-skill-library-search[\s\S]*?grid-column:\s*1 \/ -1/);
+    expect(skillsCss).toMatch(/settings-skill-filter-panel[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+    expect(skillsCss).not.toContain('settings-page-header__tabs');
+    expect(skillsCss).not.toMatch(/min-width:\s*(?:420|284|180)px/);
   });
 
   it('gives Account the sea-blue accent and a shared-width header in compact Chrome mode', () => {
@@ -431,12 +413,12 @@ describe('settings image-based visual contract', () => {
   });
 
   it('shares the entity typography tokens with MCP cards so their geometry stays in sync', () => {
-    expect(connectorsCss).toMatch(/\.synon-mcp-card[\s\S]*?height:\s*var\(--settings-entity-card-height\)/);
+    expect(connectorsCss).toMatch(/\.synon-mcp-card[\s\S]*?height:\s*auto/);
     expect(connectorsCss).toMatch(
       /\.synon-mcp-card__title-row > span[\s\S]*?font-size:\s*var\(--settings-entity-card-title-size\)/
     );
     expect(connectorsCss).toMatch(
-      /\.synon-mcp-card__description[\s\S]*?line-height:\s*(?:var\(--settings-entity-card-body-line\)|18px)/
+      /\.synon-mcp-card__description[\s\S]*?line-height:\s*(?:var\(--settings-entity-card-body-line\)|21px)/
     );
     expect(connectorsCss).toMatch(
       /data-state='connected'[\s\S]*?background:\s*color-mix\(in srgb, #22b85a 14%, var\(--settings-surface\)\)\s*!important[\s\S]*?color:\s*#18783c\s*!important/

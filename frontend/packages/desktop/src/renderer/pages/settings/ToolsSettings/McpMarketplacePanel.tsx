@@ -216,7 +216,7 @@ const MarketplaceEntryCard: React.FC<{
         </div>
         <div className='synon-mcp-card__identity min-w-0 flex-1'>
           <div className='synon-mcp-card__title-row'>
-            <span className='min-w-0 truncate text-14px font-650 text-t-primary'>{entry.title}</span>
+            <span className='min-w-0 text-14px font-650 text-t-primary'>{entry.title}</span>
           </div>
           <div className='synon-mcp-card__badges'>
             <Tag size='small' color='arcoblue'>
@@ -227,7 +227,7 @@ const MarketplaceEntryCard: React.FC<{
         </div>
         <Tag size='small'>{t('settings.synonBiomedMcpMarketplaceNotInstalled')}</Tag>
       </div>
-      <p className='synon-mcp-card__description m-0 line-clamp-2 text-t-secondary' title={entry.description}>
+      <p className='synon-mcp-card__description' title={entry.description}>
         {description}
       </p>
       <div className='synon-mcp-card__metadata flex flex-wrap items-center'>

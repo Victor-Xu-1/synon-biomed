@@ -95,7 +95,7 @@ describe('SynonBiomedSkillsSettings', () => {
     expect(screen.getByTestId('synon-biomed-skills-section')).toBeInTheDocument();
     expect(screen.getByTestId('synon-biomed-skill-row-alphafold2')).toHaveTextContent('alphafold2');
     expect(screen.getByTestId('synon-biomed-skill-row-boltz2-nim')).toHaveTextContent('boltz2-nim');
-    expect(screen.getByText('推荐 (2)')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '技能 2' })).toBeInTheDocument();
   });
 
   it('searches within Synon Biomed runtime skills', async () => {
@@ -114,6 +114,6 @@ describe('SynonBiomedSkillsSettings', () => {
 
     await renderWithSettingsI18n(<SynonBiomedSkillsSettings withWrapper={false} />);
 
-    await waitFor(() => expect(screen.getByText('暂无推荐 Skill')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('暂无技能')).toBeInTheDocument());
   });
 });

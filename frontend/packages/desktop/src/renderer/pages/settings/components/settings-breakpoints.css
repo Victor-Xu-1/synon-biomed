@@ -13,36 +13,9 @@
   }
 }
 
-/* The locked Skills sheet places the category rail 16px closer to the
-   toolbar than the generic page stack. Its cards then use the wider 24px
-   column gutter visible in the supplied image. */
-.settings-page-wrapper[data-settings-route='skills'] .settings-skills-page > section {
-  margin-top: -16px;
-}
-
-.settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid {
-  column-gap: 24px !important;
-  row-gap: 20px !important;
-}
-
 @container (min-width: 1500px) {
   .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  }
-}
-
-/* At the locked 1536px sheet width the three-column cards reserve the taller
-   editorial blocks shown in the approved captures. The compact four-column
-   treatment above remains the wide-rail default. */
-@container (max-width: 1499px) {
-  .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card {
-    height: 220px;
-    min-height: 220px;
-  }
-
-  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-    height: 220px;
-    min-height: 220px;
   }
 }
 

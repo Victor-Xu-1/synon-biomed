@@ -33,8 +33,7 @@
 @media (min-width: 768px) {
   html body .settings-page-wrapper[data-settings-route='models'] .settings-models-page,
   html body .settings-page-wrapper[data-settings-route='general'] .settings-general-page,
-  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page,
-  html body .settings-page-wrapper[data-settings-route='tools'] .settings-tools-page {
+  html body .settings-page-wrapper[data-settings-route='storage'] .settings-storage-page {
     gap: 0 !important;
     row-gap: 0 !important;
   }

@@ -1,12 +1,11 @@
-/* Connector cards use the quiet, editorial artwork treatment from the
- * approved Scientific connectors sheet. All decorative marks are reviewed
- * image-2 assets; this file only supplies their palette, scale and opacity. */
+/* Connector cards share native-size typography and fluid layout with Skills. */
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  align-content: start;
   align-items: stretch;
-  gap: 20px !important;
+  gap: 16px !important;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
@@ -14,25 +13,17 @@
   isolation: isolate;
   display: flex;
   min-width: 0;
-  height: var(--settings-entity-card-height);
-  min-height: var(--settings-entity-card-height);
+  height: auto;
+  min-height: 236px;
   flex-direction: column;
-  gap: 0;
+  gap: 14px;
   overflow: hidden;
   box-sizing: border-box;
-  padding: var(--settings-entity-card-padding) !important;
+  padding: 18px !important;
   border: 1px solid var(--settings-border) !important;
   border-radius: var(--settings-card-radius) !important;
   background: var(--settings-surface) !important;
   color: var(--settings-text);
-}
-
-/* Tools now expose the same usage rail as Skills. Keep the additional
-   metadata inside a stable card height so the four-column grid remains even. */
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-  height: 220px;
-  min-height: 220px;
-  padding: 16px !important;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='blue'] {
@@ -71,7 +62,7 @@
   --mcp-soft: #f3efff;
 }
 
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card > :not(.mcp-connector-visual--artwork) {
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card > * {
   position: relative;
   z-index: 1;
 }
@@ -92,21 +83,10 @@
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .mcp-connector-visual--badge {
-  width: 46px;
-  height: 46px;
+  width: 36px;
+  height: 36px;
   overflow: hidden;
   border-radius: 11px;
-}
-
-.settings-page-wrapper[data-settings-route='tools'] .mcp-connector-visual--artwork {
-  position: absolute;
-  z-index: 0;
-  top: 50px;
-  right: 4px;
-  width: 108px;
-  height: 92px;
-  opacity: 0.62;
-  mix-blend-mode: multiply;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__top {
@@ -117,9 +97,9 @@
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__icon {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   border-radius: 11px;
   overflow: hidden;
   background: transparent !important;
@@ -127,7 +107,7 @@
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__identity {
   min-width: 0;
-  max-width: calc(100% - 56px);
+  overflow-wrap: anywhere;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row {
@@ -147,31 +127,43 @@
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__description {
   width: 100%;
   max-width: 100%;
-  min-height: 54px;
-  margin: 6px 0 0 !important;
+  min-height: 0;
+  margin: 0 !important;
   color: var(--settings-text-secondary) !important;
   font-size: var(--settings-entity-card-body-size) !important;
-  line-height: 18px !important;
-  text-align: justify;
-  text-align-last: left;
-  text-justify: inter-ideograph;
-  word-break: break-word;
+  line-height: 21px !important;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__usage {
   display: flex;
   min-height: 34px;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: 2px;
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px solid var(--settings-border);
+  margin-top: 0;
+  padding-top: 0;
   color: var(--settings-text-tertiary);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 16px;
-  text-align: center;
+  text-align: left;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--settings-border);
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__footer .synon-mcp-card__actions {
+  padding-top: 0;
+  gap: 6px;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__actions {
@@ -180,7 +172,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: auto;
+  flex-wrap: wrap;
+  margin-top: 0;
   padding-top: 6px;
   border-top: 0 !important;
 }
@@ -222,8 +215,9 @@
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
   display: inline-flex;
-  min-width: 0;
-  height: 34px;
+  width: auto !important;
+  min-width: 88px !important;
+  height: 34px !important;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
@@ -238,6 +232,12 @@
   font-weight: 550;
   line-height: 20px;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control[data-state='connected'] {
@@ -280,31 +280,19 @@
   box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.13);
 }
 
-@media (max-width: 1199px) {
-  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 860px) {
-  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 680px) {
-  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-    height: auto;
-    min-height: 224px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
     transition: none;
   }
+}
+
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__metadata {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  color: var(--settings-text-tertiary);
+  font-size: 12px;
+  line-height: 19px;
 }

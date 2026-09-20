@@ -123,31 +123,6 @@
   background: var(--settings-accent) !important;
 }
 
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar {
-  min-height: 48px;
-  padding-block: 0;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar > .flex {
-  display: flex;
-  min-width: 0;
-  flex: 1 1 auto;
-  gap: 12px;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar .arco-input-wrapper {
-  width: min(420px, 100%);
-  min-width: 220px;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skills-toolbar__search {
-  margin-right: auto;
-}
-
-.settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .skills-toolbar .arco-btn-primary {
-  min-width: 124px;
-}
-
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-body > :first-child {
   gap: var(--settings-section-gap) !important;
 }

@@ -78,14 +78,11 @@ describe('SynonBiomedMcpSettingsContent', () => {
     const ketcherCard = within(ketcherCardElement);
     expect(pubmedCardElement).toHaveAttribute('data-mcp-visual', 'pubmed');
     expect(ketcherCardElement).toHaveAttribute('data-mcp-visual', 'ketcher-chemistry');
-    expect(pubmedCardElement.querySelector('.mcp-connector-visual--artwork')).toHaveAttribute('aria-hidden', 'true');
-    expect(screen.getByTestId('synon-biomed-mcp-grid-Recommended connectors')).toHaveClass(
-      'grid-cols-1',
-      'xl:grid-cols-4'
-    );
+    expect(pubmedCardElement.querySelector('.mcp-connector-visual--artwork')).toBeNull();
+    expect(screen.getByTestId('synon-biomed-mcp-grid')).toHaveClass('synon-mcp-grid');
     expect(pubmedCard.getByText('Connected')).toBeInTheDocument();
     expect(pubmedCard.getByTestId('synon-biomed-mcp-permissions-pubmed')).toHaveTextContent('Configure');
-    expect(pubmedCard.getByText('Biomedical literature search and metadata')).toBeInTheDocument();
+    expect(pubmedCard.getByText('PubMed — Biomedical literature search and metadata.')).toBeInTheDocument();
     expect(ketcherCard.getByText('Connected')).toBeInTheDocument();
     expect(pubmedCard.queryByText('No authentication')).toBeNull();
     expect(ketcherCard.queryByText('No authentication')).toBeNull();
@@ -271,6 +268,38 @@ describe('SynonBiomedMcpSettingsContent', () => {
     );
   });
 
+  it('clears unsaved credentials when closing and reopening configuration', async () => {
+    const fetchMock = vi.fn(
+      async (input: string) =>
+        new Response(
+          JSON.stringify(
+            input === '/api/mcp-servers/directory-health'
+              ? { directoryHealth: { ok: true } }
+              : [
+                  {
+                    ...connectorFixture('bundled:credential', 'credential', 'Credential Provider'),
+                    apiKeyConfigurable: true,
+                    apiKeyLabel: 'Provider key',
+                    authRequired: true,
+                  },
+                ]
+          ),
+          { status: 200 }
+        )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-credential'));
+    fireEvent.change(await screen.findByTestId('synon-biomed-mcp-api-key-input'), {
+      target: { value: 'unsaved-test-secret' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    await waitFor(() => expect(screen.queryByTestId('synon-biomed-mcp-api-key-input')).toBeNull());
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-configure-credential'));
+    expect(await screen.findByTestId('synon-biomed-mcp-api-key-input')).toHaveValue('');
+    expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/credential'))).toBe(false);
+  });
+
   it('starts credential authorization for connectors that require authentication', async () => {
     const assignMock = vi.fn();
     const popup = {
@@ -314,7 +343,10 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
-    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-authorize-clinical'));
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-clinical'));
+    expect(openMock).not.toHaveBeenCalled();
+    expect(await screen.findByText('Account sign-in')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('mcp-configuration-authorize'));
 
     expect(openMock).toHaveBeenCalledWith('about:blank', '_blank');
     expect(popup.opener).toBeNull();
@@ -358,7 +390,8 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
-    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-authorize-clinical'));
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-clinical'));
+    fireEvent.click(await screen.findByTestId('mcp-configuration-authorize'));
 
     await waitFor(() => expect(popup.close).toHaveBeenCalledTimes(1));
     expect(assignMock).not.toHaveBeenCalled();
@@ -399,12 +432,12 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
-    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-key-tamarind-bio'));
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-tamarind-bio'));
     const input = await screen.findByTestId('synon-biomed-mcp-api-key-input');
     expect(input).toHaveAttribute('type', 'password');
     expect(input).toHaveAttribute('autocomplete', 'new-password');
     fireEvent.change(input, { target: { value: 'provider-secret' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save and check connection' }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -412,9 +445,11 @@ describe('SynonBiomedMcpSettingsContent', () => {
         expect.objectContaining({ method: 'PUT', body: '{"apiKey":"provider-secret"}' })
       )
     );
-    await waitFor(() => expect(screen.queryByTestId('synon-biomed-mcp-api-key-input')).toBeNull());
+    await waitFor(() => expect(input).toHaveValue(''));
     expect(document.body).not.toHaveTextContent('provider-secret');
-    expect(screen.getByTestId('synon-biomed-mcp-configure-key-tamarind-bio')).toHaveTextContent('Configure');
+    expect(await screen.findByTestId('mcp-configuration-status')).toHaveTextContent('Connected');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    expect(screen.getByTestId('synon-biomed-mcp-configure-tamarind-bio')).toHaveTextContent('Configure');
 
     fireEvent.click(screen.getByTestId('synon-biomed-mcp-more-tamarind-bio'));
     fireEvent.click(await screen.findByTestId('synon-biomed-mcp-disconnect-tamarind-bio'));
@@ -425,7 +460,7 @@ describe('SynonBiomedMcpSettingsContent', () => {
       )
     );
     await waitFor(() =>
-      expect(screen.getByTestId('synon-biomed-mcp-configure-key-tamarind-bio')).toHaveTextContent('Configure')
+      expect(screen.getByTestId('synon-biomed-mcp-configure-tamarind-bio')).toHaveTextContent('Configure')
     );
     expect(screen.queryByTestId('synon-biomed-mcp-disconnect-tamarind-bio')).toBeNull();
   });
@@ -453,10 +488,12 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
-    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-authorize-clinical'));
+    fireEvent.click(await screen.findByTestId('synon-biomed-mcp-configure-clinical'));
+    fireEvent.click(await screen.findByTestId('mcp-configuration-authorize'));
 
     expect(openMock).toHaveBeenCalledWith('about:blank', '_blank');
     expect(Message.error).toHaveBeenCalledWith('Allow pop-ups for this site, then connect credentials again.');
+    await waitFor(() => expect(screen.getByTestId('mcp-configuration-authorize')).not.toBeDisabled());
     expect(fetchMock).not.toHaveBeenCalledWith(
       '/api/mcp-servers/connectors/remote%3Aclinical/authorize',
       expect.anything()
@@ -566,6 +603,7 @@ describe('SynonBiomedMcpSettingsContent', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
 
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-add'));
     fireEvent.click(await screen.findByText('Free & local'));
     const card = await screen.findByTestId('synon-biomed-mcp-optional-renkin-local');
     expect(card).toHaveAttribute('aria-label', 'RENKIN retrosynthesis. Not installed');
@@ -580,6 +618,90 @@ describe('SynonBiomedMcpSettingsContent', () => {
       )
     );
     await waitFor(() => expect(card).toHaveAttribute('aria-label', 'RENKIN retrosynthesis. Installed'));
+  });
+  it('searches displayed translations and keeps the library filter when closing connector discovery', async () => {
+    const fixture = {
+      ...connectorFixture('bundled:example', 'example', 'Example'),
+      description_i18n: { 'zh-CN': '中文检索说明' },
+    };
+    const fetchMock = vi.fn(
+      async (input: string) =>
+        new Response(
+          JSON.stringify(
+            input.endsWith('directory-health')
+              ? { directoryHealth: { ok: true } }
+              : input.endsWith('/connectors')
+                ? [fixture]
+                : []
+          ),
+          { status: 200 }
+        )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'zh-CN');
+    expect(await screen.findByText('中文检索说明')).toBeVisible();
+    fireEvent.change(screen.getByRole('textbox', { name: '搜索连接器...' }), { target: { value: '中文检索' } });
+    expect(screen.getByText('Example')).toBeVisible();
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-add'));
+    fireEvent.click(await screen.findByText('免费与本地'));
+    await screen.findByTestId('synon-biomed-mcp-optional');
+    fireEvent.click(screen.getByRole('dialog').querySelector('.arco-modal-close-icon')!);
+    expect(screen.getByRole('textbox', { name: '搜索连接器...' })).toHaveValue('中文检索');
+    expect(screen.getByText('Example')).toBeVisible();
+    expect(fetchMock.mock.calls.every(([path]) => !path.endsWith('/install'))).toBe(true);
+  });
+
+  it('reports a failed first load instead of presenting it as an empty inventory', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('unavailable', { status: 503 }))
+    );
+    await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
+    expect(await screen.findByTestId('synon-biomed-mcp-load-error')).toBeVisible();
+    expect(screen.queryByText('No connectors installed yet.')).toBeNull();
+  });
+
+  it('keeps pagination outside the scroll area, resets page after filtering and preserves full localized copy', async () => {
+    const connectors = Array.from({ length: 13 }, (_, i) =>
+      connectorFixture(`bundled:item-${i}`, `item-${i}`, `Connector ${i}`)
+    );
+    connectors[0] = {
+      ...connectors[0],
+      displayName: 'bioRxiv',
+      description: 'bioRxiv/medRxiv preprints: full text and metadata.',
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async (input: string) =>
+          new Response(
+            JSON.stringify(
+              input.endsWith('directory-health')
+                ? { directoryHealth: { ok: true } }
+                : input.endsWith('/connectors')
+                  ? connectors
+                  : []
+            ),
+            { status: 200 }
+          )
+      )
+    );
+    await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
+    expect(await screen.findByRole('heading', { name: 'Connectors 13' })).toBeVisible();
+    expect(screen.getByText('bioRxiv/medRxiv preprints: full text and metadata.')).toBeVisible();
+    const footer = screen.getByTestId('mcp-library-footer');
+    const scroll = screen.getByTestId('mcp-library-scroll');
+    expect(scroll).not.toContainElement(footer);
+    fireEvent.click(within(footer).getByRole('button', { name: 'Connector pagination 2', exact: true }));
+    expect(screen.getByText('Connector 12')).toBeVisible();
+    scroll.scrollTop = 100;
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search connectors...' }), { target: { value: 'preprints' } });
+    await waitFor(() => expect(screen.getByText('bioRxiv')).toBeVisible());
+    expect(scroll.scrollTop).toBe(0);
+    expect(screen.queryByText('Connector 12')).toBeNull();
+    fireEvent.change(screen.getByTestId('synon-biomed-mcp-filter'), { target: { value: 'needs-attention' } });
+    expect(screen.getByText('No connectors match the current filters.')).toBeVisible();
   });
 });
 

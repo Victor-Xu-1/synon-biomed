@@ -7,6 +7,41 @@ const viewports = [
   { name: 'narrow', width: 390, height: 844 },
 ] as const;
 
+test('keeps the installed connector sheet four by three at wide desktop sizes', async ({ page }) => {
+  await login(page);
+  await page.goto('/#/settings/tools');
+  await expect(page.getByTestId('synon-biomed-mcp-pubmed')).toBeVisible();
+  for (const size of [
+    { width: 1440, height: 1000 },
+    { width: 1836, height: 1662 },
+  ]) {
+    await page.setViewportSize(size);
+    const pager = page.getByRole('navigation', { name: '连接器分页' });
+    const footerPositions: number[] = [];
+    for (const number of [1, 2]) {
+      await pager.getByRole('button', { name: `连接器分页 ${number}`, exact: true }).click();
+      const metrics = await page.getByTestId('synon-biomed-mcp-grid').evaluate((grid) => {
+        const boxes = [...grid.children].map((card) => card.getBoundingClientRect());
+        const scroll = grid.closest('.mcp-library-scroll')!;
+        return {
+          count: boxes.length,
+          columns: new Set(boxes.map((box) => Math.round(box.x))).size,
+          rows: new Set(boxes.map((box) => Math.round(box.y))).size,
+          gridHeight: grid.getBoundingClientRect().height,
+          scrollHeight: scroll.clientHeight,
+          footerY: document.querySelector('.mcp-library-footer')!.getBoundingClientRect().y,
+        };
+      });
+      expect(metrics.count).toBe(12);
+      expect(metrics.columns).toBe(4);
+      expect(metrics.rows).toBe(3);
+      expect(metrics.gridHeight).toBeGreaterThanOrEqual(metrics.scrollHeight - 20);
+      footerPositions.push(metrics.footerY);
+    }
+    expect(footerPositions[0]).toBe(footerPositions[1]);
+  }
+});
+
 for (const viewport of viewports) {
   test.describe(viewport.name, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height } });
@@ -18,14 +53,28 @@ for (const viewport of viewports) {
 
       const settings = page.getByTestId('synon-biomed-mcp-settings');
       await expect(settings).toBeVisible();
-      await expect(page.getByTestId('synon-biomed-mcp-directory-health')).toContainText('已连接 24/24', {
-        timeout: 60_000,
-      });
+      // Provider-backed connectors may legitimately await owner credentials.
+      // Check the displayed totals against the live catalog, not an obsolete
+      // all-connected constant; PubMed itself must be ready for these controls.
+      await expect(page.getByTestId('synon-biomed-mcp-enabled-pubmed')).toContainText('已连接', { timeout: 60_000 });
+      await expect
+        .poll(async () => {
+          const response = await page.request.get('/api/mcp-servers/connectors');
+          expect(response.ok()).toBe(true);
+          const connectors = (await response.json()) as Array<{ enabled: boolean; connectionStatus: string }>;
+          expect(connectors.length).toBeGreaterThan(0);
+          const enabled = connectors.filter((connector) => connector.enabled);
+          const connected = enabled.filter((connector) => connector.connectionStatus === 'connected');
+          const summary = await page.getByTestId('synon-biomed-mcp-directory-health').textContent();
+          return summary?.includes(`已连接 ${connected.length}/${enabled.length}`);
+        })
+        .toBe(true);
       await expect(page.getByTestId('synon-biomed-mcp-pubmed')).toContainText('PubMed');
       await expect(page.getByTestId('synon-biomed-mcp-enabled-pubmed')).toHaveAttribute('aria-checked', 'true');
       await assertInsideViewport(settings, viewport.width);
 
-      await page.getByRole('tab', { name: '在线市场' }).click();
+      await page.getByTestId('synon-biomed-mcp-add').click();
+      await page.getByRole('menuitem', { name: '在线市场' }).click();
       const marketplace = page.getByTestId('synon-biomed-mcp-marketplace');
       await expect(marketplace).toBeVisible();
       const marketplaceGrid = page.getByTestId('synon-biomed-mcp-marketplace-grid');
@@ -44,7 +93,7 @@ for (const viewport of viewports) {
       });
       expect(gridMetrics.columns).toBe(viewport.name === 'narrow' ? 1 : 3);
       expect(gridMetrics.fitsViewport).toBe(true);
-      await page.getByRole('tab', { name: '已安装' }).click();
+      await page.locator('.mcp-library-browser .arco-modal-close-icon').click();
 
       await page.getByTestId('synon-biomed-mcp-permissions-pubmed').click();
       await expect(page.getByTestId('synon-biomed-mcp-permission-search_articles-allow')).toBeVisible();
@@ -71,7 +120,7 @@ for (const viewport of viewports) {
           await page.locator('.arco-modal-close-icon').click();
 
           await page.getByTestId('synon-biomed-mcp-reconcile').click();
-          await expect(page.getByText('MCP 工具已修复并刷新。')).toBeVisible();
+          await expect(page.getByText('连接器目录已同步并刷新。')).toBeVisible();
         } finally {
           await restorePubMed(page);
         }

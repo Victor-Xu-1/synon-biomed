@@ -42,16 +42,8 @@ describe('ContextUsagePanel', () => {
       'fetch',
       vi.fn((input: RequestInfo | URL) => {
         const path = String(input);
-        if (path.includes('/messages')) {
-          return Promise.resolve(
-            new Response(JSON.stringify({ items: [] }), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          );
-        }
         return Promise.resolve(
-          new Response(JSON.stringify({ context_limit: 100, runtime_input_tokens: 20 }), {
+          new Response(JSON.stringify(path.includes('/messages') ? { items: [] } : {}), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           })
@@ -60,8 +52,11 @@ describe('ContextUsagePanel', () => {
     );
   });
 
-  it('exposes a keyboard-accessible trigger and disables frame caching', async () => {
-    await renderWithI18n(<ContextUsagePanel conversationId='conversation-1' />, 'en-US');
+  it('uses ACP usage data and never requests the cumulative frame projection', async () => {
+    await renderWithI18n(
+      <ContextUsagePanel conversationId='conversation-1' tokenUsage={{ total_tokens: 20 }} contextLimit={100} />,
+      'en-US'
+    );
     const trigger = await screen.findByTestId('synon-biomed-context-usage-trigger');
     expect(trigger.tagName).toBe('BUTTON');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
@@ -69,8 +64,9 @@ describe('ContextUsagePanel', () => {
     fireEvent.click(trigger);
     await waitFor(() => expect(screen.getByTestId('context-usage-legend')).toBeInTheDocument());
 
-    const frameRequest = vi.mocked(fetch).mock.calls.find(([input]) => !String(input).includes('/messages'));
-    expect(frameRequest?.[1]).toEqual(expect.objectContaining({ cache: 'no-store' }));
+    expect(vi.mocked(fetch).mock.calls.every(([input]) => String(input).includes('/messages'))).toBe(true);
+    const messageRequest = vi.mocked(fetch).mock.calls.find(([input]) => String(input).includes('/messages'));
+    expect(messageRequest?.[1]).toEqual(expect.objectContaining({ cache: 'no-store' }));
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 });

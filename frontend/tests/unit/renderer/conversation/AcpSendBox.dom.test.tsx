@@ -985,6 +985,8 @@ describe('AcpSendBox', () => {
 
     await render(<AcpSendBox conversation_id='conv-1' backend='claude' messageState={makeMessageState()} />);
 
+    expect(screen.queryByTestId('synon-biomed-context-usage-trigger')).not.toBeInTheDocument();
+
     await act(async () => {
       await runtimeOperationsProps.current?.onStop?.();
     });

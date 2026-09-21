@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "b32d84b74bac260d81c24f569fba28e1cbd300c6265205956e416b61dde366f6",
+  "adaptationFingerprintSHA256": "9b9be32cc1a84670b39795dc70495c31774cc92ea9076eeabb44ea27a5f2070c",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "4aedd58833a338b552654c39623e769aba4e3857f82c1dd65327d329095acebb",
+  "additionFingerprintSHA256": "f8905fb9b92edfcf5cb17995e6c7ff32f453cb3a6862d5672c41a0ec101922c5",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 405,
@@ -1760,8 +1760,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/AcpSendBox.tsx",
       "sourceSHA256": "8f99e14a4de14e19821d60b145b3cbfdbbe6686becd6150d19283dc7cedf8f80",
-      "targetSHA256": "9d9a883083aafc0001b1359020edd6f54698852bbc62da4f6d02ca1f27b98e5e",
-      "bytes": 52882,
+      "targetSHA256": "1cca41a4f902210828cc2b932b5b6f1920a8e8a377632fd468943d64f153d41f",
+      "bytes": 53234,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -3762,8 +3762,8 @@
     {
       "path": "tests/unit/renderer/conversation/AcpSendBox.dom.test.tsx",
       "sourceSHA256": "c2612ecad37fc58e61d4b91a863f1c8679ce73cd39b6f45a641273ea2f4ed035",
-      "targetSHA256": "fbc5c0741f4acdbe83a4301ccf404386123d804cddbd8f337d10f4543aafa3a8",
-      "bytes": 79133,
+      "targetSHA256": "b688484f4aa96a56456f416fbbb4fd1d3803074957f2fdd9d81b628682187e4b",
+      "bytes": 79230,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -6656,8 +6656,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/ContextUsagePanel.tsx",
-      "sha256": "aaddbfc7328a6c5f256ef475457b9924b55b67290ae7da197c2213b437719622",
-      "bytes": 10275,
+      "sha256": "74a2f56e857cf6a2270c5532a02515f0f54bb1617996f1a28fe7afc9b723ac97",
+      "bytes": 8529,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9146,8 +9146,8 @@
     },
     {
       "path": "tests/unit/renderer/ContextUsagePanel.dom.test.tsx",
-      "sha256": "3aef4dd56d6094a8cefe0eb67ba51746f8e378836eba7d6ad35978cf90a67e60",
-      "bytes": 2460,
+      "sha256": "c63a737a3261ca5bd34872a23bcc3fc988b36f4342641434d76ebee980e32063",
+      "bytes": 2385,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

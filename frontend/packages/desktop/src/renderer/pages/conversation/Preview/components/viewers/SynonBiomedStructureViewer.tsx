@@ -1573,21 +1573,32 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
     const maxWidth = Math.max(220, (stageRect?.width ?? 640) - 116);
     const maxHeight = Math.max(280, stageRect?.height ?? 720);
     let pendingWidth = startWidth;
+    let pendingHeight = startHeight;
+    // Pointer events arrive well above the frame rate, and every panel-width
+    // commit re-renders the whole viewer, so one frame applies only its latest
+    // geometry. The drag end below still commits the final value.
+    const resizeFrame = createAnimationFrameCoalescer(window, () => {
+      if (axis === 'horizontal') setDockingPanelWidth(pendingWidth);
+      else setDockingPanelHeight(pendingHeight);
+    });
     const handlePointerMove = (pointerEvent: PointerEvent) => {
       if (axis === 'horizontal') {
         pendingWidth = Math.max(
           RIGHT_PANEL_MIN_EXPANDED_WIDTH,
           Math.min(maxWidth, startWidth + startX - pointerEvent.clientX)
         );
-        setDockingPanelWidth(pendingWidth);
       } else {
-        setDockingPanelHeight(Math.max(280, Math.min(maxHeight, startHeight + pointerEvent.clientY - startY)));
+        pendingHeight = Math.max(280, Math.min(maxHeight, startHeight + pointerEvent.clientY - startY));
       }
+      resizeFrame.schedule();
     };
     const stopResize = () => {
+      resizeFrame.cancel();
       if (axis === 'horizontal') {
         setDockingPanelWidth(pendingWidth);
         setDockingCanvasInset(pendingWidth);
+      } else {
+        setDockingPanelHeight(pendingHeight);
       }
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', stopResize);
@@ -1878,13 +1889,18 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
       tooltipButton = button;
       setTooltip({ text, left, top });
     };
-    const repositionTooltip = () => {
-      if (!tooltipButton || !tooltipButton.isConnected || !host.contains(tooltipButton)) {
+    // Scroll and resize fire per pixel, and repositioning reads the button box,
+    // so an open tooltip follows the viewport at frame rate instead of doing
+    // forced layout for every event.
+    const repositionFrame = createAnimationFrameCoalescer(window, () => {
+      if (!tooltipButton) return;
+      if (!tooltipButton.isConnected || !host.contains(tooltipButton)) {
         hideTooltip();
         return;
       }
       showTooltip(tooltipButton);
-    };
+    });
+    const repositionTooltip = repositionFrame.schedule;
     const handlePointerOver = (event: PointerEvent) => {
       const button = findHelpButton(event.target);
       const previousButton = findHelpButton(event.relatedTarget);
@@ -1909,6 +1925,7 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
     window.addEventListener('scroll', repositionTooltip, true);
 
     return () => {
+      repositionFrame.cancel();
       host.removeEventListener('pointerover', handlePointerOver);
       host.removeEventListener('pointerout', handlePointerOut);
       host.removeEventListener('focusin', handleFocusIn);

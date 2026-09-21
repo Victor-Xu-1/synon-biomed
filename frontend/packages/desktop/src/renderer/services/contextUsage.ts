@@ -89,20 +89,40 @@ function estimateToolCallTokens(call: unknown): number {
   );
 }
 
+/**
+ * Count textual values in the projected message content returned by the
+ * conversation history API. That API wraps text messages as
+ * { content: { content: string } } and represents tool rows as structured
+ * objects, while the runner estimator receives a flat string. Walking the
+ * values keeps the client estimate useful for both shapes without counting
+ * transport-only field names as message text.
+ */
+function estimateStructuredContentTokens(value: unknown, seen = new Set<object>()): number {
+  if (typeof value === 'string') return estimateTextTokens(value);
+  if (!value || typeof value !== 'object') return 0;
+  if (seen.has(value)) return 0;
+  seen.add(value);
+  let total = 0;
+  if (Array.isArray(value)) {
+    for (const item of value) total += estimateStructuredContentTokens(item, seen);
+  } else {
+    for (const child of Object.values(value)) total += estimateStructuredContentTokens(child, seen);
+  }
+  seen.delete(value);
+  return total;
+}
+
 export function estimateChatMessageTokens(item: unknown): number {
   if (!item || typeof item !== 'object') return 0;
   const record = item as Record<string, unknown>;
   let total = MESSAGE_OVERHEAD_TOKENS;
-  total += estimateTextTokens(typeof record.role === 'string' ? record.role : '');
+  const role = typeof record.role === 'string' ? record.role : record.position === 'right' ? 'user' : '';
+  total += estimateTextTokens(role);
   const content = record.content;
   if (typeof content === 'string') {
     total += estimateTextTokens(content);
-  } else if (Array.isArray(content)) {
-    for (const part of content) {
-      if (part && typeof part === 'object' && typeof (part as Record<string, unknown>).text === 'string') {
-        total += estimateTextTokens((part as Record<string, unknown>).text as string);
-      }
-    }
+  } else {
+    total += estimateStructuredContentTokens(content);
   }
   if (Array.isArray(record.tool_calls)) {
     for (const call of record.tool_calls) total += estimateToolCallTokens(call);

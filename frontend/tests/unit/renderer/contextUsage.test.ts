@@ -39,6 +39,20 @@ describe('context usage estimation', () => {
     expect(estimateConversationMessagesTokens([message, message])).toBe(total * 2);
   });
 
+  it('counts the structured content shape returned by conversation history', () => {
+    const projectedText = {
+      type: 'text',
+      position: 'right',
+      content: { content: 'abcdefgh' },
+    };
+    const projectedTool = {
+      type: 'tool_call',
+      content: { name: 'search', input: { query: 'abcd' }, output: 'efgh' },
+    };
+    expect(estimateChatMessageTokens(projectedText)).toBe(4 + 1 + 2);
+    expect(estimateChatMessageTokens(projectedTool)).toBeGreaterThan(4);
+  });
+
   it('pins the breakdown rows to the authoritative used total', () => {
     const rows = buildContextUsageBreakdown({ usedTokens: 133_000, limitTokens: 300_000, messagesTokens: 84_000 });
     const sum = rows.reduce((total, row) => total + row.tokens, 0);

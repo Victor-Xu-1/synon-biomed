@@ -199,12 +199,18 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
         </div>
       }
     >
-      <ContextUsageIndicator
-        tokenUsage={{ total_tokens: usage?.usedTokens ?? 0 }}
-        context_limit={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT}
-        size={24}
-        className='composer-control-context-ring'
-      />
+      <span
+        data-testid='synon-biomed-context-usage-trigger'
+        aria-label={t('conversation.contextUsage.title')}
+        className='inline-flex items-center justify-center cursor-pointer'
+      >
+        <ContextUsageIndicator
+          tokenUsage={{ total_tokens: usage?.usedTokens ?? 0 }}
+          context_limit={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT}
+          size={24}
+          className='composer-control-context-ring'
+        />
+      </span>
     </Popover>
   );
 };

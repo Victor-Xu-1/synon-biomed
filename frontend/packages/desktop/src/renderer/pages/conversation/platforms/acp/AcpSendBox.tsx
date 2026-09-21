@@ -84,13 +84,14 @@ import { mergeFileSelectionItems } from '@/renderer/utils/file/fileSelection';
 import { buildDisplayMessage } from '@/renderer/utils/file/messageFiles';
 import { Message, Tag } from '@arco-design/web-react';
 import { useNavigate } from 'react-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
 import { buildSendFailureError } from './buildSendFailureError';
 import { redactErrorText } from './errorDiagnostics';
 import { buildSynonBiomedReviewRepairPrompt } from '@/renderer/components/synonBiomed/runtime/synonBiomedReviewRepair';
 import { useAcpInitialMessage } from './useAcpInitialMessage';
+import { applyStagedDraft, makeDraftRestoreIssueNotifier, type StagedDraftPayload } from './stagedDraftHandoff';
 import type { UseAcpMessageReturn } from './useAcpMessage';
 import { useAcpSendBoxDraftController } from './useAcpSendBoxDraftController';
 import { useAcpMobileActionSheetController } from './useAcpMobileActionSheetController';
@@ -127,8 +128,31 @@ const AcpSendBox: React.FC<{
   const localeKey = resolveLocaleKey(i18n.language);
   const navigate = useNavigate();
   const { checkAndUpdateTitle } = useAutoTitle(ownerId, initialConversation);
-  const { atPath, uploadFile, setAtPath, setUploadFile, content, setContent, contextItems, setContextItems } =
-    useAcpSendBoxDraftController(conversation_id, ownerId);
+  const {
+    atPath,
+    uploadFile,
+    setAtPath,
+    setUploadFile,
+    content,
+    setContent,
+    contextItems,
+    setContextItems,
+    stagedPlanMode,
+    setStagedPlanMode,
+    stagedSessionOptions,
+    setStagedSessionOptions,
+  } = useAcpSendBoxDraftController(conversation_id, ownerId);
+  // Staged plan mode and session options are durable in the draft; keep
+  // synchronous views for the send path because the draft store resolves
+  // asynchronously.
+  const stagedPlanModeRef = useRef(stagedPlanMode);
+  useEffect(() => {
+    stagedPlanModeRef.current = stagedPlanMode;
+  }, [stagedPlanMode]);
+  const stagedSessionOptionsRef = useRef(stagedSessionOptions);
+  useEffect(() => {
+    stagedSessionOptionsRef.current = stagedSessionOptions;
+  }, [stagedSessionOptions]);
   const layout = useLayoutContext();
   const isMobile = Boolean(layout?.isMobile);
   const conversationContext = useConversationContextSafe();
@@ -154,6 +178,26 @@ const AcpSendBox: React.FC<{
     setOptions: setSynonSessionOptions,
     loadState: sessionOptionsLoad,
   } = useSynonBiomedSessionOptionsState(conversation_id, agent_name);
+  const applyStagedSessionOptions = useCallback(() => {
+    const staged = stagedSessionOptionsRef.current;
+    if (!staged) return;
+    setSynonSessionOptions((current) => ({
+      ...current,
+      delegation: staged.delegation,
+      autoReview: staged.autoReview,
+      memory: staged.memory,
+      targetAgent: staged.targetAgent.trim() || current.targetAgent,
+    }));
+  }, [setSynonSessionOptions]);
+  // The runtime session-options load resolves asynchronously for a fresh
+  // conversation; replay the staged selection once it settles so the loaded
+  // defaults cannot silently replace the requesting page's choices.
+  useEffect(() => {
+    if (sessionOptionsLoad.conversationId !== conversation_id) return;
+    if (sessionOptionsLoad.status === 'ready' || sessionOptionsLoad.status === 'retrying') {
+      applyStagedSessionOptions();
+    }
+  }, [applyStagedSessionOptions, sessionOptionsLoad]);
   const [mobileSpecialists, setMobileSpecialists] = useState<Array<{ id: string; label: string; agentId: string }>>([]);
   const [mobileComputeProviders, setMobileComputeProviders] = useState<Array<{ name: string; label: string }>>([]);
   const [mobileEnabledCompute, setMobileEnabledCompute] = useState<string[]>([]);
@@ -439,6 +483,29 @@ const AcpSendBox: React.FC<{
   );
 
   // Check for and send initial message from guid page
+  // Check for and stage the initial message from the guid page.
+  const stageInitialDraft = useCallback(
+    (payload: StagedDraftPayload) => {
+      applyStagedDraft(
+        payload,
+        {
+          setContent,
+          setUploadFile,
+          setContextItems,
+          setStagedSessionOptions,
+          setStagedPlanMode,
+        },
+        {
+          onStagedSessionOptions: (options) => {
+            stagedSessionOptionsRef.current = options;
+          },
+          applyStagedSessionOptions,
+        }
+      );
+    },
+    [setContent, setUploadFile, setContextItems, setStagedSessionOptions, setStagedPlanMode, applyStagedSessionOptions]
+  );
+  const notifyDraftRestoreIssue = useMemo(() => makeDraftRestoreIssueNotifier(t), [t]);
   useAcpInitialMessage({
     conversation_id: conversation_id,
     backend,
@@ -451,6 +518,8 @@ const AcpSendBox: React.FC<{
     markSendFailed: runtimeView.markSendFailed,
     checkAndUpdateTitle,
     addOrUpdateMessage: addOrUpdateMessageRef.current,
+    onDraftPrefill: stageInitialDraft,
+    onDraftRestoreIssue: notifyDraftRestoreIssue,
   });
 
   const resolveCommandExecutionAuthority = useCallback(
@@ -466,11 +535,23 @@ const AcpSendBox: React.FC<{
       ) {
         throw new Error('selected_branch_changed');
       }
+      // A staged draft carries its requesting page's session options through
+      // the durable draft; they win over the async runtime load for the first
+      // send, while an explicit per-send choice (plan mode) always wins.
+      const effectiveSessionOptions = stagedSessionOptionsRef.current
+        ? {
+            ...synonSessionOptions,
+            delegation: stagedSessionOptionsRef.current.delegation,
+            autoReview: stagedSessionOptionsRef.current.autoReview,
+            memory: stagedSessionOptionsRef.current.memory,
+            targetAgent: stagedSessionOptionsRef.current.targetAgent.trim() || synonSessionOptions.targetAgent,
+          }
+        : synonSessionOptions;
       return {
         targetBranchId,
         targetBranchRevision,
-        sessionOptions: toSynonBiomedMessageSessionOptions(synonSessionOptions, {
-          planMode,
+        sessionOptions: toSynonBiomedMessageSessionOptions(effectiveSessionOptions, {
+          planMode: planMode ?? (stagedPlanModeRef.current ? true : undefined),
           targetBranchId,
           expectedBranchId: branchState?.activeBranchId,
           expectedGeneration: branchState?.generation,
@@ -538,6 +619,16 @@ const AcpSendBox: React.FC<{
         });
         if (!mountedRef.current || conversationAuthorityRef.current !== conversationAuthority) return;
         runtimeView.markSendAccepted(result.turn_id, result.runtime, result.msg_id);
+        // The staged intents applied to this first accepted send and must not
+        // leak into later manual sends: the frame now records them.
+        if (stagedPlanModeRef.current) {
+          stagedPlanModeRef.current = false;
+          setStagedPlanMode(false);
+        }
+        if (stagedSessionOptionsRef.current) {
+          stagedSessionOptionsRef.current = null;
+          setStagedSessionOptions(null);
+        }
         // The send response is the first authoritative identity for the user
         // message. Promote the optimistic row to that identity immediately so
         // the durable userCreated event cannot leave two identical rows on

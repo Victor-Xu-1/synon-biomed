@@ -274,4 +274,140 @@ describe('useAcpInitialMessage', () => {
     expect(sessionStorage.getItem(storageKey)).toBe(stored);
     expect(params.addOrUpdateMessage).toHaveBeenCalledTimes(1);
   });
+
+  it('stages draft_only payloads into the composer without sending anything', async () => {
+    const conversationId = 'initial-staged-draft';
+    const storageKey = `acp_initial_message_${conversationId}`;
+    sessionStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        input: 'stage me, do not send',
+        files: ['workspace/notes.md'],
+        artifact_refs: [
+          {
+            artifact_id: 'artifact-stage',
+            version_id: 'version-stage',
+            relation: 'attached',
+            availability: 'available',
+            filename: 'cohort.csv',
+            size_bytes: 64,
+          },
+        ],
+        inject_skills: ['literature'],
+        inject_mcp_server_ids: ['bundled:pubmed'],
+        compute_providers: ['local'],
+        session_options: {
+          ultra_mode: true,
+          verifier_mode: 'on',
+          memory_mode: 'on',
+          target_agent: 'AIDD_EXPERT',
+          plan_mode: true,
+        },
+        draft_only: true,
+      })
+    );
+    const params = createParams(conversationId);
+    const onDraftPrefill = vi.fn();
+
+    renderHook(() => useAcpInitialMessage({ ...params, onDraftPrefill }));
+
+    await vi.waitFor(() => expect(onDraftPrefill).toHaveBeenCalledTimes(1));
+    expect(onDraftPrefill).toHaveBeenCalledWith({
+      input: 'stage me, do not send',
+      files: ['workspace/notes.md'],
+      artifactRefs: [
+        {
+          artifact_id: 'artifact-stage',
+          version_id: 'version-stage',
+          relation: 'attached',
+          availability: 'available',
+          filename: 'cohort.csv',
+          size_bytes: 64,
+        },
+      ],
+      injectSkills: ['literature'],
+      injectMcpServerIds: ['bundled:pubmed'],
+      sessionOptions: {
+        delegation: true,
+        autoReview: true,
+        memory: true,
+        targetAgent: 'AIDD_EXPERT',
+      },
+      planMode: true,
+    });
+    expect(sendMessageInvokeMock).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(sessionStorage.getItem(storageKey)).toBeNull());
+    expect(params.markSendStarted).not.toHaveBeenCalled();
+    expect(params.setAiProcessing).not.toHaveBeenCalled();
+    expect(setComputeProviderMock).toHaveBeenCalledWith(conversationId, 'local', true);
+  });
+
+  it('retains the queued draft when compute provider restoration fails and reports the issue', async () => {
+    const conversationId = 'initial-staged-provider-failure';
+    const storageKey = `acp_initial_message_${conversationId}`;
+    const stored = JSON.stringify({
+      input: 'staged with failing compute',
+      draft_only: true,
+      compute_providers: ['broken'],
+    });
+    sessionStorage.setItem(storageKey, stored);
+    setComputeProviderMock.mockRejectedValue(new Error('provider unavailable'));
+    const params = createParams(conversationId);
+    const onDraftPrefill = vi.fn();
+    const onDraftRestoreIssue = vi.fn();
+
+    renderHook(() => useAcpInitialMessage({ ...params, onDraftPrefill, onDraftRestoreIssue }));
+
+    // The composer draft is applied before the asynchronous restore so the
+    // staged task itself never depends on provider availability.
+    await vi.waitFor(() => expect(onDraftPrefill).toHaveBeenCalledTimes(1));
+    expect(onDraftPrefill).toHaveBeenCalledWith({
+      input: 'staged with failing compute',
+      files: [],
+      artifactRefs: [],
+      injectSkills: [],
+      injectMcpServerIds: [],
+      sessionOptions: null,
+      planMode: false,
+    });
+    await vi.waitFor(() => expect(onDraftRestoreIssue).toHaveBeenCalledWith({ providers: ['broken'] }));
+    expect(sendMessageInvokeMock).not.toHaveBeenCalled();
+    // The queued payload survives so a later mount can retry the restore.
+    expect(sessionStorage.getItem(storageKey)).toBe(stored);
+  });
+
+  it('keeps the queued draft when the effect is torn down mid restore and retries on remount', async () => {
+    const conversationId = 'initial-staged-unmount';
+    const storageKey = `acp_initial_message_${conversationId}`;
+    const stored = JSON.stringify({
+      input: 'staged across unmount',
+      draft_only: true,
+      compute_providers: ['local'],
+    });
+    sessionStorage.setItem(storageKey, stored);
+    const gate = createDeferred<void>();
+    setComputeProviderMock.mockImplementation(() => gate.promise);
+    const params = createParams(conversationId);
+    const onDraftPrefill = vi.fn();
+    const onDraftRestoreIssue = vi.fn();
+
+    const { unmount } = renderHook(() => useAcpInitialMessage({ ...params, onDraftPrefill, onDraftRestoreIssue }));
+    await vi.waitFor(() => expect(onDraftPrefill).toHaveBeenCalledTimes(1));
+    unmount();
+    await act(async () => {
+      gate.resolve();
+      await Promise.resolve();
+    });
+
+    // The torn-down run must not consume the payload nor report an issue.
+    expect(onDraftRestoreIssue).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(storageKey)).toBe(stored);
+
+    setComputeProviderMock.mockResolvedValue(undefined);
+    const retry = renderHook(() => useAcpInitialMessage({ ...createParams(conversationId), onDraftPrefill }));
+    await vi.waitFor(() => expect(sessionStorage.getItem(storageKey)).toBeNull());
+    expect(onDraftRestoreIssue).not.toHaveBeenCalled();
+    expect(setComputeProviderMock).toHaveBeenCalledWith(conversationId, 'local', true);
+    retry.unmount();
+  });
 });

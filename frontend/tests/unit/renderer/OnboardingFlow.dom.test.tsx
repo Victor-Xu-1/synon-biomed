@@ -14,7 +14,11 @@ const mocks = vi.hoisted(() => ({
   requestSuggestions: vi.fn(),
   resolveSuggestion: vi.fn(),
   cancelSuggestion: vi.fn(),
-  launchTask: vi.fn(),
+  stageTask: vi.fn(),
+  loadLlmProviders: vi.fn(),
+  saveLlmProfile: vi.fn(),
+  activateLlmProfile: vi.fn(),
+  testLlmProfile: vi.fn(),
   confirmCompletion: vi.fn(),
   logout: vi.fn(),
   refresh: vi.fn(),
@@ -45,8 +49,10 @@ vi.mock('@icon-park/react', () => {
     ArrowRight: Icon,
     Brain: Icon,
     Check: Icon,
+    Config: Icon,
     Link: Icon,
     NetworkTree: Icon,
+    Plus: Icon,
     Tool: Icon,
     UploadOne: Icon,
   };
@@ -79,21 +85,43 @@ vi.mock('@arco-design/web-react', () => {
   }: Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> & { onChange?: (value: string) => void }) => (
     <textarea {...props} onChange={(event) => onChange?.(event.target.value)} />
   );
+  Input.Password = Input;
+  const Select = ({
+    value,
+    onChange,
+    children,
+    ...props
+  }: Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> & { onChange?: (value: string) => void }) => (
+    <select value={value} onChange={(event) => onChange?.(event.target.value)} {...props}>
+      {children}
+    </select>
+  );
+  Select.Option = ({ value, children }: { value: string; children?: React.ReactNode }) => (
+    <option value={value}>{children}</option>
+  );
   return {
     Alert: ({ content }: { content?: React.ReactNode }) => <div>{content}</div>,
     Button,
     Input,
+    Message: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+    Select,
     Spin: () => <div>loading</div>,
     Switch,
   };
 });
+vi.mock('@/renderer/services/synonBiomedLlm', () => ({
+  loadSynonBiomedLlmProviders: mocks.loadLlmProviders,
+  saveSynonBiomedLlmProfile: mocks.saveLlmProfile,
+  activateSynonBiomedLlmProfile: mocks.activateLlmProfile,
+  testSynonBiomedLlmProfile: mocks.testLlmProfile,
+}));
 vi.mock('@/renderer/services/onboardingService', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/renderer/services/onboardingService')>()),
   loadOnboardingSnapshot: mocks.loadSnapshot,
   saveOnboardingCapabilities: mocks.saveCapabilities,
   ensureOnboardingProject: mocks.ensureProject,
   prepareOnboardingSuggestionArtifacts: mocks.prepareSuggestions,
-  launchOnboardingTask: mocks.launchTask,
+  stageOnboardingTask: mocks.stageTask,
 }));
 vi.mock('@/renderer/services/onboardingSuggestions', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/renderer/services/onboardingSuggestions')>()),
@@ -174,12 +202,13 @@ describe('OnboardingFlow', () => {
     mocks.authUser = { id: 'local', username: 'local' };
     mocks.loadSnapshot.mockResolvedValue(onboardingSnapshot());
     mocks.saveCapabilities.mockResolvedValue(undefined);
-    mocks.ensureProject.mockResolvedValue({ projectId: 'project-1' });
+    mocks.ensureProject.mockResolvedValue({ projectId: 'project-1', name: 'Getting started' });
     mocks.prepareSuggestions.mockResolvedValue([]);
     mocks.requestSuggestions.mockImplementation(() => new Promise(() => undefined));
     mocks.resolveSuggestion.mockResolvedValue(undefined);
     mocks.cancelSuggestion.mockResolvedValue(undefined);
-    mocks.launchTask.mockResolvedValue({ conversationId: 'conversation-1', projectId: 'project-1', turnId: 'turn-1' });
+    mocks.stageTask.mockResolvedValue({ conversationId: 'conversation-1', projectId: 'project-1' });
+    mocks.loadLlmProviders.mockResolvedValue({ profiles: [], templates: [] });
     mocks.logout.mockResolvedValue(undefined);
     mocks.refresh.mockResolvedValue(undefined);
   });
@@ -324,7 +353,7 @@ describe('OnboardingFlow', () => {
     view.unmount();
   });
 
-  it('collects all five steps and launches the exact custom task with profile and attachment', async () => {
+  it('stages the exact custom task as an unsent draft across all six steps', async () => {
     const user = userEvent.setup();
     const { container } = await renderOnboarding();
     expect(await screen.findByTestId('onboarding-welcome')).toBeInTheDocument();
@@ -345,13 +374,19 @@ describe('OnboardingFlow', () => {
 
     const customTask = 'Reproduce the survival analysis for this cohort';
     await user.type(screen.getByTestId('onboarding-task-custom'), customTask);
-    await user.click(screen.getByTestId('onboarding-start'));
+    expect(mocks.stageTask).not.toHaveBeenCalled();
+    await user.click(continueButton());
 
-    await waitFor(() => expect(mocks.launchTask).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('onboarding-model')).toBeInTheDocument();
+    expect(await screen.findByTestId('onboarding-model-status')).toBeInTheDocument();
+    await user.click(screen.getByTestId('onboarding-finish'));
+
+    await waitFor(() => expect(mocks.stageTask).toHaveBeenCalledTimes(1));
     expect(mocks.ensureProject).toHaveBeenCalledWith('Getting started', { fetchImpl: expect.any(Function) });
-    expect(mocks.launchTask).toHaveBeenCalledWith(
+    expect(mocks.stageTask).toHaveBeenCalledWith(
       expect.objectContaining({
         projectId: 'project-1',
+        projectName: 'Getting started',
         assistantId: 'synonbiomed:operon',
         task: customTask,
         profile: { summary: 'Translational genomics researcher' },
@@ -368,32 +403,58 @@ describe('OnboardingFlow', () => {
     expect(mocks.confirmCompletion).toHaveBeenCalledWith('local');
   });
 
-  it('reuses the launch identity and created conversation after a lost send response', async () => {
+  it('enters the workspace directly when no first task was selected', async () => {
+    const user = userEvent.setup();
+    mocks.stageTask.mockResolvedValueOnce({ projectId: 'project-1', conversationId: null });
+    await renderOnboarding();
+    expect(await screen.findByTestId('onboarding-welcome')).toBeInTheDocument();
+    for (let index = 0; index < 5; index += 1) {
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+    }
+    expect(screen.getByTestId('onboarding-model')).toBeInTheDocument();
+    await user.click(screen.getByTestId('onboarding-finish'));
+
+    await waitFor(() => expect(mocks.stageTask).toHaveBeenCalledTimes(1));
+    expect(mocks.stageTask).toHaveBeenCalledWith(expect.objectContaining({ task: '' }), expect.anything());
+    expect(mocks.navigate).toHaveBeenCalledWith('/guid', { replace: true });
+    expect(mocks.confirmCompletion).toHaveBeenCalledWith('local');
+  });
+
+  it('shows the optional model setup step with the add affordance', async () => {
+    const user = userEvent.setup();
+    await renderOnboarding();
+    expect(await screen.findByTestId('onboarding-welcome')).toBeInTheDocument();
+    for (let index = 0; index < 5; index += 1) {
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+    }
+    expect(await screen.findByTestId('onboarding-model-status')).toHaveTextContent('No model configured yet');
+    expect(screen.getByTestId('onboarding-model-add')).toBeInTheDocument();
+    expect(mocks.loadLlmProviders).toHaveBeenCalledTimes(1);
+  });
+
+  it('reuses the staged conversation after a lost completion response', async () => {
     const user = userEvent.setup();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    mocks.launchTask
+    mocks.stageTask
       .mockImplementationOnce(async (_input: unknown, options: { onConversationCreated?: (id: string) => void }) => {
         options.onConversationCreated?.('conversation-retry');
-        throw new Error('connection closed after message commit');
+        throw new Error('connection closed after conversation creation');
       })
-      .mockResolvedValueOnce({ conversationId: 'conversation-retry', projectId: 'project-1', turnId: 'turn-1' });
+      .mockResolvedValueOnce({ conversationId: 'conversation-retry', projectId: 'project-1' });
     await renderOnboarding();
     expect(await screen.findByTestId('onboarding-welcome')).toBeInTheDocument();
     for (let index = 0; index < 4; index += 1) {
       await user.click(screen.getByRole('button', { name: 'Continue' }));
     }
     await user.type(screen.getByTestId('onboarding-task-custom'), 'Retry the exact first task');
-    await user.click(screen.getByTestId('onboarding-start'));
-    await waitFor(() => expect(mocks.launchTask).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByTestId('onboarding-start')).not.toBeDisabled());
-    await user.click(screen.getByTestId('onboarding-start'));
-    await waitFor(() => expect(mocks.launchTask).toHaveBeenCalledTimes(2));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByTestId('onboarding-finish'));
+    await waitFor(() => expect(mocks.stageTask).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByTestId('onboarding-finish')).not.toBeDisabled());
+    await user.click(screen.getByTestId('onboarding-finish'));
+    await waitFor(() => expect(mocks.stageTask).toHaveBeenCalledTimes(2));
 
-    const firstInput = mocks.launchTask.mock.calls[0][0] as { loadingId: string };
-    const secondInput = mocks.launchTask.mock.calls[1][0] as { loadingId: string };
-    const secondOptions = mocks.launchTask.mock.calls[1][1] as { conversationId?: string };
-    expect(firstInput.loadingId).toBeTruthy();
-    expect(secondInput.loadingId).toBe(firstInput.loadingId);
+    const secondOptions = mocks.stageTask.mock.calls[1][1] as { conversationId?: string };
     expect(secondOptions.conversationId).toBe('conversation-retry');
     expect(mocks.navigate).toHaveBeenCalledWith('/conversation/conversation-retry', { replace: true });
     consoleError.mockRestore();
@@ -521,14 +582,14 @@ describe('OnboardingFlow', () => {
     expect(window.localStorage.getItem('synonbiomed.onboarding.draft.v1:owner-b') ?? '').not.toContain('owner-a.csv');
   });
 
-  it('invalidates an in-flight launch before a different owner can receive later side effects', async () => {
+  it('invalidates an in-flight completion before a different owner can receive later side effects', async () => {
     const user = userEvent.setup();
     const uploadGate = deferred<void>();
     mocks.authUser = { id: 'owner-a', username: 'owner-a' };
-    mocks.launchTask.mockImplementationOnce(async (_input: unknown, options: { assertAuthority: () => void }) => {
+    mocks.stageTask.mockImplementationOnce(async (_input: unknown, options: { assertAuthority: () => void }) => {
       await uploadGate.promise;
       options.assertAuthority();
-      return { conversationId: 'should-not-exist', projectId: 'project-1', turnId: 'turn-1' };
+      return { conversationId: 'should-not-exist', projectId: 'project-1' };
     });
     const view = await renderOnboarding();
     expect(await screen.findByTestId('onboarding-welcome')).toBeInTheDocument();
@@ -536,8 +597,9 @@ describe('OnboardingFlow', () => {
       await user.click(screen.getByRole('button', { name: 'Continue' }));
     }
     await user.type(screen.getByTestId('onboarding-task-custom'), 'Owner A private task');
-    await user.click(screen.getByTestId('onboarding-start'));
-    await waitFor(() => expect(mocks.launchTask).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByTestId('onboarding-finish'));
+    await waitFor(() => expect(mocks.stageTask).toHaveBeenCalledTimes(1));
 
     mocks.authUser = { id: 'owner-b', username: 'owner-b' };
     view.rerender(<OnboardingFlow />);
@@ -547,7 +609,7 @@ describe('OnboardingFlow', () => {
     expect(await screen.findByTestId('onboarding-welcome')).toBeInTheDocument();
   });
 
-  it('refreshes a CSRF-invalid session without replaying the non-atomic launch', async () => {
+  it('refreshes a CSRF-invalid session without replaying the non-atomic completion', async () => {
     const user = userEvent.setup();
     mocks.saveCapabilities.mockRejectedValueOnce(
       new BackendHttpError({
@@ -563,11 +625,12 @@ describe('OnboardingFlow', () => {
       await user.click(screen.getByRole('button', { name: 'Continue' }));
     }
     await user.type(screen.getByTestId('onboarding-task-custom'), 'Recover the security session');
-    await user.click(screen.getByTestId('onboarding-start'));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByTestId('onboarding-finish'));
     await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
     expect(mocks.rememberCurrentAuthRoute).toHaveBeenCalledTimes(1);
     expect(mocks.clearAuthCache).toHaveBeenCalledTimes(1);
-    expect(mocks.launchTask).not.toHaveBeenCalled();
+    expect(mocks.stageTask).not.toHaveBeenCalled();
     expect(mocks.navigate).not.toHaveBeenCalledWith('/login', expect.anything());
   });
 });

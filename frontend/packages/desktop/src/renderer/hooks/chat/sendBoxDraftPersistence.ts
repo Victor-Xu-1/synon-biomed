@@ -14,12 +14,31 @@ const MAX_DRAFT_NAME_LENGTH = 1_024;
 const MAX_OWNER_ID_LENGTH = 256;
 const MAX_CONVERSATION_ID_LENGTH = 512;
 
+export type StagedSessionOptions = {
+  delegation: boolean;
+  autoReview: boolean;
+  memory: boolean;
+  targetAgent: string;
+};
+
 export type AcpSendBoxDraft = {
   _type: 'acp';
   content: string;
   atPath: Array<string | FileOrFolderItem>;
   uploadFile: string[];
   contextItems: ComposerContextItem[];
+  /**
+   * A staged task can request plan-first execution for its first explicit
+   * send. It rides in the durable draft so a reload keeps the intent until
+   * the user sends, and it is consumed by that first accepted send.
+   */
+  planMode?: true;
+  /**
+   * Staged session options travel in the durable draft for the same reason:
+   * the runtime session-options load resolves asynchronously and must not
+   * overwrite the requesting page's choices before the first explicit send.
+   */
+  stagedSessionOptions?: StagedSessionOptions;
 };
 
 type PersistedSendBoxDraft = {
@@ -126,7 +145,27 @@ function normalizeAcpSendBoxDraft(value: unknown): AcpSendBoxDraft | null {
     atPath,
     uploadFile,
     contextItems: normalizeComposerContextItems(value.contextItems),
+    ...(value.planMode === true ? { planMode: true as const } : {}),
+    ...normalizeStagedSessionOptions(value.stagedSessionOptions),
   };
+}
+
+function normalizeStagedSessionOptions(value: unknown): { stagedSessionOptions?: StagedSessionOptions } {
+  if (!isRecord(value)) return {};
+  const delegation = value.delegation;
+  const autoReview = value.autoReview;
+  const memory = value.memory;
+  const targetAgent = value.targetAgent;
+  if (
+    typeof delegation !== 'boolean' ||
+    typeof autoReview !== 'boolean' ||
+    typeof memory !== 'boolean' ||
+    typeof targetAgent !== 'string' ||
+    targetAgent.length > 256
+  ) {
+    return {};
+  }
+  return { stagedSessionOptions: { delegation, autoReview, memory, targetAgent } };
 }
 
 function normalizeAtPath(value: unknown): Array<string | FileOrFolderItem> | null {

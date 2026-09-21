@@ -207,7 +207,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
         <ContextUsageIndicator
           tokenUsage={{ total_tokens: usage?.usedTokens ?? 0 }}
           context_limit={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT}
-          size={24}
+          size={16}
           className='composer-control-context-ring'
         />
       </span>

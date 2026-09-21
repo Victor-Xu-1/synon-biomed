@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Popover, Spin } from '@arco-design/web-react';
+import { Dropdown, Spin } from '@arco-design/web-react';
 import { Close } from '@icon-park/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -77,6 +77,7 @@ type DurableMessagePayload = {
 };
 
 const MESSAGE_SAMPLE_LIMIT = 200;
+const USAGE_POLL_INTERVAL_MS = 10_000;
 
 function positiveNumber(value: unknown): number | null {
   const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
@@ -99,40 +100,53 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
   const [messageLoadFailed, setMessageLoadFailed] = useState(false);
 
   useEffect(() => {
-    if (!visible || !conversationId) return;
+    if (!conversationId) return;
     let cancelled = false;
-    setUsage(null);
-    setUsageLoadFailed(false);
-    const controller = new AbortController();
-    // Same authoritative frame projection the session options menu reads.
-    fetch(`/api/frames/${encodeURIComponent(conversationId)}`, {
-      credentials: 'include',
-      signal: controller.signal,
-      headers: { Accept: 'application/json' },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error(`frame usage request failed: ${response.status}`);
-        return response.json() as Promise<FrameUsagePayload>;
+    let loadedOnce = false;
+    let controller: AbortController | null = null;
+    const loadUsage = () => {
+      // Skip hidden tabs: the ring only needs to stay live while visible.
+      if (document.hidden) return;
+      controller?.abort();
+      const nextController = new AbortController();
+      controller = nextController;
+      // Same authoritative frame projection the session options menu reads.
+      fetch(`/api/frames/${encodeURIComponent(conversationId)}`, {
+        credentials: 'include',
+        signal: nextController.signal,
+        headers: { Accept: 'application/json' },
       })
-      .then((payload) => {
-        if (!cancelled) {
-          const usedTokens = positiveNumber(payload?.runtime_input_tokens);
-          const limitTokens = positiveNumber(payload?.context_limit);
-          if (usedTokens !== null && limitTokens !== null) {
-            setUsage({ usedTokens, limitTokens });
-          } else {
-            setUsageLoadFailed(true);
+        .then((response) => {
+          if (!response.ok) throw new Error(`frame usage request failed: ${response.status}`);
+          return response.json() as Promise<FrameUsagePayload>;
+        })
+        .then((payload) => {
+          if (!cancelled) {
+            const usedTokens = positiveNumber(payload?.runtime_input_tokens);
+            const limitTokens = positiveNumber(payload?.context_limit);
+            if (usedTokens !== null && limitTokens !== null) {
+              loadedOnce = true;
+              setUsage({ usedTokens, limitTokens });
+              setUsageLoadFailed(false);
+            } else {
+              setUsageLoadFailed(true);
+            }
           }
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setUsageLoadFailed(true);
-      });
+        })
+        .catch(() => {
+          // Polling failures stay silent once real figures have been shown;
+          // the last known usage remains displayed.
+          if (!cancelled && !loadedOnce) setUsageLoadFailed(true);
+        });
+    };
+    loadUsage();
+    const timer = window.setInterval(loadUsage, USAGE_POLL_INTERVAL_MS);
     return () => {
       cancelled = true;
-      controller.abort();
+      window.clearInterval(timer);
+      controller?.abort();
     };
-  }, [visible, conversationId]);
+  }, [conversationId, visible]);
 
   useEffect(() => {
     if (!visible || !conversationId) return;
@@ -175,12 +189,12 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
   const ready = Boolean(usage && rows);
 
   return (
-    <Popover
+    <Dropdown
       trigger='click'
       position='tl'
       popupVisible={visible}
       onVisibleChange={(next) => setVisible(next)}
-      content={
+      droplist={
         <div className={`app-overlay-menu composer-control-menu ${styles.root}`} data-testid='context-usage-panel'>
           <div className={styles.header}>
             <span className={styles.headerTitle}>{t('conversation.contextUsage.title')}</span>
@@ -251,7 +265,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
       >
         <UsageRing usedTokens={usage?.usedTokens ?? 0} limitTokens={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT} />
       </span>
-    </Popover>
+    </Dropdown>
   );
 };
 

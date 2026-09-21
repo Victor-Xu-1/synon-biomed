@@ -1203,7 +1203,7 @@ const AcpSendBox: React.FC<{
         }
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
-            {(aiProcessing || content.trim() === '') && <ContextUsagePanel conversationId={conversation_id} />}
+            {(isBusy || content.trim() === '') && <ContextUsagePanel conversationId={conversation_id} />}
             {content.trim() !== '' && (
               <OptimizePromptAction draft={content} disabled={false} onReplace={setContent} />
             )}

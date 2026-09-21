@@ -2126,6 +2126,10 @@ describe('AcpSendBox', () => {
   });
 
   it('swaps the context-usage ring for the optimize-prompt action while typing', async () => {
+    runtimeViewMock.isProcessing = false;
+    runtimeViewMock.canSendMessage = true;
+    runtimeViewMock.state = 'idle';
+    runtimeViewMock.view.taskStatus = 'finished';
     await render(<AcpSendBox conversation_id='conv-1' backend='synonbiomed' messageState={makeMessageState()} />);
 
     expect(screen.getByTestId('synon-biomed-context-usage-trigger')).toBeInTheDocument();
@@ -2140,9 +2144,10 @@ describe('AcpSendBox', () => {
   });
 
   it('keeps the ring while running and shows both icons when typing during a run', async () => {
-    const messageState = makeMessageState();
-    messageState.aiProcessing = true;
-    await render(<AcpSendBox conversation_id='conv-1' backend='synonbiomed' messageState={messageState} />);
+    runtimeViewMock.isProcessing = true;
+    runtimeViewMock.canSendMessage = false;
+    runtimeViewMock.state = 'running';
+    await render(<AcpSendBox conversation_id='conv-1' backend='synonbiomed' messageState={makeMessageState()} />);
 
     expect(screen.getByTestId('synon-biomed-context-usage-trigger')).toBeInTheDocument();
     expect(screen.queryByTestId('synon-biomed-optimize-prompt-trigger')).not.toBeInTheDocument();

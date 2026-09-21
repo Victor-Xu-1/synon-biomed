@@ -1,0 +1,592 @@
+/*
+ * Desktop card-sheet density.
+ *
+ * Skills, MCP connectors, and scientific environments are paged libraries,
+ * not document articles. Keep the active page as a bounded sheet: cards use
+ * a compact, readable hierarchy and the grid expands to five columns when the
+ * real Chrome content rail can support it. Narrow/mobile layouts retain their
+ * normal single-column flow and scrolling behavior.
+ */
+@media (min-width: 768px) {
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    ) {
+    --settings-control-height: 32px;
+    --settings-section-gap: 6px;
+    --settings-card-gap: 10px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    .settings-page-header {
+    padding-bottom: 0;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    .settings-page-header__row {
+    min-height: 32px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    .settings-page-header__title {
+    font-size: 22px !important;
+    line-height: 28px !important;
+    letter-spacing: -0.025em;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    :is(.settings-skill-library-total, .mcp-library-total) {
+    margin-inline-start: 5px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    .settings-page-header__description {
+    margin-top: 1px;
+    font-size: 11px !important;
+    line-height: 15px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    .settings-page-header__actions {
+    gap: 6px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    .settings-page-header__actions
+    :is(.arco-btn, .settings-action-button) {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding-inline: 10px !important;
+    border-radius: 7px !important;
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    .settings-page-header__actions
+    svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-library-toolbar,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-toolbar,
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-toolbar {
+    gap: 8px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
+    :is(.settings-skill-library-search, .mcp-library-search)
+    .arco-input-wrapper {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding-inline: 9px;
+    border-radius: 7px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
+    :is(.settings-skill-library-search, .mcp-library-search)
+    .arco-input {
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
+    :is(.settings-skill-library-toolbar, .mcp-library-toolbar)
+    :is(.arco-btn, select),
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-toolbar :is(select, button),
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-search {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding-inline: 9px !important;
+    border-radius: 7px;
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-search input {
+    height: 30px;
+    font-size: 12px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is(
+      [data-settings-route='skills'],
+      [data-settings-route='tools'],
+      [data-settings-route='environments']
+    )
+    :is(.settings-skill-library-toolbar, .mcp-library-toolbar, .environment-toolbar)
+    svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health .text-12px {
+    font-size: 10px !important;
+    line-height: 14px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health .gap-8px {
+    gap: 5px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-notice {
+    padding: 5px 8px;
+    font-size: 10px;
+    line-height: 14px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-results {
+    font-size: 10px;
+    line-height: 14px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-filter-panel,
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-filter-panel {
+    gap: 8px;
+    margin-top: 6px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-filter-panel label,
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-filter-panel label {
+    gap: 4px;
+    font-size: 11px;
+    line-height: 15px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='environments'])
+    :is(.settings-skill-filter-panel, .environment-filter-panel)
+    :is(select, button, .arco-btn) {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding-inline: 9px !important;
+    font-size: 11px !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
+    .settings-pagination {
+    min-height: 28px;
+    gap: 4px;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
+    :is(.settings-pagination__page, .settings-pagination__arrow) {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    font-size: 11px;
+    line-height: 14px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .settings-page-content {
+    display: flex;
+    flex: 1;
+    height: auto !important;
+    min-height: 0 !important;
+    padding-bottom: 12px;
+    overflow: hidden !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .settings-page-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-library {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library {
+    gap: 6px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-library-scroll,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll,
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 2px 3px 4px;
+    scrollbar-gutter: stable;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-library-scroll,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-library-scroll > .min-h-0,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll > .arco-spin,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll > .arco-spin > .arco-spin-children {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
+    display: grid;
+    flex: 1;
+    align-content: stretch;
+    gap: 10px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid,
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(0, 1fr);
+    gap: 10px !important;
+    align-content: stretch;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid,
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-grid:not(:empty) {
+    height: 100%;
+    min-height: 0 !important;
+    flex: 1;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-card,
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card {
+    min-height: 0 !important;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card {
+    gap: 4px;
+    padding: 8px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__content {
+    min-height: 0;
+    gap: 4px;
+    overflow: hidden;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__heading {
+    gap: 5px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__icon {
+    width: 22px;
+    height: 22px;
+    flex-basis: 22px;
+    border-radius: 6px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__title {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 11px !important;
+    line-height: 14px !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__description {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 10px !important;
+    line-height: 13px !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__metadata {
+    gap: 3px;
+    font-size: 9px;
+    line-height: 11px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__footer {
+    min-height: 24px;
+    padding-top: 3px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__footer .text-11px {
+    font-size: 9px;
+    line-height: 11px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
+    gap: 4px;
+    padding: 8px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__top {
+    gap: 5px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__icon {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+    border-radius: 7px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row > span {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 11px !important;
+    line-height: 14px !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__description {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 10px !important;
+    line-height: 13px !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__metadata {
+    gap: 3px;
+    font-size: 9px;
+    line-height: 11px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__footer {
+    gap: 3px;
+    padding-top: 3px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__usage {
+    min-height: 22px;
+    font-size: 9px;
+    line-height: 11px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__actions {
+    min-height: 22px;
+    gap: 3px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__configure.arco-btn,
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
+    min-height: 22px !important;
+    height: 22px !important;
+    padding-inline: 5px !important;
+    font-size: 9px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
+    min-width: 64px !important;
+    gap: 3px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card {
+    gap: 3px;
+    padding: 6px !important;
+    border-radius: 10px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-body {
+    min-height: 0;
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-heading {
+    gap: 5px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-icon {
+    width: 20px;
+    height: 20px;
+    flex-basis: 20px;
+    border-radius: 6px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card h2 {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 11px !important;
+    line-height: 14px !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-category {
+    font-size: 9px;
+    line-height: 10px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-description {
+    display: -webkit-box;
+    min-height: 0;
+    overflow: hidden;
+    font-size: 10px !important;
+    line-height: 13px !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-packages {
+    font-size: 9px;
+    line-height: 11px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-packages summary {
+    overflow: hidden;
+    padding: 1px 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-footer {
+    min-height: 22px;
+    flex-shrink: 0;
+    gap: 3px;
+    padding-top: 3px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-status {
+    font-size: 8px;
+    line-height: 10px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-status {
+    font-size: 9px;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-action {
+    min-height: 20px !important;
+    padding-inline: 5px !important;
+    font-size: 9px !important;
+  }
+
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card > progress,
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-error-code {
+    flex-shrink: 0;
+  }
+
+  html
+    body
+    .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
+    .settings-skill-library-footer,
+  html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-footer {
+    min-height: 32px;
+    padding-top: 3px;
+  }
+}
+
+@container (min-width: 900px) {
+  html
+    body
+    .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'][data-settings-route='skills']
+    .settings-skills-page
+    .settings-entity-grid,
+  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
+    overflow: visible;
+  }
+}

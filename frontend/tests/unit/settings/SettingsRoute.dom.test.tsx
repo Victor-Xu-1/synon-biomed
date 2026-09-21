@@ -25,6 +25,7 @@ vi.mock('@/renderer/pages/settings/settingsRouteLoaders', async () => {
     compute: page('Compute'),
     governance: page('Memory'),
     network: page('Network'),
+    environments: page('Scientific environments'),
     credentials: page('Credentials'),
     storage: page('Storage'),
     general: page('General'),

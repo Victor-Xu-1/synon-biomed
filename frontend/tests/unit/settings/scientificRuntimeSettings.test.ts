@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   loadScientificRuntimeSettings,
+  pauseScientificRuntime,
   saveScientificRuntimeSelection,
   retryScientificRuntime,
+  uninstallScientificRuntime,
 } from '@/renderer/services/scientificRuntimeSettings';
 
 describe('scientific runtime settings protocol', () => {
@@ -47,6 +49,22 @@ describe('scientific runtime settings protocol', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ id: 'alpha' }),
+      })
+    );
+    await pauseScientificRuntime('alpha', { fetchImpl });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      '/api/preferences/scientific-runtimes',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ id: 'alpha', action: 'pause' }),
+      })
+    );
+    await uninstallScientificRuntime('alpha', { fetchImpl });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      '/api/preferences/scientific-runtimes',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ id: 'alpha', action: 'uninstall' }),
       })
     );
     fetchImpl.mockResolvedValueOnce(new Response('{"detail":"not selected"}', { status: 409 }));

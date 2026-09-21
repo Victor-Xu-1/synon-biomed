@@ -72,6 +72,12 @@ export function getBuiltinSettingsNavItems(_isDesktop: boolean, t: TranslateFn):
       icon: <SettingsGeneratedNavIcon id='network' />,
       path: 'network',
     },
+    environments: {
+      id: 'environments',
+      label: t('settings.environments.title'),
+      icon: <SettingsGeneratedNavIcon id='environments' />,
+      path: 'environments',
+    },
     credentials: {
       id: 'credentials',
       label: t('settings.credentials'),

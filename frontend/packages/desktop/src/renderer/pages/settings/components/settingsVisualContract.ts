@@ -204,6 +204,15 @@ export const SETTINGS_VISUAL_CONTRACTS = {
     interactionSelectors: ['.settings-section button', '[role="progressbar"]'],
     dynamicStates: ['directory-loading', 'usage-loading', 'empty-cloud', 'move-pending', 'save-error'],
   }),
+  environments: contract({
+    route: 'environments',
+    reference: { desktop: null, mobile: null },
+    rootTestId: 'scientific-environments',
+    primarySelectors: ['.environment-grid'],
+    grid: { desktopColumns: 3, mobileColumns: 1 },
+    interactionSelectors: ['input', 'select', 'button'],
+    dynamicStates: ['loading', 'error', 'empty', 'preparing', 'ready', 'failed'],
+  }),
   general: contract({
     route: 'general',
     reference: {

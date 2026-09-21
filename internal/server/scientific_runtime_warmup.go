@@ -141,8 +141,68 @@ func (s *Server) setScientificRuntimeWarmupStatus(id string, status scientificRu
 	if s.scientificRuntimeWarmups == nil {
 		s.scientificRuntimeWarmups = make(map[string]scientificRuntimeWarmupStatus)
 	}
+	if s.scientificRuntimeWarmupCancelled != nil && s.scientificRuntimeWarmupCancelled[id] && status.State != "stopped" {
+		status.State = "stopped"
+		status.RetryAt = time.Time{}
+	}
 	s.scientificRuntimeWarmups[id] = status
 	s.scientificRuntimeWarmupMu.Unlock()
+}
+
+func (s *Server) setScientificRuntimeWarmupCancel(id string, cancel context.CancelFunc) {
+	if s == nil {
+		return
+	}
+	s.scientificRuntimeWarmupMu.Lock()
+	if s.scientificRuntimeWarmupCancels == nil {
+		s.scientificRuntimeWarmupCancels = make(map[string]context.CancelFunc)
+	}
+	if cancel == nil {
+		delete(s.scientificRuntimeWarmupCancels, id)
+	} else {
+		s.scientificRuntimeWarmupCancels[id] = cancel
+	}
+	s.scientificRuntimeWarmupMu.Unlock()
+}
+
+func pauseableScientificRuntimeWarmupState(state string) bool {
+	switch state {
+	case "scheduled", "preparing", "retrying":
+		return true
+	default:
+		return false
+	}
+}
+
+// pauseScientificRuntimeWarmup fences admission and cancels an already
+// admitted operation under the same lock. This closes the window between a
+// worker's selection check and creation of its operation context.
+func (s *Server) pauseScientificRuntimeWarmup(id string) bool {
+	if s == nil {
+		return false
+	}
+	s.scientificRuntimeWarmupMu.Lock()
+	status := s.scientificRuntimeWarmups[id]
+	if !pauseableScientificRuntimeWarmupState(status.State) {
+		s.scientificRuntimeWarmupMu.Unlock()
+		return false
+	}
+	if s.scientificRuntimeWarmupCancelled == nil {
+		s.scientificRuntimeWarmupCancelled = make(map[string]bool)
+	}
+	s.scientificRuntimeWarmupCancelled[id] = true
+	cancel := s.scientificRuntimeWarmupCancels[id]
+	s.scientificRuntimeWarmups[id] = scientificRuntimeWarmupStatus{
+		State:       "stopped",
+		MaxAttempts: len(scientificRuntimeWarmupRetryDelays),
+		Environment: status.Environment,
+		Generation:  status.Generation,
+	}
+	s.scientificRuntimeWarmupMu.Unlock()
+	if cancel != nil {
+		cancel()
+	}
+	return true
 }
 
 func (s *Server) scientificRuntimeWarmupStatus(id string) scientificRuntimeWarmupStatus {
@@ -205,6 +265,9 @@ func (s *Server) queueScientificRuntimeWarmup(id string) bool {
 		return false
 	}
 	s.scientificRuntimeWarmupMu.Lock()
+	if s.scientificRuntimeWarmupCancelled != nil {
+		delete(s.scientificRuntimeWarmupCancelled, id)
+	}
 	status := s.scientificRuntimeWarmups[id]
 	switch status.State {
 	case "scheduled", "preparing", "retrying", "ready":
@@ -319,6 +382,35 @@ func (s *Server) storeScientificRuntimeWarmupSelection(values []string) ([]strin
 	if s == nil || s.settingsStore == nil {
 		return nil, errors.New("settings store is not configured")
 	}
+	selectedSet := make(map[string]struct{}, len(selected))
+	for _, id := range selected {
+		selectedSet[id] = struct{}{}
+	}
+	cancels := make([]context.CancelFunc, 0)
+	// Fence queued work before persisting the new selection. Active preparation
+	// remains non-destructive and is intentionally not cancelled by a normal
+	// selection edit; the explicit pause action owns that transition.
+	s.scientificRuntimeWarmupMu.Lock()
+	if s.scientificRuntimeWarmupCancelled == nil {
+		s.scientificRuntimeWarmupCancelled = make(map[string]bool)
+	}
+	for _, definition := range scientificRuntimeWarmupDefinitions() {
+		if _, enabled := selectedSet[definition.ID]; enabled {
+			delete(s.scientificRuntimeWarmupCancelled, definition.ID)
+			continue
+		}
+		status := s.scientificRuntimeWarmups[definition.ID]
+		if status.State == "scheduled" {
+			s.scientificRuntimeWarmupCancelled[definition.ID] = true
+			if cancel := s.scientificRuntimeWarmupCancels[definition.ID]; cancel != nil {
+				cancels = append(cancels, cancel)
+			}
+		}
+	}
+	s.scientificRuntimeWarmupMu.Unlock()
+	for _, cancel := range cancels {
+		cancel()
+	}
 	if _, err := s.settingsStore.Set(scientificRuntimeSelectionSettingKey, selected); err != nil {
 		return nil, err
 	}
@@ -368,15 +460,16 @@ func (s *Server) RunScientificRuntimeWarmups(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case id := <-s.scientificRuntimeWarmupWake:
-			if !s.shouldRunScientificRuntimeWarmup(id) {
-				continue
-			}
 			definition, found := scientificRuntimeWarmupDefinitionByID(id)
 			if !found {
 				continue
 			}
+			runContext, cancel, admitted := s.beginScientificRuntimeWarmup(ctx, id)
+			if !admitted {
+				continue
+			}
 			status := runScientificRuntimeWarmup(
-				ctx,
+				runContext,
 				scientificRuntimeWarmupRetryDelays,
 				func(runContext context.Context) (scientificRuntimeWarmupResult, error) {
 					attempt := s.scientificRuntimeWarmupStatus(id).Attempt
@@ -389,6 +482,8 @@ func (s *Server) RunScientificRuntimeWarmups(ctx context.Context) error {
 					s.setScientificRuntimeWarmupStatus(id, current)
 				},
 			)
+			cancel()
+			s.setScientificRuntimeWarmupCancel(id, nil)
 			if status.State == "ready" {
 				log.Printf("scientific runtime warmup completed id=%s environment=%s generation=%s", id, status.Environment, status.Generation)
 			} else if status.State == "failed" {
@@ -398,20 +493,38 @@ func (s *Server) RunScientificRuntimeWarmups(ctx context.Context) error {
 	}
 }
 
-// Recheck the persisted selection at dequeue time. A stale queued request
-// must not install software that the user deselected before it started.
-func (s *Server) shouldRunScientificRuntimeWarmup(id string) bool {
-	if s.scientificRuntimeWarmupStatus(id).State == "ready" {
-		return false
-	}
+// beginScientificRuntimeWarmup is the single admission point for queued
+// preparation. Selection is read before the short critical section, then the
+// cancellation fence and operation context are installed atomically with the
+// final status check. A concurrent pause therefore either cancels this exact
+// context or prevents admission entirely.
+func (s *Server) beginScientificRuntimeWarmup(parent context.Context, id string) (context.Context, context.CancelFunc, bool) {
 	selected, configured, err := s.loadScientificRuntimeWarmupSelection()
+	s.scientificRuntimeWarmupMu.Lock()
+	defer s.scientificRuntimeWarmupMu.Unlock()
+	if s.scientificRuntimeWarmupCancelled != nil && s.scientificRuntimeWarmupCancelled[id] {
+		return nil, nil, false
+	}
+	status := s.scientificRuntimeWarmups[id]
+	if status.State == "ready" {
+		return nil, nil, false
+	}
 	if err != nil {
-		s.setScientificRuntimeWarmupStatus(id, scientificRuntimeWarmupStatus{State: "failed", LastErrorCode: "runtime_selection_unavailable"})
-		return false
+		s.scientificRuntimeWarmups[id] = scientificRuntimeWarmupStatus{
+			State: "failed", MaxAttempts: len(scientificRuntimeWarmupRetryDelays), LastErrorCode: "runtime_selection_unavailable",
+		}
+		return nil, nil, false
 	}
 	if !configured || !slices.Contains(selected, id) {
-		s.setScientificRuntimeWarmupStatus(id, scientificRuntimeWarmupStatus{State: "waiting_for_selection"})
-		return false
+		s.scientificRuntimeWarmups[id] = scientificRuntimeWarmupStatus{
+			State: "waiting_for_selection", MaxAttempts: len(scientificRuntimeWarmupRetryDelays),
+		}
+		return nil, nil, false
 	}
-	return true
+	runContext, cancel := context.WithCancel(parent)
+	if s.scientificRuntimeWarmupCancels == nil {
+		s.scientificRuntimeWarmupCancels = make(map[string]context.CancelFunc)
+	}
+	s.scientificRuntimeWarmupCancels[id] = cancel
+	return runContext, cancel, true
 }

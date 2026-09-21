@@ -245,8 +245,8 @@ describe('settings image-based visual contract', () => {
   });
 
   it('covers every shipped settings module exactly once', () => {
-    expect(SETTINGS_VISUAL_ROUTE_IDS).toHaveLength(12);
-    expect(new Set(SETTINGS_VISUAL_ROUTE_IDS).size).toBe(12);
+    expect(SETTINGS_VISUAL_ROUTE_IDS).toHaveLength(13);
+    expect(new Set(SETTINGS_VISUAL_ROUTE_IDS).size).toBe(13);
     expect(Object.keys(SETTINGS_VISUAL_CONTRACTS).toSorted()).toEqual([...SETTINGS_VISUAL_ROUTE_IDS].toSorted());
   });
 
@@ -261,7 +261,7 @@ describe('settings image-based visual contract', () => {
       expect(entry.primarySelectors.length).toBeGreaterThan(0);
       expect(entry.interactionSelectors.length).toBeGreaterThan(0);
       expect(entry.dynamicStates.length).toBeGreaterThan(0);
-      if (route === 'credentials' || route === 'experts' || route === 'skills') {
+      if (route === 'credentials' || route === 'experts' || route === 'skills' || route === 'environments') {
         expect(entry.reference.desktop).toBeNull();
       } else {
         expect(entry.reference.desktop).toBe(SETTINGS_LOCKED_DESKTOP_REFERENCE_SRC[route]);

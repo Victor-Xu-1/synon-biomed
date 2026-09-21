@@ -35,6 +35,11 @@
   },
   "onboarding": {
     "brand": "Synon Biomed Workbench",
+    "account": {
+      "current": "Current account: {{username}}",
+      "switch": "Switch account",
+      "switching": "Switching…"
+    },
     "progressLabel": "Setup progress",
     "progressValue": "Step {{current}} of {{total}}: {{title}}",
     "projectDefaultName": "Getting started",

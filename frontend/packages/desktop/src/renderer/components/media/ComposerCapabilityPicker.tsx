@@ -16,6 +16,7 @@ import {
   type SynonBiomedMcpServer,
   type SynonBiomedSkill,
 } from '@/renderer/services/synonBiomedCapabilities';
+import { resolveLocaleKey } from '@/common/utils';
 
 type ComposerCapabilityPickerProps = {
   skillNames: string[];
@@ -124,7 +125,7 @@ const CapabilityListRow: React.FC<{
       aria-label={name}
       disabled={disabled}
       title={description || name}
-      className={`box-border flex w-full items-center gap-8px border-0 bg-transparent px-10px py-5px text-left rounded-6px transition-colors ${
+      className={`box-border flex h-40px w-full items-center gap-9px border-0 bg-transparent px-10px text-left rounded-6px transition-colors ${
         checked ? 'bg-fill-2' : 'hover:bg-fill-2'
       } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       onClick={disabled ? undefined : onClick}
@@ -166,10 +167,25 @@ const SearchHeader: React.FC<{
 type CatalogEntry = { label: string; description: string };
 
 function catalogMap(
-  entries: Array<{ name: string; displayName: string; description: string }>
+  entries: Array<{
+    name: string;
+    displayName: string;
+    description: string;
+    description_i18n?: Record<string, string>;
+  }>,
+  localeKey: 'zh-CN' | 'en-US'
 ): Map<string, CatalogEntry> {
   return new Map<string, CatalogEntry>(
-    entries.map((entry) => [entry.name, { label: entry.displayName || entry.name, description: entry.description }])
+    entries.map((entry) => [
+      entry.name,
+      {
+        label: entry.displayName || entry.name,
+        description:
+          (entry.description_i18n &&
+            (entry.description_i18n[localeKey] || entry.description_i18n[localeKey.slice(0, 2)])) ||
+          entry.description,
+      },
+    ])
   );
 }
 
@@ -183,7 +199,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
   onOpenMcpSettings,
   onRequestClose,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [mcpOpen, setMcpOpen] = useState(false);
@@ -198,18 +214,18 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
     let cancelled = false;
     loadSynonBiomedSkills()
       .then((skills: SynonBiomedSkill[]) => {
-        if (!cancelled && Array.isArray(skills)) setSkillCatalog(catalogMap(skills));
+        if (!cancelled && Array.isArray(skills)) setSkillCatalog(catalogMap(skills, resolveLocaleKey(i18n.language)));
       })
       .catch((): undefined => undefined);
     loadSynonBiomedMcpServers()
       .then((servers: SynonBiomedMcpServer[]) => {
-        if (!cancelled && Array.isArray(servers)) setMcpCatalog(catalogMap(servers));
+        if (!cancelled && Array.isArray(servers)) setMcpCatalog(catalogMap(servers, resolveLocaleKey(i18n.language)));
       })
       .catch((): undefined => undefined);
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [i18n]);
 
   const filteredSkills = useMemo(
     () =>

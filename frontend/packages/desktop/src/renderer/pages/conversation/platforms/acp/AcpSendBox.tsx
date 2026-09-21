@@ -8,6 +8,7 @@ import SynonBiomedSendOptionsMenu, {
   type SynonBiomedSendIntent,
 } from '@/renderer/components/synonBiomed/runtime/SynonBiomedSendOptionsMenu';
 import SynonBiomedSessionOptionsMenu from '@/renderer/components/synonBiomed/runtime/SynonBiomedSessionOptionsMenu';
+import ContextUsagePanel from '@/renderer/components/synonBiomed/runtime/ContextUsagePanel';
 import SynonBiomedRuntimeOperations from '@/renderer/components/synonBiomed/runtime/SynonBiomedRuntimeOperations';
 import CommandQueuePanel from '@/renderer/components/chat/CommandQueuePanel';
 import BtwOverlay from '@/renderer/components/chat/BtwOverlay';
@@ -1201,6 +1202,7 @@ const AcpSendBox: React.FC<{
         }
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
+            <ContextUsagePanel conversationId={conversation_id} />
             <SynonBiomedModelSelector
               conversation_id={conversation_id}
               backend={backend}

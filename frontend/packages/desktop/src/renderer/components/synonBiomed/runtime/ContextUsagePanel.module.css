@@ -1,0 +1,145 @@
+/**
+ * @license
+ * Copyright 2026 Synon-AI
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Compact single-layer card rendered through Arco Dropdown: the surface stays
+ * owned by app-overlay-menu plus the shared composer-control-menu density, so
+ * this module only adds the usage-specific stat block. */
+
+.root {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--color-text-1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 24px;
+  padding: 0 10px;
+}
+
+.headerTitle {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--color-text-1);
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-3);
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: var(--color-fill-2);
+  color: var(--color-text-1);
+}
+
+.statRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 1px 10px 2px;
+}
+
+.bigPercent {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.usedText {
+  color: var(--color-text-3);
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.usedText strong {
+  color: var(--color-text-1);
+  font-weight: 600;
+}
+
+.bar {
+  display: flex;
+  height: 6px;
+  margin: 1px 10px 3px;
+  border-radius: 3px;
+  background: var(--color-fill-3);
+  overflow: hidden;
+}
+
+.barSegment {
+  height: 100%;
+  transition: width 240ms ease;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--color-text-1);
+}
+
+.legendRow + .legendRow {
+  margin-top: 0;
+}
+
+.legendRow > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.legendDot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+}
+
+.legendPercent {
+  color: var(--color-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 10px;
+  font-size: 11px;
+  line-height: 16px;
+}

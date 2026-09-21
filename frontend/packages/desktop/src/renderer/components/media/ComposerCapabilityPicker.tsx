@@ -1,8 +1,23 @@
+/**
+ * @license
+ * Copyright 2026 Synon-AI
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import type { IConversationMcpStatus, IConversationMcpStatusKind } from '@/common/config/storage';
-import { Button, Trigger } from '@arco-design/web-react';
-import { Check, Lightning, Right, Shield } from '@icon-park/react';
-import React, { useState } from 'react';
+import { Input, Trigger } from '@arco-design/web-react';
+import { Briefcase, Check, Lightning, Right, Search, Tool, UploadOne } from '@icon-park/react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
+import {
+  loadSynonBiomedMcpServers,
+  loadSynonBiomedSkills,
+  type SynonBiomedMcpServer,
+  type SynonBiomedSkill,
+} from '@/renderer/services/synonBiomedCapabilities';
+import { iconColors } from '@/renderer/styles/colors';
+import { resolveLocaleKey } from '@/common/utils';
 
 type ComposerCapabilityPickerProps = {
   skillNames: string[];
@@ -12,6 +27,7 @@ type ComposerCapabilityPickerProps = {
   onSelectSkill: (name: string) => void;
   onSelectMcpServer?: (server: IConversationMcpStatus) => void;
   onOpenMcpSettings: () => void;
+  onRequestClose?: () => void;
 };
 
 const statusClassName: Record<IConversationMcpStatusKind, string> = {
@@ -19,6 +35,23 @@ const statusClassName: Record<IConversationMcpStatusKind, string> = {
   failed: 'text-t-primary',
   unsupported: 'text-[var(--color-warning-6)]',
 };
+
+/** Deterministic pastel pair for capability avatars, keyed by the initial. */
+const AVATAR_PALETTE: Array<{ bg: string; fg: string }> = [
+  { bg: '#fde8f1', fg: '#c6196e' },
+  { bg: '#e8ffea', fg: '#009a29' },
+  { bg: '#fff3e8', fg: '#d25f00' },
+  { bg: '#e8f7f7', fg: '#0aa5a5' },
+  { bg: '#ffece8', fg: '#f53f3f' },
+  { bg: '#e8f3ff', fg: '#165dff' },
+  { bg: '#f5e8ff', fg: '#722ed1' },
+];
+
+function searchMatches(query: string, ...fields: Array<string | undefined>): boolean {
+  const needle = query.trim().toLocaleLowerCase();
+  if (!needle) return true;
+  return fields.some((field) => typeof field === 'string' && field.toLocaleLowerCase().includes(needle));
+}
 
 const CapabilityRow: React.FC<{
   icon: React.ReactNode;
@@ -36,7 +69,7 @@ const CapabilityRow: React.FC<{
     aria-label={label}
     disabled={disabled}
     title={title}
-    className={`composer-control-menu__row mx-6px box-border flex items-center gap-10px border-0 bg-transparent px-12px py-9px text-left rounded-8px text-14px transition-colors ${
+    className={`composer-control-menu__row mx-6px box-border flex h-36px items-center gap-10px border-0 bg-transparent px-12px text-left rounded-8px text-13px leading-none [&_.i-icon]:flex [&_.i-icon]:items-center [&_.i-icon]:justify-center [&_.i-icon]:leading-none [&_.i-icon_svg]:block [&_.i-icon_svg]:mx-auto ${
       disabled ? 'cursor-not-allowed text-t-secondary' : 'cursor-pointer text-t-primary hover:bg-fill-2'
     }`}
     style={{ width: 'calc(100% - 12px)' }}
@@ -48,6 +81,117 @@ const CapabilityRow: React.FC<{
   </button>
 );
 
+const SubmenuTriggerRow: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
+  <CapabilityRow
+    icon={icon}
+    label={label}
+    suffix={<Right theme='outline' size={12} strokeWidth={3} className='text-t-tertiary' />}
+  />
+);
+
+const CapabilityMenuActionRow: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}> = ({ icon, label, onClick }) => (
+  <button
+    type='button'
+    role='menuitem'
+    className='box-border flex h-30px w-full cursor-pointer items-center gap-8px border-0 bg-transparent px-10px text-left rounded-6px text-12px text-t-primary hover:bg-fill-2'
+    onClick={onClick}
+  >
+    <span className='flex-shrink-0 inline-flex items-center justify-center leading-none'>{icon}</span>
+    <span className='min-w-0 flex-1 truncate leading-none'>{label}</span>
+  </button>
+);
+
+const CapabilityListRow: React.FC<{
+  name: string;
+  description: string;
+  checked?: boolean;
+  disabled?: boolean;
+  statusSuffix?: React.ReactNode;
+  onClick?: () => void;
+}> = ({ name, description, checked, disabled = false, statusSuffix, onClick }) => {
+  const avatar = useMemo(() => {
+    const initial = name.trim().charAt(0).toUpperCase() || '?';
+    const pair = AVATAR_PALETTE[(name.charCodeAt(0) || 0) % AVATAR_PALETTE.length] ?? AVATAR_PALETTE[0];
+    return { bg: pair.bg, fg: pair.fg, letter: initial };
+  }, [name]);
+  return (
+    <button
+      type='button'
+      role={checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+      aria-checked={checked}
+      aria-label={name}
+      disabled={disabled}
+      title={description || name}
+      className={`box-border flex h-40px w-full items-center gap-9px border-0 bg-transparent px-10px text-left rounded-6px [&_.i-icon]:flex [&_.i-icon]:items-center [&_.i-icon]:justify-center [&_.i-icon]:leading-none [&_.i-icon_svg]:block [&_.i-icon_svg]:mx-auto ${
+        checked ? 'bg-fill-2' : 'hover:bg-fill-2'
+      } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+      onClick={disabled ? undefined : onClick}
+    >
+      <span
+        aria-hidden='true'
+        className='inline-flex h-20px w-20px flex-shrink-0 items-center justify-center rounded-4px text-11px font-600'
+        style={{ background: avatar.bg, color: avatar.fg }}
+      >
+        {avatar.letter}
+      </span>
+      <span className='min-w-0 flex-1'>
+        <span className='block text-13px leading-18px text-t-primary truncate'>{name}</span>
+        <span className='block text-11px leading-14px text-t-secondary truncate'>{description}</span>
+      </span>
+      {checked ? <Check theme='outline' size={14} className='flex-shrink-0 text-primary' /> : statusSuffix}
+    </button>
+  );
+};
+
+const SearchHeader: React.FC<{
+  value: string;
+  onChange: (next: string) => void;
+  placeholder: string;
+}> = ({ value, onChange, placeholder }) => (
+  <div className='px-8px pb-4px pt-4px'>
+    <Input
+      allowClear
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      aria-label={placeholder}
+      prefix={<Search theme='outline' size={14} strokeWidth={3} className='text-t-tertiary' />}
+      className='capability-submenu-search'
+    />
+  </div>
+);
+
+type CatalogEntry = { label: string; description: string };
+
+function catalogMap(
+  entries: Array<{
+    name: string;
+    displayName: string;
+    description: string;
+    description_i18n?: Record<string, string>;
+  }>,
+  localeKey: 'zh-CN' | 'en-US',
+  zhFor?: (name: string) => string | undefined
+): Map<string, CatalogEntry> {
+  return new Map<string, CatalogEntry>(
+    entries.map((entry) => [
+      entry.name,
+      {
+        label: entry.displayName || entry.name,
+        description:
+          zhFor?.(entry.name) ||
+          (entry.description_i18n &&
+            (entry.description_i18n[localeKey] || entry.description_i18n[localeKey.slice(0, 2)])) ||
+          entry.description,
+      },
+    ])
+  );
+}
+
 const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
   skillNames,
   mcpStatuses,
@@ -56,71 +200,166 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
   onSelectSkill,
   onSelectMcpServer,
   onOpenMcpSettings,
+  onRequestClose,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const localeKey = resolveLocaleKey(i18n.language);
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [mcpOpen, setMcpOpen] = useState(false);
+  const [skillQuery, setSkillQuery] = useState('');
+  const [mcpQuery, setMcpQuery] = useState('');
+  const [skillCatalog, setSkillCatalog] = useState<Map<string, CatalogEntry> | null>(null);
+  const [mcpCatalog, setMcpCatalog] = useState<Map<string, CatalogEntry> | null>(null);
+
+  // Join the loaded names with the catalog descriptions so every row carries
+  // its full blurb; failures only hide the descriptions. In zh the connector
+  // blurbs come from the locale resources (the catalog ships English-only).
+  useEffect(() => {
+    let cancelled = false;
+    loadSynonBiomedSkills()
+      .then((skills: SynonBiomedSkill[]) => {
+        if (!cancelled && Array.isArray(skills)) setSkillCatalog(catalogMap(skills, localeKey));
+      })
+      .catch((): undefined => undefined);
+    loadSynonBiomedMcpServers()
+      .then((servers: SynonBiomedMcpServer[]) => {
+        if (!cancelled && Array.isArray(servers))
+          setMcpCatalog(
+            catalogMap(servers, localeKey, (name) => {
+              if (!localeKey.startsWith('zh')) return undefined;
+              const key = ['conversation', 'mcp', 'descriptions', name].join('.');
+              return i18n.exists(key) ? i18n.t(key) : undefined;
+            })
+          );
+      })
+      .catch((): undefined => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [i18n, localeKey]);
+
+  const filteredSkills = useMemo(
+    () =>
+      skillNames
+        .map((name) => {
+          const catalog = skillCatalog?.get(name);
+          return { name, label: catalog?.label ?? name, description: catalog?.description ?? '' };
+        })
+        .filter((skill) => searchMatches(skillQuery, skill.name, skill.label, skill.description)),
+    [skillCatalog, skillNames, skillQuery]
+  );
+
+  const filteredServers = useMemo(
+    () =>
+      mcpStatuses
+        .map((server) => {
+          const catalog = mcpCatalog?.get(server.name);
+          return { server, label: catalog?.label ?? server.name, description: catalog?.description ?? '' };
+        })
+        .filter(({ server, label, description }) => searchMatches(mcpQuery, server.name, label, description)),
+    [mcpCatalog, mcpQuery, mcpStatuses]
+  );
+
   if (skillNames.length === 0 && mcpStatuses.length === 0) return null;
 
   const skillPanel = (
     <div
-      className='app-overlay-menu composer-control-submenu min-w-180px py-6px'
+      className='app-overlay-menu composer-control-submenu flex flex-col'
+      style={{ width: 'min(360px, calc(100vw - 96px))', maxHeight: 'min(400px, calc(100vh - 220px))' }}
       role='menu'
       aria-label={t('conversation.skills.loaded')}
     >
-      {skillNames.map((name) => {
-        const selected = selectedSkillNames.includes(name);
-        return (
-          <CapabilityRow
-            key={name}
-            icon={<Lightning theme='outline' size={15} />}
-            label={name}
-            checked={selected}
-            suffix={selected ? <Check theme='outline' size={14} className='text-primary' /> : undefined}
-            onClick={() => onSelectSkill(name)}
-          />
-        );
-      })}
+      <SearchHeader
+        value={skillQuery}
+        onChange={setSkillQuery}
+        placeholder={t('conversation.attachMenu.searchSkills')}
+      />
+      <div className='min-h-0 flex-1 overflow-y-auto overscroll-contain py-2px'>
+        {filteredSkills.length === 0 ? (
+          <div className='px-12px py-16px text-12px text-t-secondary'>{t('conversation.skills.noMatch')}</div>
+        ) : (
+          filteredSkills.map((skill) => (
+            <CapabilityListRow
+              key={skill.name}
+              name={skill.label}
+              description={skill.description}
+              checked={selectedSkillNames.includes(skill.name)}
+              onClick={() => onSelectSkill(skill.name)}
+            />
+          ))
+        )}
+      </div>
+      <div className='mx-8px my-4px h-1px bg-[var(--color-border-1)]' />
+      <div className='py-4px'>
+        <CapabilityMenuActionRow
+          icon={<UploadOne theme='outline' size={15} />}
+          label={t('conversation.attachMenu.addLocalSkill')}
+          onClick={() => {
+            onRequestClose?.();
+            navigate('/settings/skills?import=1');
+          }}
+        />
+        <CapabilityMenuActionRow
+          icon={<Tool theme='outline' size={15} />}
+          label={t('conversation.attachMenu.manageSkills')}
+          onClick={() => {
+            onRequestClose?.();
+            navigate('/settings/skills');
+          }}
+        />
+      </div>
     </div>
   );
 
   const mcpPanel = (
     <div
-      className='app-overlay-menu composer-control-submenu w-[min(320px,calc(100vw-96px))] min-w-220px max-w-320px py-6px'
+      className='app-overlay-menu composer-control-submenu flex flex-col'
+      style={{ width: 'min(360px, calc(100vw - 96px))', maxHeight: 'min(400px, calc(100vh - 220px))' }}
       role='menu'
       aria-label={t('conversation.mcp.loaded')}
     >
-      {mcpStatuses.map((server) => {
-        const selected = selectedMcpServerIds.includes(server.id);
-        return (
-          <CapabilityRow
-            key={`${server.id}-${server.status}`}
-            icon={<Shield theme='outline' size={15} />}
-            label={server.name}
-            checked={server.status === 'loaded' ? selected : undefined}
-            disabled={server.status !== 'loaded' || !onSelectMcpServer}
-            title={server.reason}
-            suffix={
-              selected ? (
-                <Check theme='outline' size={14} className='text-primary' />
-              ) : server.status === 'loaded' ? undefined : (
+      <SearchHeader
+        value={mcpQuery}
+        onChange={setMcpQuery}
+        placeholder={t('conversation.attachMenu.searchConnectors')}
+      />
+      <div className='min-h-0 flex-1 overflow-y-auto overscroll-contain py-2px'>
+        {filteredServers.length === 0 ? (
+          <div className='px-12px py-16px text-12px text-t-secondary'>{t('conversation.mcp.noMatch')}</div>
+        ) : (
+          filteredServers.map(({ server, label, description }) => {
+            const selected = selectedMcpServerIds.includes(server.id);
+            const statusText =
+              server.status === 'loaded' ? undefined : (
                 <span className={`text-12px leading-none ${statusClassName[server.status]}`}>
                   {t(`conversation.mcp.status.${server.status}` as const)}
                 </span>
-              )
-            }
-            onClick={() => onSelectMcpServer?.(server)}
-          />
-        );
-      })}
-      <div className='mx-12px my-4px h-1px bg-[var(--color-border-1)]' />
-      <div className='px-12px py-8px'>
-        <div className='text-12px leading-16px text-t-secondary whitespace-normal break-words'>
-          {t('conversation.mcp.managementHint')}
-        </div>
-        <Button type='text' size='mini' className='mt-6px h-auto! px-0! text-12px!' onClick={onOpenMcpSettings}>
-          {t('conversation.mcp.openSettings')}
-        </Button>
+              );
+            return (
+              <CapabilityListRow
+                key={`${server.id}-${server.status}`}
+                name={label}
+                description={description || t('conversation.mcp.managementHint')}
+                checked={server.status === 'loaded' ? selected : undefined}
+                disabled={server.status !== 'loaded' || !onSelectMcpServer}
+                statusSuffix={server.status === 'loaded' ? undefined : statusText}
+                onClick={() => onSelectMcpServer?.(server)}
+              />
+            );
+          })
+        )}
+      </div>
+      <div className='mx-8px my-4px h-1px bg-[var(--color-border-1)]' />
+      <div className='py-4px'>
+        <CapabilityMenuActionRow
+          icon={<Briefcase theme='outline' size={15} fill={iconColors.primary} />}
+          label={t('conversation.attachMenu.manageConnectors')}
+          onClick={() => {
+            onRequestClose?.();
+            onOpenMcpSettings();
+          }}
+        />
       </div>
     </div>
   );
@@ -129,38 +368,36 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
     <div className='px-6px'>
       {skillNames.length > 0 ? (
         <Trigger
-          popup={() => skillPanel}
+          popup={(): React.ReactNode => skillPanel}
           trigger='hover'
-          position='right'
+          position='rt'
           popupVisible={skillsOpen}
           onVisibleChange={setSkillsOpen}
           mouseEnterDelay={100}
           mouseLeaveDelay={150}
         >
           <div>
-            <CapabilityRow
-              icon={<Lightning theme='outline' size={15} />}
+            <SubmenuTriggerRow
+              icon={<Lightning theme='outline' size={15} fill={iconColors.primary} />}
               label={`${t('conversation.skills.loaded')} · ${skillNames.length}`}
-              suffix={<Right theme='outline' size={12} strokeWidth={3} className='text-t-tertiary' />}
             />
           </div>
         </Trigger>
       ) : null}
       {mcpStatuses.length > 0 ? (
         <Trigger
-          popup={() => mcpPanel}
+          popup={(): React.ReactNode => mcpPanel}
           trigger='hover'
-          position='right'
+          position='rt'
           popupVisible={mcpOpen}
           onVisibleChange={setMcpOpen}
           mouseEnterDelay={100}
           mouseLeaveDelay={150}
         >
           <div>
-            <CapabilityRow
-              icon={<Shield theme='outline' size={15} />}
+            <SubmenuTriggerRow
+              icon={<Briefcase theme='outline' size={15} fill={iconColors.primary} />}
               label={`${t('conversation.mcp.loaded')} · ${mcpStatuses.length}`}
-              suffix={<Right theme='outline' size={12} strokeWidth={3} className='text-t-tertiary' />}
             />
           </div>
         </Trigger>

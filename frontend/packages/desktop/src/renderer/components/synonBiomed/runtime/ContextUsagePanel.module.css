@@ -1,0 +1,133 @@
+/**
+ * @license
+ * Copyright 2026 Synon-AI
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.root {
+  box-sizing: border-box;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  padding: 18px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--color-text-1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.headerTitle {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-2);
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: var(--color-fill-2);
+  color: var(--color-text-1);
+}
+
+.statRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bigPercent {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 40px;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.usedText {
+  color: var(--color-text-2);
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.usedText strong {
+  color: var(--color-text-1);
+  font-weight: 600;
+}
+
+.bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--color-fill-3);
+  overflow: hidden;
+}
+
+.barSegment {
+  height: 100%;
+  min-width: 3px;
+  border-radius: 2px;
+  transition: width 240ms ease;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.legendRow > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--color-text-1);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+}
+
+.legendPercent {
+  color: var(--color-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.loading {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+}

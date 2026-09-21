@@ -601,7 +601,15 @@
     "queueTooLarge": "Queue data is too large to persist safely. Remove some queued commands first."
   },
   "contextUsage": {
-    "contextUsed": "context used"
+    "contextUsed": "context used",
+    "title": "Context usage",
+    "usedLabel": "Used",
+    "systemPrompt": "System prompt",
+    "toolsAndSubagents": "Tools & subagents",
+    "messages": "Conversation messages",
+    "connectorsAndMcp": "Connectors & MCP",
+    "skills": "Skills",
+    "unavailable": "No context usage data yet"
   },
   "skill_generator": {
     "title": "Generate Skill/Rule",

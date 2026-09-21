@@ -8,6 +8,7 @@ import SynonBiomedSendOptionsMenu, {
   type SynonBiomedSendIntent,
 } from '@/renderer/components/synonBiomed/runtime/SynonBiomedSendOptionsMenu';
 import SynonBiomedSessionOptionsMenu from '@/renderer/components/synonBiomed/runtime/SynonBiomedSessionOptionsMenu';
+import ContextUsagePanel from '@/renderer/components/synonBiomed/runtime/ContextUsagePanel';
 import SynonBiomedRuntimeOperations from '@/renderer/components/synonBiomed/runtime/SynonBiomedRuntimeOperations';
 import CommandQueuePanel from '@/renderer/components/chat/CommandQueuePanel';
 import BtwOverlay from '@/renderer/components/chat/BtwOverlay';
@@ -123,7 +124,16 @@ const AcpSendBox: React.FC<{
   initialConversation,
   ownerId = '',
 }) => {
-  const { aiProcessing, setAiProcessing, resetState, streamReady, hasThinkingMessage, slashCommands } = messageState;
+  const {
+    aiProcessing,
+    setAiProcessing,
+    resetState,
+    streamReady,
+    hasThinkingMessage,
+    slashCommands,
+    tokenUsage,
+    context_limit,
+  } = messageState;
   const { t, i18n } = useTranslation();
   const localeKey = resolveLocaleKey(i18n.language);
   const navigate = useNavigate();
@@ -1180,6 +1190,11 @@ const AcpSendBox: React.FC<{
                 reviewDisabled={isBusy}
                 onSaveSkill={handleSaveAsSkill}
                 saveAsSkillDisabled={isBusy || skillSaveInFlight}
+              />
+              <ContextUsagePanel
+                conversationId={conversation_id}
+                tokenUsage={tokenUsage}
+                contextLimit={context_limit}
               />
               <SynonBiomedSessionOptionsMenu
                 rootFrameId={conversation_id}

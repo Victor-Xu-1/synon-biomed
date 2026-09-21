@@ -601,7 +601,15 @@
     "queueTooLarge": "队列数据过大，无法安全缓存，请先移除部分排队指令。"
   },
   "contextUsage": {
-    "contextUsed": "上下文已使用"
+    "contextUsed": "上下文已使用",
+    "title": "上下文用量",
+    "usedLabel": "已使用",
+    "systemPrompt": "系统提示词",
+    "toolsAndSubagents": "工具及子智能体",
+    "messages": "对话消息",
+    "connectorsAndMcp": "连接器及MCP",
+    "skills": "技能",
+    "unavailable": "暂无上下文用量数据"
   },
   "skill_generator": {
     "title": "生成 Skill/规则",

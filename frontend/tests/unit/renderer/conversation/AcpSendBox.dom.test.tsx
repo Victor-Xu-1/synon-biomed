@@ -462,6 +462,20 @@ vi.mock('@/renderer/pages/conversation/platforms/acp/useAcpInitialMessage', () =
 }));
 vi.mock('@arco-design/web-react', () => ({
   Spin: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
+  Popover: ({
+    children,
+    content,
+    popupVisible,
+  }: {
+    children?: React.ReactNode;
+    content?: React.ReactNode;
+    popupVisible?: boolean;
+  }) => (
+    <>
+      {children}
+      {popupVisible ? content : null}
+    </>
+  ),
   Dropdown: ({
     children,
     droplist,

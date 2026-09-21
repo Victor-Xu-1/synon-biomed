@@ -651,7 +651,8 @@
     "hint": "Type / for commands, @ to reference files",
     "invalidReference": "The reference format is invalid and could not be added to the message.",
     "contextOnlyPrompt": "Read and use the files, Skills, and MCP connectors I selected to complete this task.",
-    "structuredContextNormalSend": "Send combined file, Skill, and MCP context normally or with Plan first."
+    "structuredContextNormalSend": "Send combined file, Skill, and MCP context normally or with Plan first.",
+    "draftComputeRestoreFailed": "The task is kept in the composer, but restoring the compute provider selection failed. Re-entering the conversation retries it automatically."
   },
   "agentTip": {
     "codes": {

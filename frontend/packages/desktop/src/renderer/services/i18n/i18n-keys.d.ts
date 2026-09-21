@@ -823,6 +823,7 @@ export type I18nKey =
   | 'conversation.scientificFiles.title'
   | 'conversation.scientificFiles.unavailableNamed'
   | 'conversation.sendbox.contextOnlyPrompt'
+  | 'conversation.sendbox.draftComputeRestoreFailed'
   | 'conversation.sendbox.hint'
   | 'conversation.sendbox.invalidReference'
   | 'conversation.sendbox.structuredContextNormalSend'

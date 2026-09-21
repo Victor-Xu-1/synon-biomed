@@ -17,12 +17,25 @@ import { getConversationRuntimeWorkspaceErrorMessage } from '../../utils/convers
 import { buildSendFailureError } from './buildSendFailureError';
 import { setSynonBiomedSessionComputeProvider } from '@/renderer/services/synonBiomedCompute';
 
+type DraftStagedSessionOptions = {
+  delegation: boolean;
+  autoReview: boolean;
+  memory: boolean;
+  targetAgent: string | null;
+};
+
 type DraftPrefillPayload = {
   input: string;
   files: string[];
   artifactRefs: ArtifactReferenceWire[];
   injectSkills: string[];
   injectMcpServerIds: string[];
+  sessionOptions: DraftStagedSessionOptions | null;
+  planMode: boolean;
+};
+
+type DraftRestoreIssue = {
+  providers: string[];
 };
 
 type UseAcpInitialMessageParams = {
@@ -38,6 +51,7 @@ type UseAcpInitialMessageParams = {
   checkAndUpdateTitle: (conversation_id: string, input: string) => void;
   addOrUpdateMessage: (message: TMessage, prepend?: boolean) => void;
   onDraftPrefill?: (payload: DraftPrefillPayload) => void;
+  onDraftRestoreIssue?: (issue: DraftRestoreIssue) => void;
 };
 
 const initialMessageSendsInFlight = new Set<string>();
@@ -73,6 +87,7 @@ export const useAcpInitialMessage = ({
   checkAndUpdateTitle,
   addOrUpdateMessage,
   onDraftPrefill,
+  onDraftRestoreIssue,
 }: UseAcpInitialMessageParams): void => {
   const { t } = useTranslation();
 
@@ -99,10 +114,9 @@ export const useAcpInitialMessage = ({
     }
 
     if (parsed.draft_only === true) {
-      // A staged task never starts by itself: hand the payload to the composer
-      // and drop the queued message so nothing is sent until the user acts.
-      sessionStorage.removeItem(storageKey);
-      initialMessageSendsInFlight.delete(storageKey);
+      // A staged task never starts by itself. The composer write happens
+      // first because the send-box draft store is durable; only after the
+      // payload is safely in the composer may the queued copy be dropped.
       const input = typeof parsed.input === 'string' ? parsed.input : '';
       const files = Array.isArray(parsed.files)
         ? parsed.files.filter((file: unknown): file is string => typeof file === 'string')
@@ -115,29 +129,76 @@ export const useAcpInitialMessage = ({
                 reference !== undefined
             )
         : [];
+      const injectSkills = normalizeInitialCapabilityIds(parsed.inject_skills) ?? [];
+      const injectMcpServerIds = normalizeInitialCapabilityIds(parsed.inject_mcp_server_ids) ?? [];
+      const rawSessionOptions =
+        parsed.session_options && typeof parsed.session_options === 'object'
+          ? (parsed.session_options as Record<string, unknown>)
+          : null;
+      const sessionOptions: DraftStagedSessionOptions | null = rawSessionOptions
+        ? {
+            delegation: rawSessionOptions.ultra_mode === true,
+            autoReview: rawSessionOptions.verifier_mode === 'on',
+            memory: rawSessionOptions.memory_mode === 'on',
+            targetAgent:
+              typeof rawSessionOptions.target_agent === 'string' && rawSessionOptions.target_agent.trim()
+                ? rawSessionOptions.target_agent.trim()
+                : null,
+          }
+        : null;
+      const planMode = rawSessionOptions?.plan_mode === true;
       const computeProviders = Array.isArray(parsed.compute_providers)
         ? parsed.compute_providers.filter(
             (provider: unknown): provider is string => typeof provider === 'string' && provider.trim().length > 0
           )
         : [];
-      const injectSkills = normalizeInitialCapabilityIds(parsed.inject_skills) ?? [];
-      const injectMcpServerIds = normalizeInitialCapabilityIds(parsed.inject_mcp_server_ids) ?? [];
-      const applyDraft = async () => {
-        if (computeProviders.length > 0) {
-          try {
-            await Promise.all(
-              computeProviders.map((provider: string) =>
-                setSynonBiomedSessionComputeProvider(conversation_id, provider, true)
-              )
-            );
-          } catch (error) {
-            console.error('[useAcpInitialMessage] Failed to restore compute providers for the staged draft:', error);
+
+      onDraftPrefill?.({
+        input,
+        files,
+        artifactRefs,
+        injectSkills,
+        injectMcpServerIds,
+        sessionOptions,
+        planMode,
+      });
+
+      if (computeProviders.length === 0) {
+        sessionStorage.removeItem(storageKey);
+        initialMessageSendsInFlight.delete(storageKey);
+        return;
+      }
+
+      // Compute-provider restoration is asynchronous. The queued payload stays
+      // until it succeeds so a reload or a failed request can retry instead of
+      // losing the staged task; late completion is fenced to this effect run.
+      let cancelled = false;
+      const restoreProviders = async () => {
+        try {
+          await Promise.all(
+            computeProviders.map((provider: string) =>
+              setSynonBiomedSessionComputeProvider(conversation_id, provider, true)
+            )
+          );
+          initialMessageSendsInFlight.delete(storageKey);
+          if (cancelled) return;
+          if (sessionStorage.getItem(storageKey) === storedMessage) {
+            sessionStorage.removeItem(storageKey);
           }
+        } catch (error) {
+          initialMessageSendsInFlight.delete(storageKey);
+          if (cancelled) return;
+          console.error('[useAcpInitialMessage] Failed to restore compute providers for the staged draft:', error);
+          // The staged task itself is already in the composer; keep the queued
+          // payload so the next mount retries the provider restore, and tell
+          // the user the compute selection needs attention.
+          onDraftRestoreIssue?.({ providers: computeProviders });
         }
-        onDraftPrefill?.({ input, files, artifactRefs, injectSkills, injectMcpServerIds });
       };
-      void applyDraft();
-      return;
+      void restoreProviders();
+      return () => {
+        cancelled = true;
+      };
     }
 
     const sendInitialMessage = async () => {
@@ -265,6 +326,7 @@ export const useAcpInitialMessage = ({
     markSendFailed,
     markSendStarted,
     onDraftPrefill,
+    onDraftRestoreIssue,
     resetState,
     setAiProcessing,
     streamReady,

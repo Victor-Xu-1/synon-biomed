@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "c28662c608fddab845dfd6580d8d6ecc7d133407ac8d2a8785560064e1254973",
+  "adaptationFingerprintSHA256": "2bd04bae2d54339c0cc9063f68290deaae85ee9f0dc29baf0fe22dd6375a775b",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "cddb17bae12de34d2128180dcf2b085c1a823fdea56f9fb8d7261f8918d4778d",
+  "additionFingerprintSHA256": "f8133c2b510a46d84ba9ac291cb5113a4388cf30526fb8ef974b15a7e81244e6",
   "summary": {
     "sourceFiles": 1354,
-    "unchangedSourceFiles": 406,
-    "adaptedSourceFiles": 659,
+    "unchangedSourceFiles": 405,
+    "adaptedSourceFiles": 660,
     "removedSourceFiles": 289,
-    "addedFiles": 638
+    "addedFiles": 639
   },
   "adaptations": [
     {
@@ -1760,8 +1760,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/AcpSendBox.tsx",
       "sourceSHA256": "8f99e14a4de14e19821d60b145b3cbfdbbe6686becd6150d19283dc7cedf8f80",
-      "targetSHA256": "1c2ca83d026bf830f27848ba0e5db929e15c11e46867ce7d7aaf1c6c2a996d2b",
-      "bytes": 49049,
+      "targetSHA256": "5a629d7d3740a6089efdfec26059a0e322ebf83cda290555abfe94cc057be5e3",
+      "bytes": 52604,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1774,8 +1774,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/useAcpInitialMessage.ts",
       "sourceSHA256": "ec7b8f6a741c7852d75d87bcc613312a4b38fffb8f03238b4567b2b159312e98",
-      "targetSHA256": "3b070219ae38401691cc32c3b0aa18defbf0d3790052ae0b83500a3705e6af35",
-      "bytes": 8239,
+      "targetSHA256": "7997af1eda8c5d0095e01cada188bbea119650d6bc8b263c68060a5324f264e1",
+      "bytes": 13216,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1907,8 +1907,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/guid/hooks/useGuidSend.ts",
       "sourceSHA256": "d2e95e288721282dcba026b0a28a7cba0ddf82c6d15472287a1d5119d28923cd",
-      "targetSHA256": "ade77adfa033ea7cf25eed997b835956ad48bf310ec80b270049406d577aaab9",
-      "bytes": 20793,
+      "targetSHA256": "b73605c211f3ba688e9f67132062ef0609a0a117d69e3af1a683ecf6726e052c",
+      "bytes": 20977,
       "reason": "Migrate authenticated login, onboarding, project workbench, and artifact workflows to the Go product shell."
     },
     {
@@ -1956,22 +1956,22 @@
     {
       "path": "packages/desktop/src/renderer/pages/onboarding/OnboardingFlow.tsx",
       "sourceSHA256": "814d51e6c9ffb2d15bebb86e0314d4a93af62c057ae1d22c83f4c931aac34a74",
-      "targetSHA256": "af543d957244707a1ed76709fc935f2b07bd4f9ad3dbca8e95130956bf2d2754",
-      "bytes": 47512,
+      "targetSHA256": "e12b3da1849d3c6d28114229644f7741c0b1aac3ba748b030650e094f6eab45e",
+      "bytes": 48062,
       "reason": "Add explicit first-run scientific-runtime selection with informational storage estimates while preserving authenticated drafts, capability allowlists, and one recoverable launch."
     },
     {
       "path": "packages/desktop/src/renderer/pages/onboarding/onboarding.module.css",
       "sourceSHA256": "e95aad6a1545f4abd1518570dd245f776b85dfb4cf0b13edfdcdf4bce708222c",
-      "targetSHA256": "3215978dda627d8eb26faec408aabb6f1708bf4beb6dafde97bef0357fcf28ff",
-      "bytes": 7311,
+      "targetSHA256": "3351c567ded4f1723635953e175049762cec19b12086c33eaf3410fe61526fcf",
+      "bytes": 8662,
       "reason": "Keep the three capability tabs and long scientific-runtime list readable and vertically scrollable without horizontal overflow on short or narrow viewports."
     },
     {
       "path": "packages/desktop/src/renderer/pages/onboarding/onboardingModel.ts",
       "sourceSHA256": "34cf3262888a32e746862c88ff5ee3a4a392a9dd4477aefef754369cdb2c44de",
-      "targetSHA256": "7dd904c31a288c27dfe2e1ee68daeefe1b0a744934bd39f183d99735f1758310",
-      "bytes": 1533,
+      "targetSHA256": "b10300a7abf55ceeaf958ad93150d0061adad600d12b8370f1cef78f3d426528",
+      "bytes": 1537,
       "reason": "Derive initial connector and Skill state from the server allowlist without duplicating the immutable selection model."
     },
     {
@@ -2362,8 +2362,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts",
       "sourceSHA256": "d46e67e7ae9b1a4c53252446bb8e2c6d12141deaac2d253b8c1922afa35ab5d9",
-      "targetSHA256": "1cd02231a857224f4b4d47f05a3d0ca9f4cb7cb09fdcb325d29e50d376e432f5",
-      "bytes": 239986,
+      "targetSHA256": "9ab3dcaf0fd90e07fb6bfa767f477ac3660bd13965dac73bf44563a3ae7109f0",
+      "bytes": 240902,
       "reason": "Regenerate typed locale keys for the unified structure controls and first-run scientific-runtime catalog."
     },
     {
@@ -2397,8 +2397,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/conversation.json",
       "sourceSHA256": "c6802cdea4137a9a8199f5b9e57c11a99e7b8fde42539065da42dd4db9052b8e",
-      "targetSHA256": "3a5e9bc5918c0c35da3d9a81f49599fa4b39430ec5c9ed7c33c59aaf6d766421",
-      "bytes": 68729,
+      "targetSHA256": "36546a30511e0e3acb76bf494b5fde7e75b1238345bf0541afd5a272b8de31af",
+      "bytes": 68907,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2418,8 +2418,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/guid.json",
       "sourceSHA256": "c272210a57fc35afb4aa9f3d5043155f93b33300e4f895862a7b71eeec854f9b",
-      "targetSHA256": "d7144d7354917f279b515baf29a8730d4780a84b41852d59e4c6d18812e0ea8b",
-      "bytes": 8265,
+      "targetSHA256": "f6a265c4a37742d320121f5551dca6d3d13fa959bc213058056338c8138dec12",
+      "bytes": 9522,
       "reason": "Describe adjustable first-run scientific runtimes and informational storage estimates in the complete English onboarding locale."
     },
     {
@@ -2488,8 +2488,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/conversation.json",
       "sourceSHA256": "cb395d18cb1692e13c849172bf6d957304ef382973fb5ab95fd14723cbc045bd",
-      "targetSHA256": "a41778bf056059a1a27c590163a22d727ab57d6a656ba4f982e01cc83c37cbc2",
-      "bytes": 66910,
+      "targetSHA256": "cbaf72b91ac04b21aaa9715bd62eb928b187dc40601e6e3c973c5a9216e489c9",
+      "bytes": 67052,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2509,8 +2509,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/guid.json",
       "sourceSHA256": "7ab211f36e7a11a46656bb32a77872ece15ff28127deb96066c5f8a08e5c9f2d",
-      "targetSHA256": "34ad48091b9f27544dbeac64c1ba04d4a3883d093b25fb1ea74b5dc1ad9919c0",
-      "bytes": 7842,
+      "targetSHA256": "0088e1a2bbd601dcfff9ef5c7a7ab0f07b506e355577c29dc1c61304a9feaa09",
+      "bytes": 9054,
       "reason": "Describe adjustable first-run scientific runtimes and informational storage estimates in the complete Simplified Chinese onboarding locale."
     },
     {
@@ -2565,8 +2565,8 @@
     {
       "path": "packages/desktop/src/renderer/services/onboardingService.ts",
       "sourceSHA256": "3436645659c5d1ace153db431fa806a6f383fbede21efc79a33b6cfda8086027",
-      "targetSHA256": "19fd6bd7986ec733db9180898e370f1cd6c0377fe88a5137e047b40eb8b6f1dd",
-      "bytes": 35988,
+      "targetSHA256": "a39060b6ec86f8884c5cd49160e74c45f5f14f15334f63b4258ef5bfc50cee2c",
+      "bytes": 36418,
       "reason": "Validate and persist the server-owned scientific-runtime selection without imposing client storage ceilings, while preserving exact Artifact and launch authority."
     },
     {
@@ -3636,8 +3636,8 @@
     {
       "path": "tests/unit/renderer/OnboardingFlow.dom.test.tsx",
       "sourceSHA256": "e2ad2270caf1c343810eef2febc9b5b3f95be7689d24064a68ecc22ea94453b3",
-      "targetSHA256": "f44b36d1a475877011efd24fd0ee3c29b3fd0acb1f5cb38131ae92d43f1ce1cb",
-      "bytes": 25193,
+      "targetSHA256": "4e74f71bf2320be4a84a693195ca962ff6abc5c248ee0b4d9bca64a829e3b9a6",
+      "bytes": 27974,
       "reason": "Verify runtime selection, storage estimates, search, unavailable-host choices, and capability-tab keyboard behavior in onboarding."
     },
     {
@@ -3783,8 +3783,8 @@
     {
       "path": "tests/unit/renderer/conversation/useAcpInitialMessage.dom.test.ts",
       "sourceSHA256": "f5af1eae24abf703d82d52b812f8d5a4331277c700817bef5f5769e7c85aca36",
-      "targetSHA256": "b3a166c55fa640ae66304de0630116916c7c29d93ca5ef2f5eeccdeba28255ce",
-      "bytes": 9461,
+      "targetSHA256": "10d258cc6aec0b4428809bdbb1fb54fbffb4f1dc0308278640214953134ef7d0",
+      "bytes": 14769,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -3907,10 +3907,17 @@
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
+      "path": "tests/unit/renderer/onboardingModel.test.ts",
+      "sourceSHA256": "54b8f64e4c86dce4bf7bf59fce37d1103fc57101392e1bf402e70573b3bb7cea",
+      "targetSHA256": "fa16eb40cff2f799909c4ab8504ff11385474f37d50c213222bb703a1885812c",
+      "bytes": 1908,
+      "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
+    },
+    {
       "path": "tests/unit/renderer/onboardingService.test.ts",
       "sourceSHA256": "5a83a0499204558283f3391d150821b0e0b804cb49acaa055540b85fbe93870b",
-      "targetSHA256": "372436bf8e6f1970b4a900266d0c52ff54139ebcbb352b28284fa461c6a4d0ab",
-      "bytes": 33135,
+      "targetSHA256": "bc281972ee0bafdba4c6c631ec74e05b3a8be3378e5fa8f1ea703dfd5846b7ec",
+      "bytes": 34537,
       "reason": "Verify scientific-runtime snapshot validation and exact selected-ID persistence alongside existing onboarding mutations."
     },
     {
@@ -4014,8 +4021,8 @@
     {
       "path": "tests/unit/renderer/useGuidSend.dom.test.ts",
       "sourceSHA256": "c76d8e85b8c9106953bfb7afaf1bd78d0b8989070c917c6043389827a922d036",
-      "targetSHA256": "1ead7eb0afc216330a07d03050accdcfcfd46fae30687156ed23cec9a35a389a",
-      "bytes": 27585,
+      "targetSHA256": "b607d99bf68e85bd398ee804760387884999491c9730ce7a886d70f1f39d93eb",
+      "bytes": 27609,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -6811,8 +6818,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/hooks/chat/sendBoxDraftPersistence.ts",
-      "sha256": "af1c36718e1df613bb7899c29b77a453e152e61da5f294994db519bc30b7f099",
-      "bytes": 6513,
+      "sha256": "63e2954a3c3f361912003a7364cb59e941ba49b4da2ba2f77d272221a337ffd6",
+      "bytes": 6833,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7453,8 +7460,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/useAcpSendBoxDraftController.ts",
-      "sha256": "d31df0f48e357c1a7fc1638c4da1249d769c05be89af8d68ce27f8ade3929f76",
-      "bytes": 2055,
+      "sha256": "1ae35880afe5904a5b551f048cabb7714e0a3d848794d23b7e258cdc260bd6f8",
+      "bytes": 2495,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7491,6 +7498,12 @@
       "path": "packages/desktop/src/renderer/pages/guid/utils/guidProjectFilesModel.ts",
       "sha256": "cb97ef00ba529006f85f927f16c64d2d12c847ce4076b5e1f1aa5a3850b03d9a",
       "bytes": 1889,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
+      "path": "packages/desktop/src/renderer/pages/onboarding/OnboardingModelSetup.tsx",
+      "sha256": "9369d2a476ca381d16fbd80ee650d98e25936f902b7518fb0691d6e8c6266a53",
+      "bytes": 9950,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -8053,7 +8066,7 @@
     },
     {
       "path": "packages/desktop/src/renderer/services/onboardingDraft.ts",
-      "sha256": "637edde4e0b5cde0646f1e8fb8132e125b8ed61ddaf480b9224be5105beb9cf4",
+      "sha256": "89cdaa42d2323261a87e6826977014617e796eb398902e249751172de3ad5116",
       "bytes": 4262,
       "reason": "Persist bounded owner-scoped capability and scientific-runtime choices across authentication and refresh without retaining uploaded file bytes."
     },
@@ -10093,8 +10106,8 @@
     },
     {
       "path": "tests/web-e2e/synonbiomedOnboarding.e2e.ts",
-      "sha256": "1403c8b94bb1fa185cee50161119c0548cb369cecb729b5fecb9da4d121431ab",
-      "bytes": 15497,
+      "sha256": "d8e7cc539d3ded855b078e3a9dd5e4bb08576a529f0af0fb8b8bc10db6fdb025",
+      "bytes": 16185,
       "reason": "Verify fresh authentication, accessible five-step onboarding, capability reachability, draft recovery, Artifact refs, and workspace entry."
     },
     {

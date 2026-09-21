@@ -651,7 +651,8 @@
     "hint": "输入 / 唤起命令，@ 引用文件",
     "invalidReference": "引用格式无效，无法添加到消息。",
     "contextOnlyPrompt": "请读取并使用我选择的文件、Skill 和 MCP 完成任务。",
-    "structuredContextNormalSend": "文件、Skill 和 MCP 组合内容请使用普通发送或先制定计划。"
+    "structuredContextNormalSend": "文件、Skill 和 MCP 组合内容请使用普通发送或先制定计划。",
+    "draftComputeRestoreFailed": "任务已保留在输入框，但计算资源选择恢复失败，重新进入会话后将自动重试。"
   },
   "agentTip": {
     "codes": {

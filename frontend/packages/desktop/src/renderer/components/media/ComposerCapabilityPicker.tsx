@@ -6,7 +6,7 @@
 
 import type { IConversationMcpStatus, IConversationMcpStatusKind } from '@/common/config/storage';
 import { Input, Trigger } from '@arco-design/web-react';
-import { Check, Lightning, Right, Search, Shield, Tool, UploadOne } from '@icon-park/react';
+import { Briefcase, Check, Lightning, Right, Search, Tool, UploadOne } from '@icon-park/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -16,6 +16,7 @@ import {
   type SynonBiomedMcpServer,
   type SynonBiomedSkill,
 } from '@/renderer/services/synonBiomedCapabilities';
+import { iconColors } from '@/renderer/styles/colors';
 import { resolveLocaleKey } from '@/common/utils';
 
 type ComposerCapabilityPickerProps = {
@@ -68,7 +69,7 @@ const CapabilityRow: React.FC<{
     aria-label={label}
     disabled={disabled}
     title={title}
-    className={`composer-control-menu__row mx-6px box-border flex items-center gap-10px border-0 bg-transparent px-12px py-7px text-left rounded-8px text-13px transition-colors ${
+    className={`composer-control-menu__row mx-6px box-border flex h-36px items-center gap-10px border-0 bg-transparent px-12px text-left rounded-8px text-13px leading-none [&_.i-icon]:flex [&_.i-icon]:items-center [&_.i-icon]:justify-center [&_.i-icon]:leading-none [&_.i-icon_svg]:block [&_.i-icon_svg]:mx-auto ${
       disabled ? 'cursor-not-allowed text-t-secondary' : 'cursor-pointer text-t-primary hover:bg-fill-2'
     }`}
     style={{ width: 'calc(100% - 12px)' }}
@@ -99,8 +100,8 @@ const CapabilityMenuActionRow: React.FC<{
     className='box-border flex h-30px w-full cursor-pointer items-center gap-8px border-0 bg-transparent px-10px text-left rounded-6px text-12px text-t-primary hover:bg-fill-2'
     onClick={onClick}
   >
-    <span className='inline-flex w-16px flex-shrink-0 items-center justify-center color-#86909c'>{icon}</span>
-    <span className='min-w-0 flex-1 truncate'>{label}</span>
+    <span className='flex-shrink-0 inline-flex items-center justify-center leading-none'>{icon}</span>
+    <span className='min-w-0 flex-1 truncate leading-none'>{label}</span>
   </button>
 );
 
@@ -125,7 +126,7 @@ const CapabilityListRow: React.FC<{
       aria-label={name}
       disabled={disabled}
       title={description || name}
-      className={`box-border flex h-40px w-full items-center gap-9px border-0 bg-transparent px-10px text-left rounded-6px transition-colors ${
+      className={`box-border flex h-40px w-full items-center gap-9px border-0 bg-transparent px-10px text-left rounded-6px [&_.i-icon]:flex [&_.i-icon]:items-center [&_.i-icon]:justify-center [&_.i-icon]:leading-none [&_.i-icon_svg]:block [&_.i-icon_svg]:mx-auto ${
         checked ? 'bg-fill-2' : 'hover:bg-fill-2'
       } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       onClick={disabled ? undefined : onClick}
@@ -351,7 +352,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
       <div className='mx-8px my-4px h-1px bg-[var(--color-border-1)]' />
       <div className='py-4px'>
         <CapabilityMenuActionRow
-          icon={<Shield theme='outline' size={15} />}
+          icon={<Briefcase theme='outline' size={15} fill={iconColors.primary} />}
           label={t('conversation.attachMenu.manageConnectors')}
           onClick={() => {
             onRequestClose?.();
@@ -376,7 +377,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
         >
           <div>
             <SubmenuTriggerRow
-              icon={<Lightning theme='outline' size={15} />}
+              icon={<Lightning theme='outline' size={15} fill={iconColors.primary} />}
               label={`${t('conversation.skills.loaded')} · ${skillNames.length}`}
             />
           </div>
@@ -394,7 +395,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
         >
           <div>
             <SubmenuTriggerRow
-              icon={<Shield theme='outline' size={15} />}
+              icon={<Briefcase theme='outline' size={15} fill={iconColors.primary} />}
               label={`${t('conversation.mcp.loaded')} · ${mcpStatuses.length}`}
             />
           </div>

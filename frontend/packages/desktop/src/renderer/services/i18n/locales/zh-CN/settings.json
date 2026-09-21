@@ -1,4 +1,45 @@
 {
+  "environments": {
+    "title": "科研环境",
+    "description": "管理科研工具与运行环境。已准备的软件可供任务复用，也可按需选择下载。",
+    "manageSelection": "管理预下载",
+    "search": "搜索环境或软件",
+    "category": "科研分类",
+    "status": "安装状态",
+    "categories": {
+      "all": "全部分类",
+      "structure": "结构与分子",
+      "medicine": "药物与临床",
+      "omics": "组学与基因组",
+      "imaging": "影像与仪器",
+      "other": "其他科研工具"
+    },
+    "filters": {
+      "all": "全部状态",
+      "ready": "已就绪",
+      "available": "可下载",
+      "active": "准备中",
+      "failed": "需要处理"
+    },
+    "notice": "目录涵盖当前支持的预下载环境。打开页面不会安装软件；保存选择或确认下载后才开始准备。已就绪不代表科研任务已通过验证。",
+    "packages": "包含软件（{{count}}）",
+    "packagesUnavailable": "软件清单暂不可用，请刷新后重试。",
+    "environmentId": "环境标识",
+    "failureHint": "准备未完成，可重试；已下载的数据会由环境管理器检查并复用。",
+    "installed": "已安装",
+    "preparing": "正在准备",
+    "pause": "暂停安装",
+    "uninstall": "卸载",
+    "uninstallTitle": "卸载科研环境",
+    "uninstallHint": "这会从可用环境中移除当前生成。为保护仍在运行的任务，已发布的数据不会立即物理删除。",
+    "confirmUninstall": "确认卸载",
+    "download": "下载环境",
+    "confirmTitle": "准备科研环境",
+    "confirmDownload": "确认下载",
+    "confirmHint": "预计新增 {{value}} MB。确认后加入后台准备队列；已有可用环境会复用，实际占用取决于依赖和缓存。",
+    "results": "显示 {{count}} / {{total}} 个环境",
+    "empty": "没有符合条件的科研环境"
+  },
   "mcpConfiguration": {
     "title": "配置 {{name}}",
     "currentStatus": "连接状态",
@@ -2252,6 +2293,7 @@
     "softwareQueued": "等待安装",
     "softwarePreparing": "安装与校验中",
     "softwareRetrying": "正在重试",
+    "softwareUninstalling": "正在卸载",
     "softwareReady": "可供任务使用",
     "softwareFailed": "安装失败",
     "softwareStopped": "已停止",

@@ -24,6 +24,7 @@ export const BUILTIN_TAB_IDS = [
   'compute',
   'governance',
   'network',
+  'environments',
   'credentials',
   'storage',
   'general',
@@ -100,6 +101,12 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
         label: t('settings.network'),
         icon: <SettingsGeneratedNavIcon id='network' />,
         path: 'network',
+      },
+      environments: {
+        id: 'environments',
+        label: t('settings.environments.title'),
+        icon: <SettingsGeneratedNavIcon id='environments' />,
+        path: 'environments',
       },
       credentials: {
         id: 'credentials',

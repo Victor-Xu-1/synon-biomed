@@ -90,14 +90,23 @@ migration or new storage engine is required by this interface.
 
 ### Local scientific software
 
-The Storage page also exposes the selected local scientific software queue.
+Settings → Scientific environments, immediately below Network, is the single
+catalog for local scientific software preparation. It presents the registered
+predownload environments as categorized cards, including their actual package
+specifications, estimated size, observed readiness and installation progress.
+Search matches software specifications as well as environment names; category
+and status filters also include newly registered catalog entries.
+Storage retains usage accounting and links to this catalog.
 Saving a selection starts preparation in the background through the same managed
 environment controller used by tasks; opening the page or selection dialog does
-not install anything. Unselecting a queued item prevents it from starting, but
-does not uninstall existing software or cancel an installation already running.
-The page distinguishes queued, preparing, ready and failed states, refreshes
-while preparation is active, and offers an explicit retry for selected failed
-items. Progress is shown only when reported by the installer, not estimated
+not install anything. Unselecting a queued item prevents it from starting. A
+preparing card has an explicit pause action that cancels the active preparation;
+ready software has an explicit uninstall action that deactivates its managed
+environment after confirmation. The page distinguishes queued, preparing,
+paused, ready and failed states, refreshes while preparation is active, and
+offers an explicit retry for selected failed items. A card download requires
+confirmation, preserves the current selections, and uses the existing
+preparation queue. Progress is shown only when reported by the installer, not estimated
 from elapsed time. Ready means the managed environment passed its checks, not
 that a scientific task or result has been validated.
 

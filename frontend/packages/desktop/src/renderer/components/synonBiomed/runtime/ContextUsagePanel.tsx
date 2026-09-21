@@ -15,8 +15,53 @@ import {
   CONTEXT_USAGE_LABEL_KEYS,
   estimateConversationMessagesTokens,
 } from '@/renderer/services/contextUsage';
-import ContextUsageIndicator, { formatTokenCount } from './ContextUsageIndicator';
+import { formatTokenCount } from './ContextUsageIndicator';
 import styles from './ContextUsagePanel.module.css';
+
+const RING_SIZE = 16;
+const RING_STROKE_WIDTH = 2.5;
+
+/**
+ * Bare usage ring without the indicator's own hover popover — the management
+ * card owns all popover behavior for the trigger.
+ */
+const UsageRing: React.FC<{ usedTokens: number; limitTokens: number }> = ({ usedTokens, limitTokens }) => {
+  const percent = limitTokens > 0 ? (usedTokens / limitTokens) * 100 : 0;
+  const radius = (RING_SIZE - RING_STROKE_WIDTH) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (Math.min(percent, 100) / 100) * circumference;
+  const strokeColor =
+    percent > 90 ? 'rgb(var(--danger-6))' : percent > 70 ? 'rgb(var(--warning-6))' : 'rgb(var(--primary-6))';
+  return (
+    <svg
+      width={RING_SIZE}
+      height={RING_SIZE}
+      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      style={{ transform: 'rotate(-90deg)', display: 'block' }}
+    >
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={radius}
+        fill='none'
+        stroke='var(--color-fill-3)'
+        strokeWidth={RING_STROKE_WIDTH}
+      />
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={radius}
+        fill='none'
+        stroke={strokeColor}
+        strokeWidth={RING_STROKE_WIDTH}
+        strokeLinecap='round'
+        strokeDasharray={circumference}
+        strokeDashoffset={strokeDashoffset}
+        style={{ transition: 'stroke-dashoffset 0.3s ease, stroke 0.3s ease' }}
+      />
+    </svg>
+  );
+};
 
 type ContextUsagePanelProps = {
   conversationId: string;
@@ -204,12 +249,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
         aria-label={t('conversation.contextUsage.title')}
         className='inline-flex items-center justify-center cursor-pointer'
       >
-        <ContextUsageIndicator
-          tokenUsage={{ total_tokens: usage?.usedTokens ?? 0 }}
-          context_limit={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT}
-          size={16}
-          className='composer-control-context-ring'
-        />
+        <UsageRing usedTokens={usage?.usedTokens ?? 0} limitTokens={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT} />
       </span>
     </Popover>
   );

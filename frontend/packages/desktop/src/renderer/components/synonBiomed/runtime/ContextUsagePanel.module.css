@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Density and type scale match the sibling composer menus
+ * (attachment/session/permission): the surface stays owned by
+ * app-overlay-menu, rows reuse composer-control-menu__row, and this module
+ * only adds the usage-specific stat block. */
+
 .root {
   box-sizing: border-box;
-  width: 340px;
-  max-width: calc(100vw - 24px);
-  padding: 18px 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 2px;
   color: var(--color-text-1);
 }
 
@@ -19,13 +21,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
 }
 
 .headerTitle {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  line-height: 22px;
+  line-height: 18px;
+  color: var(--color-text-1);
 }
 
 .closeButton {
@@ -36,7 +41,7 @@
   height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--color-text-2);
   cursor: pointer;
@@ -51,21 +56,22 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  padding: 2px 10px 4px;
 }
 
 .bigPercent {
-  font-size: 32px;
+  font-size: 20px;
   font-weight: 700;
-  line-height: 40px;
+  line-height: 28px;
   letter-spacing: 0;
   font-variant-numeric: tabular-nums;
 }
 
 .usedText {
-  color: var(--color-text-2);
-  font-size: 13px;
-  line-height: 20px;
+  color: var(--color-text-3);
+  font-size: 12px;
+  line-height: 18px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -77,8 +83,9 @@
 .bar {
   display: flex;
   gap: 2px;
-  height: 10px;
-  border-radius: 5px;
+  height: 8px;
+  margin: 0 10px 4px;
+  border-radius: 4px;
   background: var(--color-fill-3);
   overflow: hidden;
 }
@@ -93,25 +100,31 @@
 .legend {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 4px;
 }
 
 .legendRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
   font-size: 13px;
-  line-height: 20px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--color-text-1);
+}
+
+.legendRow + .legendRow {
+  margin-top: 1px;
 }
 
 .legendRow > span:first-child {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  color: var(--color-text-1);
 }
 
 .legendDot {
@@ -122,12 +135,14 @@
 }
 
 .legendPercent {
-  color: var(--color-text-2);
+  color: var(--color-text-3);
   font-variant-numeric: tabular-nums;
 }
 
 .loading {
-  display: grid;
-  place-items: center;
-  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  padding: 0 10px;
 }

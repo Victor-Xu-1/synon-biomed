@@ -8,7 +8,6 @@ import { cleanupSiderTooltips, getSiderTooltipProps } from '@renderer/utils/ui/s
 import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
-import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
 import { useSynonBiomedUserProfile } from '@renderer/hooks/useSynonBiomedUserProfile';
 import { SiderSearchEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
@@ -51,7 +50,6 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   const { closePreview } = usePreviewContext();
   const { logout, status, user } = useAuth();
   const { profile: userProfile } = useSynonBiomedUserProfile(user?.id, user?.username ?? 'User');
-  const { theme, setTheme } = useThemeContext();
   const [isBatchMode, setIsBatchMode] = useState(false);
   const isSettings = pathname.startsWith('/settings');
   const lastNonSettingsPathRef = useRef('/guid');
@@ -135,10 +133,6 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     blurActiveElement();
     closePreview();
     setIsBatchMode(false);
-  };
-
-  const handleQuickThemeToggle = () => {
-    void setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   const handleLogout = useCallback(async () => {
@@ -229,7 +223,6 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
         isMobile={isMobile}
         isSettings={isSettings}
         collapsed={collapsed}
-        theme={theme}
         username={userProfile.displayName}
         avatarDataUrl={userProfile.avatarDataUrl}
         siderTooltipProps={siderTooltipProps}
@@ -237,7 +230,6 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
         onAccountClick={handleAccountClick}
         onPlansUsageClick={handlePlansUsageClick}
         onSettingsIntent={handleSettingsIntent}
-        onThemeToggle={handleQuickThemeToggle}
         showLogout={showLogout}
         onLogoutClick={handleLogout}
       />

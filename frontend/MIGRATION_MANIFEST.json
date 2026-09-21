@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "39faba06ed56e09321f357c3011b7ee481f5e800c15532ce6c72d88b90c56cfc",
+  "adaptationFingerprintSHA256": "6ae72d43c91e4c0671cdcfc7a99877850000a855e757528f26bbcea4d76c83b0",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "04fcab39ee3cc044481cfc95a3e699a5a2520a2cc7e1b4a44bb4cb4d003adf81",
+  "additionFingerprintSHA256": "04bc9f42684b0e8019eb80d13032be73d0d32f2f1aba89a2f5ae7f1f443c84e5",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 405,
     "adaptedSourceFiles": 660,
     "removedSourceFiles": 289,
-    "addedFiles": 646
+    "addedFiles": 647
   },
   "adaptations": [
     {
@@ -360,15 +360,15 @@
     {
       "path": "packages/desktop/src/renderer/components/layout/Sider/SiderFooter.tsx",
       "sourceSHA256": "cfdb0eb9e05e1c05a0c8954a76e6079fe791e3b5a9a5aae1e1446e5aa7364805",
-      "targetSHA256": "52a29af7aa047cecb4b8105579be0e9e015ab44c531a4c0cb0ff813844c0640d",
-      "bytes": 9144,
+      "targetSHA256": "d0a618de4dfb9afa7cdbe146c22c919198deb8e9cd690cef4e294fdf8eeff606",
+      "bytes": 8501,
       "reason": "Adapt the desktop layout, command palette, navigation, and window controls to authenticated responsive browser operation."
     },
     {
       "path": "packages/desktop/src/renderer/components/layout/Sider/index.tsx",
       "sourceSHA256": "c4547120c7bd207073f1f7991073e1e60ee281ba74c9053544b2b372666e8f46",
-      "targetSHA256": "dd69033e25ad99f8f5f531a0da8104b6a92c5102a4db70b564f3685988ce2ee6",
-      "bytes": 8419,
+      "targetSHA256": "990d312fe09620a5cdbee039208c2f6ebe8426fce4540502034f44f57183ee28",
+      "bytes": 8126,
       "reason": "Adapt the desktop layout, command palette, navigation, and window controls to authenticated responsive browser operation."
     },
     {
@@ -3678,8 +3678,8 @@
     {
       "path": "tests/unit/renderer/SiderFooterAccountMenu.dom.test.tsx",
       "sourceSHA256": "49cac31e5de5a221ea0fc01db49554f6fa35c89d5f6d675edded8ba2617aa698",
-      "targetSHA256": "aa5eaf4af4f690b98bf2e8df3baea621b56ce26e3be74f5477de097658731c9a",
-      "bytes": 6593,
+      "targetSHA256": "651ac9eb3acf640f0d3c56f9dbb54f25ec3f28759dd3ded366bb54a99023610e",
+      "bytes": 6795,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -7544,8 +7544,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/MessageChannelsSettings.css",
-      "sha256": "5ceb4b52f8fdc0675b49c3054247e74d9bfdc7f362c520298355085d9ed8bf20",
-      "bytes": 9810,
+      "sha256": "e4e2b6f6b2d1c67bef593994420c703d705cba2be3d4b3c9cb2f1cc45393269e",
+      "bytes": 10418,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9634,6 +9634,12 @@
       "path": "tests/unit/settings/mcpConnectorVisuals.test.ts",
       "sha256": "974c871f1ce3ad4f65d5980d8de0230c5b228f5eb094304698db4d9bda233cef",
       "bytes": 1000,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
+    },
+    {
+      "path": "tests/unit/settings/messageChannelCardHitTargets.test.ts",
+      "sha256": "78e54468601a312357c7018132dfb848e623d7dbddc25f2bd31ca541577ae1b5",
+      "bytes": 2699,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

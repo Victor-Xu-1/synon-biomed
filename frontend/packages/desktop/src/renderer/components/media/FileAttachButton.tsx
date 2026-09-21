@@ -251,6 +251,7 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
             onSelectSkill={handleSkillClick}
             onSelectMcpServer={onSelectMcpServer ? handleMcpClick : undefined}
             onOpenMcpSettings={handleOpenMcpSettings}
+            onRequestClose={closeAndRestoreFocus}
           />
           <div className='mx-12px my-4px h-1px bg-[var(--color-border-1)]' />
         </>
@@ -359,6 +360,7 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
             onSelectSkill={handleSkillClick}
             onSelectMcpServer={onSelectMcpServer ? handleMcpClick : undefined}
             onOpenMcpSettings={handleOpenMcpSettings}
+            onRequestClose={closeAndRestoreFocus}
           />
           <div style={{ margin: '4px 12px', height: 1, backgroundColor: 'var(--color-border-1, #e5e6eb)' }} />
         </>

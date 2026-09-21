@@ -640,7 +640,8 @@
   },
   "skills": {
     "loaded": "Loaded Skills",
-    "slashHint": "Skill"
+    "slashHint": "Skill",
+    "noMatch": "No matching skills"
   },
   "mcp": {
     "loaded": "Loaded MCP",
@@ -650,7 +651,8 @@
       "loaded": "Loaded",
       "failed": "Failed",
       "unsupported": "Unsupported"
-    }
+    },
+    "noMatch": "No matching connectors"
   },
   "runtimePreparing": {
     "sendboxHint": "Preparing the runtime environment. First startup can take a little longer."
@@ -719,10 +721,8 @@
     "moreNamed": "More actions for {{name}}",
     "unknownType": "Unknown type",
     "select": "Select",
-    "downloadNamed": "Download {{name}}",
     "openTaskForNamed": "Open the task for {{name}}",
     "openTask": "Open task",
-    "moreNamed": "More actions for {{name}}",
     "viewDetails": "View details"
   },
   "synonRuntime": {
@@ -803,21 +803,21 @@
       "stopDrawer": {
         "kernelTitle": "Stop this kernel?",
         "sessionTitle": "Stop all kernels in this session?",
-        "kernelMeta": "\u00b7 {{language}} \u00b7 {{environment}} \u00b7 {{memory}}",
-        "sessionMeta": "\u00b7 {{kernels}} kernels \u00b7 {{memory}}",
+        "kernelMeta": "· {{language}} · {{environment}} · {{memory}}",
+        "sessionMeta": "· {{kernels}} kernels · {{memory}}",
         "busyHelp": "Interrupt stops the running cell and keeps the kernel and variables. Kill destroys the kernel, frees {{memory}}, and loses all in-memory variables.",
         "idleHelp": "Kill destroys the idle kernel, frees {{memory}}, and loses all in-memory variables. The agent rebuilds it when needed.",
-        "reasonPlaceholder": "e.g. this is too expensive \u2014 try a cheaper way (optional)",
+        "reasonPlaceholder": "e.g. this is too expensive — try a cheaper way (optional)",
         "interrupt": "Interrupt",
-        "stopping": "Stopping\u2026",
+        "stopping": "Stopping…",
         "kill": "Kill",
         "killAll": "Kill all",
-        "killing": "Killing\u2026",
+        "killing": "Killing…",
         "frees": "frees {{memory}}",
         "reasonDelivered": "Delivered to the agent as the reason it was stopped."
       },
       "sessionCurrent": "current",
-      "sessionSummaryCompact": "{{kernels}} kernels \u00b7 {{memory}} \u00b7 {{cores}}",
+      "sessionSummaryCompact": "{{kernels}} kernels · {{memory}} · {{cores}}",
       "kernelCpu": "kernel CPU",
       "kernelSummary": "{{running}} running · {{calls}} calls",
       "memoryMeter": "Kernel memory usage",
@@ -1323,7 +1323,14 @@
     "saveAsSkillDescription": "Save as a Skill",
     "saveAsSkillBusyDescription": "Available when the task is idle",
     "saveAsSkillSuccess": "Saved personal Skill: {{name}}",
-    "saveAsSkillFailed": "Could not save personal Skill: {{error}}"
+    "saveAsSkillFailed": "Could not save personal Skill: {{error}}",
+    "searchSkills": "Search skills",
+    "searchConnectors": "Search connectors",
+    "addLocalSkill": "Add skill from local",
+    "manageSkills": "Manage skills",
+    "manageConnectors": "Manage connectors",
+    "_skillsNoMatch": "No matching skills",
+    "_mcpNoMatch": "No matching connectors"
   },
   "syncNotice": {
     "missingTitle": "Session deleted",
@@ -1409,7 +1416,10 @@
     "note": "Note",
     "noteAria": "Message annotation note",
     "orphanedCount": "{{count}} annotations in this message need to be relocated.",
-    "kind": { "bookmark": "Bookmark", "annotation": "Annotation" }
+    "kind": {
+      "bookmark": "Bookmark",
+      "annotation": "Annotation"
+    }
   },
   "urlViewer": {
     "invalidUrl": "This internet shortcut does not contain a safe HTTP or HTTPS address."

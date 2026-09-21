@@ -6,6 +6,7 @@ import {
   loadSynonBiomedLlmProviders,
   saveSynonBiomedLlmProfile,
   testSynonBiomedLlmProfile,
+  optimizeSynonBiomedPrompt,
   type SynonBiomedLlmProfile,
 } from '@/renderer/services/synonBiomedLlm';
 
@@ -143,6 +144,21 @@ describe('Synon Biomed LLM service', () => {
       4,
       `/api/llm/providers/${profile.id}`,
       expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('optimizes a draft prompt through the dedicated endpoint', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, result: { text: '优化后的提示词', model: 'optimize-model' } }))
+    );
+    const result = await optimizeSynonBiomedPrompt('帮我写一封请假条', fetchMock);
+    expect(result).toEqual({ text: '优化后的提示词', model: 'optimize-model' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/llm/optimize-prompt',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ text: '帮我写一封请假条' }),
+      })
     );
   });
 });

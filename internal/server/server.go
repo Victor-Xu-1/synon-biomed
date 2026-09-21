@@ -930,6 +930,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/llm/providers", s.handleLLMProviders)
 	mux.HandleFunc("/api/llm/providers/", s.handleLLMProvider)
 	mux.HandleFunc("/api/llm/test", s.handleLLMProviderTest)
+	mux.HandleFunc("/api/llm/optimize-prompt", s.handleLLMPromptOptimize)
 	mux.HandleFunc("/api/mcp-servers", s.handleMCPServerCompatibility)
 	mux.HandleFunc("/api/mcp-servers/", s.handleMCPServerCompatibility)
 	mux.HandleFunc("/api/mcp-servers/connectors", s.handleMCPDirectory)

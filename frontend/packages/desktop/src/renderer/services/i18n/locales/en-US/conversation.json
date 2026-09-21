@@ -1176,6 +1176,12 @@
       "reviewStartFailed": "Failed to start manual review.",
       "goalCleared": "Conversation goal cleared",
       "goalClearFailed": "Failed to clear the conversation goal.",
+      "optimizePrompt": {
+        "label": "Optimize prompt",
+        "applied": "Prompt optimized",
+        "undo": "Undo",
+        "failed": "Failed to optimize the prompt"
+      },
       "reviewShort": "Review",
       "sendMode": "Send mode",
       "sendModeDescription": "Use a runtime mode supported by this conversation",

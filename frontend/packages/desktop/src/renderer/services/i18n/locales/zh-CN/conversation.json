@@ -1176,6 +1176,12 @@
       "reviewStartFailed": "启动手动审阅失败。",
       "goalCleared": "会话目标已清除",
       "goalClearFailed": "清除会话目标失败。",
+      "optimizePrompt": {
+        "label": "优化提示词",
+        "applied": "已优化提示词",
+        "undo": "撤销",
+        "failed": "优化提示词失败"
+      },
       "reviewShort": "审阅",
       "sendMode": "发送模式",
       "sendModeDescription": "使用当前会话支持的真实运行模式",

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act, screen, waitFor, type RenderOptions } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, type RenderOptions } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { MemoryRouter } from 'react-router';
@@ -327,16 +327,28 @@ vi.mock('@/renderer/hooks/synonBiomed/runtime/useAcpConfigOptions', () => ({
   classifyConfigSetError: () => 'unknown',
   useAcpConfigOptions: (...args: unknown[]) => useAcpConfigOptionsMock(...args),
 }));
+// The mocked draft hook keeps content in React state so typing flows through
+// the composer like it does in production; tests seed it via
+// sendBoxDraftSeed before rendering.
+const sendBoxDraftSeed = { current: '' };
 vi.mock('@/renderer/hooks/chat/useSendBoxDraft', () => ({
-  getSendBoxDraftHook: () => () => ({
-    data: {
-      atPath: [],
-      uploadFile: [],
-      content: '',
-      contextItems: draftContextItemsMock.current,
-    },
-    mutate: vi.fn(),
-  }),
+  getSendBoxDraftHook: () => () => {
+    const [content, setContentState] = React.useState(sendBoxDraftSeed.current);
+    return {
+      data: {
+        atPath: [],
+        uploadFile: [],
+        content,
+        contextItems: draftContextItemsMock.current,
+      },
+      mutate: (updater: (current: { content: string }) => { content: string } | undefined) => {
+        setContentState((current) => {
+          const next = updater({ content: current });
+          return next === undefined ? current : next.content;
+        });
+      },
+    };
+  },
 }));
 vi.mock('@/renderer/hooks/chat/useSendBoxFiles', () => ({
   useSendBoxFiles: () => ({
@@ -540,6 +552,7 @@ describe('AcpSendBox', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     queuedCommandSequence = 0;
+    sendBoxDraftSeed.current = '';
     sendBoxProps.current = null;
     isMobileMock.current = false;
     mobileActionSheetEntries.current = [];
@@ -2110,5 +2123,35 @@ describe('AcpSendBox', () => {
     });
 
     expect(messageErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('swaps the context-usage ring for the optimize-prompt action while typing', async () => {
+    await render(<AcpSendBox conversation_id='conv-1' backend='synonbiomed' messageState={makeMessageState()} />);
+
+    expect(screen.getByTestId('synon-biomed-context-usage-trigger')).toBeInTheDocument();
+    expect(screen.queryByTestId('synon-biomed-optimize-prompt-trigger')).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'change' }));
+    });
+
+    expect(screen.queryByTestId('synon-biomed-context-usage-trigger')).not.toBeInTheDocument();
+    expect(screen.getByTestId('synon-biomed-optimize-prompt-trigger')).toBeInTheDocument();
+  });
+
+  it('keeps the ring while running and shows both icons when typing during a run', async () => {
+    const messageState = makeMessageState();
+    messageState.aiProcessing = true;
+    await render(<AcpSendBox conversation_id='conv-1' backend='synonbiomed' messageState={messageState} />);
+
+    expect(screen.getByTestId('synon-biomed-context-usage-trigger')).toBeInTheDocument();
+    expect(screen.queryByTestId('synon-biomed-optimize-prompt-trigger')).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'change' }));
+    });
+
+    expect(screen.getByTestId('synon-biomed-context-usage-trigger')).toBeInTheDocument();
+    expect(screen.getByTestId('synon-biomed-optimize-prompt-trigger')).toBeInTheDocument();
   });
 });

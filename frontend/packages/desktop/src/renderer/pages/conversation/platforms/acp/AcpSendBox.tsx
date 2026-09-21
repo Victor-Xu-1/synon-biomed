@@ -124,16 +124,7 @@ const AcpSendBox: React.FC<{
   initialConversation,
   ownerId = '',
 }) => {
-  const {
-    aiProcessing,
-    setAiProcessing,
-    resetState,
-    streamReady,
-    hasThinkingMessage,
-    slashCommands,
-    tokenUsage,
-    context_limit,
-  } = messageState;
+  const { aiProcessing, setAiProcessing, resetState, streamReady, hasThinkingMessage, slashCommands } = messageState;
   const { t, i18n } = useTranslation();
   const localeKey = resolveLocaleKey(i18n.language);
   const navigate = useNavigate();
@@ -1191,11 +1182,6 @@ const AcpSendBox: React.FC<{
                 onSaveSkill={handleSaveAsSkill}
                 saveAsSkillDisabled={isBusy || skillSaveInFlight}
               />
-              <ContextUsagePanel
-                conversationId={conversation_id}
-                tokenUsage={tokenUsage}
-                contextLimit={context_limit}
-              />
               <SynonBiomedSessionOptionsMenu
                 rootFrameId={conversation_id}
                 value={synonSessionOptions}
@@ -1216,6 +1202,7 @@ const AcpSendBox: React.FC<{
         }
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
+            <ContextUsagePanel conversationId={conversation_id} />
             <SynonBiomedModelSelector
               conversation_id={conversation_id}
               backend={backend}

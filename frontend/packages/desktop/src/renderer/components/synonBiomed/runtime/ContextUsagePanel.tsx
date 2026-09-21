@@ -5,23 +5,26 @@
  */
 
 import { Popover, Spin } from '@arco-design/web-react';
-import { Close, Dashboard } from '@icon-park/react';
+import { Close } from '@icon-park/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TokenUsageData } from '@/common/config/storage';
+import { DEFAULT_CONTEXT_LIMIT } from '@/renderer/utils/model/modelContextLimits';
 import {
   buildContextUsageBreakdown,
   CONTEXT_USAGE_COLORS,
   CONTEXT_USAGE_LABEL_KEYS,
   estimateConversationMessagesTokens,
 } from '@/renderer/services/contextUsage';
-import { formatTokenCount } from './ContextUsageIndicator';
+import ContextUsageIndicator, { formatTokenCount } from './ContextUsageIndicator';
 import styles from './ContextUsagePanel.module.css';
 
 type ContextUsagePanelProps = {
   conversationId: string;
-  tokenUsage: TokenUsageData | null;
-  contextLimit: number;
+};
+
+type FrameUsagePayload = {
+  context_limit?: unknown;
+  runtime_input_tokens?: unknown;
 };
 
 type DurableMessagePayload = {
@@ -30,23 +33,67 @@ type DurableMessagePayload = {
 
 const MESSAGE_SAMPLE_LIMIT = 200;
 
+function positiveNumber(value: unknown): number | null {
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 /**
- * Composer context-usage management card. The used/limit figures come from the
- * conversation's authoritative usage record; the message share is estimated
- * with the server-side accounting heuristic over the durable history, and the
+ * Composer context-usage management card. Used/limit figures come from the
+ * conversation's authoritative frame projection (`context_limit` plus the
+ * runner's `runtime_input_tokens`); the message share is estimated with the
+ * server-side accounting heuristic over the durable history, and the
  * capability rows split the documented residual.
  */
-const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, tokenUsage, contextLimit }) => {
+const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
+  const [usage, setUsage] = useState<{ usedTokens: number; limitTokens: number } | null>(null);
+  const [usageLoadFailed, setUsageLoadFailed] = useState(false);
   const [messageItems, setMessageItems] = useState<Array<Record<string, unknown>> | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [messageLoadFailed, setMessageLoadFailed] = useState(false);
+
+  useEffect(() => {
+    if (!visible || !conversationId) return;
+    let cancelled = false;
+    setUsage(null);
+    setUsageLoadFailed(false);
+    const controller = new AbortController();
+    // Same authoritative frame projection the session options menu reads.
+    fetch(`/api/frames/${encodeURIComponent(conversationId)}`, {
+      credentials: 'include',
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`frame usage request failed: ${response.status}`);
+        return response.json() as Promise<FrameUsagePayload>;
+      })
+      .then((payload) => {
+        if (!cancelled) {
+          const usedTokens = positiveNumber(payload?.runtime_input_tokens);
+          const limitTokens = positiveNumber(payload?.context_limit);
+          if (usedTokens !== null && limitTokens !== null) {
+            setUsage({ usedTokens, limitTokens });
+          } else {
+            setUsageLoadFailed(true);
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setUsageLoadFailed(true);
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [visible, conversationId]);
 
   useEffect(() => {
     if (!visible || !conversationId) return;
     let cancelled = false;
     setMessageItems(null);
-    setLoadFailed(false);
+    setMessageLoadFailed(false);
     const controller = new AbortController();
     fetch(`/api/conversations/${encodeURIComponent(conversationId)}/messages?limit=${MESSAGE_SAMPLE_LIMIT}`, {
       credentials: 'include',
@@ -61,7 +108,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, t
         if (!cancelled) setMessageItems(Array.isArray(payload?.items) ? payload.items : []);
       })
       .catch(() => {
-        if (!cancelled) setLoadFailed(true);
+        if (!cancelled) setMessageLoadFailed(true);
       });
     return () => {
       cancelled = true;
@@ -69,15 +116,18 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, t
     };
   }, [visible, conversationId]);
 
-  const usedTokens = tokenUsage?.total_tokens ?? 0;
   const rows = useMemo(() => {
-    if (usedTokens <= 0 || contextLimit <= 0) return null;
+    if (!usage) return null;
     const messageEstimate = messageItems === null ? null : estimateConversationMessagesTokens(messageItems);
-    return buildContextUsageBreakdown({ usedTokens, limitTokens: contextLimit, messagesTokens: messageEstimate });
-  }, [messageItems, usedTokens, contextLimit]);
+    return buildContextUsageBreakdown({
+      usedTokens: usage.usedTokens,
+      limitTokens: usage.limitTokens,
+      messagesTokens: messageEstimate,
+    });
+  }, [messageItems, usage]);
 
-  const usagePercent = contextLimit > 0 ? (usedTokens / contextLimit) * 100 : 0;
-  const ready = usedTokens > 0 && contextLimit > 0 && rows !== null;
+  const usagePercent = usage ? (usage.usedTokens / usage.limitTokens) * 100 : 0;
+  const ready = Boolean(usage && rows);
 
   return (
     <Popover
@@ -99,7 +149,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, t
               <Close theme='outline' size={14} strokeWidth={3.6} />
             </button>
           </div>
-          {ready && rows ? (
+          {ready && rows && usage ? (
             <>
               <div className={styles.statRow}>
                 <span className={styles.bigPercent} data-testid='context-usage-percent'>
@@ -108,13 +158,13 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, t
                 <span className={styles.usedText}>
                   {t('conversation.contextUsage.usedLabel')}{' '}
                   <strong>
-                    {formatTokenCount(usedTokens)} / {formatTokenCount(contextLimit, true)}
+                    {formatTokenCount(usage.usedTokens)} / {formatTokenCount(usage.limitTokens, true)}
                   </strong>
                 </span>
               </div>
               <div className={styles.bar} aria-hidden='true'>
                 {rows.map((row) => {
-                  const width = (row.tokens / contextLimit) * 100;
+                  const width = (row.tokens / usage.limitTokens) * 100;
                   if (width <= 0) return null;
                   return (
                     <span
@@ -132,35 +182,29 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, t
                       <i className={styles.legendDot} style={{ background: CONTEXT_USAGE_COLORS[row.key] }} />
                       {t(CONTEXT_USAGE_LABEL_KEYS[row.key])}
                     </span>
-                    <span className={styles.legendPercent}>{((row.tokens / contextLimit) * 100).toFixed(1)}%</span>
+                    <span className={styles.legendPercent}>{((row.tokens / usage.limitTokens) * 100).toFixed(1)}%</span>
                   </div>
                 ))}
               </div>
             </>
-          ) : tokenUsage === null ? (
+          ) : usageLoadFailed || messageLoadFailed ? (
             <div className={styles.loading}>
               <span className='text-13px text-t-secondary'>{t('conversation.contextUsage.unavailable')}</span>
             </div>
           ) : (
             <div className={styles.loading}>
-              {loadFailed ? (
-                <span className='text-13px text-t-secondary'>{t('conversation.contextUsage.unavailable')}</span>
-              ) : (
-                <Spin size={16} />
-              )}
+              <Spin size={16} />
             </div>
           )}
         </div>
       }
     >
-      <button
-        type='button'
-        aria-label={t('conversation.contextUsage.title')}
-        data-testid='synon-biomed-context-usage-trigger'
-        className='composer-icon-control relative'
-      >
-        <Dashboard theme='outline' size={17} strokeWidth={3.6} />
-      </button>
+      <ContextUsageIndicator
+        tokenUsage={{ total_tokens: usage?.usedTokens ?? 0 }}
+        context_limit={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT}
+        size={24}
+        className='composer-control-context-ring'
+      />
     </Popover>
   );
 };

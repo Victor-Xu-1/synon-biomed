@@ -92,11 +92,11 @@ export type OnboardingPendingUpload = {
   uploadId: string;
 };
 
-export type OnboardingLaunchInput = {
+export type OnboardingStageInput = {
   projectId: string;
+  projectName: string;
   assistantId: string;
   assistantName: string;
-  loadingId: string;
   task: string;
   profile: OnboardingResearcherProfile;
   files: File[];
@@ -104,10 +104,9 @@ export type OnboardingLaunchInput = {
   capabilities: OnboardingCapabilitySelection;
 };
 
-export type OnboardingLaunchResult = {
+export type OnboardingStageResult = {
   projectId: string;
-  conversationId: string;
-  turnId: string;
+  conversationId: string | null;
 };
 
 export type OnboardingLaunchFailureKind =
@@ -129,7 +128,7 @@ export type SynonBiomedProjectAttachmentUploadOptions = OnboardingServiceOptions
   onAbandoned?: () => void;
 };
 
-export type OnboardingLaunchOptions = OnboardingServiceOptions & {
+export type OnboardingStageOptions = OnboardingServiceOptions & {
   assertAuthority?: () => void;
   uploadedArtifacts?: ReadonlyMap<File, OnboardingArtifactCacheEntry>;
   pendingUploads?: ReadonlyMap<File, OnboardingPendingUpload>;
@@ -306,18 +305,22 @@ export async function saveOnboardingCapabilities(
 
 export const saveOnboardingScientificRuntimes = saveScientificRuntimeSelection;
 
-export async function launchOnboardingTask(
-  input: OnboardingLaunchInput,
-  options: OnboardingLaunchOptions = {}
-): Promise<OnboardingLaunchResult> {
+/**
+ * Persist the onboarding setup without starting a task. Attachments and the
+ * researcher profile are uploaded into the project; when a first task was
+ * selected it is delivered to the conversation page as an unsent draft via the
+ * shared initial-message channel, so the user reviews and sends it explicitly.
+ */
+export async function stageOnboardingTask(
+  input: OnboardingStageInput,
+  options: OnboardingStageOptions = {}
+): Promise<OnboardingStageResult> {
   const assertAuthority = options.assertAuthority ?? (() => undefined);
   assertAuthority();
   const task = input.task.trim();
-  if (!task) throw new Error('A first task is required');
-  if (!input.assistantId.trim()) throw new Error('A Synon Biomed assistant is required');
+  if (task && !input.assistantId.trim()) throw new Error('A Synon Biomed assistant is required');
   const assistantName = input.assistantName.trim();
-  if (!assistantName) throw new Error('A Synon Biomed assistant name is required');
-  if (!input.loadingId.trim()) throw new Error('An onboarding launch identity is required');
+  if (task && !assistantName) throw new Error('A Synon Biomed assistant name is required');
   const fetchImpl = onboardingMutationFetch(options.fetchImpl ?? fetch);
   const uploadedArtifacts: OnboardingUploadedArtifact[] = [];
 
@@ -400,7 +403,7 @@ export async function launchOnboardingTask(
   await updateSynonBiomedProject(
     input.projectId,
     {
-      name: buildSynonBiomedConversationTitle(task),
+      name: task ? buildSynonBiomedConversationTitle(task) : input.projectName.trim(),
       description: input.profile.summary.trim() || null,
       context,
     },
@@ -408,60 +411,64 @@ export async function launchOnboardingTask(
   );
   assertAuthority();
 
-  const conversationExtra: ICreateConversationParams['extra'] & {
-    backend: 'synonbiomed';
-    project_id: string;
-  } = {
-    workspace: `synonbiomed://project/${encodeURIComponent(input.projectId)}`,
-    backend: 'synonbiomed',
-    project_id: input.projectId,
-    custom_workspace: false,
-    default_files: [],
-    selected_mcp_server_ids: [],
-    selected_session_mcp_servers: [],
-  };
-  let conversationId = options.conversationId?.trim() ?? '';
-  if (!conversationId) {
-    const conversation = await ipcBridge.conversation.create.invoke({
-      name: buildSynonBiomedConversationTitle(task),
-      assistant: {
-        id: input.assistantId,
-        conversation_overrides: {
-          // Skill switches were already persisted as availability preferences.
-          // OPERON discovers enabled Skills lazily; treating every enabled Skill
-          // as a fixed per-conversation selection would inject the whole catalog.
-          mcp_ids: enabledKeys(input.capabilities.connectorEnabled),
+  let conversationId: string | null = options.conversationId?.trim() || null;
+  if (task) {
+    if (!conversationId) {
+      const conversationExtra: ICreateConversationParams['extra'] & {
+        backend: 'synonbiomed';
+        project_id: string;
+      } = {
+        workspace: `synonbiomed://project/${encodeURIComponent(input.projectId)}`,
+        backend: 'synonbiomed',
+        project_id: input.projectId,
+        custom_workspace: false,
+        default_files: [],
+        selected_mcp_server_ids: [],
+        selected_session_mcp_servers: [],
+      };
+      const conversation = await ipcBridge.conversation.create.invoke({
+        name: buildSynonBiomedConversationTitle(task),
+        assistant: {
+          id: input.assistantId,
+          conversation_overrides: {
+            // Skill switches were already persisted as availability preferences.
+            // OPERON discovers enabled Skills lazily; treating every enabled Skill
+            // as a fixed per-conversation selection would inject the whole catalog.
+            mcp_ids: enabledKeys(input.capabilities.connectorEnabled),
+          },
         },
-      },
-      extra: conversationExtra,
-    });
-    assertAuthority();
-    conversationId = requireConversationId(conversation);
-    options.onConversationCreated?.(conversationId);
+        extra: conversationExtra,
+      });
+      assertAuthority();
+      conversationId = requireConversationId(conversation);
+      options.onConversationCreated?.(conversationId);
+    }
+    // The first task is handed to the conversation as an unsent draft through
+    // the shared initial-message channel; nothing starts until the user sends.
+    writeSessionValue(
+      `acp_initial_message_${conversationId}`,
+      JSON.stringify({
+        input: task,
+        files: [],
+        artifact_refs: [
+          toOnboardingAttachedArtifactReference(profileArtifact),
+          ...uploadedArtifacts.map(toOnboardingAttachedArtifactReference),
+        ],
+        session_options: {
+          ultra_mode: false,
+          verifier_mode: 'off',
+          memory_mode: 'off',
+          target_agent: assistantName,
+        },
+        draft_only: true,
+      })
+    );
   }
-  const result = await ipcBridge.conversation.sendMessage.invoke({
-    input: task,
-    conversation_id: conversationId,
-    files: [],
-    artifact_refs: [
-      toOnboardingAttachedArtifactReference(profileArtifact),
-      ...uploadedArtifacts.map(toOnboardingAttachedArtifactReference),
-    ],
-    message_context: 'onboarding_first_task',
-    loading_id: input.loadingId,
-    session_options: {
-      ultra_mode: false,
-      verifier_mode: 'off',
-      memory_mode: 'off',
-      target_agent: assistantName,
-    },
-  });
-  assertAuthority();
 
   await markOnboardingComplete({ fetchImpl });
   assertAuthority();
   removeSessionValue(PENDING_PROJECT_KEY);
-  return { projectId: input.projectId, conversationId, turnId: result.turn_id };
+  return { projectId: input.projectId, conversationId };
 }
 
 export async function prepareOnboardingSuggestionArtifacts(

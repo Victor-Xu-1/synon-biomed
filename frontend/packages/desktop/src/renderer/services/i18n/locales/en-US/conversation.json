@@ -601,7 +601,15 @@
     "queueTooLarge": "Queue data is too large to persist safely. Remove some queued commands first."
   },
   "contextUsage": {
-    "contextUsed": "context used"
+    "contextUsed": "context used",
+    "title": "Context usage",
+    "usedLabel": "Used",
+    "systemPrompt": "System prompt",
+    "toolsAndSubagents": "Tools & subagents",
+    "messages": "Conversation messages",
+    "connectorsAndMcp": "Connectors & MCP",
+    "skills": "Skills",
+    "unavailable": "No context usage data yet"
   },
   "skill_generator": {
     "title": "Generate Skill/Rule",
@@ -632,7 +640,8 @@
   },
   "skills": {
     "loaded": "Loaded Skills",
-    "slashHint": "Skill"
+    "slashHint": "Skill",
+    "noMatch": "No matching skills"
   },
   "mcp": {
     "loaded": "Loaded MCP",
@@ -642,6 +651,42 @@
       "loaded": "Loaded",
       "failed": "Failed",
       "unsupported": "Unsupported"
+    },
+    "noMatch": "No matching connectors",
+    "descriptions": {
+      "biomart": "Ensembl BioMart — genomic annotations, identifier translation, and cross-reference queries.",
+      "pubmed": "PubMed biomedical literature — search, metadata, abstracts, full-text (PMC), related articles, ID conversion, copyright status, citation lookup.",
+      "clinical-trials": "ClinicalTrials.gov — trial search, details, endpoints, sponsor/investigator/eligibility queries.",
+      "chembl": "ChEMBL bioactivity database — compound/drug/target search, bioactivities, mechanisms, ADMET.",
+      "biorxiv": "bioRxiv/medRxiv preprints — search, metadata, published links, funder search, usage statistics.",
+      "variants": "Human genetic variants — gnomAD population frequencies/constraint (r4), ClinVar records/search (direct NCBI), dbSNP, structural and mitochondrial variants.",
+      "clinical-genomics": "Clinical genomics knowledge — ClinGen gene validity, dosage and actionability curations plus CIViC clinical evidence.",
+      "expression": "Gene expression — GTEx tissue expression and eQTLs (pinned dataset).",
+      "regulation": "Gene regulation — ENCODE experiments/files/biosamples, JASPAR transcription-factor binding matrices, UniBind TFBS.",
+      "protein-annotation": "Protein annotation — InterPro/Pfam domains and families, Human Protein Atlas, STRING interaction networks.",
+      "rna": "Non-coding RNA — Rfam families, seed alignments, covariance models, trees, sequence regions.",
+      "structures-interactions": "Structures and molecular interactions — PDB structures, AlphaFold predictions, EMDB cryo-EM entries, Complex Portal complexes, IntAct interaction networks.",
+      "omics-archives": "Omics data archives — ArrayExpress/BioStudies, GEO, MGnify, PRIDE proteomics projects.",
+      "genes-ontologies": "Gene identity and ontologies — MyGene queries, OLS4 ontology terms, GO annotations (QuickGO), UniProt entries, Reactome pathways.",
+      "drug-regulatory": "FDA drug data — Drugs@FDA applications, approvals, pharmacologic classes, generic equivalents, SPL drug labels.",
+      "research-resources": "Research resources — Grants.gov funding opportunity search, Antibody Registry lookups.",
+      "synon-research": "Independent Synon-research MCP — compact discovery and bounded execution of an operator-verified research capability pack without exposing each source as a separate Skill.",
+      "cancer-models": "Cancer genomics cohorts — cBioPortal studies, mutations, copy-number alterations, clinical attributes.",
+      "chemistry": "Small-molecule chemistry — PubChem compounds/properties/similarity, ChEBI ontology, Rhea reactions, BindingDB affinities.",
+      "human-genetics": "Human genetics associations — GWAS Catalog, eQTL Catalogue, FinnGen/BioBank-Japan PheWAS portals.",
+      "literature": "Scholarly literature graph — OpenAlex works/authors/venues/citations, arXiv metadata.",
+      "genomes": "Genome annotation — Ensembl REST lookup/sequence/homology/VEP, UCSC Genome Browser tracks and conservation.",
+      "cellguide": "Cell type information from CELLxGENE — descriptions, marker genes, tissue distribution, source datasets.",
+      "zinc": "ZINC22 purchasable chemical space (CartBlanche22) — compound lookup by ZINC id, SMILES exact/similarity search, supplier-code resolution, random sampling, 3D structure locations for docking.",
+      "omtx-om": "Official hosted Om MCP — target-conditioned small-molecule ranking with LULA, accessible-space screening, molecule fulfillment, generated-data access and discovery diligence without local model deployment.",
+      "patsnap-chemical-molecular": "Official hosted PatSnap Chemical Molecular MCP — structure and similarity search, fragment and scaffold analysis, ADMET prediction, patent-linked compound intelligence and SAR extraction.",
+      "inductive-bio": "Official hosted Inductive Bio MCP — small-molecule ADMET and PK property prediction for solubility, permeability, stability, efflux, CYP, hERG, BBB and related development risks without local model deployment.",
+      "boltz-api-official": "Official hosted Boltz MCP — small-molecule and protein structure or binding prediction, library screening, binder design and ADME workflows without local model deployment.",
+      "open-targets-official": "Official hosted Open Targets Platform MCP — target/disease evidence, tractability, safety, genetics, drug mechanisms and clinical candidates through schema-guided GraphQL.",
+      "tamarind-bio": "Hosted computational drug-design MCP — molecular and protein structure prediction, docking, protein/antibody/RNA design, molecular generation and property workflows without local GPU deployment.",
+      "adaptyv-cloud-lab": "Official hosted cloud-lab MCP for protein and antibody validation — target catalog, experiment design, quotes, binding/affinity, expression, thermostability and structured results.",
+      "ketcher-chemistry": "Interactive 2D molecule sketcher (Ketcher) as an MCP App. Backs the .ket/.smi/.mol/.sdf/.rxn artifact viewer.",
+      "idc-rest": "Public clinical imaging MCP — read-only cohort discovery, metadata, guarded SQL and citation-ready cancer imaging evidence. No API key or local data download required."
     }
   },
   "runtimePreparing": {
@@ -651,7 +696,8 @@
     "hint": "Type / for commands, @ to reference files",
     "invalidReference": "The reference format is invalid and could not be added to the message.",
     "contextOnlyPrompt": "Read and use the files, Skills, and MCP connectors I selected to complete this task.",
-    "structuredContextNormalSend": "Send combined file, Skill, and MCP context normally or with Plan first."
+    "structuredContextNormalSend": "Send combined file, Skill, and MCP context normally or with Plan first.",
+    "draftComputeRestoreFailed": "The task is kept in the composer, but restoring the compute provider selection failed. Re-entering the conversation retries it automatically."
   },
   "agentTip": {
     "codes": {
@@ -710,10 +756,8 @@
     "moreNamed": "More actions for {{name}}",
     "unknownType": "Unknown type",
     "select": "Select",
-    "downloadNamed": "Download {{name}}",
     "openTaskForNamed": "Open the task for {{name}}",
     "openTask": "Open task",
-    "moreNamed": "More actions for {{name}}",
     "viewDetails": "View details"
   },
   "synonRuntime": {
@@ -794,21 +838,21 @@
       "stopDrawer": {
         "kernelTitle": "Stop this kernel?",
         "sessionTitle": "Stop all kernels in this session?",
-        "kernelMeta": "\u00b7 {{language}} \u00b7 {{environment}} \u00b7 {{memory}}",
-        "sessionMeta": "\u00b7 {{kernels}} kernels \u00b7 {{memory}}",
+        "kernelMeta": "· {{language}} · {{environment}} · {{memory}}",
+        "sessionMeta": "· {{kernels}} kernels · {{memory}}",
         "busyHelp": "Interrupt stops the running cell and keeps the kernel and variables. Kill destroys the kernel, frees {{memory}}, and loses all in-memory variables.",
         "idleHelp": "Kill destroys the idle kernel, frees {{memory}}, and loses all in-memory variables. The agent rebuilds it when needed.",
-        "reasonPlaceholder": "e.g. this is too expensive \u2014 try a cheaper way (optional)",
+        "reasonPlaceholder": "e.g. this is too expensive — try a cheaper way (optional)",
         "interrupt": "Interrupt",
-        "stopping": "Stopping\u2026",
+        "stopping": "Stopping…",
         "kill": "Kill",
         "killAll": "Kill all",
-        "killing": "Killing\u2026",
+        "killing": "Killing…",
         "frees": "frees {{memory}}",
         "reasonDelivered": "Delivered to the agent as the reason it was stopped."
       },
       "sessionCurrent": "current",
-      "sessionSummaryCompact": "{{kernels}} kernels \u00b7 {{memory}} \u00b7 {{cores}}",
+      "sessionSummaryCompact": "{{kernels}} kernels · {{memory}} · {{cores}}",
       "kernelCpu": "kernel CPU",
       "kernelSummary": "{{running}} running · {{calls}} calls",
       "memoryMeter": "Kernel memory usage",
@@ -1314,7 +1358,14 @@
     "saveAsSkillDescription": "Save as a Skill",
     "saveAsSkillBusyDescription": "Available when the task is idle",
     "saveAsSkillSuccess": "Saved personal Skill: {{name}}",
-    "saveAsSkillFailed": "Could not save personal Skill: {{error}}"
+    "saveAsSkillFailed": "Could not save personal Skill: {{error}}",
+    "searchSkills": "Search skills",
+    "searchConnectors": "Search connectors",
+    "addLocalSkill": "Add skill from local",
+    "manageSkills": "Manage skills",
+    "manageConnectors": "Manage connectors",
+    "_skillsNoMatch": "No matching skills",
+    "_mcpNoMatch": "No matching connectors"
   },
   "syncNotice": {
     "missingTitle": "Session deleted",
@@ -1400,7 +1451,10 @@
     "note": "Note",
     "noteAria": "Message annotation note",
     "orphanedCount": "{{count}} annotations in this message need to be relocated.",
-    "kind": { "bookmark": "Bookmark", "annotation": "Annotation" }
+    "kind": {
+      "bookmark": "Bookmark",
+      "annotation": "Annotation"
+    }
   },
   "urlViewer": {
     "invalidUrl": "This internet shortcut does not contain a safe HTTP or HTTPS address."

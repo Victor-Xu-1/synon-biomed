@@ -129,12 +129,37 @@
       },
       "personalizing": "正在根据你的科研背景和附件生成三个任务…",
       "fallback": "个性化建议生成时间较长，你可以先从以下任务中选择。",
-      "customPlaceholder": "描述你准备启动的任务"
+      "customPlaceholder": "描述你准备启动的任务",
+      "draftHint": "所选任务会作为草稿带入工作台，发送前不会自动启动。"
+    },
+    "model": {
+      "title": "配置大模型",
+      "subtitle": "连接一个可用于科研任务的大模型；也可以先跳过，稍后在设置中完成。",
+      "add": "添加模型配置",
+      "save": "保存并启用",
+      "current": "当前使用",
+      "unconfigured": "未配置",
+      "unconfiguredHint": "尚未配置模型。",
+      "skipHint": "模型配置为可选步骤；不配置也能进入工作台，可随时在设置中添加。",
+      "provider": "服务商",
+      "modelId": "模型 ID",
+      "baseUrl": "接口地址",
+      "apiKey": "API 密钥",
+      "apiKeyPlaceholder": "粘贴服务商提供的 API 密钥",
+      "test": "测试连接",
+      "setActive": "设为当前",
+      "saved": "模型配置已保存",
+      "activated": "已设为当前模型",
+      "testSuccess": "连接成功：{{model}}",
+      "testFailed": "连接失败，请检查配置与密钥。",
+      "saveFailed": "保存失败，请检查配置后重试。",
+      "actionFailed": "操作失败，请重试。",
+      "loadError": "模型配置加载失败，请重试。"
     },
     "actions": {
       "back": "上一步",
       "continue": "继续",
-      "start": "启动任务",
+      "finish": "进入工作台",
       "reviewCapabilities": "检查能力选择"
     },
     "error": {

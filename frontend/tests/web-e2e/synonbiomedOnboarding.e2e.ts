@@ -217,6 +217,10 @@ test('fresh authenticated user completes accessible onboarding and enters a reco
   await continueButton.click();
   const task = 'Summarize the uploaded cohort design without external model calls';
   await page.getByTestId('onboarding-task-custom').fill(task);
+  // The task step no longer launches: Continue moves to the optional model
+  // setup step, and finishing there stages the task as an unsent draft.
+  await continueButton.click();
+  await expect(page.getByTestId('onboarding-model')).toBeVisible();
   const launchOutcomePromise = Promise.race([
     page
       .waitForResponse((response) => {
@@ -232,7 +236,7 @@ test('fresh authenticated user completes accessible onboarding and enters a reco
         text: await page.getByTestId('onboarding-launch-error').innerText(),
       })),
   ]);
-  await page.getByTestId('onboarding-start').click();
+  await page.getByTestId('onboarding-finish').click();
 
   const launchOutcome = await launchOutcomePromise;
   if (launchOutcome.kind === 'launch-error') {
@@ -257,6 +261,15 @@ test('fresh authenticated user completes accessible onboarding and enters a reco
   expect(page.url()).toContain(`/conversation/${encodeURIComponent(conversationId)}`);
   const composer = page.getByRole('textbox', { name: /Send a message|发消息|输入你的问题/ });
   await expect(composer).toBeVisible();
+  // The staged task sits in the composer; the user starts it explicitly.
+  await expect(composer).toHaveValue(task);
+  const sendAccepted = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().includes(`/api/conversations/${encodeURIComponent(conversationId)}/messages`)
+  );
+  await page.getByTestId('sendbox-send-btn').click();
+  expect((await sendAccepted).status()).toBe(202);
 
   const persistedState = async () =>
     page.evaluate(

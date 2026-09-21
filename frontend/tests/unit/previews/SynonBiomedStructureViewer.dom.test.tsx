@@ -302,6 +302,16 @@ const expandCompoundListFromRight = async () => {
   fireEvent.click(expandButton);
 };
 
+const dockingPanelResizeEnsemble = [
+  'REMARK 900 SYNON BIOMED DOCKING COMPLEX ENSEMBLE',
+  'ATOM      1 CA   GLY A  16      27.817 -18.400  -4.985  1.00 46.96           C',
+  'REMARK 900 REFERENCE LIGAND REF SOURCE G7I CHAIN A RESIDUE 201',
+  'HETATM    2 C1   REF Z   1      30.588 -29.829   3.037  1.00 18.75           C',
+  'REMARK 900 DOCKED LIGAND D01 CANDIDATE MDM2-010 RANK 1 AFFINITY -10.100 KCAL/MOL',
+  'HETATM    3 C1   D01 Z 101      31.000 -28.000   2.000  1.00  0.00           C',
+  'END',
+].join('\n');
+
 describe('SynonBiomedStructureViewer', () => {
   it('keeps the electrostatic scale as one top-anchored content-height overlay', () => {
     const rules = structureViewerCss.match(/\.synon-biomed-molstar__electrostatic-legend\s*\{[^}]*\}/g) ?? [];
@@ -1831,6 +1841,90 @@ describe('SynonBiomedStructureViewer', () => {
         name: 'Expand the compound list from the right',
       })
     ).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('commits one docking panel width per animation frame while dragging the edge', async () => {
+    await renderWithI18n(
+      <SynonBiomedStructureViewer filename='docking_complex_ensemble.pdb' content={dockingPanelResizeEnsemble} />,
+      'en-US'
+    );
+    await expandCompoundListFromRight();
+
+    const card = screen.getByTestId('synon-biomed-docking-score-card');
+    const handle = screen.getByRole('separator', {
+      name: 'Drag to resize the compound list width',
+    });
+    expect(card).toHaveStyle({ width: '180px' });
+
+    fireEvent.pointerDown(handle, { clientX: 0, clientY: 0 });
+    [-6, -12, -18, -24].forEach((clientX) => {
+      fireEvent.pointerMove(window, { clientX, clientY: 0 });
+    });
+    // Pointer events outrun the frame budget, so a drag may not commit the
+    // panel width between animation frames.
+    expect(card).toHaveStyle({ width: '180px' });
+    // Only the last of the four movements survives into the next frame.
+    await waitFor(() => expect(card).toHaveStyle({ width: '204px' }));
+  });
+
+  it('keeps the final docking panel width when the drag ends before the next frame', async () => {
+    await renderWithI18n(
+      <SynonBiomedStructureViewer filename='docking_complex_ensemble.pdb' content={dockingPanelResizeEnsemble} />,
+      'en-US'
+    );
+    await expandCompoundListFromRight();
+
+    const card = screen.getByTestId('synon-biomed-docking-score-card');
+    const handle = screen.getByRole('separator', {
+      name: 'Drag to resize the compound list width',
+    });
+
+    fireEvent.pointerDown(handle, { clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(window, { clientX: -30, clientY: 0 });
+    fireEvent.pointerUp(window, { clientX: -30, clientY: 0 });
+    await waitFor(() => expect(card).toHaveStyle({ width: '210px' }));
+    // The released drag must not replay a queued frame with a stale value.
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+    expect(card).toHaveStyle({ width: '210px' });
+  });
+
+  it('repositions an open structure tooltip once per frame instead of once per scroll event', async () => {
+    await renderWithI18n(
+      <SynonBiomedStructureViewer
+        filename='complex.pdb'
+        content='HEADER TEST\nATOM      1  N   MET A   1'
+        conversationId='frame-tooltip-frame-rate'
+      />,
+      'zh-CN'
+    );
+
+    const selectionDescription = '选择模式：开启后可点击选择结构中的原子、残基或其他对象。';
+    const selectionButton = await waitFor(() => screen.getByRole('button', { name: selectionDescription }));
+    fireEvent.pointerOver(selectionButton);
+    const tooltip = screen.getByRole('tooltip');
+    expect(tooltip).toHaveStyle({ left: '8px' });
+
+    const layoutReads = vi.spyOn(selectionButton, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          left: 600,
+          top: 120,
+          right: 600,
+          bottom: 120,
+          width: 0,
+          height: 0,
+          x: 600,
+          y: 120,
+          toJSON: () => ({}),
+        }) as DOMRect
+    );
+    [10, 20, 30, 40, 50].forEach((scrollTop) => {
+      fireEvent.scroll(window, { scrollTop });
+    });
+    expect(layoutReads).not.toHaveBeenCalled();
+    await waitFor(() => expect(tooltip).toHaveStyle({ left: '608px' }));
+    expect(layoutReads).toHaveBeenCalledTimes(1);
+    layoutReads.mockRestore();
   });
 
   it('passes multi-model molecule files directly to Mol* instead of a custom frame navigator', async () => {

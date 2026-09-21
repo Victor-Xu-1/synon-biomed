@@ -43,9 +43,11 @@ describe('onboarding state model', () => {
   });
 
   it('bounds forward and backward navigation', () => {
-    expect(nextOnboardingStep(4)).toBe(4);
+    expect(nextOnboardingStep(5)).toBe(5);
+    expect(nextOnboardingStep(4)).toBe(5);
     expect(nextOnboardingStep(2)).toBe(3);
     expect(previousOnboardingStep(0)).toBe(0);
     expect(previousOnboardingStep(2)).toBe(1);
+    expect(previousOnboardingStep(5)).toBe(4);
   });
 });

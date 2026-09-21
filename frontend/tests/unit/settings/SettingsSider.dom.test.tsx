@@ -24,6 +24,7 @@ vi.mock('@/renderer/pages/settings/settingsRouteLoaders', () => ({
       'compute',
       'governance',
       'network',
+      'environments',
       'credentials',
       'storage',
       'general',

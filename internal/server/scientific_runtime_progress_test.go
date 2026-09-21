@@ -76,3 +76,17 @@ func TestScientificWarmupRetryRequiresSavedSelectionAndCoalescesDuplicates(t *te
 		t.Fatalf("stale queue status: %#v", status)
 	}
 }
+
+func TestScientificRuntimeUninstallDoesNotRequireFutureSelection(t *testing.T) {
+	server := New(Options{FileRoot: t.TempDir()})
+	server.setScientificRuntimeWarmupStatus(autoDockVinaRuntimeID, scientificRuntimeWarmupStatus{
+		State: "ready", Environment: "autodock-vina", Generation: strings.Repeat("a", 64),
+	})
+
+	// The test server has no kernel manager, so the request must reach the
+	// deactivation-availability guard rather than being rejected as an absent
+	// future-download selection.
+	runtimeCompatJSON(t, server.Handler(), http.MethodPost, "/api/preferences/scientific-runtimes", "local", map[string]any{
+		"id": autoDockVinaRuntimeID, "action": "uninstall",
+	}, http.StatusServiceUnavailable)
+}

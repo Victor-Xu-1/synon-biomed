@@ -1,4 +1,45 @@
 {
+  "environments": {
+    "title": "Scientific environments",
+    "description": "Manage scientific tools and environments. Reuse prepared software in tasks or choose additional downloads.",
+    "manageSelection": "Manage predownloads",
+    "search": "Search environments or software",
+    "category": "Research category",
+    "status": "Installation status",
+    "categories": {
+      "all": "All categories",
+      "structure": "Structures & molecules",
+      "medicine": "Drug & clinical research",
+      "omics": "Omics & genomics",
+      "imaging": "Imaging & instruments",
+      "other": "Other scientific tools"
+    },
+    "filters": {
+      "all": "All statuses",
+      "ready": "Ready",
+      "available": "Available to download",
+      "active": "Preparing",
+      "failed": "Needs attention"
+    },
+    "notice": "This catalog includes the currently supported predownload environments. Opening this page does not install software. Save a selection or confirm a download to prepare it. Ready does not mean a scientific task has been validated.",
+    "packages": "Included software ({{count}})",
+    "packagesUnavailable": "Software list unavailable. Refresh and try again.",
+    "environmentId": "Environment ID",
+    "failureHint": "Preparation did not complete. Retry to check and reuse downloaded data.",
+    "installed": "Installed",
+    "preparing": "Preparing",
+    "pause": "Pause install",
+    "uninstall": "Uninstall",
+    "uninstallTitle": "Uninstall scientific environment",
+    "uninstallHint": "This removes the active generation from available environments. Published data is retained until safe reference-aware cleanup.",
+    "confirmUninstall": "Confirm uninstall",
+    "download": "Download environment",
+    "confirmTitle": "Prepare scientific environment",
+    "confirmDownload": "Confirm download",
+    "confirmHint": "Estimated additional storage: {{value}} MB. Confirmation queues background preparation and reuses existing validated environments. Actual size depends on dependencies and caches.",
+    "results": "Showing {{count}} of {{total}} environments",
+    "empty": "No scientific environments match these filters"
+  },
   "mcpConfiguration": {
     "title": "Configure {{name}}",
     "currentStatus": "Connection status",
@@ -2198,6 +2239,7 @@
     "softwareQueued": "Queued",
     "softwarePreparing": "Installing and checking",
     "softwareRetrying": "Retrying",
+    "softwareUninstalling": "Uninstalling",
     "softwareReady": "Ready for tasks",
     "softwareFailed": "Installation failed",
     "softwareStopped": "Stopped",

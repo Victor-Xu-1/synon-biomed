@@ -1,0 +1,318 @@
+import { Down, Search } from '@icon-park/react';
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { Modal } from '@arco-design/web-react';
+import { useTranslation } from 'react-i18next';
+import {
+  loadScientificRuntimeSettings,
+  pauseScientificRuntime,
+  saveScientificRuntimeSelection,
+  retryScientificRuntime,
+  uninstallScientificRuntime,
+  type ScientificRuntimeOption,
+} from '@/renderer/services/scientificRuntimeSettings';
+import { scientificRuntimePresentation } from '@/renderer/utils/scientificRuntimePresentation';
+import SettingsPageWrapper from './components/SettingsPageWrapper';
+import SettingsPageHeader from './components/SettingsPageHeader';
+import { RefreshButton } from './components/SettingsPrimitives';
+import { useStorageResource } from './storage/useStorageResource';
+import { StorageRuntimeSelectionDialog } from './storage/StorageRuntimeSelectionDialog';
+import { StorageError, StorageLoading } from './storage/StorageFeedback';
+import { EnvironmentCard } from './environments/EnvironmentCard';
+import {
+  activeEnvironmentStates,
+  environmentCategories,
+  environmentCategory,
+  matchesEnvironmentFilter,
+  type EnvironmentCategory,
+  type EnvironmentFilter,
+} from './environments/environmentCatalog';
+import './environments/environments.css';
+
+const load = (signal: AbortSignal) => loadScientificRuntimeSettings({ signal });
+export default function ScientificEnvironmentSettings() {
+  const { t } = useTranslation();
+  const resource = useStorageResource(load);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<EnvironmentCategory>('all');
+  const [filter, setFilter] = useState<EnvironmentFilter>('all');
+  const [selection, setSelection] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [target, setTarget] = useState<ScientificRuntimeOption | null>(null);
+  const [uninstallTarget, setUninstallTarget] = useState<ScientificRuntimeOption | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const pending = useRef(false);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  const items = resource.data?.options ?? [];
+  const active = items.some((item) => activeEnvironmentStates.has(item.status));
+  useEffect(() => {
+    if (!active || resource.loading || resource.failed) return;
+    const timer = window.setTimeout(() => {
+      void resource.refresh(false);
+    }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [active, resource.loading, resource.failed, resource.data, resource.refresh]);
+  const filtered = items.filter((item) => {
+    const presentation = scientificRuntimePresentation(item.id, t);
+    const haystack = [
+      item.id,
+      presentation.title,
+      presentation.description,
+      ...(item.packages ?? []).map((pkg) => pkg.spec),
+    ]
+      .join(' ')
+      .toLocaleLowerCase();
+    return (
+      (category === 'all' || environmentCategory(item.id) === category) &&
+      matchesEnvironmentFilter(item, filter) &&
+      haystack.includes(query.trim().toLocaleLowerCase())
+    );
+  });
+  const filterPanelId = useId();
+  const activeFilterCount = filter === 'all' ? 0 : 1;
+  const prepare = async () => {
+    if (!target || pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    setFailed(false);
+    try {
+      // Read the current shared selection immediately before adding one item.
+      const current = await loadScientificRuntimeSettings();
+      if (!alive.current) return;
+      const selected = current.options.find((item) => item.id === target.id);
+      if (!selected?.available) throw new Error('Runtime unavailable');
+      if (!selected.selected) {
+        await saveScientificRuntimeSelection(
+          Object.fromEntries(current.options.map((item) => [item.id, item.selected || item.id === target.id]))
+        );
+      } else {
+        await retryScientificRuntime(target.id);
+      }
+      if (alive.current) {
+        setTarget(null);
+        await resource.refresh(false);
+      }
+    } catch {
+      if (alive.current) setFailed(true);
+    } finally {
+      pending.current = false;
+      if (alive.current) setBusy(false);
+    }
+  };
+  const pause = async (item: ScientificRuntimeOption) => {
+    if (pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    setFailed(false);
+    try {
+      await pauseScientificRuntime(item.id);
+      if (alive.current) await resource.refresh(false);
+    } catch {
+      if (alive.current) {
+        setFailed(true);
+        setTarget(item);
+      }
+    } finally {
+      pending.current = false;
+      if (alive.current) setBusy(false);
+    }
+  };
+  const uninstall = async () => {
+    if (!uninstallTarget || pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    setFailed(false);
+    try {
+      await uninstallScientificRuntime(uninstallTarget.id);
+      if (alive.current) {
+        setUninstallTarget(null);
+        await resource.refresh(false);
+      }
+    } catch {
+      if (alive.current) setFailed(true);
+    } finally {
+      pending.current = false;
+      if (alive.current) setBusy(false);
+    }
+  };
+  return (
+    <SettingsPageWrapper>
+      <div className='environment-library' data-testid='scientific-environments'>
+        <SettingsPageHeader
+          title={
+            <>
+              {t('settings.environments.title')} <span className='settings-skill-library-total'>{items.length}</span>
+            </>
+          }
+          description={t('settings.environments.description')}
+          actions={
+            <>
+              <RefreshButton loading={resource.loading} onClick={() => resource.refresh(false)} />
+              <button
+                type='button'
+                className='settings-action-button'
+                disabled={!resource.data || resource.failed || busy}
+                onClick={() => setSelection(true)}
+              >
+                {t('settings.environments.manageSelection')}
+              </button>
+            </>
+          }
+        />
+        <div className='environment-toolbar' role='search' aria-label={t('settings.environments.title')}>
+          <div className='environment-search'>
+            <Search size={15} aria-hidden='true' />
+            <input
+              type='search'
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label={t('settings.environments.search')}
+              placeholder={t('settings.environments.search')}
+            />
+          </div>
+          <select
+            value={category}
+            onChange={(event) => setCategory(event.target.value as EnvironmentCategory)}
+            aria-label={t('settings.environments.category')}
+          >
+            {environmentCategories
+              .filter((id) => id === 'all' || items.some((item) => environmentCategory(item.id) === id))
+              .map((id) => (
+                <option key={id} value={id}>
+                  {t('settings.environments.categories.' + id)}
+                </option>
+              ))}
+          </select>
+          <button
+            type='button'
+            className='environment-filter-toggle'
+            aria-expanded={filtersExpanded}
+            aria-controls={filterPanelId}
+            onClick={() => setFiltersExpanded((value) => !value)}
+          >
+            {t('settings.skillsSettings.filters')}
+            {activeFilterCount > 0 ? <span className='environment-filter-count'>{activeFilterCount}</span> : null}
+            <Down size={14} aria-hidden='true' />
+          </button>
+        </div>
+        {filtersExpanded && (
+          <div
+            id={filterPanelId}
+            className='environment-filter-panel'
+            role='group'
+            aria-label={t('settings.skillsSettings.filters')}
+          >
+            <label>
+              <span>{t('settings.environments.status')}</span>
+              <select
+                value={filter}
+                onChange={(event) => setFilter(event.target.value as EnvironmentFilter)}
+                aria-label={t('settings.environments.status')}
+              >
+                {(['all', 'ready', 'available', 'active', 'failed'] as const).map((id) => (
+                  <option key={id} value={id}>
+                    {t('settings.environments.filters.' + id)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type='button'
+              className='environment-filter-reset'
+              disabled={activeFilterCount === 0}
+              onClick={() => setFilter('all')}
+            >
+              {t('settings.skillsSettings.resetFilters')}
+            </button>
+          </div>
+        )}
+        <p className='environment-notice'>{t('settings.environments.notice')}</p>
+        {resource.loading && !resource.data && <StorageLoading />}
+        {resource.failed && <StorageError retained={!!resource.data} onRetry={() => void resource.refresh(false)} />}
+        {resource.data && (
+          <>
+            <div className='environment-results' role='status'>
+              {t('settings.environments.results', { count: filtered.length, total: items.length })}
+            </div>
+            <div className='environment-grid' role='list'>
+              {filtered.map((item) => (
+                <EnvironmentCard
+                  key={item.id}
+                  item={item}
+                  disabled={busy || resource.failed}
+                  onPrepare={(value) => {
+                    setFailed(false);
+                    setTarget(value);
+                  }}
+                  onPause={(value) => void pause(value)}
+                  onUninstall={(value) => {
+                    setFailed(false);
+                    setUninstallTarget(value);
+                  }}
+                />
+              ))}
+            </div>
+            {!filtered.length && <div className='environment-empty'>{t('settings.environments.empty')}</div>}
+          </>
+        )}
+        {selection && resource.data && (
+          <StorageRuntimeSelectionDialog
+            items={items}
+            onClose={() => setSelection(false)}
+            onSaved={() => {
+              setSelection(false);
+              void resource.refresh(false);
+            }}
+          />
+        )}
+        {target && (
+          <Modal
+            visible
+            title={t('settings.environments.confirmTitle')}
+            onOk={() => void prepare()}
+            onCancel={() => {
+              if (!pending.current) setTarget(null);
+            }}
+            confirmLoading={busy}
+            closable={!busy}
+            maskClosable={!busy}
+            escToExit={!busy}
+            cancelButtonProps={{ disabled: busy }}
+            okText={t('settings.environments.confirmDownload')}
+          >
+            <p>{scientificRuntimePresentation(target.id, t).title}</p>
+            <p>{t('settings.environments.confirmHint', { value: target.estimatedInstallMB })}</p>
+            {failed && <p role='alert'>{t('settings.storageSettings.softwareRetryFailed')}</p>}
+          </Modal>
+        )}
+        {uninstallTarget && (
+          <Modal
+            visible
+            title={t('settings.environments.uninstallTitle')}
+            onOk={() => void uninstall()}
+            onCancel={() => {
+              if (!pending.current) setUninstallTarget(null);
+            }}
+            confirmLoading={busy}
+            closable={!busy}
+            maskClosable={!busy}
+            escToExit={!busy}
+            cancelButtonProps={{ disabled: busy }}
+            okButtonProps={{ status: 'danger' }}
+            okText={t('settings.environments.confirmUninstall')}
+          >
+            <p>{scientificRuntimePresentation(uninstallTarget.id, t).title}</p>
+            <p>{t('settings.environments.uninstallHint')}</p>
+            {failed && <p role='alert'>{t('settings.storageSettings.softwareRetryFailed')}</p>}
+          </Modal>
+        )}
+      </div>
+    </SettingsPageWrapper>
+  );
+}

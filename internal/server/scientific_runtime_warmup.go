@@ -145,6 +145,36 @@ func (s *Server) setScientificRuntimeWarmupStatus(id string, status scientificRu
 	s.scientificRuntimeWarmupMu.Unlock()
 }
 
+func (s *Server) setScientificRuntimeWarmupCancel(id string, cancel context.CancelFunc) {
+	if s == nil {
+		return
+	}
+	s.scientificRuntimeWarmupMu.Lock()
+	if s.scientificRuntimeWarmupCancels == nil {
+		s.scientificRuntimeWarmupCancels = make(map[string]context.CancelFunc)
+	}
+	if cancel == nil {
+		delete(s.scientificRuntimeWarmupCancels, id)
+	} else {
+		s.scientificRuntimeWarmupCancels[id] = cancel
+	}
+	s.scientificRuntimeWarmupMu.Unlock()
+}
+
+func (s *Server) cancelScientificRuntimeWarmup(id string) bool {
+	if s == nil {
+		return false
+	}
+	s.scientificRuntimeWarmupMu.RLock()
+	cancel := s.scientificRuntimeWarmupCancels[id]
+	s.scientificRuntimeWarmupMu.RUnlock()
+	if cancel == nil {
+		return false
+	}
+	cancel()
+	return true
+}
+
 func (s *Server) scientificRuntimeWarmupStatus(id string) scientificRuntimeWarmupStatus {
 	if s == nil {
 		return scientificRuntimeWarmupStatus{State: "disabled"}
@@ -375,8 +405,10 @@ func (s *Server) RunScientificRuntimeWarmups(ctx context.Context) error {
 			if !found {
 				continue
 			}
+			runContext, cancel := context.WithCancel(ctx)
+			s.setScientificRuntimeWarmupCancel(id, cancel)
 			status := runScientificRuntimeWarmup(
-				ctx,
+				runContext,
 				scientificRuntimeWarmupRetryDelays,
 				func(runContext context.Context) (scientificRuntimeWarmupResult, error) {
 					attempt := s.scientificRuntimeWarmupStatus(id).Attempt
@@ -389,6 +421,8 @@ func (s *Server) RunScientificRuntimeWarmups(ctx context.Context) error {
 					s.setScientificRuntimeWarmupStatus(id, current)
 				},
 			)
+			cancel()
+			s.setScientificRuntimeWarmupCancel(id, nil)
 			if status.State == "ready" {
 				log.Printf("scientific runtime warmup completed id=%s environment=%s generation=%s", id, status.Environment, status.Generation)
 			} else if status.State == "failed" {

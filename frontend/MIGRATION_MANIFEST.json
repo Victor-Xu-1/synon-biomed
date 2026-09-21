@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "2bd04bae2d54339c0cc9063f68290deaae85ee9f0dc29baf0fe22dd6375a775b",
+  "adaptationFingerprintSHA256": "d277007962f9ec5d207c86b54434ebb90d048431dd59a0c8b06cd3197d709586",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "f8133c2b510a46d84ba9ac291cb5113a4388cf30526fb8ef974b15a7e81244e6",
+  "additionFingerprintSHA256": "01aa8ef65f0ab283e993facd633db1bdf36b25c7afc7b14a8284c7cf9eae39ac",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 405,
     "adaptedSourceFiles": 660,
     "removedSourceFiles": 289,
-    "addedFiles": 639
+    "addedFiles": 640
   },
   "adaptations": [
     {
@@ -1760,8 +1760,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/AcpSendBox.tsx",
       "sourceSHA256": "8f99e14a4de14e19821d60b145b3cbfdbbe6686becd6150d19283dc7cedf8f80",
-      "targetSHA256": "5a629d7d3740a6089efdfec26059a0e322ebf83cda290555abfe94cc057be5e3",
-      "bytes": 52604,
+      "targetSHA256": "a52611c6ea2a76a73d7c0d21f8da5a15dead7bb94d086556e302806386b629b4",
+      "bytes": 52722,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -6818,8 +6818,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/hooks/chat/sendBoxDraftPersistence.ts",
-      "sha256": "63e2954a3c3f361912003a7364cb59e941ba49b4da2ba2f77d272221a337ffd6",
-      "bytes": 6833,
+      "sha256": "c22f23f0334611d2f2f80ce576cc1b30cfdd2c7be56b63722285fc955930a107",
+      "bytes": 7907,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7447,6 +7447,12 @@
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
+      "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/stagedDraftHandoff.ts",
+      "sha256": "26484e0b9cefdca01af3297bbd19bc2020ef8b1fdc61e086b9b06c9251985810",
+      "bytes": 3826,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/useAcpComposerContextSelection.ts",
       "sha256": "d76fd1de971a239cfcb1a563d3cc8152732237b1fd1e510d2b0862e00952e779",
       "bytes": 5488,
@@ -7460,8 +7466,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/useAcpSendBoxDraftController.ts",
-      "sha256": "1ae35880afe5904a5b551f048cabb7714e0a3d848794d23b7e258cdc260bd6f8",
-      "bytes": 2495,
+      "sha256": "b4d96723b1fcb704af716e66aee0ef964f70b19bdac9818b6a316af6ee8e6d4e",
+      "bytes": 2894,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {

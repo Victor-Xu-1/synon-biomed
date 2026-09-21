@@ -17,11 +17,8 @@ import SendBox from '@/renderer/components/chat/SendBox';
 import ComposerContextChips from '@/renderer/components/chat/SendBox/ComposerContextChips';
 import {
   buildComposerCapabilityPayload,
-  normalizeComposerContextItems,
   removeComposerContextItem,
-  type ComposerContextItem,
 } from '@/renderer/components/chat/SendBox/composerCompositionModel';
-import type { ArtifactReferenceWire } from '@/common/adapter/messageStreamProtocol';
 import ThoughtDisplay from '@/renderer/components/chat/ThoughtDisplay';
 import FileAttachButton from '@/renderer/components/media/FileAttachButton';
 import GuidProjectFilesModal from '@/renderer/pages/guid/components/GuidProjectFilesModal';
@@ -87,13 +84,14 @@ import { mergeFileSelectionItems } from '@/renderer/utils/file/fileSelection';
 import { buildDisplayMessage } from '@/renderer/utils/file/messageFiles';
 import { Message, Tag } from '@arco-design/web-react';
 import { useNavigate } from 'react-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
 import { buildSendFailureError } from './buildSendFailureError';
 import { redactErrorText } from './errorDiagnostics';
 import { buildSynonBiomedReviewRepairPrompt } from '@/renderer/components/synonBiomed/runtime/synonBiomedReviewRepair';
 import { useAcpInitialMessage } from './useAcpInitialMessage';
+import { applyStagedDraft, makeDraftRestoreIssueNotifier, type StagedDraftPayload } from './stagedDraftHandoff';
 import type { UseAcpMessageReturn } from './useAcpMessage';
 import { useAcpSendBoxDraftController } from './useAcpSendBoxDraftController';
 import { useAcpMobileActionSheetController } from './useAcpMobileActionSheetController';
@@ -485,70 +483,29 @@ const AcpSendBox: React.FC<{
   );
 
   // Check for and send initial message from guid page
+  // Check for and stage the initial message from the guid page.
   const stageInitialDraft = useCallback(
-    (payload: {
-      input: string;
-      files: string[];
-      artifactRefs: ArtifactReferenceWire[];
-      injectSkills: string[];
-      injectMcpServerIds: string[];
-      sessionOptions: {
-        delegation: boolean;
-        autoReview: boolean;
-        memory: boolean;
-        targetAgent: string | null;
-      } | null;
-      planMode: boolean;
-    }) => {
-      if (payload.input.trim()) setContent(payload.input);
-      if (payload.files.length > 0) setUploadFile(payload.files);
-      const stagedItems: ComposerContextItem[] = [
-        ...payload.artifactRefs.map(
-          (reference): ComposerContextItem => ({
-            kind: 'artifact',
-            artifactId: reference.artifact_id,
-            versionId: reference.version_id,
-            label: reference.filename || reference.artifact_id,
-            ...(reference.content_type ? { contentType: reference.content_type } : {}),
-            ...(reference.size_bytes === undefined ? {} : { sizeBytes: reference.size_bytes }),
-          })
-        ),
-        ...payload.injectSkills.map((name): ComposerContextItem => ({ kind: 'skill', name, label: name })),
-        ...payload.injectMcpServerIds.map(
-          (serverId): ComposerContextItem => ({ kind: 'mcp', serverId, label: serverId })
-        ),
-      ];
-      if (stagedItems.length > 0) {
-        setContextItems((current: ComposerContextItem[]) =>
-          normalizeComposerContextItems([...current, ...stagedItems])
-        );
-      }
-      // A fresh conversation has no frames yet, so the staged selection stays
-      // authoritative until the first explicit send bakes it into the frame.
-      // It lives in the durable draft so the async runtime-options load can
-      // never overwrite it, and so a reload keeps the requesting page's choices.
-      if (payload.sessionOptions) {
-        const staged = {
-          delegation: payload.sessionOptions.delegation,
-          autoReview: payload.sessionOptions.autoReview,
-          memory: payload.sessionOptions.memory,
-          targetAgent: payload.sessionOptions.targetAgent?.trim() ?? '',
-        };
-        setStagedSessionOptions(staged);
-        stagedSessionOptionsRef.current = staged;
-        applyStagedSessionOptions();
-      }
-      if (payload.planMode) setStagedPlanMode(true);
+    (payload: StagedDraftPayload) => {
+      applyStagedDraft(
+        payload,
+        {
+          setContent,
+          setUploadFile,
+          setContextItems,
+          setStagedSessionOptions,
+          setStagedPlanMode,
+        },
+        {
+          onStagedSessionOptions: (options) => {
+            stagedSessionOptionsRef.current = options;
+          },
+          applyStagedSessionOptions,
+        }
+      );
     },
-    [setContent, setUploadFile, setContextItems, setStagedSessionOptions, applyStagedSessionOptions, setStagedPlanMode]
+    [setContent, setUploadFile, setContextItems, setStagedSessionOptions, setStagedPlanMode, applyStagedSessionOptions]
   );
-  const notifyDraftRestoreIssue = useCallback(
-    (issue: { providers: string[] }) => {
-      console.error('[AcpSendBox] staged draft compute restore failed:', issue.providers);
-      Message.error(t('conversation.sendbox.draftComputeRestoreFailed'));
-    },
-    [t]
-  );
+  const notifyDraftRestoreIssue = useMemo(() => makeDraftRestoreIssueNotifier(t), [t]);
   useAcpInitialMessage({
     conversation_id: conversation_id,
     backend,

@@ -21,6 +21,7 @@
   "version": "版本号",
   "contact": "联系我们",
   "github": "Github",
+  "starOnGitHub": "去 GitHub 收藏",
   "loading": "请稍候...",
   "copy": "复制",
   "reply": "引用",

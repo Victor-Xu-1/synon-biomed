@@ -290,6 +290,7 @@ export type I18nKey =
   | 'common.settings'
   | 'common.show'
   | 'common.skills'
+  | 'common.starOnGitHub'
   | 'common.status'
   | 'common.success'
   | 'common.system'

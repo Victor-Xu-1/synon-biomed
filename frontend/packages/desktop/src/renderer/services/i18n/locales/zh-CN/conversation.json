@@ -652,7 +652,42 @@
       "failed": "失败",
       "unsupported": "不支持"
     },
-    "noMatch": "没有匹配的连接器"
+    "noMatch": "没有匹配的连接器",
+    "descriptions": {
+      "biomart": "Ensembl BioMart — 基因组注释、标识符转换与交叉引用查询。",
+      "pubmed": "PubMed 生物医学文献 — 检索、元数据、摘要、全文（PMC）与相关文献。",
+      "clinical-trials": "ClinicalTrials.gov — 试验检索、详情、终点、申办方/研究者/入组标准查询。",
+      "chembl": "ChEMBL 生物活性数据库 — 化合物/靶点/药物检索、生物活性、机制与 ADME 信息。",
+      "biorxiv": "bioRxiv/medRxiv 预印本 — 检索、元数据、已发表链接、资助者检索与使用统计。",
+      "variants": "人类遗传变异 — gnomAD 群体频率/约束（r4）、ClinVar 记录/提交与频率对比。",
+      "clinical-genomics": "临床基因组学知识 — ClinGen 基因有效性、剂量与可操作性整理。",
+      "expression": "基因表达 — GTEx 组织表达与 eQTL（固定数据集）。",
+      "regulation": "基因调控 — ENCODE 实验/文件/生物样本、JASPAR 转录因子结合谱。",
+      "protein-annotation": "蛋白注释 — InterPro/Pfam 结构域与家族、Human Protein Atlas、STRING 相互作用。",
+      "rna": "非编码 RNA — Rfam 家族、种子比对、协方差模型、序列区域与树。",
+      "structures-interactions": "结构与分子相互作用 — PDB 结构、AlphaFold 预测、EMDB 冷冻电镜与分子相互作用。",
+      "omics-archives": "组学数据归档 — ArrayExpress/BioStudies、GEO、MGnify 与 PRIDE 蛋白组学项目。",
+      "genes-ontologies": "基因标识与本体 — MyGene 查询、OLS4 本体术语、GO 注释（QuickGO）。",
+      "drug-regulatory": "FDA 药品数据 — Drugs@FDA 申请、批准、药理类别与仿制药等效性。",
+      "research-resources": "科研资源 — Grants.gov 资助机会检索、Antibody Registry 抗体查询。",
+      "synon-research": "独立 Synon 科研 MCP — 操作员验证信息的紧凑发现与受控执行。",
+      "cancer-models": "癌症基因组队列 — cBioPortal 研究、突变、拷贝数改变与临床数据。",
+      "chemistry": "小分子化学 — PubChem 化合物/性质/相似性、ChEBI 本体与 Rhea 反应。",
+      "human-genetics": "人类遗传关联 — GWAS Catalog、eQTL Catalogue、FinnGen/日本 BioBank PheWAS 表型。",
+      "literature": "学术文献图谱 — OpenAlex 论文/作者/期刊/引用、arXiv 元数据。",
+      "genomes": "基因组注释 — Ensembl REST 查找/序列/同源/VEP、UCSC Genome Browser 条带。",
+      "cellguide": "来自 CELLxGENE 的细胞类型信息 — 描述、标记基因、组织分布与来源。",
+      "zinc": "ZINC22 可购买化学空间（CartBlanche22）— 按 ZINC id、SMILES 表达式查询化合物。",
+      "omtx-om": "官方托管 Om MCP — 靶点条件小分子排序（LULA），可访问性优先。",
+      "patsnap-chemical-molecular": "官方托管 PatSnap Chemical Molecular MCP — 结构与相似性检索、片段枚举。",
+      "inductive-bio": "官方托管 Inductive Bio MCP — 小分子 ADMET 与 PK 性质预测。",
+      "boltz-api-official": "官方托管 Boltz MCP — 小分子与蛋白结构或结合预测。",
+      "open-targets-official": "官方托管 Open Targets Platform MCP — 靶点/疾病证据、可药性与安全性。",
+      "tamarind-bio": "托管计算药物设计 MCP — 分子与蛋白结构预测、对接与从头设计。",
+      "adaptyv-cloud-lab": "官方托管云实验室 MCP — 蛋白与抗体验证：靶点目录、实验设计。",
+      "ketcher-chemistry": "交互式 2D 分子绘图（Ketcher）MCP App，支持 .ket/.smi/.mol/.sdf 等格式。",
+      "idc-rest": "公共临床影像 MCP — 只读队列发现、元数据、受控 SQL 与引用。"
+    }
   },
   "runtimePreparing": {
     "sendboxHint": "正在准备运行环境。首次启动可能会稍慢一些。"

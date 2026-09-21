@@ -652,7 +652,42 @@
       "failed": "Failed",
       "unsupported": "Unsupported"
     },
-    "noMatch": "No matching connectors"
+    "noMatch": "No matching connectors",
+    "descriptions": {
+      "biomart": "Ensembl BioMart — genomic annotations, identifier translation, and cross-reference queries.",
+      "pubmed": "PubMed biomedical literature — search, metadata, abstracts, full-text (PMC), related articles, ID conversion, copyright status, citation lookup.",
+      "clinical-trials": "ClinicalTrials.gov — trial search, details, endpoints, sponsor/investigator/eligibility queries.",
+      "chembl": "ChEMBL bioactivity database — compound/drug/target search, bioactivities, mechanisms, ADMET.",
+      "biorxiv": "bioRxiv/medRxiv preprints — search, metadata, published links, funder search, usage statistics.",
+      "variants": "Human genetic variants — gnomAD population frequencies/constraint (r4), ClinVar records/search (direct NCBI), dbSNP, structural and mitochondrial variants.",
+      "clinical-genomics": "Clinical genomics knowledge — ClinGen gene validity, dosage and actionability curations plus CIViC clinical evidence.",
+      "expression": "Gene expression — GTEx tissue expression and eQTLs (pinned dataset).",
+      "regulation": "Gene regulation — ENCODE experiments/files/biosamples, JASPAR transcription-factor binding matrices, UniBind TFBS.",
+      "protein-annotation": "Protein annotation — InterPro/Pfam domains and families, Human Protein Atlas, STRING interaction networks.",
+      "rna": "Non-coding RNA — Rfam families, seed alignments, covariance models, trees, sequence regions.",
+      "structures-interactions": "Structures and molecular interactions — PDB structures, AlphaFold predictions, EMDB cryo-EM entries, Complex Portal complexes, IntAct interaction networks.",
+      "omics-archives": "Omics data archives — ArrayExpress/BioStudies, GEO, MGnify, PRIDE proteomics projects.",
+      "genes-ontologies": "Gene identity and ontologies — MyGene queries, OLS4 ontology terms, GO annotations (QuickGO), UniProt entries, Reactome pathways.",
+      "drug-regulatory": "FDA drug data — Drugs@FDA applications, approvals, pharmacologic classes, generic equivalents, SPL drug labels.",
+      "research-resources": "Research resources — Grants.gov funding opportunity search, Antibody Registry lookups.",
+      "synon-research": "Independent Synon-research MCP — compact discovery and bounded execution of an operator-verified research capability pack without exposing each source as a separate Skill.",
+      "cancer-models": "Cancer genomics cohorts — cBioPortal studies, mutations, copy-number alterations, clinical attributes.",
+      "chemistry": "Small-molecule chemistry — PubChem compounds/properties/similarity, ChEBI ontology, Rhea reactions, BindingDB affinities.",
+      "human-genetics": "Human genetics associations — GWAS Catalog, eQTL Catalogue, FinnGen/BioBank-Japan PheWAS portals.",
+      "literature": "Scholarly literature graph — OpenAlex works/authors/venues/citations, arXiv metadata.",
+      "genomes": "Genome annotation — Ensembl REST lookup/sequence/homology/VEP, UCSC Genome Browser tracks and conservation.",
+      "cellguide": "Cell type information from CELLxGENE — descriptions, marker genes, tissue distribution, source datasets.",
+      "zinc": "ZINC22 purchasable chemical space (CartBlanche22) — compound lookup by ZINC id, SMILES exact/similarity search, supplier-code resolution, random sampling, 3D structure locations for docking.",
+      "omtx-om": "Official hosted Om MCP — target-conditioned small-molecule ranking with LULA, accessible-space screening, molecule fulfillment, generated-data access and discovery diligence without local model deployment.",
+      "patsnap-chemical-molecular": "Official hosted PatSnap Chemical Molecular MCP — structure and similarity search, fragment and scaffold analysis, ADMET prediction, patent-linked compound intelligence and SAR extraction.",
+      "inductive-bio": "Official hosted Inductive Bio MCP — small-molecule ADMET and PK property prediction for solubility, permeability, stability, efflux, CYP, hERG, BBB and related development risks without local model deployment.",
+      "boltz-api-official": "Official hosted Boltz MCP — small-molecule and protein structure or binding prediction, library screening, binder design and ADME workflows without local model deployment.",
+      "open-targets-official": "Official hosted Open Targets Platform MCP — target/disease evidence, tractability, safety, genetics, drug mechanisms and clinical candidates through schema-guided GraphQL.",
+      "tamarind-bio": "Hosted computational drug-design MCP — molecular and protein structure prediction, docking, protein/antibody/RNA design, molecular generation and property workflows without local GPU deployment.",
+      "adaptyv-cloud-lab": "Official hosted cloud-lab MCP for protein and antibody validation — target catalog, experiment design, quotes, binding/affinity, expression, thermostability and structured results.",
+      "ketcher-chemistry": "Interactive 2D molecule sketcher (Ketcher) as an MCP App. Backs the .ket/.smi/.mol/.sdf/.rxn artifact viewer.",
+      "idc-rest": "Public clinical imaging MCP — read-only cohort discovery, metadata, guarded SQL and citation-ready cancer imaging evidence. No API key or local data download required."
+    }
   },
   "runtimePreparing": {
     "sendboxHint": "Preparing the runtime environment. First startup can take a little longer."

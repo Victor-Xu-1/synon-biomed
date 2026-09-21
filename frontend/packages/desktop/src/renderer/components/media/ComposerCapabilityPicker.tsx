@@ -173,7 +173,8 @@ function catalogMap(
     description: string;
     description_i18n?: Record<string, string>;
   }>,
-  localeKey: 'zh-CN' | 'en-US'
+  localeKey: 'zh-CN' | 'en-US',
+  zhFor?: (name: string) => string | undefined
 ): Map<string, CatalogEntry> {
   return new Map<string, CatalogEntry>(
     entries.map((entry) => [
@@ -181,6 +182,7 @@ function catalogMap(
       {
         label: entry.displayName || entry.name,
         description:
+          zhFor?.(entry.name) ||
           (entry.description_i18n &&
             (entry.description_i18n[localeKey] || entry.description_i18n[localeKey.slice(0, 2)])) ||
           entry.description,
@@ -209,7 +211,8 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
   const [mcpCatalog, setMcpCatalog] = useState<Map<string, CatalogEntry> | null>(null);
 
   // Join the loaded names with the catalog descriptions so every row carries
-  // its full blurb; failures only hide the descriptions.
+  // its full blurb; failures only hide the descriptions. In zh the connector
+  // blurbs come from the locale resources (the catalog ships English-only).
   useEffect(() => {
     let cancelled = false;
     loadSynonBiomedSkills()
@@ -219,7 +222,14 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
       .catch((): undefined => undefined);
     loadSynonBiomedMcpServers()
       .then((servers: SynonBiomedMcpServer[]) => {
-        if (!cancelled && Array.isArray(servers)) setMcpCatalog(catalogMap(servers, resolveLocaleKey(i18n.language)));
+        if (!cancelled && Array.isArray(servers))
+          setMcpCatalog(
+            catalogMap(servers, resolveLocaleKey(i18n.language), (name) => {
+              if (!resolveLocaleKey(i18n.language).startsWith('zh')) return undefined;
+              const key = ['conversation', 'mcp', 'descriptions', name].join('.');
+              return i18n.exists(key) ? i18n.t(key) : undefined;
+            })
+          );
       })
       .catch((): undefined => undefined);
     return () => {

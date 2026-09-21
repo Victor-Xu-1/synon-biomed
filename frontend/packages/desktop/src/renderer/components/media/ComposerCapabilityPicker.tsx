@@ -67,7 +67,7 @@ const CapabilityRow: React.FC<{
     aria-label={label}
     disabled={disabled}
     title={title}
-    className={`composer-control-menu__row mx-6px box-border flex items-center gap-10px border-0 bg-transparent px-12px py-9px text-left rounded-8px text-14px transition-colors ${
+    className={`composer-control-menu__row mx-6px box-border flex items-center gap-10px border-0 bg-transparent px-12px py-7px text-left rounded-8px text-13px transition-colors ${
       disabled ? 'cursor-not-allowed text-t-secondary' : 'cursor-pointer text-t-primary hover:bg-fill-2'
     }`}
     style={{ width: 'calc(100% - 12px)' }}
@@ -95,10 +95,10 @@ const CapabilityMenuActionRow: React.FC<{
   <button
     type='button'
     role='menuitem'
-    className='box-border flex h-36px w-full cursor-pointer items-center gap-10px border-0 bg-transparent px-12px text-left rounded-8px text-13px text-t-primary hover:bg-fill-2'
+    className='box-border flex h-30px w-full cursor-pointer items-center gap-8px border-0 bg-transparent px-10px text-left rounded-6px text-12px text-t-primary hover:bg-fill-2'
     onClick={onClick}
   >
-    <span className='inline-flex w-18px flex-shrink-0 items-center justify-center color-#86909c'>{icon}</span>
+    <span className='inline-flex w-16px flex-shrink-0 items-center justify-center color-#86909c'>{icon}</span>
     <span className='min-w-0 flex-1 truncate'>{label}</span>
   </button>
 );
@@ -124,21 +124,21 @@ const CapabilityListRow: React.FC<{
       aria-label={name}
       disabled={disabled}
       title={description || name}
-      className={`box-border flex w-full items-center gap-10px border-0 bg-transparent px-10px py-8px text-left rounded-8px transition-colors ${
+      className={`box-border flex w-full items-center gap-8px border-0 bg-transparent px-10px py-5px text-left rounded-6px transition-colors ${
         checked ? 'bg-fill-2' : 'hover:bg-fill-2'
       } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       onClick={disabled ? undefined : onClick}
     >
       <span
         aria-hidden='true'
-        className='inline-flex h-24px w-24px flex-shrink-0 items-center justify-center rounded-6px text-13px font-600'
+        className='inline-flex h-20px w-20px flex-shrink-0 items-center justify-center rounded-4px text-11px font-600'
         style={{ background: avatar.bg, color: avatar.fg }}
       >
         {avatar.letter}
       </span>
       <span className='min-w-0 flex-1'>
-        <span className='block text-14px leading-20px text-t-primary truncate'>{name}</span>
-        <span className='block text-12px leading-16px text-t-secondary truncate'>{description}</span>
+        <span className='block text-13px leading-18px text-t-primary truncate'>{name}</span>
+        <span className='block text-11px leading-14px text-t-secondary truncate'>{description}</span>
       </span>
       {checked ? <Check theme='outline' size={14} className='flex-shrink-0 text-primary' /> : statusSuffix}
     </button>
@@ -150,7 +150,7 @@ const SearchHeader: React.FC<{
   onChange: (next: string) => void;
   placeholder: string;
 }> = ({ value, onChange, placeholder }) => (
-  <div className='px-8px pb-6px pt-6px'>
+  <div className='px-8px pb-4px pt-4px'>
     <Input
       allowClear
       value={value}
@@ -238,7 +238,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
   const skillPanel = (
     <div
       className='app-overlay-menu composer-control-submenu flex flex-col'
-      style={{ width: 'min(410px, calc(100vw - 96px))', maxHeight: 'min(480px, calc(100vh - 160px))' }}
+      style={{ width: 'min(360px, calc(100vw - 96px))', maxHeight: 'min(400px, calc(100vh - 220px))' }}
       role='menu'
       aria-label={t('conversation.skills.loaded')}
     >
@@ -287,7 +287,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
   const mcpPanel = (
     <div
       className='app-overlay-menu composer-control-submenu flex flex-col'
-      style={{ width: 'min(410px, calc(100vw - 96px))', maxHeight: 'min(480px, calc(100vh - 160px))' }}
+      style={{ width: 'min(360px, calc(100vw - 96px))', maxHeight: 'min(400px, calc(100vh - 220px))' }}
       role='menu'
       aria-label={t('conversation.mcp.loaded')}
     >
@@ -342,7 +342,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
         <Trigger
           popup={(): React.ReactNode => skillPanel}
           trigger='hover'
-          position='right'
+          position='rt'
           popupVisible={skillsOpen}
           onVisibleChange={setSkillsOpen}
           mouseEnterDelay={100}
@@ -360,7 +360,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
         <Trigger
           popup={(): React.ReactNode => mcpPanel}
           trigger='hover'
-          position='right'
+          position='rt'
           popupVisible={mcpOpen}
           onVisibleChange={setMcpOpen}
           mouseEnterDelay={100}

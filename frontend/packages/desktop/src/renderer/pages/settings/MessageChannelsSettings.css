@@ -270,6 +270,14 @@ html body .settings-page-wrapper[data-settings-route='general'] .message-channel
   border-radius: 12px !important;
 }
 
+/* The card is split in two halves, and the halves are stacked rather than laid
+   out side by side: this header is an absolutely positioned overlay covering
+   the full height of the left half, while the body is an absolutely positioned
+   layer underneath it. The action footer (scan, cancel, unpair) is positioned
+   inside that same left half, so the higher header would otherwise swallow
+   every pointer event aimed at those buttons — they stayed visible but were
+   impossible to click. Nothing inside the header is interactive, so it must be
+   removed from hit testing. */
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__header {
   position: absolute;
   top: 0;
@@ -282,6 +290,7 @@ html body .settings-page-wrapper[data-settings-route='general'] .message-channel
   padding: 24px !important;
   border-right: 1px solid var(--settings-border, #dfe7ef);
   border-bottom: 0 !important;
+  pointer-events: none;
 }
 
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__logo {

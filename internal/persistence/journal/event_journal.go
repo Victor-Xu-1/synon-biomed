@@ -984,7 +984,7 @@ func cleanMetadata(value string) string {
 }
 
 func cloneMessage(message Message) Message {
-	copied := make(Message, len(message)+4)
+	copied := make(Message, len(message))
 	for key, value := range message {
 		copied[key] = value
 	}

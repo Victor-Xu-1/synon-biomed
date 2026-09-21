@@ -204,6 +204,7 @@ type Server struct {
 	allowedDomainsMu                      sync.Mutex
 	hostGrantKernelMu                     sync.Mutex
 	hostGrantKernelFences                 map[string]bool
+	hostGrantKernelFenceEpoch             map[string]uint64
 	kernelLocalExecMu                     sync.Mutex
 	kernelLocalExecWaiters                map[string]kernelLocalExecWaiterAuthority
 	detachedKernelObserverMu              sync.Mutex
@@ -587,6 +588,7 @@ func New(options Options) *Server {
 		configNetworkProxy:                    strings.TrimSpace(options.ConfigNetworkProxy),
 		mcpX509Posture:                        options.MCPX509Posture,
 		hostGrantKernelFences:                 map[string]bool{},
+		hostGrantKernelFenceEpoch:             map[string]uint64{},
 		detachedKernelObservers:               map[string]context.CancelFunc{},
 		detachedKernelObserversDone:           nil,
 		kernelOperationBootID:                 newCSRFToken(),

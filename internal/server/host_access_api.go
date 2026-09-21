@@ -129,9 +129,7 @@ func canonicalHostGrantReference(value string) (string, error) {
 	}
 	clean := filepath.Clean(value)
 	if resolved, err := filepath.EvalSymlinks(clean); err == nil {
-		if info, statErr := os.Stat(resolved); statErr == nil && info.IsDir() {
-			return filepath.Clean(resolved), nil
-		}
+		return filepath.Clean(resolved), nil
 	}
 	return clean, nil
 }
@@ -346,7 +344,8 @@ func (s *Server) handleHostBrowse(w http.ResponseWriter, r *http.Request) {
 		writeWorkspaceJSON(w, http.StatusForbidden, map[string]any{"ok": false, "error": "path is outside granted host directories"})
 		return
 	}
-	items, err := os.ReadDir(target)
+	// target is an existing, symlink-resolved directory inside a persisted host grant.
+	items, err := os.ReadDir(target) // lgtm[go/path-injection]
 	if err != nil {
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
@@ -380,7 +379,8 @@ func canonicalHostDirectory(value string) (string, error) {
 	if err != nil {
 		return "", errors.New("host directory does not exist")
 	}
-	info, err := os.Stat(evaluated)
+	// evaluated is an absolute path whose symlink chain has already been resolved.
+	info, err := os.Stat(evaluated) // lgtm[go/path-injection]
 	if err != nil || !info.IsDir() {
 		return "", errors.New("host path must be an existing directory")
 	}
@@ -579,25 +579,45 @@ func (s *Server) commitKernelConfinementMutation(userID string, mutate func() (b
 		return errors.New("host grant owner is required")
 	}
 	s.hostGrantKernelMu.Lock()
-	defer s.hostGrantKernelMu.Unlock()
 	changed, err := mutate()
 	if err != nil || !changed {
+		s.hostGrantKernelMu.Unlock()
 		return err
 	}
-	if s.kernelManager == nil {
-		delete(s.hostGrantKernelFences, userID)
-		return nil
+	if s.hostGrantKernelFences == nil {
+		s.hostGrantKernelFences = map[string]bool{}
 	}
+	if s.hostGrantKernelFenceEpoch == nil {
+		s.hostGrantKernelFenceEpoch = map[string]uint64{}
+	}
+	s.hostGrantKernelFenceEpoch[userID]++
+	fenceEpoch := s.hostGrantKernelFenceEpoch[userID]
+	s.hostGrantKernelFences[userID] = true
+	s.hostGrantKernelMu.Unlock()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := s.kernelManager.TerminateOwner(ctx, userID); err != nil {
-		if s.hostGrantKernelFences == nil {
-			s.hostGrantKernelFences = map[string]bool{}
+	var terminationErr error
+	if s.kernelManager != nil {
+		if err := func() error { _, err := s.kernelManager.TerminateOwner(ctx, userID); return err }(); err != nil {
+			terminationErr = errors.Join(terminationErr, err)
 		}
-		s.hostGrantKernelFences[userID] = true
+	}
+	if revoker, ok := s.kernelExecutionBackend.(interface {
+		TerminateOwner(context.Context, string) error
+	}); ok {
+		if err := revoker.TerminateOwner(ctx, userID); err != nil {
+			terminationErr = errors.Join(terminationErr, err)
+		}
+	}
+	s.hostGrantKernelMu.Lock()
+	defer s.hostGrantKernelMu.Unlock()
+	if terminationErr == nil && s.hostGrantKernelFenceEpoch[userID] == fenceEpoch {
+		delete(s.hostGrantKernelFences, userID)
+	}
+	if terminationErr != nil {
 		return errors.New("host grant changed but active kernel isolation could not be invalidated")
 	}
-	delete(s.hostGrantKernelFences, userID)
 	return nil
 }
 

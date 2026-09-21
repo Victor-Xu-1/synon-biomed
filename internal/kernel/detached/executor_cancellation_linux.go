@@ -123,6 +123,7 @@ func (e *Executor) reconcileCancellation(ctx context.Context) error {
 	// terminal receipt finish. Native workers still retire to close descendants.
 	if drain && !containerActive && readyToDrain {
 		e.beginDraining()
+		e.requestShutdownIfDrained(ctx)
 	}
 	return nil
 }

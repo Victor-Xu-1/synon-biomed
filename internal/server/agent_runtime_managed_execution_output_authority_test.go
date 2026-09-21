@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,6 +63,15 @@ func TestManagedExecutionReceiptMountPreventsPythonOutputMutation(t *testing.T) 
 		t.Fatal(err)
 	}
 	script := filepath.Join(identity.workspaceDir, ".synon", "runtime", "skills", "managed-workflow-abcd", "scripts", "run.py")
+	seed, err := app.executeAgentKernelTool(
+		context.Background(), identity, "python", map[string]any{
+			"code":        "persisted_namespace_value = 'kept-after-publication'",
+			"environment": "python",
+		},
+	)
+	if err != nil || seed["ok"] != true {
+		t.Fatalf("seed persistent namespace result=%#v err=%v", seed, err)
+	}
 	if _, err := store.SaveExecutionLog(workspace.SaveExecutionLogInput{
 		Record: workspace.ExecutionLogRecord{
 			ID: "managed-pack-execution", FrameID: access.Frame.ID, KernelID: kernelID,
@@ -100,15 +110,18 @@ func TestManagedExecutionReceiptMountPreventsPythonOutputMutation(t *testing.T) 
 			if err != nil {
 				t.Fatal(err)
 			}
-			mountedReadOnly := false
+			mountedStableRoot := false
 			for _, mount := range mounts {
-				if filepath.Clean(mount.Path) == filepath.Clean(output) && !mount.Writable {
-					mountedReadOnly = true
+				if filepath.Clean(mount.Path) == filepath.Join(identity.workspaceDir, ".synon-artifacts") && !mount.Writable {
+					mountedStableRoot = true
 					break
 				}
 			}
-			if !mountedReadOnly {
-				t.Fatalf("promoted output lost its immutable mount: %#v", mounts)
+			if !mountedStableRoot {
+				t.Fatalf("stable artifact root lost its immutable mount: %#v", mounts)
+			}
+			if info, err := os.Lstat(output); err != nil || info.Mode()&os.ModeSymlink == 0 {
+				t.Fatalf("promoted output did not retain its stable snapshot link: info=%v err=%v", info, err)
 			}
 		})
 	}
@@ -120,7 +133,7 @@ try:
     path.write_text("mutated report\n", encoding="utf-8")
 except OSError:
     blocked = True
-print(blocked, path.read_text(encoding="utf-8").strip())
+print(persisted_namespace_value, blocked, path.read_text(encoding="utf-8").strip())
 `
 	result, err := app.executeAgentKernelTool(
 		context.Background(), identity, "python", map[string]any{"code": code, "environment": "python"},
@@ -128,11 +141,64 @@ print(blocked, path.read_text(encoding="utf-8").strip())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result["ok"] != true || !strings.Contains(stringValue(result["stdout"]), "True validated report") {
+	if result["ok"] != true || !strings.Contains(stringValue(result["stdout"]), "kept-after-publication True validated report") {
 		t.Fatalf("immutable execution output result=%#v", result)
 	}
 	raw, err := os.ReadFile(filepath.Join(output, "report.md"))
 	if err != nil || string(raw) != "validated report\n" {
 		t.Fatalf("managed output changed: %q err=%v", raw, err)
+	}
+}
+
+func TestManagedExecutionSnapshotRecoversInterruptedCompatibilitySwap(t *testing.T) {
+	workspaceRoot := t.TempDir()
+	outputRoot := filepath.Join(workspaceRoot, "results")
+	if err := os.MkdirAll(outputRoot, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	content := []byte("stable report\n")
+	if err := os.WriteFile(filepath.Join(outputRoot, "report.md"), content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256(content)
+	authority := managedExecutionOutputAuthority{
+		Root: outputRoot, PackID: "pack-recovery", ExecutionID: "execution-recovery",
+		Digests: map[string]string{"results/report.md": hex.EncodeToString(digest[:])},
+	}
+	stableRoot := filepath.Join(workspaceRoot, ".synon-artifacts", ".managed")
+	finalRoot := filepath.Join(stableRoot, managedExecutionSnapshotID(authority))
+	if err := os.MkdirAll(finalRoot, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(finalRoot, "report.md"), content, 0o444); err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := json.Marshal(managedExecutionSnapshotManifest{
+		Schema: managedExecutionSnapshotSchema, PackID: authority.PackID,
+		ExecutionID: authority.ExecutionID, Digests: authority.Digests,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(finalRoot, ".synon-output-snapshot.json"), manifest, 0o444); err != nil {
+		t.Fatal(err)
+	}
+	backupRoot := outputRoot + ".synon-output-backup-" + managedExecutionSnapshotID(authority)
+	if err := os.Rename(outputRoot, backupRoot); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := publishManagedExecutionOutputSnapshot(context.Background(), workspaceRoot, authority); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Lstat(outputRoot)
+	if err != nil || info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("recovered compatibility path info=%v err=%v", info, err)
+	}
+	if got, err := os.ReadFile(filepath.Join(outputRoot, "report.md")); err != nil || string(got) != string(content) {
+		t.Fatalf("recovered snapshot content=%q err=%v", got, err)
+	}
+	if _, err := os.Lstat(backupRoot); !os.IsNotExist(err) {
+		t.Fatalf("recovery backup remains err=%v", err)
 	}
 }

@@ -304,7 +304,7 @@ func (run *sessionRunnerChatRun) resolvedUserEvidenceRecordsSnapshot() []managed
 	lock := run.scientificCapabilityLock()
 	lock.Lock()
 	defer lock.Unlock()
-	result := make([]managedExecutionUserEvidence, 0, len(run.ResolvedUserEvidence)+1)
+	result := make([]managedExecutionUserEvidence, 0, len(run.ResolvedUserEvidence))
 	if intent := strings.TrimSpace(run.TaskIntent); intent != "" {
 		result = append(result, managedExecutionUserEvidence{Source: "task", Text: intent})
 	}

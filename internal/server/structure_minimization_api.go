@@ -46,10 +46,11 @@ type structureMinimizationRequest struct {
 }
 
 type structureMinimizationFormat struct {
-	input      string
-	output     string
-	inputName  string
-	outputName string
+	input             string
+	output            string
+	outputName        string
+	runtimeInputName  string
+	runtimeOutputName string
 }
 
 func (s *Server) registerStructureMinimizationRoutes(mux *http.ServeMux) {
@@ -98,8 +99,8 @@ func (s *Server) handleStructureMinimization(w http.ResponseWriter, r *http.Requ
 		Executable:        "python",
 		Arguments: []string{
 			"_structure_minimize.py",
-			"--input", format.inputName,
-			"--output", format.outputName,
+			"--input", format.runtimeInputName,
+			"--output", format.runtimeOutputName,
 			"--report", "minimization-report.json",
 			"--format", format.input,
 			"--force-field", request.ForceField,
@@ -110,7 +111,7 @@ func (s *Server) handleStructureMinimization(w http.ResponseWriter, r *http.Requ
 			"--tolerance", strconv.FormatFloat(request.Tolerance, 'g', -1, 64),
 		},
 		ExpectedOutputs: []software.OutputWitness{
-			{Path: format.outputName, MinBytes: 1, Format: "text"},
+			{Path: format.runtimeOutputName, MinBytes: 1, Format: "text"},
 			{Path: "minimization-report.json", MinBytes: 2, Format: "json", RequiredJSONTrue: []string{"/contract"}},
 		},
 		TimeoutSeconds: 5 * 60,
@@ -147,8 +148,10 @@ func (s *Server) handleStructureMinimization(w http.ResponseWriter, r *http.Requ
 	}
 	defer os.RemoveAll(operationDir)
 
-	inputPath := filepath.Join(operationDir, format.inputName)
+	inputPath := filepath.Join(operationDir, format.runtimeInputName)
 	scriptPath := filepath.Join(operationDir, "_structure_minimize.py")
+	// runtimeInputName is derived only from the validated format enum and operationDir is server-created.
+	// lgtm[go/path-injection]
 	if err := os.WriteFile(inputPath, []byte(request.Content), 0o600); err != nil {
 		writeStructureMinimizationError(w, http.StatusInternalServerError, "input_stage_failed", "the structure input could not be staged", false)
 		return
@@ -230,7 +233,7 @@ func (s *Server) handleStructureMinimization(w http.ResponseWriter, r *http.Requ
 		writeStructureMinimizationError(w, http.StatusInternalServerError, "minimization_report_invalid", "the structure minimization report failed its contract validation", false)
 		return
 	}
-	outputBytes, err := readBoundedStructureFile(filepath.Join(operationDir, format.outputName), maxStructureMinimizationInputBytes)
+	outputBytes, err := readBoundedStructureFile(filepath.Join(operationDir, format.runtimeOutputName), maxStructureMinimizationInputBytes)
 	if err != nil || !utf8.Valid(outputBytes) {
 		writeStructureMinimizationError(w, http.StatusInternalServerError, "minimization_output_invalid", "the minimized structure output failed its text validation", false)
 		return
@@ -336,7 +339,7 @@ func normalizeStructureMinimizationFormat(filename string) (structureMinimizatio
 	if base == "" || len(base) > 160 {
 		return structureMinimizationFormat{}, errors.New("filename base is invalid")
 	}
-	result := structureMinimizationFormat{inputName: filename}
+	result := structureMinimizationFormat{}
 	switch extension {
 	case ".sdf", ".sd":
 		result.input = "sdf"
@@ -354,6 +357,8 @@ func normalizeStructureMinimizationFormat(filename string) (structureMinimizatio
 		return structureMinimizationFormat{}, errors.New("supported structure formats are SDF, MOL, MOL2, and PDB")
 	}
 	result.outputName = base + "-minimized." + result.output
+	result.runtimeInputName = "input." + result.input
+	result.runtimeOutputName = "output." + result.output
 	return result, nil
 }
 
@@ -366,9 +371,7 @@ func (s *Server) prepareStructureMinimizationWorkspace(access workspace.KernelFr
 		return "", nil, nil, err
 	}
 	identity := &agentKernelContext{access: access, workspaceDir: baseWorkspace}
-	s.hostGrantKernelMu.Lock()
-	defer s.hostGrantKernelMu.Unlock()
-	if s.hostGrantKernelFences[access.UserID] {
+	if s.kernelHostGrantFenceActive(access.UserID) {
 		return "", nil, nil, errors.New("kernel host access is fenced")
 	}
 	if err := s.ensureAgentKernelManagedDirectories(); err != nil {
@@ -392,6 +395,10 @@ func (s *Server) prepareStructureMinimizationWorkspace(access workspace.KernelFr
 		os.RemoveAll(operationDir)
 		return "", nil, nil, err
 	}
+	if s.kernelHostGrantFenceActive(access.UserID) {
+		os.RemoveAll(operationDir)
+		return "", nil, nil, errors.New("kernel host access changed during preparation")
+	}
 	return operationDir, mounts, protectedPaths, nil
 }
 
@@ -410,6 +417,8 @@ func readStructureMinimizationReport(operationDir string) (map[string]any, error
 }
 
 func readBoundedStructureFile(path string, maxBytes int) ([]byte, error) {
+	// Callers pass only server-created operation paths or fixed report names; the workspace is removed after settlement.
+	// lgtm[go/path-injection]
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err

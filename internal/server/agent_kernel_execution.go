@@ -296,15 +296,8 @@ func (s *Server) executeAgentKernelToolInternal(
 		}
 		runtimeGeneration = generation
 	}
-	s.hostGrantKernelMu.Lock()
-	hostGrantAuthorityLocked := true
-	defer func() {
-		if hostGrantAuthorityLocked {
-			s.hostGrantKernelMu.Unlock()
-		}
-	}()
-	if s.hostGrantKernelFences[access.UserID] {
-		return nil, errors.New("kernel host access is fenced until isolation can be re-established")
+	if s.kernelHostGrantFenceActive(access.UserID) {
+		return nil, errKernelHostAccessFenced
 	}
 	if err := s.ensureAgentKernelManagedDirectories(); err != nil {
 		return nil, err
@@ -358,6 +351,11 @@ func (s *Server) executeAgentKernelToolInternal(
 		if ensureErr != nil {
 			return nil, ensureErr
 		}
+		if s.kernelHostGrantFenceActive(access.UserID) {
+			return nil, s.releaseUnstartedDetachedSession(
+				publicName, backendSession, errKernelHostAccessFenced, taskOwnedKernel,
+			)
+		}
 		if run, _ := setupCtx.Value(transcriptRunnerChatRunContextKey{}).(*sessionRunnerChatRun); run == nil || run.Transcript == nil {
 			return nil, s.releaseUnstartedDetachedSession(
 				publicName, backendSession, errors.New("kernel local operation runner authority is unavailable after backend setup"), taskOwnedKernel,
@@ -365,8 +363,6 @@ func (s *Server) executeAgentKernelToolInternal(
 		} else if err := s.validateLiveTranscriptRunnerClaim(setupCtx, run.Transcript.Claim); err != nil {
 			return nil, s.releaseUnstartedDetachedSession(publicName, backendSession, err, taskOwnedKernel)
 		}
-		s.hostGrantKernelMu.Unlock()
-		hostGrantAuthorityLocked = false
 		return s.executeDetachedAgentKernel(setupCtx, access, identity, spec, backendSession,
 			publicName, authorityInput, code, workingDir, background, executionTimeout, outputLimitBytes, *approvalCall)
 	}
@@ -413,8 +409,9 @@ func (s *Server) executeAgentKernelToolInternal(
 		}
 		ownedKernel = taskOwnedKernel
 	}
-	s.hostGrantKernelMu.Unlock()
-	hostGrantAuthorityLocked = false
+	if s.kernelHostGrantFenceActive(access.UserID) {
+		return nil, errKernelHostAccessFenced
+	}
 	expectedGeneration := session.Worker.Generation()
 	if expectedGeneration == 0 {
 		return nil, errors.New("kernel generation is unavailable")
@@ -510,21 +507,29 @@ func (s *Server) executeAgentKernelToolInternal(
 		if err != nil {
 			return nil, reject(err)
 		}
-		startedOperation, err := s.workspaceStore.StartKernelLocalOperation(ctx,
-			workspace.StartKernelLocalOperationInput{
-				OwnerUserID: preparedOperation.OwnerUserID, OperationID: preparedOperation.OperationID,
-				ExpectedStateVersion: preparedOperation.StateVersion, Claim: run.Transcript.Claim,
-				BootID: s.kernelOperationBootID, ExecutionID: execID,
-			})
+		var startedOperation workspace.KernelLocalOperation
+		err = s.withKernelHostGrantAdmission(access.UserID, func() error {
+			var admissionErr error
+			startedOperation, admissionErr = s.workspaceStore.StartKernelLocalOperation(ctx,
+				workspace.StartKernelLocalOperationInput{
+					OwnerUserID: preparedOperation.OwnerUserID, OperationID: preparedOperation.OperationID,
+					ExpectedStateVersion: preparedOperation.StateVersion, Claim: run.Transcript.Claim,
+					BootID: s.kernelOperationBootID, ExecutionID: execID,
+				})
+			if admissionErr != nil {
+				return admissionErr
+			}
+			kernelOperation = &startedOperation
+			claim := run.Transcript.Claim
+			kernelOperationClaim = &claim
+			handle = preparedHandle
+			gate <- nil
+			close(gate)
+			return nil
+		})
 		if err != nil {
 			return nil, reject(err)
 		}
-		kernelOperation = &startedOperation
-		claim := run.Transcript.Claim
-		kernelOperationClaim = &claim
-		handle = preparedHandle
-		gate <- nil
-		close(gate)
 	}
 	if handle == nil {
 		if approvalCall != nil {
@@ -615,49 +620,7 @@ func (s *Server) executeAgentKernelToolInternal(
 	select {
 	case outcome = <-handle.Done():
 	case <-ctx.Done():
-		if s.kernelManager != nil {
-			s.kernelManager.CancelHostCalls(spec.FrameID, spec.FrameIncarnationID, spec.RootFrameIncarnationID, execID)
-		}
-		cause := agentKernelContextCause(ctx)
-		if agentKernelCallerRequiresExecutionStop(ctx) {
-			// A user stop and a runtime drain are lifecycle commands, not short
-			// foreground-wait cancellations. Never detach their computation. A
-			// user stop settles the exact durable execution as cancelled; a drain
-			// leaves the started operation recoverable by the next process.
-			if errors.Is(cause, ErrGenerationStopped) {
-				if err := s.recordAgentKernelBackgroundStart(access, started); err != nil {
-					s.kernelManager.InterruptSession(spec.FrameID, spec.FrameIncarnationID, spec.RootFrameIncarnationID, execID)
-					select {
-					case <-handle.Done():
-					case <-time.After(6 * time.Second):
-					}
-					return nil, errors.Join(cause, errors.New("kernel cancellation result channel is unavailable"))
-				}
-				settled := startObserver()
-				s.kernelManager.InterruptSession(spec.FrameID, spec.FrameIncarnationID, spec.RootFrameIncarnationID, execID)
-				select {
-				case <-settled:
-				case <-time.After(6 * time.Second):
-				}
-				return nil, cause
-			}
-
-			s.kernelManager.InterruptSession(spec.FrameID, spec.FrameIncarnationID, spec.RootFrameIncarnationID, execID)
-			select {
-			case <-handle.Done():
-			case <-time.After(6 * time.Second):
-			}
-			return nil, cause
-		}
-		if err := s.recordAgentKernelBackgroundStart(access, started); err != nil {
-			s.kernelManager.InterruptSession(spec.FrameID, spec.FrameIncarnationID, spec.RootFrameIncarnationID, execID)
-			return nil, errors.New("kernel detached result channel is unavailable")
-		}
-		startObserver()
-		return map[string]any{
-			"status": "running", "exec_id": execID,
-			"message": "Kernel cell continues in the background after the caller stopped waiting.",
-		}, nil
+		return s.handleAgentKernelForegroundContextDone(ctx, access, spec, execID, started, handle, startObserver)
 	case <-observerCtx.Done():
 		if err := s.recordAgentKernelBackgroundStart(access, started); err != nil {
 			s.kernelManager.InterruptSession(spec.FrameID, spec.FrameIncarnationID, spec.RootFrameIncarnationID, execID)

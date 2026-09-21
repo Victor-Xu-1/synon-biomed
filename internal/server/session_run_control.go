@@ -32,6 +32,10 @@ type activeSessionRun struct {
 	chatRun      *sessionRunnerChatRun
 }
 
+// sessionRunLifetimeContextKey retains the registered execution-unit lifetime
+// underneath shorter provider, preparation and request contexts.
+type sessionRunLifetimeContextKey struct{}
+
 func (s *Server) activeSessionChatRun(sessionID string) *sessionRunnerChatRun {
 	if s == nil || strings.TrimSpace(sessionID) == "" {
 		return nil
@@ -58,6 +62,7 @@ func (s *Server) registerActiveSessionRun(parent context.Context, sessionID, run
 	}
 	ctx, cancel := context.WithCancelCause(parent)
 	run := &activeSessionRun{runnerID: runnerID, cancel: cancel, done: make(chan struct{})}
+	ctx = context.WithValue(ctx, sessionRunLifetimeContextKey{}, ctx)
 	s.sessionRunsMu.Lock()
 	if s.sessionRunsDraining {
 		s.sessionRunsMu.Unlock()

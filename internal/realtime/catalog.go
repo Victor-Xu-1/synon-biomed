@@ -411,8 +411,7 @@ func appendIfResolved(values []QueryInvalidation, query string, suffix []any, po
 	if !ok {
 		return values
 	}
-	key := make([]any, 1, len(suffix)+1)
-	key[0] = prefix
+	key := []any{prefix}
 	key = append(key, suffix...)
 	return append(values, QueryInvalidation{Query: query, Key: key, Policy: policy, Match: match})
 }

@@ -129,7 +129,7 @@ func TestExecutorRetiresBackendAfterRealWorkerExit(t *testing.T) {
 
 func TestExecutorRejectsContainerDispatchWhileDrainingBeforeProviderAccess(t *testing.T) {
 	executor := &Executor{draining: true}
-	err := executor.dispatchContainerExecution(workspace.KernelDetachedExecutionRequestV1{ToolName: "bash"})
+	err := executor.dispatchContainerExecution(context.Background(), workspace.KernelDetachedExecutionRequestV1{ToolName: "bash"}, workspace.DetachedKernelExecution{})
 	if err == nil || !strings.Contains(err.Error(), "draining") {
 		t.Fatalf("draining executor reached provider setup: %v", err)
 	}

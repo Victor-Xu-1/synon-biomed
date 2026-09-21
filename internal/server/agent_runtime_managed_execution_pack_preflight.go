@@ -72,7 +72,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionOutputMutatio
 		return managedExecutionOutputOwnershipInvalidResult(target, resolvedRoot)
 	}
 	for _, authority := range authorities {
-		if managedExecutionPathWithinRoot(authority.Root, resolvedTarget) {
+		if managedExecutionAuthorityContainsPath(authority, resolvedTarget) {
 			relative, _ := filepath.Rel(resolvedRoot, target)
 			return map[string]any{
 				"ok": false, "status": "managed_execution_output_immutable", "executed": false,

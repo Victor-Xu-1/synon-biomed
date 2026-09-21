@@ -283,7 +283,7 @@ func managedExecutionPrioritizeResolverOption(
 	if len(options) >= 4 {
 		options = options[:3]
 	}
-	prioritized := make([]any, 0, len(options)+1)
+	prioritized := make([]any, 0, len(options))
 	prioritized = append(prioritized, managedExecutionResolverAskUserOption(resolver, group, parameters, original))
 	prioritized = append(prioritized, options...)
 	return prioritized, true

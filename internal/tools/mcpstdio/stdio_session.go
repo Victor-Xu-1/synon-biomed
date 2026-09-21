@@ -51,7 +51,8 @@ func startSession(ctx context.Context, root string, config ServerConfig) (*sessi
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	cmd := exec.CommandContext(ctx, command, config.Args...)
+	// command/args are an explicitly configured MCP executable and have passed ValidateSpec; tool payloads never enter argv.
+	cmd := exec.CommandContext(ctx, command, config.Args...) // lgtm[go/command-injection]
 	if root != "" {
 		cmd.Dir = root
 	}

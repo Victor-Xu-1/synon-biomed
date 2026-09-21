@@ -501,7 +501,7 @@ func (s *Store) AcquireKernelExecutionBackendControl(
 		result, err := tx.ExecContext(ctx, `UPDATE kernel_execution_backends SET
 		controller_epoch=controller_epoch+1,controller_token_sha256=?,controller_lease_expires_at=?,
 		state_version=state_version+1,updated_at=?
-		WHERE backend_id=? AND backend_generation=? AND state='ready'`, digest[:],
+		WHERE backend_id=? AND backend_generation=? AND state IN ('ready','draining')`, digest[:],
 			input.LeaseExpiresAt.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano),
 			input.BackendID, input.BackendGeneration)
 		if err != nil {

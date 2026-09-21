@@ -1,6 +1,7 @@
 package toolcontract
 
 import (
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -35,5 +36,22 @@ func TestDecodeExternalizedResultUsesOneClosedContract(t *testing.T) {
 				t.Fatalf("invalid descriptor found=%t err=%v", found, err)
 			}
 		})
+	}
+}
+
+func TestCanonicalReadWithEscapesVersionIdentity(t *testing.T) {
+	versionID := "version\"quoted\\path"
+	readWith := CanonicalReadWith(versionID)
+	if readWith != `read_file(version_id="version\"quoted\\path")` {
+		t.Fatalf("canonical read hint=%q", readWith)
+	}
+	descriptor := ExternalizedResultDescriptor{
+		ArtifactID: "artifact-1", VersionID: versionID, SHA256: strings.Repeat("a", 64),
+		SizeBytes: 1, ContentType: "application/json", Outcome: "succeeded",
+		ContentURL: "/api/artifacts/artifact-1/versions/" + url.PathEscape(versionID),
+		ReadWith:   readWith, Preview: "{", Truncated: true,
+	}
+	if err := ValidateExternalizedResultDescriptor(descriptor); err != nil {
+		t.Fatal(err)
 	}
 }

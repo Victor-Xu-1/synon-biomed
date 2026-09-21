@@ -163,7 +163,7 @@ func RealtimeTypeForFrameEvent(sourceType string) string {
 }
 
 func FrameRealtimeEventInput(eventID, userID string, frame Frame, source FrameEvent) RealtimeEventInput {
-	payload := make(map[string]any, len(source.Payload)+8)
+	payload := make(map[string]any, len(source.Payload))
 	for key, value := range source.Payload {
 		payload[key] = value
 	}

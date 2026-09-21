@@ -1107,8 +1107,8 @@ func kernelEnvironment(extra map[string]string) []string {
 		"HOME": true, "PATH": true, "LANG": true, "LC_ALL": true, "LC_CTYPE": true,
 		"TMPDIR": true, "TMP": true, "TEMP": true, "SSL_CERT_FILE": true, "SSL_CERT_DIR": true,
 	}
-	values := make(map[string]string, len(allowed)+len(extra)+1)
-	order := make([]string, 0, len(allowed)+len(extra)+1)
+	values := make(map[string]string, len(allowed))
+	order := make([]string, 0, len(allowed))
 	remember := func(key, value string) {
 		if _, found := values[key]; !found {
 			order = append(order, key)

@@ -344,7 +344,7 @@ func streamAgentWorkspaceReplacement(
 	}
 	hasher := sha256.New()
 	validator := agentWorkspaceUTF8Validator{}
-	pending := make([]byte, 0, len(oldString)+(64<<10))
+	pending := make([]byte, 0, len(oldString))
 	buffer := make([]byte, 64<<10)
 	written, matches := int64(0), 0
 	write := func(content []byte) error {

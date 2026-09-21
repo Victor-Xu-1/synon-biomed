@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -105,6 +106,77 @@ func TestDetachedKernelSetupContextKeepsLongExecutionUnbounded(t *testing.T) {
 	}
 	if got := setupCtx.Value(transcriptRunnerChatRunContextKey{}); got != run {
 		t.Fatalf("unbounded setup lost runner authority value: %#v", got)
+	}
+}
+
+func TestDetachedKernelSetupContextHonorsExplicitLifecycleStops(t *testing.T) {
+	for _, cause := range []error{ErrGenerationStopped, ErrRuntimeDraining} {
+		t.Run(cause.Error(), func(t *testing.T) {
+			parent, stop := context.WithCancelCause(context.Background())
+			defer stop(nil)
+			setup, cleanup := detachedKernelSetupContext(parent, 0)
+			defer cleanup()
+			stop(cause)
+			if setup.Err() == nil || !errors.Is(context.Cause(setup), cause) {
+				t.Fatalf("explicit lifecycle stop was not immediately observable: err=%v cause=%v", setup.Err(), context.Cause(setup))
+			}
+			select {
+			case <-setup.Done():
+				if !errors.Is(context.Cause(setup), cause) {
+					t.Fatalf("setup lost stop cause: %v", context.Cause(setup))
+				}
+			case <-time.After(time.Second):
+				t.Fatal("explicit lifecycle stop did not cancel kernel setup")
+			}
+		})
+	}
+}
+
+func TestDetachedKernelSetupContextRejectsAlreadyStoppedParent(t *testing.T) {
+	parent, stop := context.WithCancelCause(context.Background())
+	stop(ErrGenerationStopped)
+	setup, cleanup := detachedKernelSetupContext(parent, 0)
+	defer cleanup()
+	if !errors.Is(context.Cause(setup), ErrGenerationStopped) {
+		t.Fatal("already-stopped task received a live setup context")
+	}
+}
+
+func TestDetachedKernelSetupContextTracksTaskAfterRequestHandoff(t *testing.T) {
+	app := &Server{sessionRuns: map[string]*activeSessionRun{}}
+	task, active, finish, err := app.registerActiveSessionRun(context.Background(), "setup-task", "runner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer finish()
+	request, detachRequest := context.WithCancel(task)
+	defer detachRequest()
+	setup, cleanup := detachedKernelSetupContext(request, 0)
+	defer cleanup()
+	detachRequest()
+	if setup.Err() != nil {
+		t.Fatal("request handoff stopped the live task's preparation")
+	}
+	active.cancel(ErrGenerationStopped)
+	select {
+	case <-setup.Done():
+		if !errors.Is(context.Cause(setup), ErrGenerationStopped) {
+			t.Fatalf("task cancellation lost its cause after request handoff: %v", context.Cause(setup))
+		}
+	case <-time.After(time.Second):
+		t.Fatal("task cancellation was hidden by an earlier request handoff")
+	}
+}
+
+func TestKernelHostGrantAdmissionRejectsPublishedRevocationFence(t *testing.T) {
+	server := &Server{hostGrantKernelFences: map[string]bool{"owner": true}}
+	called := false
+	err := server.withKernelHostGrantAdmission("owner", func() error {
+		called = true
+		return nil
+	})
+	if !errors.Is(err, errKernelHostAccessFenced) || called {
+		t.Fatalf("revocation fence admission err=%v callback_called=%t", err, called)
 	}
 }
 

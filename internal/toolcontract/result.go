@@ -68,12 +68,20 @@ func ValidateExternalizedResultDescriptor(descriptor ExternalizedResultDescripto
 			descriptor.Outcome != "unavailable" && descriptor.Outcome != "partial") ||
 		descriptor.ContentURL != "/api/artifacts/"+url.PathEscape(descriptor.ArtifactID)+
 			"/versions/"+url.PathEscape(descriptor.VersionID) ||
-		(descriptor.ReadWith != "" && descriptor.ReadWith !=
-			`read_file(version_id="`+descriptor.VersionID+`")`) ||
+		(descriptor.ReadWith != "" && descriptor.ReadWith != CanonicalReadWith(descriptor.VersionID)) ||
 		descriptor.Preview == "" || !utf8.ValidString(descriptor.Preview) || !descriptor.Truncated {
 		return errors.New("externalized tool result is invalid")
 	}
 	return nil
+}
+
+// CanonicalReadWith is the single producer/validator encoding for the
+// human-readable immutable-version hint. JSON string encoding keeps quotes,
+// backslashes and control characters in an identity from changing the parser
+// shape of the hint.
+func CanonicalReadWith(versionID string) string {
+	encoded, _ := json.Marshal(versionID)
+	return `read_file(version_id=` + string(encoded) + `)`
 }
 
 func ValidLowerHexSHA256(value string) bool {

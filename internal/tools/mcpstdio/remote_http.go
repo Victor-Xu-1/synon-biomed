@@ -23,11 +23,14 @@ func remoteHTTPRPC(ctx context.Context, root string, config ServerConfig, sessio
 }
 
 func remoteHTTPRPCOnce(ctx context.Context, root string, config ServerConfig, sessionID *string, id int, method string, params any, options remoteHTTPRPCOptions) (json.RawMessage, error) {
-	client, err := secureRemoteHTTPClient(ctx, config.URL)
+	requestURL, err := remoteMCPRequestURL(config.URL, config.QueryParams)
 	if err != nil {
 		return nil, err
 	}
-	requestURL, err := remoteMCPRequestURL(config.URL, config.QueryParams)
+	// Validate and pin the exact URL that will be requested, including the
+	// configured query parameters, instead of validating a base URL and then
+	// sending a separately assembled destination.
+	client, err := secureRemoteHTTPClient(ctx, requestURL)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +74,8 @@ func remoteHTTPRPCOnce(ctx context.Context, root string, config ServerConfig, se
 		req.Header.Set("Mcp-Session-Id", *sessionID)
 	}
 	secrets := remoteMCPSecretValues(config, req.Header)
-	resp, err := client.Do(req)
+	// requestURL is the exact destination validated and DNS-pinned by secureRemoteHTTPClient above.
+	resp, err := client.Do(req) // lgtm[go/request-forgery]
 	if err != nil {
 		return nil, &remoteMCPTransportError{message: fmt.Sprintf("remote MCP %s request failed: %s", method, redactMCPErrorText(err.Error(), secrets)), cause: err}
 	}

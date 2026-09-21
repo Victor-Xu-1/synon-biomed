@@ -712,9 +712,7 @@ func writeManagedRuntimeMarker(path string, marker managedRuntimeMarker) error {
 
 func (m *Manager) smokeManagedPython(ctx context.Context, runtime managedPythonRuntime, prefix string) error {
 	python := filepath.Join(prefix, "bin", executableName("python"))
-	prefixJSON, _ := json.Marshal(prefix)
-	code := "import json,pathlib,tempfile;import rdkit,py3Dmol,shutil,cheminfo_render_helpers as h;out=tempfile.mkdtemp(prefix='synon-rdkit-smoke-',dir=" +
-		string(prefixJSON) + ");r=h.render_molecule_images(['CCO'],['smoke'],out_dir=out);p=pathlib.Path(r['grid']);" +
+	code := "import json,os,pathlib,tempfile;import rdkit,py3Dmol,shutil,cheminfo_render_helpers as h;out=tempfile.mkdtemp(prefix='synon-rdkit-smoke-',dir=os.environ[\"CONDA_PREFIX\"]);r=h.render_molecule_images(['CCO'],['smoke'],out_dir=out);p=pathlib.Path(r['grid']);" +
 		"assert p.is_file() and p.stat().st_size>0;shutil.rmtree(out);print(json.dumps({'rdkit':rdkit.__version__,'ok':True},sort_keys=True))"
 	command := newWorkerProcessCommand(ctx, python, "-I", "-c", code)
 	command.Env = kernelEnvironment(map[string]string{

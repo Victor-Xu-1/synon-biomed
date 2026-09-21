@@ -31,6 +31,8 @@ const (
 	defaultExecutorHeartbeatInterval  = 10 * time.Second
 	defaultExecutorSocketReadyTimeout = 5 * time.Second
 	defaultExecutorIdleTimeout        = 15 * time.Minute
+	defaultExecutorDrainTimeout       = 30 * time.Second
+	defaultExecutorDrainPollInterval  = 100 * time.Millisecond
 	maxOutcomeCommitAttempts          = 8
 	minHeartbeatContentionRetryDelay  = 100 * time.Millisecond
 	maxHeartbeatContentionRetryDelay  = 5 * time.Second
@@ -173,7 +175,11 @@ func (e *Executor) Run(ctx context.Context) (runReturnErr error) {
 	e.draining = false
 	e.mu.Unlock()
 
-	runCtx, cancel := context.WithCancel(ctx)
+	// The supervisor context owns the physical executor lifetime, but a caller
+	// context ending is a handoff signal, not permission to kill accepted work.
+	// Run observes ctx below, fences new admission, and drains durable receipts
+	// before it cancels this independent control context.
+	runCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	e.mu.Lock()
 	e.lifetimeDone = runCtx.Done()
@@ -232,9 +238,18 @@ func (e *Executor) Run(ctx context.Context) (runReturnErr error) {
 		runErr = err
 		settlementFailed = true
 	}
-	// Withdraw dispatch before draining outstanding receipts. A surviving
-	// control socket is not evidence that its physical worker is reusable.
+	// Withdraw new dispatch before draining outstanding receipts. A surviving
+	// control socket is not evidence that its physical worker is reusable, but
+	// already accepted work remains owned until its durable receipt settles.
 	e.beginDraining()
+	drainCtx, drainCancel := context.WithTimeout(context.Background(), defaultExecutorDrainTimeout)
+	drainErr := e.waitForDurableDrain(drainCtx)
+	drainCancel()
+	if drainErr != nil {
+		settlementFailed = true
+		runErr = errors.Join(runErr, drainErr)
+	}
+	e.requestShutdown()
 	cancel()
 	<-pressureDone
 	if !serverFinished {
@@ -278,10 +293,6 @@ func (e *Executor) HandleDetachedKernelCommand(ctx context.Context, request Comm
 		return commandResponseError(request.RequestID, "stale_authority", "detached kernel command authority is stale")
 	}
 	e.mu.Lock()
-	if e.draining {
-		e.mu.Unlock()
-		return commandResponseError(request.RequestID, "draining", "detached kernel executor is stopping")
-	}
 	e.lastActivity = time.Now().UTC()
 	e.mu.Unlock()
 	switch request.Command {
@@ -295,6 +306,11 @@ func (e *Executor) HandleDetachedKernelCommand(ctx context.Context, request Comm
 		response.Snapshot = &snapshot
 		return response
 	case CommandDispatch:
+		// Durable acceptance is the admission fence. An accepted execution can
+		// still be dispatched while this generation drains because the state
+		// transition to draining is serialized with acceptance in SQLite; no new
+		// accepted execution can appear after that transition. This closes the
+		// service-handoff window without allowing a second operation to enter.
 		return e.dispatch(ctx, request)
 	case CommandCancel:
 		return e.cancelExecution(ctx, request)
@@ -303,6 +319,16 @@ func (e *Executor) HandleDetachedKernelCommand(ctx context.Context, request Comm
 		return commandResponseOK(request.RequestID)
 	default:
 		return commandResponseError(request.RequestID, "unsupported", "detached kernel command is unsupported")
+	}
+}
+
+// AfterDetachedKernelCommand is called after the close acknowledgement is on
+// the wire. Shutting down from the handler itself can close the Unix socket
+// before the controller receives its successful response, turning a clean
+// handoff into a spurious context deadline.
+func (e *Executor) AfterDetachedKernelCommand(_ context.Context, request CommandRequest, response CommandResponse) {
+	if request.Command == CommandClose && response.OK {
+		e.requestShutdownIfDrained(context.Background())
 	}
 }
 
@@ -323,20 +349,13 @@ func (e *Executor) dispatch(ctx context.Context, request CommandRequest) Command
 		return commandResponseError(request.RequestID, "request_invalid", "detached kernel execution request is unavailable")
 	}
 	e.mu.Lock()
-	if e.draining {
-		e.mu.Unlock()
-		if err := e.commitSubmitFailure(durableRequest, errors.New("kernel executor is draining")); err != nil {
-			e.reportFatal(err)
-		}
-		return commandResponseError(request.RequestID, "draining", "detached kernel executor is stopping")
-	}
 	if _, exists := e.active[request.ExecutionID]; exists {
 		e.mu.Unlock()
 		return e.dispatchResponse(request, execution)
 	}
 	if localcontainer.IsEnvironmentName(durableRequest.Environment) {
 		e.mu.Unlock()
-		if err := e.dispatchContainerExecution(durableRequest); err != nil {
+		if err := e.dispatchContainerExecution(ctx, durableRequest, execution); err != nil {
 			log.Printf("submit detached container execution %s: %v", durableRequest.ExecutionID, err)
 			if commitErr := e.commitSubmitFailure(durableRequest, err); commitErr != nil {
 				e.reportFatal(commitErr)
@@ -417,6 +436,10 @@ func (e *Executor) observeExecution(request workspace.KernelDetachedExecutionReq
 		delete(e.active, request.ExecutionID)
 		e.lastActivity = time.Now().UTC()
 		e.mu.Unlock()
+		// A cancellation reconciler may have published draining while this
+		// observer was settling. Re-check after removing the last local handle;
+		// checking before deletion would leave a drained executor alive forever.
+		e.requestShutdownIfDrained(context.Background())
 	}()
 	startedAt := time.Now().UTC()
 	started, startedOK := <-handle.Started()
@@ -450,11 +473,22 @@ func (e *Executor) observeExecution(request workspace.KernelDetachedExecutionReq
 	handle.AcknowledgePersistence()
 }
 
-func (e *Executor) dispatchContainerExecution(request workspace.KernelDetachedExecutionRequestV1) error {
+func (e *Executor) dispatchContainerExecution(
+	ctx context.Context,
+	request workspace.KernelDetachedExecutionRequestV1,
+	execution workspace.DetachedKernelExecution,
+) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	e.mu.Lock()
 	draining := e.draining
 	e.mu.Unlock()
-	if draining {
+	// A request can cross the drain boundary only after the durable admission
+	// transaction has written its dispatch request. New work cannot be accepted
+	// once the backend is draining, while already-accepted work must still be
+	// allowed to reach its provider and settle its receipt.
+	if draining && execution.RequestWrittenAt == nil {
 		return errors.New("kernel executor is draining")
 	}
 	if request.ToolName != kernelcontract.PythonTool && request.ToolName != kernelcontract.BashTool {
@@ -464,7 +498,7 @@ func (e *Executor) dispatchContainerExecution(request workspace.KernelDetachedEx
 	if err != nil {
 		return err
 	}
-	environment, found, err := manager.Resolve(context.Background(), request.Environment)
+	environment, found, err := manager.Resolve(ctx, request.Environment)
 	if err != nil {
 		return err
 	}
@@ -530,6 +564,7 @@ func (e *Executor) observeContainerExecution(
 		delete(e.active, request.ExecutionID)
 		e.lastActivity = time.Now().UTC()
 		e.mu.Unlock()
+		e.requestShutdownIfDrained(context.Background())
 	}()
 	startedAt := time.Now().UTC()
 	tracker := kernelruntime.NewWorkspaceChangeTracker(e.workspaceDir, request.WorkingDir)
@@ -815,8 +850,8 @@ func (e *Executor) runIdleReconciler(ctx context.Context) error {
 			e.mu.Lock()
 			if executorShouldReapIdle(e.lastActivity, len(e.active), now.UTC(), e.IdleTimeout) {
 				e.draining = true
-				e.once.Do(func() { close(e.shutdown) })
 				e.mu.Unlock()
+				e.requestShutdownIfDrained(ctx)
 				return nil
 			}
 			e.mu.Unlock()
@@ -838,7 +873,59 @@ func (e *Executor) beginDraining() {
 	e.mu.Lock()
 	e.draining = true
 	e.mu.Unlock()
+}
+
+func (e *Executor) requestShutdown() {
+	if e == nil || e.shutdown == nil {
+		return
+	}
 	e.once.Do(func() { close(e.shutdown) })
+}
+
+// requestShutdownIfDrained closes the control loop only after both the local
+// observer set and the durable accepted set are empty. The durable query is
+// the authority across restart; the in-memory map only prevents closing while
+// this process is still writing a receipt.
+func (e *Executor) requestShutdownIfDrained(ctx context.Context) {
+	if e == nil || e.Store == nil {
+		return
+	}
+	e.mu.Lock()
+	draining := e.draining
+	localActive := len(e.active)
+	e.mu.Unlock()
+	if !draining || localActive != 0 {
+		return
+	}
+	durable, err := e.Store.CountNonterminalKernelExecutions(ctx, e.BackendID, e.BackendGeneration)
+	if err == nil && durable == 0 {
+		e.requestShutdown()
+	}
+}
+
+func (e *Executor) waitForDurableDrain(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ticker := time.NewTicker(defaultExecutorDrainPollInterval)
+	defer ticker.Stop()
+	for {
+		e.mu.Lock()
+		localActive := len(e.active)
+		e.mu.Unlock()
+		durable, err := e.Store.CountNonterminalKernelExecutions(ctx, e.BackendID, e.BackendGeneration)
+		if err != nil {
+			return fmt.Errorf("inspect detached kernel drain: %w", err)
+		}
+		if localActive == 0 && durable == 0 {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("detached kernel drain did not settle: local_active=%d durable_active=%d: %w", localActive, durable, ctx.Err())
+		case <-ticker.C:
+		}
+	}
 }
 
 func (e *Executor) validateController(ctx context.Context, request CommandRequest) error {

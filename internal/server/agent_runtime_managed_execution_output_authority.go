@@ -17,10 +17,11 @@ import (
 )
 
 type managedExecutionOutputAuthority struct {
-	Root        string
-	PackID      string
-	ExecutionID string
-	Digests     map[string]string
+	Root         string
+	ResolvedRoot string
+	PackID       string
+	ExecutionID  string
+	Digests      map[string]string
 }
 
 // managedExecutionOutputAuthorities reconstructs immutable output ownership
@@ -85,6 +86,16 @@ func (s *Server) managedExecutionOutputAuthorities(
 					if verifyErr != nil {
 						return nil, verifyErr
 					}
+					if err := publishManagedExecutionOutputSnapshot(ctx, workspaceRoot, authority); err != nil {
+						return nil, err
+					}
+					if resolvedRoot, managed, resolveErr := managedExecutionSnapshotRoot(
+						workspaceRoot, authority.Root, authority.PackID, authority.ExecutionID,
+					); resolveErr != nil || !managed {
+						return nil, errors.New("managed execution output snapshot did not become readable")
+					} else {
+						authority.ResolvedRoot = resolvedRoot
+					}
 					authorities = append(authorities, authority)
 				}
 			}
@@ -129,14 +140,36 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 		return managedExecutionOutputAuthority{}, errors.New("managed execution output escaped the task workspace")
 	}
 	info, err := os.Lstat(outputRoot)
-	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+	recoveredSnapshot := false
+	resolved := outputRoot
+	if errors.Is(err, os.ErrNotExist) {
+		candidate := filepath.Join(workspaceRoot, ".synon-artifacts", ".managed", managedExecutionSnapshotID(managedExecutionOutputAuthority{
+			Root: outputRoot, PackID: packID, ExecutionID: executionID,
+		}))
+		valid, snapshotErr := managedExecutionSnapshotManifestAt(candidate, packID, executionID)
+		if snapshotErr != nil || !valid {
+			return managedExecutionOutputAuthority{}, errors.New("managed execution output directory is unavailable or unsafe")
+		}
+		resolved, recoveredSnapshot = candidate, true
+	} else if err != nil || !info.IsDir() && info.Mode()&os.ModeSymlink == 0 {
 		return managedExecutionOutputAuthority{}, errors.New("managed execution output directory is unavailable or unsafe")
+	} else if info.Mode()&os.ModeSymlink != 0 {
+		var managed bool
+		resolved, managed, err = managedExecutionSnapshotRoot(workspaceRoot, outputRoot, packID, executionID)
+		if err != nil || !managed {
+			return managedExecutionOutputAuthority{}, errors.New("managed execution output directory changed through an untrusted symbolic link")
+		}
+	} else {
+		resolved, err = filepath.EvalSymlinks(outputRoot)
+		if err != nil || filepath.Clean(resolved) != filepath.Clean(outputRoot) {
+			return managedExecutionOutputAuthority{}, errors.New("managed execution output directory changed through a symbolic link")
+		}
 	}
-	resolved, err := filepath.EvalSymlinks(outputRoot)
-	if err != nil || filepath.Clean(resolved) != filepath.Clean(outputRoot) {
-		return managedExecutionOutputAuthority{}, errors.New("managed execution output directory changed through a symbolic link")
+	ownershipRoot := outputRoot
+	if recoveredSnapshot {
+		ownershipRoot = resolved
 	}
-	markerPackID, ownership := inspectManagedExecutionOutputOwnership(outputRoot)
+	markerPackID, ownership := inspectManagedExecutionOutputOwnership(ownershipRoot)
 	if ownership != managedExecutionOutputOwnershipValid || markerPackID != packID {
 		return managedExecutionOutputAuthority{}, errors.New("managed execution output ownership does not match its successful receipt")
 	}
@@ -156,11 +189,22 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 		return managedExecutionOutputAuthority{}, errors.New("managed execution ownership marker is missing from its successful file-write receipt")
 	}
 	for _, output := range engine.ExecutionPack.Outputs {
-		relative, found := managedExecutionBundleOutputPath(workspaceRoot, outputRoot, output.Path)
+		lookupRoot := outputRoot
+		if recoveredSnapshot {
+			lookupRoot = resolved
+		}
+		relative, found := managedExecutionBundleOutputPath(workspaceRoot, lookupRoot, output.Path)
 		if !found {
 			return managedExecutionOutputAuthority{}, fmt.Errorf("managed execution output %q is missing", output.Path)
 		}
 		path := filepath.Join(workspaceRoot, filepath.FromSlash(relative))
+		if recoveredSnapshot {
+			withinSnapshot, relativeErr := filepath.Rel(resolved, path)
+			if relativeErr != nil || withinSnapshot == "." || withinSnapshot == ".." || strings.HasPrefix(withinSnapshot, ".."+string(filepath.Separator)) {
+				return managedExecutionOutputAuthority{}, errors.New("managed execution output recovery path is invalid")
+			}
+			path = filepath.Join(outputRoot, withinSnapshot)
+		}
 		if !pathSet[path] {
 			return managedExecutionOutputAuthority{}, errors.New("managed execution output is missing from its successful file-write receipt")
 		}
@@ -176,15 +220,23 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 		if receiptDigest == "" {
 			return managedExecutionOutputAuthority{}, errors.New("managed execution output is missing from its successful file-write receipt")
 		}
-		currentDigest, err := digestManagedExecutionOutputFile(ctx, outputRoot, path)
+		digestPath := path
+		if recoveredSnapshot {
+			relative, relativeErr := filepath.Rel(outputRoot, path)
+			if relativeErr != nil || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+				return managedExecutionOutputAuthority{}, errors.New("managed execution output recovery path is invalid")
+			}
+			digestPath = filepath.Join(resolved, relative)
+		}
+		currentDigest, err := digestManagedExecutionOutputFile(ctx, resolved, digestPath)
 		if err != nil || !strings.EqualFold(currentDigest, receiptDigest) {
-			return managedExecutionOutputAuthority{}, errors.New("managed execution output no longer matches its successful file-write receipt")
+			return managedExecutionOutputAuthority{}, fmt.Errorf("managed execution output no longer matches its successful file-write receipt: %s want=%s got=%s err=%v", filepath.ToSlash(path), receiptDigest, currentDigest, err)
 		}
 		relative, _ := filepath.Rel(workspaceRoot, path)
 		digests[filepath.ToSlash(relative)] = currentDigest
 	}
 	return managedExecutionOutputAuthority{
-		Root: outputRoot, PackID: packID, ExecutionID: executionID, Digests: digests,
+		Root: outputRoot, ResolvedRoot: resolved, PackID: packID, ExecutionID: executionID, Digests: digests,
 	}, nil
 }
 
@@ -194,7 +246,7 @@ func digestManagedExecutionOutputFile(ctx context.Context, outputRoot, path stri
 		return "", errors.New("managed execution output file is unavailable or unsafe")
 	}
 	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil || filepath.Clean(resolved) != filepath.Clean(path) || !managedExecutionPathWithinRoot(outputRoot, resolved) {
+	if err != nil || !managedExecutionPathWithinRoot(outputRoot, resolved) {
 		return "", errors.New("managed execution output file changed through a symbolic link")
 	}
 	file, err := os.Open(path)
@@ -233,14 +285,11 @@ func (s *Server) agentKernelWorkspaceImmutableMounts(
 		if bindingErr != nil {
 			return nil, errors.New("managed execution output operation bindings could not be loaded")
 		}
-		authorities, authorityErr := s.managedExecutionOutputAuthorities(
+		_, authorityErr := s.managedExecutionOutputAuthorities(
 			ctx, access, workspaceRoot, records, bindings, excludePackID,
 		)
 		if authorityErr != nil {
 			return nil, authorityErr
-		}
-		for _, authority := range authorities {
-			paths = append(paths, authority.Root)
 		}
 	}
 	sort.Slice(paths, func(left, right int) bool {

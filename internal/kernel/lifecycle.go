@@ -1561,7 +1561,7 @@ func (execution *managedExecution) finish(outcome ExecutionOutcome) {
 
 func formatRKernelRestartNotice(environment, reason string) string {
 	return fmt.Sprintf(
-		"This cell ran on a fresh kernel process: the previous R kernel for environment '%s' %s. Variables, imports, and other in-memory state from earlier cells are gone; workspace files on disk are unaffected. Re-run setup before relying on earlier state.",
+		"This cell ran on a fresh kernel process: the previous R kernel for environment %q %s. Variables, imports, and other in-memory state from earlier cells are gone; workspace files on disk are unaffected. Re-run setup before relying on earlier state.",
 		environment, reason,
 	)
 }

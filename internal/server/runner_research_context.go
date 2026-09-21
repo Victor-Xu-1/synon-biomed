@@ -508,7 +508,7 @@ func currentResearchSourceMaterial(call agentruntime.ToolCall, result any, focus
 }
 
 func researchSourceReadCandidates(cards []map[string]any) []any {
-	result := make([]any, 0, min(len(cards)*2, maxSessionRunnerSourceReadCandidates))
+	result := make([]any, 0, min(len(cards), maxSessionRunnerSourceReadCandidates))
 	seen := make(map[string]struct{})
 	appendCandidate := func(tool string, arguments map[string]any, card map[string]any, fallback bool) {
 		encoded, err := json.Marshal(arguments)

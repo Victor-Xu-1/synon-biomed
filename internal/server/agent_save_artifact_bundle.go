@@ -71,7 +71,7 @@ func (s *Server) augmentAgentSaveArtifactsWithExecutionBundles(
 			continue
 		}
 		for _, authority := range authorities {
-			if managedExecutionPathWithinRoot(authority.Root, resolved) && resolved != authority.Root {
+			if managedExecutionAuthorityContainsPath(authority, resolved) && resolved != authority.Root {
 				ownersByRoot[authority.Root] = authority
 				break
 			}

@@ -352,7 +352,7 @@ func buildRunnerLargeToolResultDescriptor(
 		}
 		return best, nil
 	}
-	readWith := "read_file(version_id=\"" + record.VersionID + "\")"
+	readWith := toolcontract.CanonicalReadWith(record.VersionID)
 	best, err := fit(readWith)
 	if err != nil {
 		return agentruntime.LargeToolResultDescriptor{}, errors.Join(errRunnerLargeToolResultAuthority, err)

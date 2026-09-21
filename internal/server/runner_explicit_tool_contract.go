@@ -99,7 +99,7 @@ func matchesSessionRunnerContractPattern(value string, patterns []*regexp.Regexp
 
 func (contract sessionRunnerExplicitToolContract) gaps(messages []agentruntime.Message) []string {
 	completed := sessionRunnerSuccessfulToolExecutionIndex(messages)
-	gaps := make([]string, 0, len(contract.Requirements)+len(contract.PostWriteReads)+1)
+	gaps := make([]string, 0, len(contract.Requirements))
 	for _, requirement := range contract.Requirements {
 		actual := completed[requirement.Name]
 		if actual >= requirement.MinResults {

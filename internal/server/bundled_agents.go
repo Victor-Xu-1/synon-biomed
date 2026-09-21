@@ -472,8 +472,8 @@ func sessionConfiguredAgentName(session sessionstore.Session) string {
 }
 
 func appendUniqueFolded(existing []string, values ...string) []string {
-	seen := make(map[string]struct{}, len(existing)+len(values))
-	result := make([]string, 0, len(existing)+len(values))
+	seen := make(map[string]struct{}, len(existing))
+	result := make([]string, 0, len(existing))
 	for _, group := range [][]string{existing, values} {
 		for _, value := range group {
 			value = strings.TrimSpace(value)

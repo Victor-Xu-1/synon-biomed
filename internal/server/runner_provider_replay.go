@@ -386,12 +386,12 @@ func boundedIdentifierEditDistance(left, right string, limit int) int {
 	if delta := len(leftRunes) - len(rightRunes); delta > limit || delta < -limit {
 		return limit + 1
 	}
-	previous := make([]int, len(rightRunes)+1)
+	previous := append(make([]int, len(rightRunes)), 0)
 	for index := range previous {
 		previous[index] = index
 	}
 	for leftIndex, leftRune := range leftRunes {
-		current := make([]int, len(rightRunes)+1)
+		current := append(make([]int, len(rightRunes)), 0)
 		current[0] = leftIndex + 1
 		rowMinimum := current[0]
 		for rightIndex, rightRune := range rightRunes {

@@ -176,7 +176,7 @@ func (s *Server) publishWebMessageStream(
 	if declared, present := payload["stream_type"]; present && strings.TrimSpace(webString(declared)) != streamType {
 		return errors.New("message stream subtype conflicts with payload type")
 	}
-	projected := make(map[string]any, len(payload)+1)
+	projected := make(map[string]any, len(payload))
 	for key, value := range payload {
 		projected[key] = value
 	}

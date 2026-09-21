@@ -5,13 +5,13 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "eba61ec09d15b3f7ac1f4001546bc4c13c5fab78af6837ad21f0a6e4ffcceeed",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "02f37c6805081cfba354dd87249fa21f8673832a70b40ceb2155c360abbb574b",
+  "additionFingerprintSHA256": "4aedd58833a338b552654c39623e769aba4e3857f82c1dd65327d329095acebb",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 405,
     "adaptedSourceFiles": 660,
     "removedSourceFiles": 289,
-    "addedFiles": 651
+    "addedFiles": 653
   },
   "adaptations": [
     {
@@ -6602,8 +6602,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/media/ComposerCapabilityPicker.tsx",
-      "sha256": "0c9cd7e47d0b26af36210891e6455af078379a7af6e34b6ae15b2bb7c79a1b32",
-      "bytes": 14898,
+      "sha256": "581d2771d5dc4549d295b99e5ec6edc28781ab740f9a1c8f5780b3adc40ec600",
+      "bytes": 14896,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6656,8 +6656,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/ContextUsagePanel.tsx",
-      "sha256": "e41178f933a4aa57422a0373e398363daac30d1f6e010e5ad3cf5274522d2bbc",
-      "bytes": 10108,
+      "sha256": "aaddbfc7328a6c5f256ef475457b9924b55b67290ae7da197c2213b437719622",
+      "bytes": 10275,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -8048,8 +8048,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/services/contextUsage.ts",
-      "sha256": "39292448ce4bb498abec11f6828dca06f840cdbb3362fd8ca0934c194959599a",
-      "bytes": 6401,
+      "sha256": "aa6baf61331b2b2304812919fb780e8d2cc0079939c01455fad156a88836b19d",
+      "bytes": 7213,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9133,9 +9133,21 @@
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
+      "path": "tests/unit/renderer/ComposerCapabilityPicker.dom.test.tsx",
+      "sha256": "543a3fb915056b557b9a0609a3c1935fb5f3f0497a3e4a51d642c8eea1b02e28",
+      "bytes": 2981,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
+    },
+    {
       "path": "tests/unit/renderer/ComputeSettings.dom.test.tsx",
       "sha256": "6be9b125c2435d22cf0795c26198c3871d3dd7470721f2f9297da589d99353cd",
       "bytes": 3520,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
+    },
+    {
+      "path": "tests/unit/renderer/ContextUsagePanel.dom.test.tsx",
+      "sha256": "3aef4dd56d6094a8cefe0eb67ba51746f8e378836eba7d6ad35978cf90a67e60",
+      "bytes": 2460,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -9212,8 +9224,8 @@
     },
     {
       "path": "tests/unit/renderer/contextUsage.test.ts",
-      "sha256": "7d25a66757e93e89a5af777c0a5b35ca114887fca017c476c9d3cbc1b0977b3e",
-      "bytes": 2433,
+      "sha256": "4ed30777ed9ace7108b7ed8c3272fbf5b2671732d244c683f977d1fd589084a5",
+      "bytes": 2925,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

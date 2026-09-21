@@ -37,6 +37,7 @@ const UsageRing: React.FC<{ usedTokens: number; limitTokens: number }> = ({ used
       width={RING_SIZE}
       height={RING_SIZE}
       viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      aria-hidden='true'
       style={{ transform: 'rotate(-90deg)', display: 'block' }}
     >
       <circle
@@ -114,6 +115,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
       fetch(`/api/frames/${encodeURIComponent(conversationId)}`, {
         credentials: 'include',
         signal: nextController.signal,
+        cache: 'no-store',
         headers: { Accept: 'application/json' },
       })
         .then((response) => {
@@ -258,13 +260,16 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
         </div>
       }
     >
-      <span
+      <button
+        type='button'
         data-testid='synon-biomed-context-usage-trigger'
         aria-label={t('conversation.contextUsage.title')}
-        className='inline-flex items-center justify-center cursor-pointer'
+        aria-expanded={visible}
+        aria-haspopup='menu'
+        className='inline-flex items-center justify-center cursor-pointer border-0 bg-transparent p-0'
       >
         <UsageRing usedTokens={usage?.usedTokens ?? 0} limitTokens={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT} />
-      </span>
+      </button>
     </Dropdown>
   );
 };

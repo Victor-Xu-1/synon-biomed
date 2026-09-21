@@ -3,6 +3,33 @@ import { expect, test } from './officialChromeTest';
 
 test.use({ viewport: { width: 1600, height: 775 } });
 
+test('can leave first-use onboarding and switch accounts', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/#\/login/);
+
+  const accountIdentity = randomUUID().replaceAll('-', '').slice(0, 12);
+  const accountEmail = `switch-${accountIdentity}@example.test`;
+  const accountPassword = `Switch-${accountIdentity}-A9!`;
+  await page.getByRole('button', { name: /Create new account|创建新账户/ }).click();
+  await page.locator('input[name="username"]').fill(`Switch ${accountIdentity}`);
+  await page.locator('input[name="email"]').fill(accountEmail);
+  await page.locator('input[name="password"]').fill(accountPassword);
+  await page.locator('button[type="submit"]').click();
+
+  await expect(page).toHaveURL(/#\/onboarding/);
+  await expect(page.getByTestId('onboarding-welcome')).toBeVisible();
+  await expect(page.getByTestId('onboarding-switch-account')).toBeEnabled();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await expect(page.getByTestId('onboarding-switch-account')).toBeInViewport();
+  await page.getByTestId('onboarding-switch-account').click();
+
+  await expect(page).toHaveURL(/#\/login/);
+  await expect(page.getByRole('textbox', { name: /Username|用户名/ })).toBeVisible();
+  const currentUser = await page.request.get('/api/auth/user');
+  expect(currentUser.status()).toBe(401);
+});
+
 test('fresh authenticated user completes accessible onboarding and enters a recoverable workspace', async ({
   page,
 }) => {

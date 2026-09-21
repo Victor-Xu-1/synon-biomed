@@ -1,54 +1,4 @@
 /* Intrinsic height keeps scans, long paths and disclosures readable. */
-.storage-runtime-list {
-  display: flex;
-  flex-direction: column;
-}
-.storage-runtime-row {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--color-border-2);
-}
-.storage-runtime-row:last-child {
-  border-bottom: 0;
-}
-.storage-runtime-name {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-.storage-runtime-name strong {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-1);
-}
-.storage-runtime-name span {
-  font-size: 12px;
-  line-height: 20px;
-  color: var(--color-text-3);
-}
-.storage-runtime-status {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-shrink: 0;
-  font-size: 12px;
-  flex-wrap: wrap;
-}
-.storage-runtime-status[data-status='ready'] {
-  color: #38845a;
-}
-.storage-runtime-status[data-status='failed'] {
-  color: rgb(var(--danger-6));
-}
-.storage-runtime-status progress {
-  width: 80px;
-  height: 6px;
-  accent-color: #648f79;
-}
 .storage-runtime-selection {
   display: flex;
   flex-direction: column;
@@ -74,11 +24,6 @@
   line-height: 20px;
 }
 @media (max-width: 600px) {
-  .storage-runtime-row {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-  }
   .storage-runtime-selection label {
     flex-wrap: wrap;
   }

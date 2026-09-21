@@ -35,6 +35,11 @@
   },
   "onboarding": {
     "brand": "Synon Biomed 科研工作台",
+    "account": {
+      "current": "当前账号：{{username}}",
+      "switch": "切换账号",
+      "switching": "正在切换…"
+    },
     "progressLabel": "初始化进度",
     "progressValue": "第 {{current}}/{{total}} 步：{{title}}",
     "projectDefaultName": "开始使用",

@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   activateLlmProfile: vi.fn(),
   testLlmProfile: vi.fn(),
   confirmCompletion: vi.fn(),
+  logout: vi.fn(),
   refresh: vi.fn(),
   clearAuthCache: vi.fn(),
   rememberCurrentAuthRoute: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('@/renderer/hooks/context/AuthContext', () => ({
     user: mocks.authUser,
     status: 'authenticated',
     ready: true,
+    logout: mocks.logout,
     refresh: mocks.refresh,
     clearAuthCache: mocks.clearAuthCache,
   }),
@@ -207,7 +209,20 @@ describe('OnboardingFlow', () => {
     mocks.cancelSuggestion.mockResolvedValue(undefined);
     mocks.stageTask.mockResolvedValue({ conversationId: 'conversation-1', projectId: 'project-1' });
     mocks.loadLlmProviders.mockResolvedValue({ profiles: [], templates: [] });
+    mocks.logout.mockResolvedValue(undefined);
     mocks.refresh.mockResolvedValue(undefined);
+  });
+
+  it('lets an authenticated user switch accounts from onboarding', async () => {
+    const user = userEvent.setup();
+    await renderOnboarding('zh-CN');
+    expect(await screen.findByTestId('onboarding-welcome')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '切换账号' }));
+
+    await waitFor(() => expect(mocks.logout).toHaveBeenCalledTimes(1));
+    expect(mocks.navigate).toHaveBeenCalledWith('/login', { replace: true });
+    expect(screen.getByTestId('onboarding-switch-account')).toBeDisabled();
   });
 
   it('latches the exact six-second fallback and never installs a late model result', async () => {
@@ -454,6 +469,7 @@ describe('OnboardingFlow', () => {
     const errorView = await screen.findByTestId('onboarding-load-error');
     expect(errorView).toHaveTextContent('Setup data is temporarily unavailable. Retry to continue.');
     expect(errorView).not.toHaveTextContent('credential path');
+    expect(screen.getByTestId('onboarding-switch-account')).toBeVisible();
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();
   });

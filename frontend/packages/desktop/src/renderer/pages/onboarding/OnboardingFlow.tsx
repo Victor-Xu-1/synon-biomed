@@ -52,7 +52,7 @@ type CapabilityTab = 'connectors' | 'skills' | 'runtimes';
 const OnboardingFlow: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, refresh, clearAuthCache } = useAuth();
+  const { user, refresh, clearAuthCache, logout } = useAuth();
   const fallbackTaskOptions = useMemo<OnboardingTaskSuggestion[]>(
     () => [
       {
@@ -87,6 +87,7 @@ const OnboardingFlow: React.FC = () => {
   const [suggestionView, setSuggestionView] = useState<'fallback' | 'loading' | 'agent'>('fallback');
   const [suggestionRetryGeneration, setSuggestionRetryGeneration] = useState(0);
   const [launching, setLaunching] = useState(false);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const [launchError, setLaunchError] = useState<ReturnType<typeof classifyOnboardingLaunchFailure> | null>(null);
   const [activeCapabilityTab, setActiveCapabilityTab] = useState<CapabilityTab>('connectors');
   const [capabilityQuery, setCapabilityQuery] = useState('');
@@ -529,13 +530,54 @@ const OnboardingFlow: React.FC = () => {
     window.history.back();
   };
 
+  const switchAccount = useCallback(async () => {
+    if (switchingAccount) return;
+
+    loadGeneration.current += 1;
+    launchGeneration.current += 1;
+    launchAbort.current?.abort('onboarding_account_switch');
+    launchAbort.current = null;
+    suggestionGeneration.current += 1;
+    suggestionAbort.current?.abort('onboarding_account_switch');
+    suggestionAbort.current = null;
+    const retiredSuggestionFrame = suggestionFrameId.current;
+    suggestionFrameId.current = null;
+    suggestionSession.current = null;
+    suggestionSignature.current = null;
+    suggestionAutoDispatched.current = false;
+    suggestionViewRef.current = 'fallback';
+    suggestionTaskStepActive.current = false;
+    if (retiredSuggestionFrame) {
+      void cancelOnboardingSuggestionFrame(retiredSuggestionFrame).catch(() =>
+        console.error('[OnboardingFlow] onboarding_suggestion_cleanup_failed')
+      );
+    }
+    launchArtifacts.current.clear();
+    pendingUploads.current.clear();
+    profileDocument.current = null;
+    launchIdentity.current = null;
+    setLaunchError(null);
+    setLaunching(false);
+    setSwitchingAccount(true);
+    try {
+      await logout();
+      void navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('[OnboardingFlow] account_switch_failed', error);
+      setSwitchingAccount(false);
+    }
+  }, [logout, navigate, switchingAccount]);
+
   if (loadError) {
     return (
       <main className={styles.root} data-testid='onboarding-load-error'>
-        <Alert type='error' title={t('guid.onboarding.error.loadTitle')} content={loadError} />
-        <Button type='primary' onClick={load}>
-          {t('common.retry')}
-        </Button>
+        <OnboardingHeader user={user} switchingAccount={switchingAccount} onSwitchAccount={switchAccount} t={t} />
+        <div className={styles.state}>
+          <Alert type='error' title={t('guid.onboarding.error.loadTitle')} content={loadError} />
+          <Button type='primary' onClick={load}>
+            {t('common.retry')}
+          </Button>
+        </div>
       </main>
     );
   }
@@ -543,7 +585,10 @@ const OnboardingFlow: React.FC = () => {
   if (!snapshot) {
     return (
       <main className={styles.root} data-testid='onboarding-loading' aria-busy='true'>
-        <Spin size={28} />
+        <OnboardingHeader user={user} switchingAccount={switchingAccount} onSwitchAccount={switchAccount} t={t} />
+        <div className={styles.state}>
+          <Spin size={28} />
+        </div>
       </main>
     );
   }
@@ -691,10 +736,7 @@ const OnboardingFlow: React.FC = () => {
 
   return (
     <main className={styles.root} data-testid='onboarding-flow'>
-      <header className={styles.header}>
-        <img src={PRODUCT_ICON} alt='' aria-hidden='true' className={styles.brandMark} />
-        <span>{t('guid.onboarding.brand')}</span>
-      </header>
+      <OnboardingHeader user={user} switchingAccount={switchingAccount} onSwitchAccount={switchAccount} t={t} />
       <section className={styles.flow} aria-live='polite'>
         <div
           className={styles.progress}
@@ -1002,6 +1044,39 @@ const StepHeading: React.FC<{ icon: React.ReactNode; title: string }> = ({ icon,
       {title}
     </h1>
   </div>
+);
+
+type OnboardingHeaderProps = {
+  user: { username?: string } | null;
+  switchingAccount: boolean;
+  onSwitchAccount: () => void;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+const OnboardingHeader: React.FC<OnboardingHeaderProps> = ({ user, switchingAccount, onSwitchAccount, t }) => (
+  <header className={styles.header}>
+    <div className={styles.brand}>
+      <img src={PRODUCT_ICON} alt='' aria-hidden='true' className={styles.brandMark} />
+      <span>{t('guid.onboarding.brand')}</span>
+    </div>
+    <div className={styles.accountActions}>
+      {user?.username && (
+        <span className={styles.accountIdentity} title={user.username}>
+          {t('guid.onboarding.account.current', { username: user.username })}
+        </span>
+      )}
+      <button
+        type='button'
+        className={styles.accountSwitch}
+        data-testid='onboarding-switch-account'
+        disabled={switchingAccount}
+        aria-busy={switchingAccount}
+        onClick={onSwitchAccount}
+      >
+        {t(switchingAccount ? 'guid.onboarding.account.switching' : 'guid.onboarding.account.switch')}
+      </button>
+    </div>
+  </header>
 );
 
 type CapabilityListProps = {

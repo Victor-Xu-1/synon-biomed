@@ -13,7 +13,7 @@ import { StorageLocationDialog, StorageMoveCompletionDialog, StorageRulesDialog 
 import { StorageLocationPanel } from './storage/StorageLocationPanel';
 import { StorageRulesPanel } from './storage/StorageRulesPanel';
 import { StorageUsagePanel } from './storage/StorageUsagePanel';
-import { StorageRuntimePanel } from './storage/StorageRuntimePanel';
+import { navigateSettingsRoute } from './settingsNavigation';
 import { directoryChangeAllowed } from './storage/storagePresentation';
 import { useStorageResource } from './storage/useStorageResource';
 
@@ -58,15 +58,10 @@ export const StorageSettingsContent: React.FC = () => {
           onFinishMove={(remove) => setDialog(remove ? 'delete-source' : 'keep-source')}
         />
         <div className='storage-detail-grid'>
-          <StorageUsagePanel
-            resource={usage}
-            onManageSoftware={() => document.getElementById('storage-software')?.scrollIntoView({ block: 'start' })}
-          />
+          <StorageUsagePanel resource={usage} onManageSoftware={() => navigateSettingsRoute('environments')} />
           <StorageRulesPanel resource={rules} canEdit={canEdit} onEdit={() => setDialog('rules')} />
         </div>
-        <div id='storage-software'>
-          <StorageRuntimePanel />
-        </div>
+
         <StorageCloudPanel resource={cloud} />
       </div>
       {dialog === 'location' && directory.data && (

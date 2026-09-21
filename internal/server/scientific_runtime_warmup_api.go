@@ -80,19 +80,15 @@ func (s *Server) handleScientificRuntimeWarmups(w http.ResponseWriter, r *http.R
 		}
 		switch action {
 		case "pause":
-			if !s.cancelScientificRuntimeWarmup(input.ID) {
-				// A queued item has not acquired an operation context yet. Removing
-				// it from the persisted selection is the durable cancellation fence;
-				// the dequeue check will discard the stale wake-up.
+			if !s.pauseScientificRuntimeWarmup(input.ID) {
+				writeWorkspaceJSON(w, http.StatusConflict, map[string]any{"detail": "runtime is not being prepared"})
+				return
 			}
 			selected = removeScientificRuntimeID(selected, input.ID)
 			if _, err := s.storeScientificRuntimeWarmupSelection(selected); err != nil {
 				writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"detail": "runtime pause could not be persisted"})
 				return
 			}
-			s.setScientificRuntimeWarmupStatus(input.ID, scientificRuntimeWarmupStatus{
-				State: "stopped", MaxAttempts: len(scientificRuntimeWarmupRetryDelays),
-			})
 			writeWorkspaceJSON(w, http.StatusAccepted, map[string]any{
 				"id": input.ID, "action": action, "runtime": scientificRuntimeWarmupHealthValue(s.scientificRuntimeWarmupStatus(input.ID)),
 			})

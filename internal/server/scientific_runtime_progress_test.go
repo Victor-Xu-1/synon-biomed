@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"path/filepath"
@@ -63,13 +64,16 @@ func TestScientificWarmupRetryRequiresSavedSelectionAndCoalescesDuplicates(t *te
 	if len(server.scientificRuntimeWarmupWake) != 1 {
 		t.Fatal("duplicate retry queued another installer")
 	}
-	if !server.shouldRunScientificRuntimeWarmup(commonStructureRuntimeID) {
+	_, admissionCancel, admitted := server.beginScientificRuntimeWarmup(context.Background(), commonStructureRuntimeID)
+	if !admitted {
 		t.Fatal("saved selection was not admitted")
 	}
+	admissionCancel()
+	server.setScientificRuntimeWarmupCancel(commonStructureRuntimeID, nil)
 	if _, err := server.settingsStore.Set(scientificRuntimeSelectionSettingKey, []string{}); err != nil {
 		t.Fatal(err)
 	}
-	if server.shouldRunScientificRuntimeWarmup(commonStructureRuntimeID) {
+	if _, _, admitted := server.beginScientificRuntimeWarmup(context.Background(), commonStructureRuntimeID); admitted {
 		t.Fatal("deselected queued runtime was installed")
 	}
 	if status := server.scientificRuntimeWarmupStatus(commonStructureRuntimeID); status.State != "waiting_for_selection" {
@@ -89,4 +93,49 @@ func TestScientificRuntimeUninstallDoesNotRequireFutureSelection(t *testing.T) {
 	runtimeCompatJSON(t, server.Handler(), http.MethodPost, "/api/preferences/scientific-runtimes", "local", map[string]any{
 		"id": autoDockVinaRuntimeID, "action": "uninstall",
 	}, http.StatusServiceUnavailable)
+}
+
+func TestScientificRuntimePauseRejectsReadyStateWithoutLosingIdentity(t *testing.T) {
+	server := New(Options{FileRoot: t.TempDir()})
+	if _, err := server.settingsStore.Set(scientificRuntimeSelectionSettingKey, []string{autoDockVinaRuntimeID}); err != nil {
+		t.Fatal(err)
+	}
+	server.setScientificRuntimeWarmupStatus(autoDockVinaRuntimeID, scientificRuntimeWarmupStatus{
+		State: "ready", Environment: "autodock-vina", Generation: strings.Repeat("b", 64),
+	})
+	runtimeCompatJSON(t, server.Handler(), http.MethodPost, "/api/preferences/scientific-runtimes", "local", map[string]any{
+		"id": autoDockVinaRuntimeID, "action": "pause",
+	}, http.StatusConflict)
+	status := server.scientificRuntimeWarmupStatus(autoDockVinaRuntimeID)
+	if status.State != "ready" || status.Environment != "autodock-vina" || status.Generation != strings.Repeat("b", 64) {
+		t.Fatalf("pause changed ready identity: %#v", status)
+	}
+}
+
+func TestScientificRuntimePauseFencesQueuedAdmission(t *testing.T) {
+	server := New(Options{FileRoot: t.TempDir()})
+	if _, err := server.settingsStore.Set(scientificRuntimeSelectionSettingKey, []string{autoDockVinaRuntimeID}); err != nil {
+		t.Fatal(err)
+	}
+	server.setScientificRuntimeWarmupStatus(autoDockVinaRuntimeID, scientificRuntimeWarmupStatus{State: "scheduled"})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	server.scientificRuntimeWarmupMu.Lock()
+	server.scientificRuntimeWarmupCancels[autoDockVinaRuntimeID] = cancel
+	server.scientificRuntimeWarmupMu.Unlock()
+	if !server.pauseScientificRuntimeWarmup(autoDockVinaRuntimeID) {
+		t.Fatal("scheduled runtime was not pauseable")
+	}
+	select {
+	case <-ctx.Done():
+	default:
+		t.Fatal("pause did not cancel the admitted operation")
+	}
+	if _, _, admitted := server.beginScientificRuntimeWarmup(context.Background(), autoDockVinaRuntimeID); admitted {
+		t.Fatal("paused runtime crossed the admission fence")
+	}
+	server.setScientificRuntimeWarmupStatus(autoDockVinaRuntimeID, scientificRuntimeWarmupStatus{State: "ready"})
+	if status := server.scientificRuntimeWarmupStatus(autoDockVinaRuntimeID); status.State != "stopped" {
+		t.Fatalf("cancelled worker overwrote pause state: %#v", status)
+	}
 }

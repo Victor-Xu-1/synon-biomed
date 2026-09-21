@@ -237,6 +237,7 @@ type Server struct {
 	scientificRuntimeWarmupMu        sync.RWMutex
 	scientificRuntimeWarmups         map[string]scientificRuntimeWarmupStatus
 	scientificRuntimeWarmupCancels   map[string]context.CancelFunc
+	scientificRuntimeWarmupCancelled map[string]bool
 	scientificRuntimeWarmupWake      chan string
 	runtimeStartedAt                 time.Time
 	mcpDiscoverySlots                chan struct{}
@@ -607,6 +608,7 @@ func New(options Options) *Server {
 		backgroundServicesStarted:        options.StartBackgroundServices,
 		scientificRuntimeWarmups:         map[string]scientificRuntimeWarmupStatus{},
 		scientificRuntimeWarmupCancels:   map[string]context.CancelFunc{},
+		scientificRuntimeWarmupCancelled: map[string]bool{},
 		scientificRuntimeWarmupWake:      make(chan string, len(scientificRuntimeWarmupDefinitions())),
 		runtimeStartedAt:                 time.Now().UTC(),
 		mcpDiscoverySlots:                processMCPDiscoverySlots,

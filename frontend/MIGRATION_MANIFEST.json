@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "9b9be32cc1a84670b39795dc70495c31774cc92ea9076eeabb44ea27a5f2070c",
+  "adaptationFingerprintSHA256": "92d63783b8acc3c8b2a040228a21a56bac63ed8154dfcc90808bece97e7783bf",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "f8905fb9b92edfcf5cb17995e6c7ff32f453cb3a6862d5672c41a0ec101922c5",
+  "additionFingerprintSHA256": "983fee75fc5ce6c5c68ebea7261398764518d4421c2ff3012937691a7c7932d0",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 405,
     "adaptedSourceFiles": 660,
     "removedSourceFiles": 289,
-    "addedFiles": 653
+    "addedFiles": 654
   },
   "adaptations": [
     {
@@ -388,15 +388,15 @@
     {
       "path": "packages/desktop/src/renderer/components/layout/Titlebar/index.tsx",
       "sourceSHA256": "7b153bd44dd2f1ecd46c3153d779ba5fe40294f9b70db169a5ff5355ad57949e",
-      "targetSHA256": "c9b3e402c30b9158e4c619bf06289b46dcf8bc20f9584f4c2128a68dd8794590",
-      "bytes": 14771,
+      "targetSHA256": "6bfd3316c9c921a00db833745ba83ebca3549a4e1bdc183e1846990acb754d67",
+      "bytes": 16131,
       "reason": "Adapt the desktop layout, command palette, navigation, and window controls to authenticated responsive browser operation."
     },
     {
       "path": "packages/desktop/src/renderer/components/layout/Titlebar/titlebar.css",
       "sourceSHA256": "c73788540c5a8c3e0357030b1650608c9957f699c2807287d01f116a2205481f",
-      "targetSHA256": "07ac49b1467384b905cd191f368f3d88aac28191c2fe32f0b9807d0441aa7ca7",
-      "bytes": 7801,
+      "targetSHA256": "384283b3050235d777db436409124ccc4c1c9762705b42b28e22ccd070bd3b57",
+      "bytes": 8082,
       "reason": "Adapt the desktop layout, command palette, navigation, and window controls to authenticated responsive browser operation."
     },
     {
@@ -2362,8 +2362,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts",
       "sourceSHA256": "d46e67e7ae9b1a4c53252446bb8e2c6d12141deaac2d253b8c1922afa35ab5d9",
-      "targetSHA256": "9094f06933f93f49c91cec43dac92a7e33e967bb0bf75659a754706a42b6dc91",
-      "bytes": 244854,
+      "targetSHA256": "760c03573d8eeb9e08631633386c8c369ee07439eca608adb4e5993f64bbe5ea",
+      "bytes": 244880,
       "reason": "Regenerate typed locale keys for the unified structure controls and first-run scientific-runtime catalog."
     },
     {
@@ -2390,8 +2390,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/common.json",
       "sourceSHA256": "7f0551495cb6843a54ed515cfc052468d8857ceec658f91f76b852690339c8db",
-      "targetSHA256": "7a1ea8933e9a12773d3b8bf356553595d6247e69af42f394835d9a2db33243dd",
-      "bytes": 4564,
+      "targetSHA256": "1555355deaabf16285755b5da8a02cdde247c42ff8a6c117e51f36cb372cab47",
+      "bytes": 4600,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2481,8 +2481,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/common.json",
       "sourceSHA256": "58e5974433b46b9f30c07816e305c5b4f792710e487ac50ca3d2e1c96f1c197e",
-      "targetSHA256": "901322526bd88a782c9a83c201ac4bc57f8314f55dd38e292387a988e0f45b31",
-      "bytes": 4555,
+      "targetSHA256": "547556d91e5d727316a027213ec1b8c5fa4baf75af129161ab1c8d1c406db0ea",
+      "bytes": 4594,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -8957,6 +8957,12 @@
       "sha256": "0887c1a85b03ba394ca8171ad3b04c74993b7a1587c899c2f7a7dabf8b212d10",
       "bytes": 1424,
       "reason": "Shared deterministic bilingual renderer for localized component tests."
+    },
+    {
+      "path": "tests/unit/layout/githubStarBadge.test.ts",
+      "sha256": "4af66ba4bce21486acfaa49cecef65ac5002502c65812fc49fc144ed4f727a8a",
+      "bytes": 3572,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
       "path": "tests/unit/previews/ArchiveViewer.dom.test.tsx",

@@ -260,11 +260,19 @@
   background-color: transparent;
 }
 
-/* Optical alignment: arrow icons have their visual weight pulled upward by
-   the V tip; nudge them down 1px to sit on the same centerline as the
-   sidebar rectangle icon (which has a solid, symmetric visual weight). */
+/* Optical alignment: icon-park's .i-icon wrapper rides ~2.5px high inside the
+   flex-centered buttons (vertical-align: -.125em), so the nav icons need a
+   2.5px push down to share the exact same centerline as the search and
+   sidebar-toggle icons. */
 .app-titlebar__button--nav svg {
-  transform: translateY(1px);
+  transform: translateY(2.5px);
+}
+
+/* GitHub star shortcut (right of the history-forward arrow): shares the
+   nav-button chrome and icon spec; only the hover warms up to gold so the
+   affordance reads as "favorite this". */
+.synon-biomed-github-star:hover {
+  color: #f7ba1e;
 }
 
 .app-titlebar__button:disabled:hover,

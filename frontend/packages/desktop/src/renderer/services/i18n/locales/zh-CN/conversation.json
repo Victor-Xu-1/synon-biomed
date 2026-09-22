@@ -1179,7 +1179,7 @@
       "optimizePrompt": {
         "label": "优化提示词",
         "applied": "已优化提示词",
-        "undo": "撤销",
+        "revert": "恢复原文",
         "failed": "优化提示词失败"
       },
       "reviewShort": "审阅",

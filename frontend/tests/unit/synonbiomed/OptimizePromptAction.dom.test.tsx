@@ -63,6 +63,7 @@ describe('OptimizePromptAction', () => {
 
     expect(optimizeMock).toHaveBeenCalledWith('帮我写一封请假条');
     expect(onReplace).toHaveBeenCalledWith('优化后的提示词');
+    expect(screen.getByTestId('synon-biomed-optimize-prompt-revert')).toBeInTheDocument();
     expect(screen.queryByTestId('synon-biomed-optimize-prompt-spinner')).not.toBeInTheDocument();
   });
 
@@ -91,10 +92,17 @@ describe('OptimizePromptAction', () => {
     });
 
     expect(onReplace).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('synon-biomed-optimize-prompt-revert')).not.toBeInTheDocument();
     expect(screen.queryByTestId('synon-biomed-optimize-prompt-spinner')).not.toBeInTheDocument();
   });
 
-  it('restores the previous draft when the success toast undo is pressed', async () => {
+  it('hides the revert button until the first optimization succeeds', async () => {
+    await renderAction({});
+
+    expect(screen.queryByTestId('synon-biomed-optimize-prompt-revert')).not.toBeInTheDocument();
+  });
+
+  it('restores the previous draft when the revert button is pressed', async () => {
     const onReplace = vi.fn();
     optimizeMock.mockResolvedValue({ text: '优化后的提示词', model: 'optimize-model' });
     await renderAction({ onReplace });
@@ -105,14 +113,26 @@ describe('OptimizePromptAction', () => {
     });
     onReplace.mockClear();
 
-    const successArg = messageSuccessMock.mock.calls[0]?.[0] as { content?: React.ReactNode } | undefined;
-    expect(successArg?.content).toBeDefined();
-
-    const contentView = render(<>{successArg?.content}</>);
     await act(async () => {
-      contentView.getByRole('button', { name: '撤销' }).click();
+      screen.getByTestId('synon-biomed-optimize-prompt-revert').click();
     });
+
     expect(onReplace).toHaveBeenCalledWith('帮我写一封请假条');
-    contentView.unmount();
+    expect(screen.queryByTestId('synon-biomed-optimize-prompt-revert')).not.toBeInTheDocument();
+  });
+
+  it('restores the previous draft when the toast content undo is pressed', async () => {
+    const onReplace = vi.fn();
+    optimizeMock.mockResolvedValue({ text: '优化后的提示词', model: 'optimize-model' });
+    await renderAction({ onReplace });
+
+    await act(async () => {
+      screen.getByTestId('synon-biomed-optimize-prompt-trigger').click();
+      await Promise.resolve();
+    });
+    onReplace.mockClear();
+
+    expect(messageSuccessMock).not.toHaveBeenCalledWith(expect.objectContaining({ btn: expect.anything() }));
+    expect(onReplace).not.toHaveBeenCalled();
   });
 });

@@ -1179,7 +1179,7 @@
       "optimizePrompt": {
         "label": "Optimize prompt",
         "applied": "Prompt optimized",
-        "undo": "Undo",
+        "revert": "Restore original wording",
         "failed": "Failed to optimize the prompt"
       },
       "reviewShort": "Review",

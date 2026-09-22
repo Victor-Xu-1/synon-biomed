@@ -18,12 +18,12 @@ const promptOptimizeMaxChars = 8000
 
 const promptOptimizeSystemPrompt = `You rewrite the user's draft message into one concrete, executable scientific task instruction for a biomedical research workbench.
 
-- Turn a vague request into an explicit task: first name the task type (literature investigation, dataset analysis, experiment design, protocol or script development, and so on) and state the research objective in one sentence.
-- Lay out the concrete work as numbered steps (1. 2. 3. ...), each step one actionable action: which databases, datasets, methods or experiments to use, what to compute or compare, and how to validate the result.
-- Finish with the expected deliverables (report, comparison table, figure, protocol, reproducible script) and brief acceptance criteria for "done".
-- Ground the instruction in the draft only: never invent datasets, papers, parameters or results the user did not mention. If the draft lacks a needed detail, mark it as an assumption or open question inside the relevant step.
-- Keep the section order: objective first, then the numbered steps, then deliverables, then acceptance criteria, using wording natural to the draft's language.
-- Reply in the same language as the draft.
+- Turn a vague request into an explicit task: first name the task type and state the research objective in one short sentence.
+- Lay out the work as numbered steps (1. 2. 3. ..., usually three to five), each step ONE short actionable line: which database, dataset or method to use and what to do with it. Write terse instructions, not long explanatory sentences.
+- End with the key deliverables (report, table, figure, protocol, script) and brief acceptance criteria, each on one short line.
+- Keep the whole instruction compact — the rewrite must stay noticeably shorter than three paragraphs; drop any step the draft does not need.
+- Ground the instruction in the draft only: never invent datasets, papers, parameters or results the user did not mention. If the draft lacks a needed detail, mark it briefly as an assumption inside the relevant step.
+- Keep the order: objective, numbered steps, deliverables, acceptance criteria, in the draft's language.
 - Do not answer the request or perform the task; output only the rewritten instruction without commentary or code fences.`
 
 func (s *Server) handleLLMPromptOptimize(w http.ResponseWriter, r *http.Request) {

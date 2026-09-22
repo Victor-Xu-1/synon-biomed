@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Button, Message, Spin } from '@arco-design/web-react';
+import { Message, Spin } from '@arco-design/web-react';
+import { Undo } from '@icon-park/react';
 import React, { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { optimizeSynonBiomedPrompt } from '@/renderer/services/synonBiomedLlm';
@@ -29,27 +30,29 @@ const SparkleIcon: React.FC = () => (
 export type OptimizePromptActionProps = {
   draft: string;
   disabled?: boolean;
-  /** Replaces the composer draft; also used by the toast undo to restore the previous text. */
+  /** Replaces the composer draft; also used by the revert action to restore the previous text. */
   onReplace: (text: string) => void;
 };
 
 /**
  * WorkBuddy-style composer action: one click rewrites the draft into a
- * clearer prompt through the active model provider. The toast carries an
- * undo button so the original wording can be restored.
+ * clearer scientific task instruction through the active model provider.
+ * After a rewrite a persistent revert button appears to the left of the
+ * sparkle and restores the original wording until the next optimization.
  */
 const OptimizePromptAction: React.FC<OptimizePromptActionProps> = ({ draft, disabled, onReplace }) => {
   const { t } = useTranslation();
   const [optimizing, setOptimizing] = useState(false);
-  // The undo button lives inside a toast that keeps rendering after this
-  // component re-renders, so the pre-optimization text must be read through a
-  // ref instead of a captured state value.
+  const [canRevert, setCanRevert] = useState(false);
+  // The revert affordance outlives re-renders, so the pre-optimization text
+  // must be read through a ref instead of a captured state value.
   const previousDraftRef = useRef<string | null>(null);
 
-  const handleUndo = useCallback(() => {
+  const handleRevert = useCallback(() => {
     const previous = previousDraftRef.current;
     if (previous === null) return;
     previousDraftRef.current = null;
+    setCanRevert(false);
     onReplace(previous);
   }, [onReplace]);
 
@@ -60,17 +63,11 @@ const OptimizePromptAction: React.FC<OptimizePromptActionProps> = ({ draft, disa
       const result = await optimizeSynonBiomedPrompt(draft);
       if (result.text.trim() === '') throw new Error('model provider returned an empty response');
       previousDraftRef.current = draft;
+      setCanRevert(true);
       onReplace(result.text);
       Message.success({
         id: 'synon-biomed-prompt-optimized',
-        content: (
-          <span className='inline-flex items-center gap-8px'>
-            {t('conversation.synonRuntime.sendBox.optimizePrompt.applied')}
-            <Button size='mini' type='text' onClick={handleUndo}>
-              {t('conversation.synonRuntime.sendBox.optimizePrompt.undo')}
-            </Button>
-          </span>
-        ),
+        content: t('conversation.synonRuntime.sendBox.optimizePrompt.applied'),
         duration: 6000,
       });
     } catch {
@@ -78,26 +75,41 @@ const OptimizePromptAction: React.FC<OptimizePromptActionProps> = ({ draft, disa
     } finally {
       setOptimizing(false);
     }
-  }, [disabled, draft, handleUndo, onReplace, optimizing, t]);
+  }, [disabled, draft, onReplace, optimizing, t]);
 
   return (
-    <button
-      type='button'
-      data-testid='synon-biomed-optimize-prompt-trigger'
-      aria-label={t('conversation.synonRuntime.sendBox.optimizePrompt.label')}
-      title={t('conversation.synonRuntime.sendBox.optimizePrompt.label')}
-      disabled={disabled || optimizing}
-      onClick={handleOptimize}
-      className='inline-flex h-24px w-24px items-center justify-center cursor-pointer border-0 bg-transparent rounded-6px p-0 hover:bg-fill-2 disabled:cursor-not-allowed disabled:opacity-50'
-    >
-      {optimizing ? (
-        <span data-testid='synon-biomed-optimize-prompt-spinner' className='inline-flex'>
-          <Spin size={14} />
-        </span>
-      ) : (
-        <SparkleIcon />
+    <>
+      {canRevert && (
+        <button
+          type='button'
+          data-testid='synon-biomed-optimize-prompt-revert'
+          aria-label={t('conversation.synonRuntime.sendBox.optimizePrompt.revert')}
+          title={t('conversation.synonRuntime.sendBox.optimizePrompt.revert')}
+          disabled={disabled || optimizing}
+          onClick={handleRevert}
+          className='inline-flex h-24px w-24px items-center justify-center cursor-pointer border-0 bg-transparent rounded-6px p-0 hover:bg-fill-2 disabled:cursor-not-allowed disabled:opacity-50'
+        >
+          <Undo theme='outline' size={16} className='text-t-secondary' />
+        </button>
       )}
-    </button>
+      <button
+        type='button'
+        data-testid='synon-biomed-optimize-prompt-trigger'
+        aria-label={t('conversation.synonRuntime.sendBox.optimizePrompt.label')}
+        title={t('conversation.synonRuntime.sendBox.optimizePrompt.label')}
+        disabled={disabled || optimizing}
+        onClick={handleOptimize}
+        className='inline-flex h-24px w-24px items-center justify-center cursor-pointer border-0 bg-transparent rounded-6px p-0 hover:bg-fill-2 disabled:cursor-not-allowed disabled:opacity-50'
+      >
+        {optimizing ? (
+          <span data-testid='synon-biomed-optimize-prompt-spinner' className='inline-flex'>
+            <Spin size={14} />
+          </span>
+        ) : (
+          <SparkleIcon />
+        )}
+      </button>
+    </>
   );
 };
 

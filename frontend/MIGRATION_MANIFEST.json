@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "dd938811b689efb689b82d8c9245de3eefc3463d07d750f2c2a140acd4150910",
+  "adaptationFingerprintSHA256": "aaede758f7550c8217312e440f4c6692091dc910cb8a7379372ecb274e49751b",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "6b422a2f150c412544de5dc8dceaf653bdf7cfe89448f9f3cddd2fe7aefb89e0",
+  "additionFingerprintSHA256": "22bb41790d4abb5f567d4d53ac43c1bad84fa08dd81f7c1d2de8f06ca2498608",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 405,
@@ -2362,8 +2362,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts",
       "sourceSHA256": "d46e67e7ae9b1a4c53252446bb8e2c6d12141deaac2d253b8c1922afa35ab5d9",
-      "targetSHA256": "a5e5fc53386e8bf78790aa0f43ec30c8da1963d05f0afc478e553696129af6f3",
-      "bytes": 245100,
+      "targetSHA256": "33b3a8625bc8ee7739a60c804ab683af0d05956260425cab339af797da5787f2",
+      "bytes": 245102,
       "reason": "Regenerate typed locale keys for the unified structure controls and first-run scientific-runtime catalog."
     },
     {
@@ -2397,8 +2397,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/conversation.json",
       "sourceSHA256": "c6802cdea4137a9a8199f5b9e57c11a99e7b8fde42539065da42dd4db9052b8e",
-      "targetSHA256": "c533201a7e99535e427170d640344ce889e2cc9871110dc5b871760002bc1d1f",
-      "bytes": 74926,
+      "targetSHA256": "72dbe63157f79e3bd05e5c38b274d85a524df5c90a7a9b9e5ef9d20475635aa8",
+      "bytes": 74948,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2488,8 +2488,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/conversation.json",
       "sourceSHA256": "cb395d18cb1692e13c849172bf6d957304ef382973fb5ab95fd14723cbc045bd",
-      "targetSHA256": "8a7c9cd39c5f2d4813bac66e9c91014d15074abd25c1c58b564a54193f0aabcd",
-      "bytes": 70934,
+      "targetSHA256": "9f7af520bf2820ea9ad04367ceff883f1ca4943349ab0ce5196a68055bab8a42",
+      "bytes": 70942,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -6668,8 +6668,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/OptimizePromptAction.tsx",
-      "sha256": "c8c19ef2f131e80fa71913484bff6505834a2b61d4a92047cde58e4131f5565d",
-      "bytes": 3950,
+      "sha256": "beede8aa434bbcf35d725e259eb89cb2cfe1cb609e0ac70dcb639bee4644f6ec",
+      "bytes": 4566,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9734,8 +9734,8 @@
     },
     {
       "path": "tests/unit/synonbiomed/OptimizePromptAction.dom.test.tsx",
-      "sha256": "09c4119188689efbe270d86d517abb7808386ed7c7e0abfbced10c731a4b2e02",
-      "bytes": 4100,
+      "sha256": "407c95825703ea410daeeb126ae93326a1e97b7fc1a8e7ba9bbffb5bd3fe4e74",
+      "bytes": 4950,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

@@ -18,8 +18,11 @@ const promptOptimizeMaxChars = 8000
 
 const promptOptimizeSystemPrompt = `You rewrite the user's draft message into one concrete, executable scientific task instruction for a biomedical research workbench.
 
-- Turn a vague request into an explicit task: state the research objective, the concrete method or analysis steps to follow, the expected deliverables (e.g. report, comparison table, figure, protocol, reproducible script), and brief acceptance criteria for the result.
-- Ground the instruction in the draft only: never invent datasets, papers, parameters or results the user did not mention. If the draft lacks a needed detail, encode it as a clearly marked assumption or open question inside the instruction.
+- Turn a vague request into an explicit task: first name the task type (literature investigation, dataset analysis, experiment design, protocol or script development, and so on) and state the research objective in one sentence.
+- Lay out the concrete work as numbered steps (1. 2. 3. ...), each step one actionable action: which databases, datasets, methods or experiments to use, what to compute or compare, and how to validate the result.
+- Finish with the expected deliverables (report, comparison table, figure, protocol, reproducible script) and brief acceptance criteria for "done".
+- Ground the instruction in the draft only: never invent datasets, papers, parameters or results the user did not mention. If the draft lacks a needed detail, mark it as an assumption or open question inside the relevant step.
+- Keep the section order: objective first, then the numbered steps, then deliverables, then acceptance criteria, using wording natural to the draft's language.
 - Reply in the same language as the draft.
 - Do not answer the request or perform the task; output only the rewritten instruction without commentary or code fences.`
 

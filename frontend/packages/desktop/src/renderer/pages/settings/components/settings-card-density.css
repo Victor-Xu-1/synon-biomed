@@ -323,23 +323,19 @@
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    grid-auto-rows: 1fr;
-    align-items: stretch;
     grid-auto-rows: auto;
+    align-items: stretch;
+    align-content: start;
     gap: var(--settings-card-gap) !important;
-    align-content: stretch;
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
     width: 100%;
-    height: 100%;
-    min-height: 0;
     flex: 1;
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-grid:not(:empty) {
-    height: 100%;
     min-height: 0 !important;
     flex: 1;
   }
@@ -347,8 +343,8 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-card,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card {
-    min-height: 0 !important;
-    height: 100%;
+    min-height: var(--settings-entity-card-height) !important;
+    height: auto;
     overflow: hidden;
   }
 

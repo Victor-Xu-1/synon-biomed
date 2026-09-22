@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "91db672ef33f37b38dc7a543df2907274b2d98f81b7a8aae670793c0d5c54036",
+  "adaptationFingerprintSHA256": "58c3de5e401ff4d2864e692a4b97a197f5cedb41984a682084c868278602a66a",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "41d9b8c41515dc68dee08077616f2a68d70b5ec7ad8688292e66ad75834e1a25",
+  "additionFingerprintSHA256": "f05d2d0690d5ce707a80c71104e0292e4df6f8fdee5677bbfec9c3f48976ab2d",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -2103,8 +2103,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/SynonBiomedExpertsSettings/ExpertWorkbench.tsx",
       "sourceSHA256": "d16cf7d5e33fa81c06a9ed7482450fd70309a8441f161575985c24d55f73caf9",
-      "targetSHA256": "ac1dcdf53c2e537204d8e08b3a1fdbe4b7a99af37fef12911a27fc5edbdfd9d0",
-      "bytes": 39494,
+      "targetSHA256": "2549e09342884217802ec94ef1942c3fe45b4ed16b4cb184b525e256216f3437",
+      "bytes": 39598,
       "reason": "Improve responsive expert rows and compact long descriptions without dropping source detail."
     },
     {
@@ -2201,8 +2201,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/SynonBiomedSkillsSettings.tsx",
       "sourceSHA256": "c3df56872aa6777496e50f80a282ca30eed7a1d43b538bc5eb3e0cf767a635db",
-      "targetSHA256": "c38f27f245211a3171feb15c2e7db6a101cd3f40ffecfa3a3fe62f5e26e1bd2b",
-      "bytes": 23471,
+      "targetSHA256": "55d2b63ef80fe4115029ed14c49c188ed5771efe389a387856e7945217c2685e",
+      "bytes": 23547,
       "reason": "Unify installed Skill sources in one searchable library and consolidate acquisition into one action while preserving personal, import, toggle, and market workflows."
     },
     {
@@ -7584,8 +7584,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/LibrarySettingsPage.tsx",
-      "sha256": "b565d742522c9806e4b36fb84f3fa56bb0c59729eca0de7c524c9a27a2dc3b85",
-      "bytes": 4144,
+      "sha256": "9b531a6c53ffc8d1faa44fb605e7d70063fa4e7e73aaee48b2fffd03d3358aae",
+      "bytes": 4157,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7608,8 +7608,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ScientificEnvironmentSettings.tsx",
-      "sha256": "c87a3ffc92e0c3c0cc812a3557f04bbeecf9935a6bdc9e62bb3ca3fdaf5e7f3d",
-      "bytes": 13511,
+      "sha256": "061f2fab95b61eb1d9e4ce9821f02607ec4b95fe9159fe44df2e430128a6ed75",
+      "bytes": 14279,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7632,8 +7632,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpLibraryToolbar.tsx",
-      "sha256": "6ee4798287ae1cd350d7b61f50dadfc8055e5083025fc726f9917d2e33a3bd6f",
-      "bytes": 3931,
+      "sha256": "1b821e7b2f759c164483c22c580e72ad5229ac7b1f0a70db548b9cf6ee733aeb",
+      "bytes": 4057,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7776,8 +7776,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "a7fa1a30d4afb67a0f875fe6277244f093251f3eb58568fe161aa93812026f5e",
-      "bytes": 22134,
+      "sha256": "a8ab5f85dce35d24e4877aab56b1b04c0064ffc76b0a49342d86ab4afd9e1210",
+      "bytes": 22738,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {

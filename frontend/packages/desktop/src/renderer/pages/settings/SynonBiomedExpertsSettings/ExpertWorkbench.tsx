@@ -675,37 +675,39 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true, co
           }
         />
       ) : null}
-      <SettingsToolbar className='experts-toolbar'>
-        <Select
-          aria-label={t('settings.expertsSettings.filter')}
-          value={filter}
-          onChange={setFilter}
-          className='w-170px'
-        >
-          <Select.Option value='all'>
-            {t('settings.expertsSettings.filterAll', { count: profiles.length })}
-          </Select.Option>
-          <Select.Option value='personal'>
-            {t('settings.expertsSettings.filterPersonal', {
-              count: profiles.filter((profile) => profile.source === 'user').length,
-            })}
-          </Select.Option>
-          <Select.Option value='builtin'>
-            {t('settings.expertsSettings.filterBuiltin', {
-              count: profiles.filter((profile) => profile.source !== 'user').length,
-            })}
-          </Select.Option>
-        </Select>
-        <Input
-          aria-label={t('settings.expertsSettings.search')}
-          prefix={<Search size={15} />}
-          value={query}
-          onChange={setQuery}
-          placeholder={t('settings.expertsSettings.searchPlaceholder')}
-          className='ml-auto w-260px max-w-full'
-          allowClear
-        />
-      </SettingsToolbar>
+      {!compactHeader ? (
+        <SettingsToolbar className='experts-toolbar'>
+          <Select
+            aria-label={t('settings.expertsSettings.filter')}
+            value={filter}
+            onChange={setFilter}
+            className='w-170px'
+          >
+            <Select.Option value='all'>
+              {t('settings.expertsSettings.filterAll', { count: profiles.length })}
+            </Select.Option>
+            <Select.Option value='personal'>
+              {t('settings.expertsSettings.filterPersonal', {
+                count: profiles.filter((profile) => profile.source === 'user').length,
+              })}
+            </Select.Option>
+            <Select.Option value='builtin'>
+              {t('settings.expertsSettings.filterBuiltin', {
+                count: profiles.filter((profile) => profile.source !== 'user').length,
+              })}
+            </Select.Option>
+          </Select>
+          <Input
+            aria-label={t('settings.expertsSettings.search')}
+            prefix={<Search size={15} />}
+            value={query}
+            onChange={setQuery}
+            placeholder={t('settings.expertsSettings.searchPlaceholder')}
+            className='ml-auto w-260px max-w-full'
+            allowClear
+          />
+        </SettingsToolbar>
+      ) : null}
       <div className='min-h-0 flex-1 pb-24px'>
         {loading ? (
           <div className='flex min-h-260px items-center justify-center'>

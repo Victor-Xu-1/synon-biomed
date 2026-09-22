@@ -427,23 +427,25 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
           actions={headerActions}
         />
       ) : null}
-      <SkillLibraryToolbar
-        query={searchQuery}
-        onQueryChange={setSearchQuery}
-        category={categoryFilter}
-        categories={categoryOptions}
-        onCategoryChange={setCategoryFilter}
-        source={activeSection}
-        sourceCounts={{
-          all: availableSkills.length + drafts.length,
-          recommended: sectionSkills.recommended.length,
-          imported: sectionSkills.imported.length,
-          personal: sectionSkills.personal.length + drafts.length,
-        }}
-        onSourceChange={setActiveSection}
-        status={filter}
-        onStatusChange={setFilter}
-      />
+      {!compactHeader ? (
+        <SkillLibraryToolbar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          category={categoryFilter}
+          categories={categoryOptions}
+          onCategoryChange={setCategoryFilter}
+          source={activeSection}
+          sourceCounts={{
+            all: availableSkills.length + drafts.length,
+            recommended: sectionSkills.recommended.length,
+            imported: sectionSkills.imported.length,
+            personal: sectionSkills.personal.length + drafts.length,
+          }}
+          onSourceChange={setActiveSection}
+          status={filter}
+          onStatusChange={setFilter}
+        />
+      ) : null}
       {loadError ? (
         <div
           data-testid='synon-biomed-skills-load-error'

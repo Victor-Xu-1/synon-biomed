@@ -63,45 +63,47 @@ export function McpLibraryToolbar(props: Props) {
           actions={addAction}
         />
       )}
-      <div className='mcp-library-toolbar' role='search' aria-label={t('settings.synonBiomedMcpConnectors')}>
-        <div className='mcp-library-search'>
-          <Input
-            value={props.search}
-            allowClear
-            prefix={<Search size={15} />}
-            data-testid='synon-biomed-mcp-search'
-            placeholder={t('settings.synonBiomedMcpSearch')}
-            aria-label={t('settings.synonBiomedMcpSearch')}
-            onChange={props.onSearch}
-          />
+      {!props.compactHeader ? (
+        <div className='mcp-library-toolbar' role='search' aria-label={t('settings.synonBiomedMcpConnectors')}>
+          <div className='mcp-library-search'>
+            <Input
+              value={props.search}
+              allowClear
+              prefix={<Search size={15} />}
+              data-testid='synon-biomed-mcp-search'
+              placeholder={t('settings.synonBiomedMcpSearch')}
+              aria-label={t('settings.synonBiomedMcpSearch')}
+              onChange={props.onSearch}
+            />
+          </div>
+          <select
+            className='mcp-library-select'
+            value={props.filter}
+            data-testid='synon-biomed-mcp-filter'
+            aria-label={t('settings.skillsSettings.filters')}
+            onChange={(event) => props.onFilter(event.target.value as ConnectorFilter)}
+          >
+            <option value='all'>
+              {t('settings.synonBiomedMcpAll')} ({props.count})
+            </option>
+            <option value='connected'>{t('settings.synonBiomedMcpConnected')}</option>
+            <option value='needs-attention'>{t('settings.synonBiomedMcpNeedsAttention')}</option>
+            <option value='custom'>
+              {t('settings.synonBiomedMcpCustom')} ({props.customCount})
+            </option>
+          </select>
+          <div className='mcp-library-health'>{props.health}</div>
+          <Button
+            icon={<Refresh size={14} />}
+            loading={props.reconciling}
+            disabled={props.loading}
+            data-testid='synon-biomed-mcp-reconcile'
+            onClick={props.onReconcile}
+          >
+            {t('settings.synonBiomedMcpReconcile')}
+          </Button>
         </div>
-        <select
-          className='mcp-library-select'
-          value={props.filter}
-          data-testid='synon-biomed-mcp-filter'
-          aria-label={t('settings.skillsSettings.filters')}
-          onChange={(event) => props.onFilter(event.target.value as ConnectorFilter)}
-        >
-          <option value='all'>
-            {t('settings.synonBiomedMcpAll')} ({props.count})
-          </option>
-          <option value='connected'>{t('settings.synonBiomedMcpConnected')}</option>
-          <option value='needs-attention'>{t('settings.synonBiomedMcpNeedsAttention')}</option>
-          <option value='custom'>
-            {t('settings.synonBiomedMcpCustom')} ({props.customCount})
-          </option>
-        </select>
-        <div className='mcp-library-health'>{props.health}</div>
-        <Button
-          icon={<Refresh size={14} />}
-          loading={props.reconciling}
-          disabled={props.loading}
-          data-testid='synon-biomed-mcp-reconcile'
-          onClick={props.onReconcile}
-        >
-          {t('settings.synonBiomedMcpReconcile')}
-        </Button>
-      </div>
+      ) : null}
     </>
   );
 }

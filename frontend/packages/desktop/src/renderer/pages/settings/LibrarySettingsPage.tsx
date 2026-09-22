@@ -62,7 +62,7 @@ const LibrarySettingsPage: React.FC = () => {
                     data-testid={`settings-tab-${tab.key}`}
                     onClick={() => handleTabChange(tab.key)}
                     className={classNames(
-                      'relative inline-flex cursor-pointer items-center border-none bg-transparent px-2px pb-12px text-14px leading-none transition-colors',
+                      'relative inline-flex cursor-pointer items-center border-none bg-transparent px-2px pb-10px text-14px leading-none transition-colors',
                       isActive ? 'font-600 text-t-primary' : 'font-500 text-t-tertiary hover:text-t-secondary'
                     )}
                   >
@@ -76,10 +76,10 @@ const LibrarySettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className='settings-library-page__content min-h-0 flex-1 pt-16px'>
+        <div className='settings-library-page__content min-h-0 flex-1 pt-8px'>
           {activeTab === 'experts' ? <ExpertWorkbenchContent /> : null}
           {activeTab === 'skills' ? <SynonBiomedSkillsSettingsContent /> : null}
-          {activeTab === 'tools' ? <SynonBiomedMcpSettingsContent /> : null}
+          {activeTab === 'tools' ? <SynonBiomedMcpSettingsContent compactHeader /> : null}
           {activeTab === 'environments' ? <ScientificEnvironmentSettingsContent /> : null}
         </div>
       </div>

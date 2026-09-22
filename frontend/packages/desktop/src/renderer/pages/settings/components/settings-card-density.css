@@ -658,7 +658,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 32px;
+  min-height: 40px;
 }
 
 .settings-library-tab-header__title {
@@ -691,4 +691,25 @@
   align-items: center;
   gap: var(--ui-space-3);
   margin-inline-start: auto;
+}
+
+/*
+ * Merged page vertical rhythm: the tab row hugs the content top and every
+ * tab header sits exactly one 12px gap above the card wall (tab underline →
+ * 8px content padding → 40px header row → 12px gap ≤ 72px total).
+ */
+html body .settings-page-wrapper.settings-library-route .settings-page-header__tabs-row {
+  margin-top: 0;
+}
+
+html
+  body
+  .settings-page-wrapper.settings-library-route
+  :is(.settings-experts-page, .settings-skills-page, .mcp-library) {
+  gap: 12px;
+}
+
+html body .settings-page-wrapper.settings-library-route .environment-library {
+  gap: 12px;
+  margin-top: 12px;
 }

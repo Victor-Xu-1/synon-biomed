@@ -297,7 +297,7 @@ describe('settings image-based visual contract', () => {
     expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(236);
-    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*236px/);
+    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*168px/);
     expect(componentsCss).toMatch(/--settings-card-title-size:\s*15px/);
     expect(componentsCss).toMatch(/--settings-entity-card-body-size:\s*13px/);
     expect(skillsCss).toMatch(/\.settings-skill-card\s*\{[^}]*min-height:\s*236px/);

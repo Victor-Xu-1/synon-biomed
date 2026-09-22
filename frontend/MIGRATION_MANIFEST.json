@@ -5,7 +5,7 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "1892370216a01f29a0b1ebf865dd8d5343dc22a0b0d446611fcd1fd0ad2757e6",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "54b5d986a73b8fcb4145de83acdd1a2fafc537d27441d8e69942f0dc234022b2",
+  "additionFingerprintSHA256": "7102dd1dc857d5ad216419b84c4424ff7bb03cf0d297b25e4fd78aa696bb4242",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -7800,8 +7800,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-core.css",
-      "sha256": "86a678cfcfd3e79fe9ea89433b817b52bfce1bb8ded99034f66fd2a017f73fea",
-      "bytes": 19158,
+      "sha256": "f4e1f7a67a47554126125bd543da99a47c9676efa6ec032cd73014c4aab463c0",
+      "bytes": 19292,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9762,13 +9762,13 @@
     },
     {
       "path": "tests/unit/settings/settingsVisualContract.test.ts",
-      "sha256": "7bd9a231ef2f758f4c37675a0788ed068380897689aba30590855cb27a0120c7",
+      "sha256": "4c6882cf02ed4c25ada89422216fb65d1da11edd0cd6197bc8e966a5db92da6b",
       "bytes": 25072,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
       "path": "tests/unit/settings/settingsVisualSystem.test.ts",
-      "sha256": "00502d16aab0038aaf18e62710ccdd160f02250467772a22bf187a1bd949e378",
+      "sha256": "9d258ba632bb35499f8bdf28a919e1d436ab8ca3c7cc3d5f18a439cca3e5d0e6",
       "bytes": 4643,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },

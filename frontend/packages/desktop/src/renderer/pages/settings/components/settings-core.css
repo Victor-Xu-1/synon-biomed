@@ -19,7 +19,9 @@
   --settings-content-inline: clamp(24px, 2.4vw, 38px);
   --settings-entity-card-padding: 18px;
   --settings-entity-card-padding-wide: 20px;
-  --settings-entity-card-height: 236px;
+  /* Compact floor: cards grow with their content instead of reserving a
+     fixed 236px sheet that left a void above the footer. */
+  --settings-entity-card-height: 168px;
   /* One type ramp for the whole settings surface. */
   --settings-page-title-size: 26px;
   --settings-page-title-line: 34px;

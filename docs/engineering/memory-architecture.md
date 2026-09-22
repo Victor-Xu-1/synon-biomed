@@ -1,6 +1,6 @@
 # Memory architecture
 
-Synon Biomed v0.1.1 implements one workspace memory lifecycle. It does not maintain a parallel session-summary memory, file mirror, or runtime-KV memory ledger.
+Synon Biomed implements one workspace memory lifecycle. It does not maintain a parallel session-summary memory, file mirror, or runtime-KV memory ledger.
 
 ## Authorities
 

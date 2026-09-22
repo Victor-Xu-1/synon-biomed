@@ -1,6 +1,6 @@
 # Repository quality tools
 
-These scripts enforce the current Synon Biomed v0.1.1 repository boundaries.
+These scripts enforce the current Synon Biomed repository boundaries.
 They are verification gates: passing one gate proves only the contract named by
 that gate, not complete product acceptance.
 
@@ -62,7 +62,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/module_topology_gate.py \
   --repo .
 ```
 
-Verify product identity and every checked-in v0.1.1 projection:
+Verify product identity and every checked-in projection:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/quality/product_identity_gate.py \

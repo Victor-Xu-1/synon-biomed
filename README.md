@@ -74,9 +74,9 @@ See [installation, package downloads and upgrade guidance](docs/operations-runbo
 
 ## Run from source / 从源码运行
 
-The community source is publicly available. Use Ubuntu or WSL with Git,
+The source repository is publicly available. Use Ubuntu or WSL with Git,
 Go >=1.26, Node.js >=22.22 and <25, and npm installed.
-社区源码可直接公开获取。请在 Ubuntu 或 WSL 中安装 Git、Go >=1.26、
+源码仓库可直接获取。请在 Ubuntu 或 WSL 中安装 Git、Go >=1.26、
 Node.js >=22.22 且 <25，以及 npm。
 
 ```bash
@@ -120,10 +120,10 @@ APBS/PDB2PQR 生物分子电性、AutoDock Vina、药物化学、QSAR/ADMET、�
 
 ## Project status / 项目状态
 
-Synon Biomed v0.1.1 is an actively developed source edition. Capabilities, integrations,
+Synon Biomed is an actively developed source edition. Capabilities, integrations,
 and release packaging continue to evolve through verified, reviewable updates.
 
-Synon Biomed v0.1.1 是持续演进中的源码版。能力、集成和发布包装会通过
+Synon Biomed 是持续演进中的源码版。能力、集成和发布包装会通过
 可验证、可审阅的更新持续完善。
 
 ## Licensing / 许可

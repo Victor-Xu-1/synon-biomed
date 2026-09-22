@@ -235,7 +235,7 @@ func runServer(info buildinfo.Info, cfg config.Config, tlsResolver *networktls.R
 			skillDirectories = []string{packagedSkills}
 		}
 	}
-	kernelManager, err := kernelruntime.DiscoverManagerWithPaths(cfg.CondaHome, cfg.CondaEnvsPath)
+	kernelManager, err := kernelruntime.DiscoverManagerWithPathsAndProxy(cfg.CondaHome, cfg.CondaEnvsPath, cfg.Network.Proxy)
 	if err != nil {
 		return fmt.Errorf("discover local scientific runtime manager: %w", err)
 	}
@@ -372,6 +372,19 @@ func runServer(info buildinfo.Info, cfg config.Config, tlsResolver *networktls.R
 			}, app.ReportRuntimeComponent, app.IsDraining, defaultRuntimeSupervisorPolicy(),
 		)
 	}
+	startSupervisorWithReadiness := func(name string, run func(context.Context, func()) error) {
+		report := func(component string, componentErr error) {
+			// Core installation can take minutes on a fresh host. Keep gateway
+			// health available for onboarding and progress UI while the dedicated
+			// scientific_runtime_ready field remains false; real failures still
+			// degrade the component until a supervised retry succeeds.
+			if errors.Is(componentErr, errRuntimeComponentStarting) {
+				return
+			}
+			app.ReportRuntimeComponent(component, componentErr)
+		}
+		go runRuntimeSupervisor(ctx, name, run, report, app.IsDraining, defaultRuntimeSupervisorPolicy())
+	}
 	startSupervisor("realtime-outbox", realtimeOutbox.Run)
 	fmt.Println("realtime outbox dispatcher enabled")
 	startSupervisor("kernel-result-settlement", kernelSettlementOutbox.Run)
@@ -389,7 +402,7 @@ func runServer(info buildinfo.Info, cfg config.Config, tlsResolver *networktls.R
 	startSupervisor("compute-provider-jobs", app.RunComputeProviderJobSupervisor)
 	fmt.Println("compute provider job supervisor enabled")
 	if app.ManagedScientificRuntimeProvisioningEnabled() {
-		startSupervisor("managed-scientific-runtimes", app.RunManagedScientificRuntimeProvisioner)
+		startSupervisorWithReadiness("managed-scientific-runtimes", app.RunManagedScientificRuntimeProvisionerWithReady)
 		fmt.Println("managed Python and R runtime supervisor enabled")
 	}
 	if app.KernelIdleReaperEnabled() {

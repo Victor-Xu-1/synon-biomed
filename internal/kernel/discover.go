@@ -80,10 +80,18 @@ func discoveryFailure(stage DiscoveryStage, err error) error {
 }
 
 func DiscoverManager() (*Manager, error) {
-	return DiscoverManagerWithPaths(os.Getenv("SYNON_CONDA_HOME"), os.Getenv("SYNON_CONDA_ENVS_PATH"))
+	return DiscoverManagerWithPathsAndProxy(
+		os.Getenv("SYNON_CONDA_HOME"), os.Getenv("SYNON_CONDA_ENVS_PATH"), os.Getenv("SYNON_NETWORK_PROXY"),
+	)
 }
 
 func DiscoverManagerWithPaths(condaHome, condaEnvsPath string) (*Manager, error) {
+	return DiscoverManagerWithPathsAndProxy(condaHome, condaEnvsPath, "")
+}
+
+// DiscoverManagerWithPathsAndProxy keeps the normalized product proxy scoped
+// to installer processes while preserving the legacy two-path entrypoint.
+func DiscoverManagerWithPathsAndProxy(condaHome, condaEnvsPath, installerProxy string) (*Manager, error) {
 	assetRoot, err := discoverAssetRoot()
 	if err != nil {
 		return nil, discoveryFailure(DiscoveryStageAssetRoot, err)
@@ -133,7 +141,8 @@ func DiscoverManagerWithPaths(condaHome, condaEnvsPath string) (*Manager, error)
 	}
 	manager := NewManager(Config{
 		Python: python, Micromamba: micromamba, CondaHome: condaHome, CondaEnvsPath: condaEnvsPath,
-		AssetRoot: assetRoot, ManifestPath: filepath.Join(assetRoot, "kernel-compute.manifest.json"),
+		InstallerProxy: strings.TrimSpace(installerProxy),
+		AssetRoot:      assetRoot, ManifestPath: filepath.Join(assetRoot, "kernel-compute.manifest.json"),
 		WorkerPath:               filepath.Join(assetRoot, "kernels", "kernel_worker.py"),
 		CondaRuntimeCatalog:      filepath.Join(assetRoot, "conda-runtimes", "manifest.json"),
 		ManagedPythonEnvironment: defaultManagedPythonEnvironment,

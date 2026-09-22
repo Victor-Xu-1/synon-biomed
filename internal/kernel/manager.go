@@ -52,6 +52,9 @@ type Config struct {
 	// observed installer output, CPU work, process-tree changes, or I/O. It is
 	// deliberately separate from a wall-clock execution deadline.
 	ManagedEnvironmentInstallerInactivityTimeout time.Duration
+	// InstallerProxy is the normalized product network proxy used only for
+	// bundled package installation. It is never inherited by task runtimes.
+	InstallerProxy string
 	// ExecutionTimeout is an optional active-cell wall-clock deadline. Zero
 	// leaves active cells running until completion, explicit cancellation, or
 	// worker shutdown; the separate worker idle policy owns unused lifetimes.

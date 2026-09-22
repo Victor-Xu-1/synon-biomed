@@ -220,14 +220,22 @@ func (m *Manager) smokeManagedR(ctx context.Context, runtime managedRRuntime, pr
 	command := newWorkerProcessCommand(ctx, rscript, "--vanilla", "-e", code)
 	command.Env = kernelEnvironment(map[string]string{
 		"CONDA_PREFIX": prefix, "CONDA_DEFAULT_ENV": runtime.entry.Name,
-		"PATH": filepath.Dir(rscript), "R_LIBS_USER": "",
+		"PATH": managedExecutableSearchPath(filepath.Dir(rscript)), "R_LIBS_USER": "",
 	})
-	output := newTailBuffer(maxDiagnosticBytes)
-	command.Stdout, command.Stderr = output, output
+	stdout := newTailBuffer(maxDiagnosticBytes)
+	stderr := newTailBuffer(maxDiagnosticBytes)
+	command.Stdout, command.Stderr = stdout, stderr
 	if err := runWorkerProcess(command); err != nil {
-		return fmt.Errorf("managed R scientific smoke failed: %w: %s", err, strings.TrimSpace(output.String()))
+		return fmt.Errorf("managed R scientific smoke failed: %w: %s", err, boundedProcessDiagnostics(stdout.String(), stderr.String()))
 	}
-	if version := strings.TrimPrefix(strings.TrimSpace(output.String()), "SYNON_R_VERSION="); version != runtime.rVersion {
+	versionLine := ""
+	for _, line := range reverseNonEmptyOutputLines(stdout.String()) {
+		if strings.HasPrefix(line, "SYNON_R_VERSION=") {
+			versionLine = line
+			break
+		}
+	}
+	if version := strings.TrimPrefix(versionLine, "SYNON_R_VERSION="); version != runtime.rVersion {
 		return errors.New("managed R scientific smoke returned an invalid version")
 	}
 	return nil
@@ -265,19 +273,24 @@ func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
 		return m.repairRSharedLibrary(ctx, rscript)
 	}
 	generationPath := m.managedRGenerationPath(runtime)
-	if _, err := os.Stat(generationPath); errors.Is(err, os.ErrNotExist) {
+	generationReady, quarantinedGeneration, err := prepareManagedRuntimeGeneration(generationPath, func() error {
+		return m.verifyManagedRGeneration(runtime, generationPath)
+	})
+	if err != nil {
+		return fmt.Errorf("inspect managed R generation: %w", err)
+	}
+	if quarantinedGeneration != "" {
+		defer func() { _ = os.RemoveAll(quarantinedGeneration) }()
+	}
+	if !generationReady {
 		staging, err := os.MkdirTemp(generationRoot, ".staging-")
 		if err != nil {
 			return err
 		}
 		defer os.RemoveAll(staging)
 		m.setManagedRProvisioningPhase("installing-bundled-generation")
-		command := newWorkerProcessCommand(ctx, m.config.Micromamba, "--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath)
-		command.Env = m.managedEnvironmentInstallerEnv()
-		output := newTailBuffer(maxDiagnosticBytes)
-		command.Stdout, command.Stderr = output, output
-		if err := runWorkerProcess(command); err != nil {
-			return fmt.Errorf("install managed R generation: %w: %s", err, strings.TrimSpace(output.String()))
+		if err := m.runManagedEnvironmentProcessWithEnv(ctx, m.config.Micromamba, m.managedEnvironmentInstallerEnv(), "--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath); err != nil {
+			return fmt.Errorf("install managed R generation: %w", err)
 		}
 		m.setManagedRProvisioningPhase("running-scientific-smoke-test")
 		if err := m.smokeManagedR(ctx, runtime, staging); err != nil {
@@ -288,12 +301,10 @@ func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
 		}
 		m.setManagedRProvisioningPhase("publishing-generation")
 		if err := os.Rename(staging, generationPath); err != nil {
-			if _, statErr := os.Stat(generationPath); statErr != nil {
-				return fmt.Errorf("publish managed R generation: %w", err)
+			if verifyErr := m.verifyManagedRGeneration(runtime, generationPath); verifyErr != nil {
+				return fmt.Errorf("publish managed R generation: %w (existing generation: %v)", err, verifyErr)
 			}
 		}
-	} else if err != nil {
-		return fmt.Errorf("inspect managed R generation: %w", err)
 	}
 	m.setManagedRProvisioningPhase("activating-generation")
 	if err := activateManagedRuntimeGeneration(active, generationPath); err != nil {

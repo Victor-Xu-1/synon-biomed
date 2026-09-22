@@ -130,6 +130,13 @@ func currentCondaPlatform() string {
 	return runtime.GOOS + "-" + runtime.GOARCH
 }
 
+// ManagedScientificRuntimePlatform is the stable platform identity used by
+// runtime status consumers. It deliberately reports the catalog platform
+// spelling (for example, linux-x86_64) rather than a machine-specific path.
+func ManagedScientificRuntimePlatform() string {
+	return currentCondaPlatform()
+}
+
 func managedPythonName(config Config) string {
 	if value := strings.TrimSpace(config.ManagedPythonEnvironment); value != "" {
 		return canonicalCondaRuntimeName(value)
@@ -509,6 +516,9 @@ func loadManagedCondaRuntime(config Config, name string) (managedCondaRuntime, e
 	if entry == nil || entry.Platform != currentCondaPlatform() || !validSHA256(entry.Generation) || !validSHA256(entry.ExplicitSHA256) {
 		return managedCondaRuntime{}, errors.New("managed runtime catalog entry is invalid")
 	}
+	if !ValidEnvironmentName(entry.Name) {
+		return managedCondaRuntime{}, errors.New("managed runtime catalog entry name is invalid")
+	}
 	root := filepath.Dir(catalogPath)
 	manifestPath, err := runtimeAssetPath(root, entry.ManifestPath)
 	if err != nil {
@@ -564,6 +574,9 @@ func loadManagedCondaRuntime(config Config, name string) (managedCondaRuntime, e
 	}
 	resolvedEntry := entryCopy(*entry)
 	resolvedEntry.Name = canonicalCondaRuntimeName(resolvedEntry.Name)
+	if !ValidEnvironmentName(resolvedEntry.Name) {
+		return managedCondaRuntime{}, errors.New("managed runtime canonical entry name is invalid")
+	}
 	return managedCondaRuntime{
 		entry: resolvedEntry, manifest: manifest, explicitPath: explicitPath,
 		manifestDigest: manifestDigest, packageVersions: packageVersions,
@@ -783,21 +796,109 @@ func (m *Manager) smokeManagedPython(ctx context.Context, runtime managedPythonR
 	command := newWorkerProcessCommand(ctx, python, "-I", "-c", code)
 	command.Env = kernelEnvironment(map[string]string{
 		"CONDA_PREFIX": prefix, "CONDA_DEFAULT_ENV": runtime.entry.Name,
-		"PATH": filepath.Join(prefix, "bin"), "PYTHONNOUSERSITE": "1",
+		"PATH": managedExecutableSearchPath(filepath.Join(prefix, "bin")), "PYTHONNOUSERSITE": "1",
 	})
-	output := newTailBuffer(maxDiagnosticBytes)
-	command.Stdout, command.Stderr = output, output
+	stdout := newTailBuffer(maxDiagnosticBytes)
+	stderr := newTailBuffer(maxDiagnosticBytes)
+	command.Stdout, command.Stderr = stdout, stderr
 	if err := runWorkerProcess(command); err != nil {
-		return fmt.Errorf("managed Python scientific smoke failed: %w: %s", err, strings.TrimSpace(output.String()))
+		return fmt.Errorf("managed Python scientific smoke failed: %w: %s", err, boundedProcessDiagnostics(stdout.String(), stderr.String()))
 	}
 	var response struct {
 		OK    bool   `json:"ok"`
 		RDKit string `json:"rdkit"`
 	}
-	if err := json.Unmarshal([]byte(strings.TrimSpace(output.String())), &response); err != nil || !response.OK || response.RDKit != runtime.rdkitVersion {
+	valid := false
+	for _, line := range reverseNonEmptyOutputLines(stdout.String()) {
+		var candidate struct {
+			OK    bool   `json:"ok"`
+			RDKit string `json:"rdkit"`
+		}
+		if err := json.Unmarshal([]byte(line), &candidate); err == nil && candidate.OK && candidate.RDKit == runtime.rdkitVersion {
+			response = candidate
+			valid = true
+			break
+		}
+	}
+	if !valid || !response.OK || response.RDKit != runtime.rdkitVersion {
 		return errors.New("managed Python scientific smoke returned an invalid result")
 	}
 	return nil
+}
+
+func reverseNonEmptyOutputLines(value string) []string {
+	lines := strings.Split(value, "\n")
+	result := make([]string, 0, len(lines))
+	for index := len(lines) - 1; index >= 0; index-- {
+		line := strings.TrimSpace(lines[index])
+		if line != "" {
+			result = append(result, line)
+		}
+	}
+	return result
+}
+
+func boundedProcessDiagnostics(stdout, stderr string) string {
+	stderr = strings.TrimSpace(stderr)
+	stdout = strings.TrimSpace(stdout)
+	diagnostics := ""
+	if stderr == "" {
+		diagnostics = stdout
+	} else if stdout == "" {
+		diagnostics = stderr
+	} else {
+		diagnostics = stderr + " | stdout: " + stdout
+	}
+	if len(diagnostics) > maxDiagnosticBytes {
+		return diagnostics[len(diagnostics)-maxDiagnosticBytes:]
+	}
+	return diagnostics
+}
+
+func quarantineManagedRuntimeGeneration(path string) (string, error) {
+	_, err := os.Lstat(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil
+		}
+		return "", err
+	}
+	quarantine := filepath.Join(filepath.Dir(path), ".staging-invalid-"+uuid.NewString())
+	if err := os.Rename(path, quarantine); err != nil {
+		return "", err
+	}
+	return quarantine, nil
+}
+
+// prepareManagedRuntimeGeneration validates the deterministic generation while
+// holding the caller's install lock. A corrupt generation is moved aside rather
+// than reused, so a failed or interrupted install can recover on the next
+// attempt without touching a healthy active generation.
+func prepareManagedRuntimeGeneration(path string, verify func() error) (bool, string, error) {
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, "", nil
+	}
+	if err != nil {
+		return false, "", err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		quarantine, err := quarantineManagedRuntimeGeneration(path)
+		if err != nil {
+			return false, "", fmt.Errorf("quarantine invalid managed runtime generation: %w", err)
+		}
+		return false, quarantine, nil
+	}
+	if verify == nil {
+		return false, "", errors.New("managed runtime generation verifier is unavailable")
+	}
+	if err := verify(); err == nil {
+		return true, "", nil
+	} else if quarantine, quarantineErr := quarantineManagedRuntimeGeneration(path); quarantineErr != nil {
+		return false, "", fmt.Errorf("quarantine invalid managed runtime generation: %w (verification: %v)", quarantineErr, err)
+	} else {
+		return false, quarantine, nil
+	}
 }
 
 func (m *Manager) activateManagedPythonGeneration(runtime managedPythonRuntime) error {
@@ -849,7 +950,16 @@ func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 		return nil
 	}
 	generationPath := m.managedPythonGenerationPath(runtime)
-	if _, err := os.Stat(generationPath); errors.Is(err, os.ErrNotExist) {
+	generationReady, quarantinedGeneration, err := prepareManagedRuntimeGeneration(generationPath, func() error {
+		return m.verifyManagedPythonGeneration(runtime, generationPath)
+	})
+	if err != nil {
+		return fmt.Errorf("inspect managed Python generation: %w", err)
+	}
+	if quarantinedGeneration != "" {
+		defer func() { _ = os.RemoveAll(quarantinedGeneration) }()
+	}
+	if !generationReady {
 		parent := filepath.Dir(generationPath)
 		staging, err := os.MkdirTemp(parent, ".staging-")
 		if err != nil {
@@ -858,12 +968,8 @@ func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 		defer os.RemoveAll(staging)
 		m.setManagedPythonProvisioningPhase("installing-bundled-generation")
 		arguments := []string{"--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath}
-		command := newWorkerProcessCommand(ctx, m.config.Micromamba, arguments...)
-		command.Env = m.managedEnvironmentInstallerEnv()
-		output := newTailBuffer(maxDiagnosticBytes)
-		command.Stdout, command.Stderr = output, output
-		if err := runWorkerProcess(command); err != nil {
-			return fmt.Errorf("install managed Python generation: %w: %s", err, strings.TrimSpace(output.String()))
+		if err := m.runManagedEnvironmentProcessWithEnv(ctx, m.config.Micromamba, m.managedEnvironmentInstallerEnv(), arguments...); err != nil {
+			return fmt.Errorf("install managed Python generation: %w", err)
 		}
 		m.setManagedPythonProvisioningPhase("installing-runtime-helpers")
 		if err := m.installManagedPythonHelpers(runtime, staging); err != nil {
@@ -878,12 +984,10 @@ func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 		}
 		m.setManagedPythonProvisioningPhase("publishing-generation")
 		if err := os.Rename(staging, generationPath); err != nil {
-			if _, statErr := os.Stat(generationPath); statErr != nil {
-				return fmt.Errorf("publish managed Python generation: %w", err)
+			if verifyErr := m.verifyManagedPythonGeneration(runtime, generationPath); verifyErr != nil {
+				return fmt.Errorf("publish managed Python generation: %w (existing generation: %v)", err, verifyErr)
 			}
 		}
-	} else if err != nil {
-		return fmt.Errorf("inspect managed Python generation: %w", err)
 	}
 	m.setManagedPythonProvisioningPhase("activating-generation")
 	if err := m.activateManagedPythonGeneration(runtime); err != nil {

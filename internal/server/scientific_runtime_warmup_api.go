@@ -304,9 +304,11 @@ func (s *Server) managedScientificRuntimeHealth(id string) map[string]any {
 	}
 	var environmentName string
 	if s != nil && s.kernelManager != nil {
-		if id == managedRScientificRuntimeID && !s.kernelManager.ManagedRProvisioningEnabled() {
+		pythonUnavailable := id == managedPythonScientificRuntimeID && !s.kernelManager.ManagedPythonProvisioningEnabled()
+		rUnavailable := id == managedRScientificRuntimeID && !s.kernelManager.ManagedRProvisioningEnabled()
+		if pythonUnavailable || rUnavailable {
 			state.State = "failed"
-			state.LastErrorCode = "managed_runtime_unavailable"
+			state.LastErrorCode = managedScientificRuntimeUnavailableCode()
 			return scientificRuntimeWarmupHealthValue(state)
 		}
 		for _, runtime := range s.kernelManager.RuntimeEnvironmentStatuses(false) {
@@ -326,7 +328,7 @@ func (s *Server) managedScientificRuntimeHealth(id string) map[string]any {
 				state.State = "scheduled"
 			case "failed", "unavailable":
 				state.State = "failed"
-				state.LastErrorCode = "managed_runtime_unavailable"
+				state.LastErrorCode = managedScientificRuntimeUnavailableCode()
 			default:
 				state.State = "disabled"
 			}
@@ -342,4 +344,11 @@ func (s *Server) managedScientificRuntimeHealth(id string) map[string]any {
 		result["environment"] = environmentName
 	}
 	return result
+}
+
+func managedScientificRuntimeUnavailableCode() string {
+	if kernelruntime.ManagedScientificRuntimePlatform() != "linux-x86_64" {
+		return "bundled_runtime_platform_unsupported"
+	}
+	return "managed_runtime_unavailable"
 }

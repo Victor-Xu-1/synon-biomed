@@ -767,3 +767,14 @@ html body .settings-page-wrapper.settings-library-route .environment-library {
   overflow: visible !important;
   text-overflow: clip !important;
 }
+
+/* Footer stacks vertically: the meta gets a full-width wrapping line, the
+   status control sits under it - nothing is squeezed into ellipses. */
+.settings-library-route .settings-library-card__footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ui-space-2);
+}
+.settings-library-route .settings-library-card__footer .settings-library-card__control {
+  justify-content: flex-end;
+}

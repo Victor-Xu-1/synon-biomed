@@ -5,7 +5,7 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "a02b64dc31ac154d4997e778ea6521576fcd17a75ee78714ebc83804768b6786",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "55af5e808eee784587b7e9980e158df6c1a11ab923ee7e7bae30950b9939ae0b",
+  "additionFingerprintSHA256": "b6ece6b79f700f04f6d4c00b9ef3432e0b2c16385e442a54e64472ce014ab928",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -7788,8 +7788,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "ab42b54f910e1b9914d743892073b55b13f1bcec5037761cf194e618ac1bda6e",
-      "bytes": 25646,
+      "sha256": "662bc562f6cc077876f3d4f85dc5a22c6e66ca78252bfedd9ad16eaf6d5a3ca9",
+      "bytes": 26049,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {

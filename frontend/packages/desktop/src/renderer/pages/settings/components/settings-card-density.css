@@ -768,13 +768,23 @@ html body .settings-page-wrapper.settings-library-route .environment-library {
   text-overflow: clip !important;
 }
 
-/* Footer stacks vertically: the meta gets a full-width wrapping line, the
-   status control sits under it - nothing is squeezed into ellipses. */
+/* Footer: meta sits bottom-left and wraps up to three lines; the status control stays bottom-right. */
 .settings-library-route .settings-library-card__footer {
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--ui-space-2);
+  align-items: flex-start;
 }
-.settings-library-route .settings-library-card__footer .settings-library-card__control {
-  justify-content: flex-end;
+.settings-library-route .settings-library-card__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: normal !important;
+  overflow: visible !important;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.settings-library-route .settings-library-card__control {
+  flex-shrink: 0;
+}
+/* The enable switch reads as a light green when on, not the neutral ink. */
+.settings-library-route .arco-switch-checked {
+  background-color: color-mix(in srgb, var(--settings-status-ready) 55%, #ffffff) !important;
 }

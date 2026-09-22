@@ -269,7 +269,7 @@ describe('settings image-based visual contract', () => {
     expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?gap:\s*16px/);
     // The expert tile no longer pins its own height; the shared merged-library
     // card anatomy owns it so all four tabs stay exactly equal.
-    expect(expertsCss).not.toMatch(/(?<![-\w])height:\s*208px/);
+    expect(expertsCss).not.toMatch(/(?<![-\w])height:\s*216px/);
     expect(expertsCss).not.toMatch(/grid-template-columns:\s*643px/);
     expect(expertsCss).not.toMatch(/settings-list-row/);
   });
@@ -278,10 +278,10 @@ describe('settings image-based visual contract', () => {
     // Same three parts on every card: heading (icon + title), a two-line
     // description, then a footer holding one metadata line and one 24px pill
     // control. Every metric is a token, so the tabs cannot drift apart again.
-    // The merged library floor is 208px — 24px roomier than the 208px entity
+    // The merged library floor is 216px — 24px roomier than the 216px entity
     // token the standalone settings pages keep — so the two-line copy and the
     // status row always fit whole.
-    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*208px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*216px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*padding:\s*20px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__heading\s*\{[^}]*min-height:\s*36px/);
     // The heading owns the title ramp, so the icon slot, the title slot and the
@@ -402,13 +402,13 @@ describe('settings image-based visual contract', () => {
     expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(236);
-    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*208px/);
+    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*216px/);
     expect(componentsCss).toMatch(/--settings-card-title-size:\s*15px/);
     expect(componentsCss).toMatch(/--settings-entity-card-body-size:\s*13px/);
     // The skill tile takes its height and type ramp from the shared merged-library
     // anatomy rather than pinning a route-specific min-height of its own.
     expect(skillsCss).not.toMatch(/\.settings-skill-card\s*\{[^}]*min-height:\s*236px/);
-    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*208px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*216px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*font-size:\s*13px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*overflow-wrap:\s*anywhere/);
     expect(skillsCss).toMatch(/\.settings-skill-library-scroll[\s\S]*?overflow-y:\s*auto/);

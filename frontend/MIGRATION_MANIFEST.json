@@ -5,7 +5,7 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "a02b64dc31ac154d4997e778ea6521576fcd17a75ee78714ebc83804768b6786",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "b6ece6b79f700f04f6d4c00b9ef3432e0b2c16385e442a54e64472ce014ab928",
+  "additionFingerprintSHA256": "5f359b70900c3620702a5f2688a588e26eb0d02c5187a9a1ec8842838a6d9fc2",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -7788,8 +7788,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "662bc562f6cc077876f3d4f85dc5a22c6e66ca78252bfedd9ad16eaf6d5a3ca9",
-      "bytes": 26049,
+      "sha256": "0bfc84715792c55baab84cc4cd2a6c5e712c213bb2397cda6ec4301a71c291e8",
+      "bytes": 26373,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7824,7 +7824,7 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-core.css",
-      "sha256": "ebd31605bc96826c41d35c454c3d559abf955219d84b5a0af6ebad04fcfdd5e7",
+      "sha256": "e511a21eae24e3f5b5466c78a84848001709c760fa418bc33edb8b888e739df8",
       "bytes": 22456,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
@@ -9798,13 +9798,13 @@
     },
     {
       "path": "tests/unit/settings/settingsVisualContract.test.ts",
-      "sha256": "39442f34c0eae8d7ed487ea31e3b00268dfc576624da8b6619fd71831796801f",
+      "sha256": "46ea6ef5344ae6bb3be0f680eee89222c93a9982af63dac4dee6875c54875e8c",
       "bytes": 32938,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
       "path": "tests/unit/settings/settingsVisualSystem.test.ts",
-      "sha256": "a45ce90b788f686f8ea203e1013eac240d8bf10541f8439d7b93454f7ce50c90",
+      "sha256": "5becd44884290f6e4b5ce33ef14be6e7ed68220d40cee236dec74ea92217448d",
       "bytes": 5463,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },

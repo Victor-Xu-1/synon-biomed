@@ -1,7 +1,14 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync as readFileRaw } from 'node:fs';
+import { resolveDesignTokens } from '../../_helpers/designTokens';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+
+/** Stylesheets are read with primitives inlined; contracts keep pinning numbers. */
+const readFileSync = (target: string | URL, encoding?: BufferEncoding): string =>
+  `${target}`.endsWith('.css')
+    ? resolveDesignTokens(readFileRaw(target, 'utf8'))
+    : (readFileRaw(target, encoding) as unknown as string);
 
 const workspaceThemeCssPath = fileURLToPath(
   new URL('../../../../packages/desktop/src/renderer/styles/workspace-theme.css', import.meta.url)

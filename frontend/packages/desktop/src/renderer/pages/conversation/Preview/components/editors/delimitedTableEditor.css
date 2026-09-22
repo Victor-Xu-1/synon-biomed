@@ -14,7 +14,7 @@
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 2px;
+  gap: var(--ui-space-1);
   padding: 4px 10px;
   border-bottom: 1px solid var(--preview-border, var(--color-border-2));
 }
@@ -29,7 +29,7 @@
 .delimited-table-editor__dimensions {
   margin-left: auto;
   color: var(--preview-muted, var(--color-text-3));
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
 }
 
 .delimited-table-editor__viewport {
@@ -37,7 +37,7 @@
   min-height: 0;
   flex: 1;
   overflow: auto;
-  padding: 12px;
+  padding: var(--ui-space-5);
   background: var(--preview-subtle, var(--color-fill-1));
 }
 
@@ -63,7 +63,7 @@
 .delimited-table-editor__table tr:first-child > :not(.delimited-table-editor__row-number) {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: var(--ui-z-layer);
   background: var(--preview-subtle, var(--color-fill-1));
 }
 
@@ -72,11 +72,11 @@
   min-width: 44px;
   position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: var(--ui-z-layer-top);
   color: var(--preview-muted, var(--color-text-3));
   background: var(--preview-subtle, var(--color-fill-1));
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--ui-font-micro);
+  font-weight: var(--ui-weight-medium);
   text-align: center;
 }
 

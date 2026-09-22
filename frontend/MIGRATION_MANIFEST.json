@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "92d63783b8acc3c8b2a040228a21a56bac63ed8154dfcc90808bece97e7783bf",
+  "adaptationFingerprintSHA256": "1892370216a01f29a0b1ebf865dd8d5343dc22a0b0d446611fcd1fd0ad2757e6",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "983fee75fc5ce6c5c68ebea7261398764518d4421c2ff3012937691a7c7932d0",
+  "additionFingerprintSHA256": "613605a311c827f011dfab57c9f103ac749ec305652e651d72cdcc8ef9807f4c",
   "summary": {
     "sourceFiles": 1354,
-    "unchangedSourceFiles": 405,
-    "adaptedSourceFiles": 660,
+    "unchangedSourceFiles": 401,
+    "adaptedSourceFiles": 664,
     "removedSourceFiles": 289,
-    "addedFiles": 654
+    "addedFiles": 657
   },
   "adaptations": [
     {
@@ -234,8 +234,8 @@
     {
       "path": "packages/desktop/src/renderer/components/chat/BtwOverlay/BtwOverlay.module.css",
       "sourceSHA256": "2ad1466ef61161d66f7e3fda1dc91dcfe762bf6c8f4b5b13fb4aa55088e8bb3c",
-      "targetSHA256": "87f31f22c41199c6b87c150569b0ebfb034fc4cac0f91457c7542fd749e82607",
-      "bytes": 945,
+      "targetSHA256": "234fd1c5ec5fffefa81cee8d6f425532a6e04c85553f95115ec2ce31519fb5b4",
+      "bytes": 956,
       "reason": "Connect the composer, queue, attachments, and chat actions to the Go-owned conversation runtime with localized responsive states."
     },
     {
@@ -262,8 +262,8 @@
     {
       "path": "packages/desktop/src/renderer/components/chat/MobileActionSheet/MobileActionSheet.module.css",
       "sourceSHA256": "5840217b45e977fa66d80fe6292fb1603567028051bf84922a60216161c23755",
-      "targetSHA256": "af74b351b9a14fd9818e79090c1921280e6acdcbc8a6d1d251e09e9dbb1022ad",
-      "bytes": 4861,
+      "targetSHA256": "e43ff952c56ddee9c0c3dad63883d32f3f0b1b77260446b36b22a0d11394ff62",
+      "bytes": 5189,
       "reason": "Connect the composer, queue, attachments, and chat actions to the Go-owned conversation runtime with localized responsive states."
     },
     {
@@ -304,8 +304,8 @@
     {
       "path": "packages/desktop/src/renderer/components/chat/SendBox/sendbox.css",
       "sourceSHA256": "1ecc45183a7f01be98bbec2dc01701a67aa180fb52cec026bc1214259798c40b",
-      "targetSHA256": "b23aacfbb42e5074f06b92a4e6152dc94c950dbb27737bd0078d7862526ab504",
-      "bytes": 23756,
+      "targetSHA256": "16664ae51676d4818db0b61afb021b2c293bfafe00c066d01955865dfe19b8a2",
+      "bytes": 24424,
       "reason": "Connect the composer, queue, attachments, and chat actions to the Go-owned conversation runtime with localized responsive states."
     },
     {
@@ -332,8 +332,8 @@
     {
       "path": "packages/desktop/src/renderer/components/chat/thought-display.css",
       "sourceSHA256": "5c9c2234f418269ba7b6b42dedd3e2b0ef03492c339a601f35965a63e59e4b48",
-      "targetSHA256": "66560b0a6601ac8759f4482f8f22fd534d7df1ecdd307538eb8bf53922d4de8f",
-      "bytes": 1172,
+      "targetSHA256": "a77d220061c6acf6862384cf2fbfc51b8a57b250e82fd1c4c8de5d7057a4d144",
+      "bytes": 1235,
       "reason": "Connect the composer, queue, attachments, and chat actions to the Go-owned conversation runtime with localized responsive states."
     },
     {
@@ -353,8 +353,8 @@
     {
       "path": "packages/desktop/src/renderer/components/layout/Sider/Sider.module.css",
       "sourceSHA256": "220158dd2e29d12c29e4394ee679c94bad06fb9dc40cb6c81b0ee994383f5ac3",
-      "targetSHA256": "bbe0f357e01535f93c200a49d3e8f04a9caa9fd2e42cd3c493b02f616ea0b1a2",
-      "bytes": 888,
+      "targetSHA256": "d6a17afaf528fb2001ce7dfc0e5c45a7656305429de90f14554653ee4cde0599",
+      "bytes": 904,
       "reason": "Adapt the desktop layout, command palette, navigation, and window controls to authenticated responsive browser operation."
     },
     {
@@ -395,8 +395,8 @@
     {
       "path": "packages/desktop/src/renderer/components/layout/Titlebar/titlebar.css",
       "sourceSHA256": "c73788540c5a8c3e0357030b1650608c9957f699c2807287d01f116a2205481f",
-      "targetSHA256": "384283b3050235d777db436409124ccc4c1c9762705b42b28e22ccd070bd3b57",
-      "bytes": 8082,
+      "targetSHA256": "457910f67a61926f9870fc0aadc73e9b980b59327686be632bd25aea601486ba",
+      "bytes": 8287,
       "reason": "Adapt the desktop layout, command palette, navigation, and window controls to authenticated responsive browser operation."
     },
     {
@@ -563,8 +563,8 @@
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/SynonBiomedApprovalCard.css",
       "sourceSHA256": "d33c273e054a26cba3a536bc31b19129e4ce2068533538b92da3d5c1607dc6aa",
-      "targetSHA256": "e7ba2dace8063022ddf44b2779d22f97f46b9742ee72e037ab511840c7bf4a62",
-      "bytes": 8986,
+      "targetSHA256": "f1dc6a0288af775dad6d1af7042220bb1c6cfa254e834ad73586945fb360d692",
+      "bytes": 9662,
       "reason": "Project authoritative Go files, notes, approvals, models, kernels, sessions, and runtime operations into the migrated workbench."
     },
     {
@@ -871,8 +871,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/artifact/SynonBiomedLatexArtifactViewer.css",
       "sourceSHA256": "d51849a469beb8d5798db59ea12b4dc088577cdc5391cf3ca783ff1ee1ddaa28",
-      "targetSHA256": "29c0941e3bf1a8f9e292a61e475ee7f16e4304cd4cd984e87036a27ab93e6338",
-      "bytes": 2295,
+      "targetSHA256": "9b7ea6d4ef60f11a0336c09f763d761ec79d64d1b17778671da1f69a584db9be",
+      "bytes": 2404,
       "reason": "Connect immutable Go artifacts, annotations, refinement, and native viewers with bounded localized failure handling."
     },
     {
@@ -913,8 +913,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/GroupedHistory/ConversationSearchPopover.css",
       "sourceSHA256": "1cd952663f5b21e37c501f9b76034c238e92a3527721ee87d2ca405f443dca78",
-      "targetSHA256": "94073482dd00729891a8f8894782e74b9dc6bfb8cf753f83fe2bfd44776c3584",
-      "bytes": 9854,
+      "targetSHA256": "8e78697c61cb9a10a6f43a886adaf2276ed5d9f624e29cb7a1e5b93d8b8ecfe7",
+      "bytes": 10339,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1079,6 +1079,13 @@
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
+      "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/MessageSubagentEvents.css",
+      "sourceSHA256": "07f4c02dc114fdb89686e93f36ca933747b6697a4cb45183ba657564bc5fb40c",
+      "targetSHA256": "21b402426307f7894db8dfac55ccf30385310f7fd83ac2cfc14276053e032317",
+      "bytes": 3260,
+      "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
+    },
+    {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/MessageSubagentEvents.tsx",
       "sourceSHA256": "ca7050bc8a13232056ea007d6316f07cd48565717ed8873bf3c4a861ac82b284",
       "targetSHA256": "02b826d8533c33d7ea037bfb7eb9a166c6173810921aeef2d87f1d3f12e1f37c",
@@ -1088,8 +1095,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/MessageSubagentTurn.css",
       "sourceSHA256": "1e0c2c0e7c347c7845e0ad775813a25e74c1c75c96c9d03c6eea9d858eecf250",
-      "targetSHA256": "45428576b8b2adebdc43f2d5ce65b36433fa2cf935230b447f68bb99aa7fdee5",
-      "bytes": 2323,
+      "targetSHA256": "6ccd2d06d0320d5c84c0df1e16279a286ad6d166cb1ddc8263810df89f02f03c",
+      "bytes": 2468,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1109,8 +1116,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/MessageThinking.module.css",
       "sourceSHA256": "aa86ba9e46f2ff6c4a1dd5a3ce5b949635327c62c6a1cedf8c9d34322d723a48",
-      "targetSHA256": "279142cb425274bba49fa08b044dca976499b6e60fbd8c80feecd6dcf3367614",
-      "bytes": 3293,
+      "targetSHA256": "b21b49ce8f78b948f98c4a65829a20fbaa0b05ece9ebd40b7d4da821623ad437",
+      "bytes": 3526,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1137,8 +1144,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/MessageToolGroupSummary.css",
       "sourceSHA256": "80824bab1e7678ffecf213398fca032adc6be08e94165cba08fe79938302add3",
-      "targetSHA256": "d85e70a2193026dacb7a3cda8d30d24fddd57d1e538857db5c6f25c0ba757139",
-      "bytes": 26250,
+      "targetSHA256": "8a5fb75d5cec2fcab95d7c1ceb07f869939925416a005ef4aef63bcde403d1ae",
+      "bytes": 27881,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1200,8 +1207,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/messages.css",
       "sourceSHA256": "6870c6feae4bb4dc187532558598f5435e7b04ba9f13f429aa2812b1442ed5da",
-      "targetSHA256": "7a1d63066f196ab8dfb1a2628f8d1bccc99a233ec2e01cb49e1959bccf32557f",
-      "bytes": 8611,
+      "targetSHA256": "1a1c05fcf7661216dd23aced65e71ddbdd43bc8bc1651a123c57d5f8e1918cb7",
+      "bytes": 9015,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1256,8 +1263,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Preview/components/PreviewPanel/preview.css",
       "sourceSHA256": "0b00c170d8d6dfbf1ad315b4ab403426afb2bdad857316eb9e8f4496b2904219",
-      "targetSHA256": "7fc75a84bd2539adc4cea4ef01c1687988858efdd14f9b2dd500299a69b588a8",
-      "bytes": 21688,
+      "targetSHA256": "7675b9623ad28bef8d8cfe84e4cea2900d09e6fdac8ccddbb28bc0d53283c254",
+      "bytes": 22573,
       "reason": "Migrate preview history and real scientific, office, document, and media viewers with safe parsing and responsive controls."
     },
     {
@@ -1620,8 +1627,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Workspace/workspace.css",
       "sourceSHA256": "ee3a3913dab05a0e036516cfcd3ff9a92f3c180ec29538380c97d9b70dd09350",
-      "targetSHA256": "158a7e7216f0ad8003084595f9529bb01c91f5839af813fabc271854d1eaa3e4",
-      "bytes": 7781,
+      "targetSHA256": "3821c45077723be6f09fcb15f655fef52e093934071c4c25779cadae6b9a7fdb",
+      "bytes": 8120,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1653,6 +1660,13 @@
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
+      "path": "packages/desktop/src/renderer/pages/conversation/components/ChatLayout/chat-layout.css",
+      "sourceSHA256": "873ec3dd8826470d033d8cd4d46ce1b6ad7ed16f976b6c0813b6fa0f1ff220c7",
+      "targetSHA256": "bf3d3009ad1e6589829536dac32878f40655efb133487df582ed4407b0a240b8",
+      "bytes": 1965,
+      "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
+    },
+    {
       "path": "packages/desktop/src/renderer/pages/conversation/components/ChatLayout/index.tsx",
       "sourceSHA256": "81420473f853e3e812a62eadff854ad5917c3e8345e97ccd71f3b07b7ff4f8eb",
       "targetSHA256": "86cb7c6c2527b6a7f1f50fabb7fe3ca9f0c2aa1da1cde5746584a983fb78af8d",
@@ -1676,8 +1690,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/components/ConversationTitleMinimap/ConversationTitleMinimap.module.css",
       "sourceSHA256": "20a478cb7ae09ebd815a5cdd61dc12cb7c6e57a0358798f625133ee13bbc3b7a",
-      "targetSHA256": "c58d93e812192e497e28f91ccb05e1957bff752a4ab7d4a01078dd856e26b993",
-      "bytes": 2219,
+      "targetSHA256": "30a97c987d765159a48040d2eecce0b84c73a832d852812622d6d2402b38fcb9",
+      "bytes": 2268,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1697,8 +1711,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/components/SynonBiomedDelegateDock.css",
       "sourceSHA256": "d717c1fea7dc97b8b771adc8bb967badfeb718819a607c3fc49a142d4038c5d4",
-      "targetSHA256": "d19a3da16f3f7fbba4588192ce7e6d2983db66c5c878790467175d6b505593df",
-      "bytes": 4556,
+      "targetSHA256": "1136ee3b72f989faa96e7c60ce3cee0338cb331278df2b5ef207b8f397814ed9",
+      "bytes": 4934,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -1921,8 +1935,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/guid/index.module.css",
       "sourceSHA256": "621b68a0a731017b7e37f68d28c69924d0593ea48ab8751fb70bb9a111f582cf",
-      "targetSHA256": "66221c44d4814c157156c1efdb9e0da086c55d85d26a147ae81f1477cbb2c8de",
-      "bytes": 14798,
+      "targetSHA256": "0bfb81ff623187b9be3039dc91e73e2b447bcd3b2a85d4215d6a3a32323fe491",
+      "bytes": 15528,
       "reason": "Migrate authenticated login, onboarding, project workbench, and artifact workflows to the Go product shell."
     },
     {
@@ -1935,8 +1949,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/login/LoginPage.css",
       "sourceSHA256": "2778d3ec60a02f49835499a8e40936e361d1ee0fcc5afa8042678eb079539ff5",
-      "targetSHA256": "1a39a5b0e3dea2d764bdf137284386c23d2a2eef6342675a171e7ef676cf115d",
-      "bytes": 8969,
+      "targetSHA256": "f8d6f3c719483ae26ab2b0676c2761cb6eb6c820e7312f4c5fb51af8344a7f3a",
+      "bytes": 9670,
       "reason": "Migrate authenticated login, onboarding, project workbench, and artifact workflows to the Go product shell."
     },
     {
@@ -1963,8 +1977,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/onboarding/onboarding.module.css",
       "sourceSHA256": "e95aad6a1545f4abd1518570dd245f776b85dfb4cf0b13edfdcdf4bce708222c",
-      "targetSHA256": "9736c003b3d7b635e76472d61cdf06d51e7ec820b7895bd2540b451de53f99fa",
-      "bytes": 9611,
+      "targetSHA256": "cdb79499ffb4ab02a841204e3da27576818a0b7eecb9aef3c376825d246d6e22",
+      "bytes": 10366,
       "reason": "Keep the three capability tabs and long scientific-runtime list readable and vertically scrollable without horizontal overflow on short or narrow viewports."
     },
     {
@@ -2105,6 +2119,13 @@
       "sourceSHA256": "f2478a5606adbaa03338e1553b8cfd1eefaffa1f9db891a45ffc91c3c49eaa85",
       "targetSHA256": "3b88740bef5618b81244b44a87aa36961062fe1faa18896eb5055773d237c336",
       "bytes": 5817,
+      "reason": "Expose Go-owned agents, skills, MCP, models, compute, memory, permissions, credentials, storage, and governance settings."
+    },
+    {
+      "path": "packages/desktop/src/renderer/pages/settings/SynonBiomedExpertsSettings/editor/DefaultsSection.module.css",
+      "sourceSHA256": "5d8ffab873e6c190173dc576b538d56634d05c05d9789284076186d76cce1dab",
+      "targetSHA256": "9d2c1209113b199ac5a7780dcf3e88666943682d4e6d005270383e495b5be17c",
+      "bytes": 2604,
       "reason": "Expose Go-owned agents, skills, MCP, models, compute, memory, permissions, credentials, storage, and governance settings."
     },
     {
@@ -2733,8 +2754,8 @@
     {
       "path": "packages/desktop/src/renderer/styles/arco-override.css",
       "sourceSHA256": "e8b789e52489f99b7b76475d48b10a730d9210007311ddfe6cbe41d5019a8b08",
-      "targetSHA256": "4d41d2305b285d4e9744252ad0db98586324fb50041173c8a486348d7d7bc246",
-      "bytes": 16317,
+      "targetSHA256": "3eac2c97109a9d8db6e0f9cf9426178ad1652aa78c07e17332c246814a321c18",
+      "bytes": 16540,
       "reason": "Converge global styles, builtin theme declarations, PWA assets, service-worker behavior, and renderer type declarations on the focused Web product."
     },
     {
@@ -2747,8 +2768,8 @@
     {
       "path": "packages/desktop/src/renderer/styles/layout.css",
       "sourceSHA256": "7c770e55d7927b0c7c3dddd607cd783fa6b2007eb3828267fe95e04bd19f8f7b",
-      "targetSHA256": "75b0f38d154efd2557c1681cdb97bb5eb75f552ed68bbadda35ecd90a4e156b6",
-      "bytes": 14259,
+      "targetSHA256": "d0124106bf20b5a3c854ab9f0e4c16ad08ead82e4052089ab226aa134041f9f8",
+      "bytes": 14646,
       "reason": "Converge global styles, builtin theme declarations, PWA assets, service-worker behavior, and renderer type declarations on the focused Web product."
     },
     {
@@ -2761,8 +2782,8 @@
     {
       "path": "packages/desktop/src/renderer/styles/themes/base.css",
       "sourceSHA256": "15a06aab04fe86b888d87b16618be4c08b1773a87e12463220f8295144662ce4",
-      "targetSHA256": "5abc7b811b70b43d25a55a39c0acd0a997b0cf29d887f77c3915e30be208ea13",
-      "bytes": 2562,
+      "targetSHA256": "17d4a834ec955351db216d00c6bb2145aed567aa87d06443713a3b994c05b61e",
+      "bytes": 2578,
       "reason": "Allow the authenticated onboarding and workbench layout to fit the supported 320px viewport without horizontal clipping."
     },
     {
@@ -2770,6 +2791,13 @@
       "sourceSHA256": "7974dca3d0725a1b24893ea1438a9e9a7777c4d39fae8f42cd87e623862c8427",
       "targetSHA256": "428183a70aa29f65de392a05be5b134910a785a4f7622e9e225030a96781681a",
       "bytes": 4551,
+      "reason": "Converge global styles, builtin theme declarations, PWA assets, service-worker behavior, and renderer type declarations on the focused Web product."
+    },
+    {
+      "path": "packages/desktop/src/renderer/styles/themes/index.css",
+      "sourceSHA256": "6101ebb9f180857bcaaec9dce02aa6340ed54c3e2f24c7fa8295f5c34918af6a",
+      "targetSHA256": "7383ea64b01cc13da0087f91337d68c45b0700e714ead25e2d1348c15aff20d1",
+      "bytes": 258,
       "reason": "Converge global styles, builtin theme declarations, PWA assets, service-worker behavior, and renderer type declarations on the focused Web product."
     },
     {
@@ -6500,8 +6528,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/chat/CommandQueuePanel.css",
-      "sha256": "4d6513b42dcc34f0b2331d52d3e913e0c7d2367b11d0af0b21d45f7d7c24c497",
-      "bytes": 6955,
+      "sha256": "1cec323b3fa0fa7f88664a4ee5b37208389883975cf09858d25d88ed8c1e4e79",
+      "bytes": 7262,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6578,8 +6606,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/layout/AuthUnavailablePanel.css",
-      "sha256": "8c40a05aaa78b8aad2612c7c7e68e0bb173234ee8f770bd94d552fa7eec13ac8",
-      "bytes": 3669,
+      "sha256": "12bc8d33c0da8e0168b574b922067caa246961175b2271fd066d5f6449afb3cd",
+      "bytes": 4006,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6620,14 +6648,14 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/AskUserCard.css",
-      "sha256": "25e0df28ccb6a0e082d0ab1327a4291b785542ece677a6eeecf6c8ddb01a5d56",
-      "bytes": 1726,
+      "sha256": "59d8b5918ecfcba83f7936bc321f8144fe7ebba08bb9ec6e301f8df1ec492fe1",
+      "bytes": 1837,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/AskUserHistoryCard.css",
-      "sha256": "fc0d0536b969e48a7f23619270693b092f7441e4e70c4d9ec187e43104198897",
-      "bytes": 2827,
+      "sha256": "fc335de1403de510e84d6da160428fd32285a49b6c3b5db3d2d54382e0936a77",
+      "bytes": 3008,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6650,8 +6678,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/ContextUsagePanel.module.css",
-      "sha256": "9ba85b6dd94236a942b012567c14923fd18c7a27081467ba38333838ef862199",
-      "bytes": 2436,
+      "sha256": "49ff2580a43219c7989f7c315a7af10e4d5246e72dc3e56f3e9c45c65e8d156b",
+      "bytes": 2707,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6668,8 +6696,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/SynonBiomedComputeRuntimePanel.css",
-      "sha256": "aa93a7293e6a62f53c2905f57bf9034e2aff616bec1da16aa7463de212b8b203",
-      "bytes": 3829,
+      "sha256": "77f5cf1a755aac6adf2f225fe83dab220238483eab152889a9eb24ec4ed6423b",
+      "bytes": 3975,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6680,8 +6708,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/SynonBiomedExecutionLogContent.css",
-      "sha256": "37cfaa39c5a4257ab11bfce056ba5e9d63815cb8649e35db23b2ee65fa947e4c",
-      "bytes": 4259,
+      "sha256": "586c98a5b79572317ca571796b09b63678d76c8201dd557eea3a20fc393ace17",
+      "bytes": 4501,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6704,8 +6732,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/SynonBiomedPlanReviewContent.css",
-      "sha256": "1b6ce2e3375e963cae744b90326f4db46060dbe9990d2d8a4bccae5b1285a1fe",
-      "bytes": 5305,
+      "sha256": "c016d3473eea3e9a39221bd20b972940631cb771e04faffb578816f31c7f6c4f",
+      "bytes": 5872,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6728,8 +6756,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/SynonBiomedReviewFindingsContent.css",
-      "sha256": "efd433a83f840f9268d1d13f6a8599d46e966448f8c3ac70de7f175707869a2b",
-      "bytes": 1722,
+      "sha256": "3f6fe0d9a78d23f3a37f69ea289717376e721d5c95d7ddfcbc0e1a2c48f7bf62",
+      "bytes": 1863,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6770,8 +6798,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/SynonBiomedTaskStatus.css",
-      "sha256": "bb8f1311f7fcea7a0167d589a3166b701baa211c0b1dc010b69e93c34b7dc289",
-      "bytes": 15240,
+      "sha256": "aa85f25f849e71eed773164228259326de1bf0b13b9705987e52bab8c5f810dc",
+      "bytes": 15740,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -6878,8 +6906,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/MessageScientificFiles.css",
-      "sha256": "be76d24a8034a0e681b6d2f498c03d454b640c3599f5c7a2ee86cb2a1b7c0707",
-      "bytes": 1849,
+      "sha256": "9091a7ccbc0d8ce8b9c3856317ed2fe38df508e85fab6f2892a7ff64d730fea5",
+      "bytes": 1893,
       "reason": "Own the compact workspace final-file tray dimensions and state without cross-module tool CSS overrides."
     },
     {
@@ -6890,8 +6918,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/SynonBiomedUserMessageActions.css",
-      "sha256": "fb60b73fc63e80957e74aacef4e3f1e7a1f7b4af8f610ae9c9fb17fcb750a1eb",
-      "bytes": 3924,
+      "sha256": "00db7fa91f4478ef40d58e526af9733bd8a5001a92bc43da729703a98b9f5bbb",
+      "bytes": 4091,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7190,8 +7218,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Preview/components/editors/delimitedTableEditor.css",
-      "sha256": "9ef57fe818bcc1241ce0b1e74500118f3a3d26c8357195eb41226fc8f56173a1",
-      "bytes": 2432,
+      "sha256": "0f052f2b83da683ef2dfa6ffcf7925be44168a4f0123a56c427c7114d30e0c0b",
+      "bytes": 2547,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7220,8 +7248,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Preview/components/editors/documentWysiwygEditor.css",
-      "sha256": "8a2caf0c920cf81041b9bb3ba653fbfd746a073712256a8745f213f43262c060",
-      "bytes": 3527,
+      "sha256": "c5b40a86636db9e1fbfcc1e31818b3fd44cb4c3d17b39e056e635645422ff42a",
+      "bytes": 3637,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7268,8 +7296,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Preview/components/viewers/SynonBiomedMcpAppViewer.css",
-      "sha256": "ba55c91a8672e3b63db80c20063ba289f5d2064580178f139afb21955a045870",
-      "bytes": 2531,
+      "sha256": "24d420a8ab37be69b6ceb2f06c39167c50f90f2438f95a8be3d69de4b9d7062a",
+      "bytes": 2636,
       "reason": "Style the isolated MCP App host, loading state, and explicit read-only notice."
     },
     {
@@ -7454,8 +7482,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/conversationQueueDock.css",
-      "sha256": "20de4a91661038a2c0a2953c6f26451704d7ecd996fe776cf18cb98e18d72fba",
-      "bytes": 2115,
+      "sha256": "6a9f7b12c8ad5f12660d49131f60a3cc5793f7eace1a3357ef74463ef49d3e37",
+      "bytes": 2161,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7556,8 +7584,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/MessageChannelsSettings.css",
-      "sha256": "e4e2b6f6b2d1c67bef593994420c703d705cba2be3d4b3c9cb2f1cc45393269e",
-      "bytes": 10418,
+      "sha256": "5eed4816a1a27e36fb3f23ef5d8b5dd3fd0ad04495f8a8827d718c48e8a5ab5b",
+      "bytes": 10935,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7586,8 +7614,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpConnectorConfigurationModal.css",
-      "sha256": "49d6d89e3b4c9fe95c181cce1fadc9cf8440d0693d5881293df1f5aa12e20714",
-      "bytes": 1273,
+      "sha256": "5969871839af36f2d1ce8f31de3c465c1aea4e7cea8dde90f287a99f448101d8",
+      "bytes": 1402,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7628,8 +7656,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/account/AccountActivityChart.css",
-      "sha256": "bef8feda155815f4deb54d469fc534859bde3a78476dd0a940fdf82639e9126c",
-      "bytes": 6412,
+      "sha256": "d5bb1a4b8617d5a502354cc36a9cc5b4906a25c76e77494825228ce98a6af6f2",
+      "bytes": 6749,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7640,8 +7668,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/account/AccountInsightsPanels.css",
-      "sha256": "a737e37788cc50450ddeddfe939fdcd0fc6107a841dfbbb5d7af5d4e4e44cef5",
-      "bytes": 4126,
+      "sha256": "d1871e9fd401bf798dc7d42be124c9bb979f44a6d265561c5cbdf0339cabf89f",
+      "bytes": 4506,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7652,8 +7680,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/account/AccountMetricsStrip.css",
-      "sha256": "d394c76f94f92f55534655a5c9d4812792ace9af9973e733769dfc3668340f81",
-      "bytes": 2899,
+      "sha256": "b6dfcbcae32d9d4d1ded2ae6a8345ead421417ed74c35d9549422fc5965c609e",
+      "bytes": 3057,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7664,8 +7692,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/account/AccountProfileHero.css",
-      "sha256": "f5b51c3a6b7d2a3d467adfd7a643f86888c0dd479374845812a3be2b6a093518",
-      "bytes": 6271,
+      "sha256": "4a232f2c998cb5675e8887379cf29ed19cee5c59d8701048ace4aa09d41abf42",
+      "bytes": 6703,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7676,8 +7704,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/account/AccountSecurityPanel.css",
-      "sha256": "af70e914ddad4f786506dc954b102fe028c57eac569c80e1725f3268c72e4743",
-      "bytes": 6245,
+      "sha256": "3f75d5002fe06f2886bba93277137265c3d10786cd2e91c4339e40221ecf24c6",
+      "bytes": 6850,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7688,8 +7716,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/account/AccountSettings.css",
-      "sha256": "29b1c81f5cb09b8c66df8803e5b85e1500eb389a408e8c87923def1ba2053d3b",
-      "bytes": 3852,
+      "sha256": "c1b0f962b7b32931ea9e1c3f02d3e87f2d2d94d109773fd4bf39f0abeb51d2e3",
+      "bytes": 4123,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7730,62 +7758,62 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-breakpoints.css",
-      "sha256": "1956013730a309d90dbfcb4a1fcbd1e16b3fcac56c69875148105762230537d0",
-      "bytes": 7202,
+      "sha256": "9ce7e784dc8f8d34a2ca27c7d3b73a25b09fd8f07456d4d6308d331af0b7cbc8",
+      "bytes": 7305,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "66f0a9cba0abb640c050e52b8b2a7e8c545e43dacd7171f2a496e66c9e03535b",
-      "bytes": 17610,
+      "sha256": "42ce8500390144ec843556d4c8d6e4f5cad9a5f6b9b32ec41960c46ef23731fd",
+      "bytes": 18136,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-surfaces.css",
-      "sha256": "0fa674dc4bc02c3b4029f56edcfd64b0a511b60c9b0c82a0faa8fa5111aa3476",
-      "bytes": 8372,
+      "sha256": "acae777839f62b5420c913bf48724d6900fc6a09cce4fb6c2388dc9081793089",
+      "bytes": 8419,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-compact-desktop.css",
-      "sha256": "d172e892157cc7e41e2cf3fa8050e9d32e96321eb4d974b63fd7bcdfe0d5bc7d",
-      "bytes": 8597,
+      "sha256": "565104322b7a0264168e79170daf45d86164d4932149b3e1fd305f168d3bed44",
+      "bytes": 8680,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-compute-components.css",
-      "sha256": "51099b780e16d8a97ba2e01df951d50a5abe6fb3b85ca4b8fdfc8ab9f550d710",
-      "bytes": 3644,
+      "sha256": "be7c48b3bc27fd863fe6b04abb15de8060cbde887b7e3eaea98a331b22c41dc7",
+      "bytes": 3739,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-compute.css",
-      "sha256": "320e8f28ead8df2e5904f763c8edbbb1b2201d7e69c00ccdc8cf499c740b24d4",
-      "bytes": 5937,
+      "sha256": "fdf5fbbfbf1e57c24c1b8d61de473deebdf41dcf79dd5de6c94bd4c28febc8e8",
+      "bytes": 6077,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-connectors.css",
-      "sha256": "1b40b8d2c7ab0f428243e9f9b575d468afc39a60e51bfcb809871d1117198d78",
-      "bytes": 8563,
+      "sha256": "b6a53929cd916a85c63b3dd920035d42916c22bb449ddbb01c017fc55d388df2",
+      "bytes": 8889,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-core.css",
-      "sha256": "1e8525c5cdf7131fb596b58ed6f73b01d6b88b925a1a38d4262219de32bba1bf",
-      "bytes": 15891,
+      "sha256": "4497e77beb7edecb9a2e82e051b45f4c5b5b0b3792fc83fa7388d379a173d267",
+      "bytes": 16495,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-experts.css",
-      "sha256": "27f7aa28df3ac295bfb3e2d16e7be75f21558c37c2635389d8267de91f46c59d",
-      "bytes": 6986,
+      "sha256": "459442abb1fe2ead9a5d290c6edafe06e6a016f88f1d9991c6ad5204b30c2fae",
+      "bytes": 7225,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-general.css",
-      "sha256": "0fe880309de1570bcd020e3ff5634978acff2325d3311eb65e1468bff1715055",
-      "bytes": 4697,
+      "sha256": "04b62ced6df3efaafd8afadc182fafb6daad7b5af4ed28c10f25675908ab506e",
+      "bytes": 4715,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7796,38 +7824,38 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-governance.css",
-      "sha256": "5187c6f34c124e1146e67163747ec6e3c29487a7537af12d86a0a5cf556dbdeb",
-      "bytes": 8660,
+      "sha256": "d25c5586ac6c1281b1230621167ee83d7b11c0b9d3bd6adb82ac3142e8b2d8d8",
+      "bytes": 9033,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-layout.css",
-      "sha256": "d8db16b063eec4f5d747a8954932fb5bc0895336f8d2893f3f38ba8bfebc5e8c",
-      "bytes": 10254,
+      "sha256": "2b1193773506348b53e886b9929882c694b1c62eecfe4f376a0bcd6023438042",
+      "bytes": 10556,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-memory.css",
-      "sha256": "07223894a47a67921bbb0251b7399d11356a3805092c64fbf38df973eadf084f",
-      "bytes": 8540,
+      "sha256": "c1ad0eea7e5f844607e69141fe87fe1302cd503cfed3626d147ec52adf3ee8a8",
+      "bytes": 9058,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-models.css",
-      "sha256": "0170f761beb79d6c9bc184832d31296b34104befbafa34d19eaea8f82762c673",
-      "bytes": 10085,
+      "sha256": "1fbda20e7dddc07509f8a981a38a817ce30b69b149d7ae54ab8e9361839b8de7",
+      "bytes": 10399,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-network.css",
-      "sha256": "84ca49e6268f6204d146fc4cb67691708f855a6e86b0c00159180a5a55172bbf",
-      "bytes": 7049,
+      "sha256": "0771a03004f24f2e4f44b9de8928a7ccf57baf35394996bf3ed74a22ac0809f9",
+      "bytes": 7158,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-plans.css",
-      "sha256": "8de21e66b14e8de75d489182a9e001f40a767e08e0a6447869caacc6821bfcd6",
-      "bytes": 7885,
+      "sha256": "b294a1ecf88b4ee95b0cb5662fb27f03a05255bb2828ba5a30950c301ef937e9",
+      "bytes": 8149,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7844,32 +7872,32 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-route-layouts.css",
-      "sha256": "cb4a16f1c33836b5b94463369ec4f31f54babfe3409f3a6880770bd874acd667",
-      "bytes": 11343,
+      "sha256": "420978a18fed181a16829845f58ca4d854e649415a827f0964b3cf13db5cfa92",
+      "bytes": 11639,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-skills.css",
-      "sha256": "6a1a837f3f23160795c80b800d463237719025731167b9a77fc11015cb07940e",
-      "bytes": 8200,
+      "sha256": "65bfc422c5eb6547e75b8ae8d33205d144a0c9e9ce3e8bdfdb69b452f34b3d61",
+      "bytes": 8632,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-storage.css",
-      "sha256": "b822a3e2801c91ce4b80b1fff7bf2c8a38eb95e1e9865ddce90e98ff415fcd3f",
-      "bytes": 9391,
+      "sha256": "73d4fb6595c28615542fd01dc343792ea36f9db6327f81fc625ae766da97f03f",
+      "bytes": 10415,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-tabbed-pages.css",
-      "sha256": "bec4d31a65d902586cdfc5e0a5b5e2de98aba957920778bfb2f3373ae9760ac1",
-      "bytes": 1297,
+      "sha256": "947e269da06a25ff5e88b86fe2941541464cb20e04a874c2392280b74e220e31",
+      "bytes": 1337,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-tools.css",
-      "sha256": "54b1f292af63144fe2a5eb262e0f54829851c45dbbf086c54077232f1164d0da",
-      "bytes": 4424,
+      "sha256": "65334b722df14b9d9968c49471031faa3e94b37805a56af1582b6761ce33b634",
+      "bytes": 4604,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7898,8 +7926,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/environments/environments.css",
-      "sha256": "45811d29d6e847451d120d6fe9f006540649dc7fbb4e627f08c293745ee53d0b",
-      "bytes": 10787,
+      "sha256": "e53a17a224aee2961826c0aadece16dc034d78c844aa29613ae522f586f94930",
+      "bytes": 11398,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -8263,9 +8291,15 @@
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
+      "path": "packages/desktop/src/renderer/styles/tokens.css",
+      "sha256": "8530a2055021a84313d5bd347c5a74add2558bd2e797d50a0448455a0e796fb2",
+      "bytes": 2664,
+      "reason": "Own the single canonical visual-primitive scale (space, radius, elevation, type, weight, stacking) that every renderer module references instead of restating literals."
+    },
+    {
       "path": "packages/desktop/src/renderer/styles/workspace-theme.css",
-      "sha256": "4162e00adef97c6a5b7da972925594908a11bb0e8e04d0c34ec2348a8d54c5b9",
-      "bytes": 63282,
+      "sha256": "f5a5f00e8c14fcc5372bc7c243eb8b9b77b19931ad247b9481655458e9592f5a",
+      "bytes": 64795,
       "reason": "Provide the shared visual shell under a product-neutral filename and CSS custom-property namespace."
     },
     {
@@ -8753,6 +8787,12 @@
       "sha256": "9e3bf6ea2eaa2f1271d090f168ea6e865ed0690acab4ff4f1da9628f0fb01cdb",
       "bytes": 4247,
       "reason": "Create and remove disposable real conversations so integration tests do not depend on deployment-specific migrated IDs."
+    },
+    {
+      "path": "tests/unit/_helpers/designTokens.ts",
+      "sha256": "114da0466df86b9609f0dbc66c66678c362ac1bc9c2eb8b72c8a17ecf8da44fb",
+      "bytes": 1102,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
       "path": "tests/unit/account/accountInsightsModel.test.ts",
@@ -9260,8 +9300,8 @@
     },
     {
       "path": "tests/unit/renderer/conversation/conversationVisualSystemCss.test.ts",
-      "sha256": "e1b4184b16a9fbd8d5fe77ae05c062d52eb21545403a601b44c3bf9bc30f02eb",
-      "bytes": 9177,
+      "sha256": "b408e3deca889398258107c7dcba1c904160cc739c9b139ee01e6c0ebf4dbfc3",
+      "bytes": 9573,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -9290,8 +9330,8 @@
     },
     {
       "path": "tests/unit/renderer/conversation/toolGroupVisualContract.test.ts",
-      "sha256": "426577e94dc65e0823d409d9648927544ea34289f7a8f2ca792963abe21f6cd4",
-      "bytes": 4978,
+      "sha256": "178aee08bbd1f9d4b18eed88bec9d818e1445df15cddae41c215232ed0028755",
+      "bytes": 5374,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -9554,8 +9594,8 @@
     },
     {
       "path": "tests/unit/renderer/transcriptTypography.test.ts",
-      "sha256": "9df5dcf1ddd556c8b4c2a32bafd9f1f2fb75cb2bd3010dd1c8cf9f618bbaf29f",
-      "bytes": 2101,
+      "sha256": "a60f60a5a6bc020b5df0ef6bd1cfc27af17d26c042eb6d7df7bdcf81502050bd",
+      "bytes": 2494,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -9680,8 +9720,8 @@
     },
     {
       "path": "tests/unit/settings/messageChannelCardHitTargets.test.ts",
-      "sha256": "78e54468601a312357c7018132dfb848e623d7dbddc25f2bd31ca541577ae1b5",
-      "bytes": 2699,
+      "sha256": "d231404accbb9d2df3abf007b14e576dfe2243bf8dc309695f8c68f20583c8b5",
+      "bytes": 2826,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -9722,8 +9762,8 @@
     },
     {
       "path": "tests/unit/settings/settingsVisualContract.test.ts",
-      "sha256": "a76c6da9ec3854bd133169a3b64f81cc26b5acf81ed3b14819d27893a7bf61b4",
-      "bytes": 24721,
+      "sha256": "ef9b07b2bc12364c7414eb85514fb6a178307ff93506e04476a3ec3d5fe2f297",
+      "bytes": 25114,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -9956,8 +9996,14 @@
     },
     {
       "path": "tests/unit/themeVisualContract.test.ts",
-      "sha256": "845b2c5fefb03e0bbb6d8e41b45866735d64cef639ee87c5b839755c399b3a4d",
-      "bytes": 21303,
+      "sha256": "6ba45e10dc7d61fe6746377345bf226da78ee81ce2e04e5ca84c7605df4d1d3b",
+      "bytes": 22037,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
+    },
+    {
+      "path": "tests/unit/themeVisualTokens.test.ts",
+      "sha256": "bc4ca52fb0c815920c85c2620299713a849f97e82bdb1defa9a7f25eeb8b80b7",
+      "bytes": 5063,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

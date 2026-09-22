@@ -9,7 +9,7 @@
 
   .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-balance-content {
     grid-template-columns: minmax(190px, 0.65fr) minmax(0, 1.35fr);
-    column-gap: 16px;
+    column-gap: var(--ui-space-6);
   }
 }
 
@@ -44,7 +44,7 @@
   .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__tabs-row {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: var(--ui-space-5);
   }
 
   .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
@@ -78,12 +78,12 @@
   }
 
   .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__title {
-    font-size: 18px !important;
+    font-size: var(--ui-font-lead) !important;
     line-height: 26px !important;
   }
 
   .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__description {
-    font-size: 14px !important;
+    font-size: var(--ui-font-subtitle) !important;
     line-height: 21px !important;
   }
 
@@ -157,7 +157,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--ui-space-3);
   min-height: 36px;
   margin: 18px auto 0;
 }
@@ -171,7 +171,7 @@
   justify-content: center;
   padding: 0;
   border: 1px solid var(--settings-border) !important;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
   background: var(--settings-surface) !important;
   color: var(--settings-text-secondary);
   font: 500 13px/20px inherit;
@@ -203,5 +203,5 @@
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__tabs {
-  margin-top: 24px;
+  margin-top: var(--ui-space-7);
 }

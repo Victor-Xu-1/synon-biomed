@@ -20,14 +20,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--ui-space-4);
   height: 24px;
   padding: 0 10px;
 }
 
 .headerTitle {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--ui-font-meta);
+  font-weight: var(--ui-weight-semibold);
   line-height: 16px;
   color: var(--color-text-1);
 }
@@ -40,7 +40,7 @@
   height: 20px;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   background: transparent;
   color: var(--color-text-3);
   cursor: pointer;
@@ -55,34 +55,34 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--ui-space-4);
   padding: 1px 10px 2px;
 }
 
 .bigPercent {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--ui-font-title);
+  font-weight: var(--ui-weight-bold);
   line-height: 20px;
   font-variant-numeric: tabular-nums;
 }
 
 .usedText {
   color: var(--color-text-3);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 16px;
   font-variant-numeric: tabular-nums;
 }
 
 .usedText strong {
   color: var(--color-text-1);
-  font-weight: 600;
+  font-weight: var(--ui-weight-semibold);
 }
 
 .bar {
   display: flex;
   height: 6px;
   margin: 1px 10px 3px;
-  border-radius: 3px;
+  border-radius: var(--ui-radius-xs);
   background: var(--color-fill-3);
   overflow: hidden;
 }
@@ -101,12 +101,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--ui-space-4);
   height: 26px;
   padding: 0 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 400;
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-font-meta);
+  font-weight: var(--ui-weight-regular);
   line-height: 16px;
   color: var(--color-text-1);
 }
@@ -126,7 +126,7 @@
   width: 7px;
   height: 7px;
   flex: 0 0 7px;
-  border-radius: 50%;
+  border-radius: var(--ui-radius-circle);
 }
 
 .legendPercent {
@@ -140,6 +140,6 @@
   justify-content: center;
   min-height: 48px;
   padding: 0 10px;
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 16px;
 }

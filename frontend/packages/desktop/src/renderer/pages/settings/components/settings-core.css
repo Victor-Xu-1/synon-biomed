@@ -10,8 +10,8 @@
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] {
   --settings-control-height: 46px;
   --settings-card-radius: 12px;
-  --settings-card-gap: 16px;
-  --settings-section-gap: 24px;
+  --settings-card-gap: var(--ui-space-6);
+  --settings-section-gap: var(--ui-space-7);
   /* Entity-card typography and geometry move together.  Route styles should
      consume these tokens instead of changing a font without reserving the
      matching line box and card space. */
@@ -28,7 +28,7 @@
    section copy remains compact enough to preserve the generous card whitespace
    from the approved sheets. */
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__body {
-  font-size: 13px !important;
+  font-size: var(--ui-font-body) !important;
   line-height: 20px !important;
 }
 
@@ -37,8 +37,8 @@
    only inside this scoped visual system. Route-specific card selectors below
    may opt into the smaller 18px entity title token. */
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-body h2 {
-  font-size: 16px !important;
-  font-weight: 650 !important;
+  font-size: var(--ui-font-section) !important;
+  font-weight: var(--ui-weight-semibold) !important;
   line-height: 22px !important;
 }
 
@@ -51,15 +51,15 @@
   min-height: 44px;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
+  gap: var(--ui-space-7);
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__title {
   min-width: 0;
   margin: 0;
   color: var(--settings-text) !important;
-  font-size: 28px !important;
-  font-weight: 700 !important;
+  font-size: var(--ui-font-headline) !important;
+  font-weight: var(--ui-weight-bold) !important;
   line-height: 36px !important;
   letter-spacing: -0.035em;
 }
@@ -68,8 +68,8 @@
   max-width: 880px;
   margin: 4px 0 0;
   color: var(--settings-text-secondary) !important;
-  font-size: 15px !important;
-  font-weight: 450;
+  font-size: var(--ui-font-title) !important;
+  font-weight: var(--ui-weight-regular);
   line-height: 22px !important;
 }
 
@@ -95,7 +95,7 @@
   display: flex;
   align-items: flex-end;
   gap: 30px;
-  margin-top: 24px;
+  margin-top: var(--ui-space-7);
   border-bottom: 1px solid var(--settings-border);
 }
 
@@ -105,7 +105,7 @@
   min-height: 38px;
   padding: 0 2px 14px !important;
   color: var(--settings-text-secondary);
-  font-size: 14px !important;
+  font-size: var(--ui-font-subtitle) !important;
   line-height: 20px !important;
 }
 
@@ -113,7 +113,7 @@
   .settings-page-header__tabs
   > [role='tab'][aria-selected='true'] {
   color: var(--settings-accent-strong) !important;
-  font-weight: 650 !important;
+  font-weight: var(--ui-weight-semibold) !important;
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
@@ -139,12 +139,12 @@
   box-sizing: border-box;
   min-height: var(--settings-control-height);
   border: 1px solid var(--settings-border) !important;
-  border-radius: 9px !important;
+  border-radius: var(--ui-radius-lg) !important;
   background: var(--settings-surface) !important;
   color: var(--settings-text) !important;
   box-shadow: none !important;
-  font-size: 14px;
-  font-weight: 520;
+  font-size: var(--ui-font-subtitle);
+  font-weight: var(--ui-weight-medium);
   line-height: 22px;
   transition:
     border-color 140ms ease,
@@ -156,7 +156,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
   padding: 0 16px;
   white-space: nowrap;
 }
@@ -195,7 +195,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
   background: transparent;
   color: var(--settings-text-secondary);
   transition:
@@ -213,7 +213,7 @@
   min-height: 36px;
   padding: 0 10px;
   color: #b24b61;
-  font-size: 13px;
+  font-size: var(--ui-font-body);
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
@@ -229,7 +229,7 @@
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-input-number {
   min-height: var(--settings-control-height);
   border: 1px solid var(--settings-border) !important;
-  border-radius: 9px !important;
+  border-radius: var(--ui-radius-lg) !important;
   background: var(--settings-surface) !important;
   box-shadow: none !important;
   color: var(--settings-text) !important;
@@ -238,7 +238,7 @@
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-input-inner,
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .arco-select-view-value {
   color: var(--settings-text) !important;
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
@@ -254,7 +254,7 @@
   width: 46px !important;
   height: 28px !important;
   border: 0 !important;
-  border-radius: 999px !important;
+  border-radius: var(--ui-radius-pill) !important;
   background: var(--workspace-selected, #dce7ee) !important;
   box-shadow: none !important;
 }
@@ -270,7 +270,7 @@
   left: 4px !important;
   width: 20px !important;
   height: 20px !important;
-  border-radius: 50% !important;
+  border-radius: var(--ui-radius-circle) !important;
   background: var(--settings-surface) !important;
   box-shadow: 0 1px 2px rgb(13 27 62 / 12%);
   transition: left 140ms ease;
@@ -301,7 +301,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
+  gap: var(--ui-space-7);
   padding: 18px 18px 0;
 }
 
@@ -309,7 +309,7 @@
   display: flex;
   min-width: 0;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--ui-space-5);
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__icon {
@@ -317,7 +317,7 @@
   width: 36px;
   height: 36px;
   flex: 0 0 36px;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   object-fit: contain;
   user-select: none;
 }
@@ -325,8 +325,8 @@
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-section__title {
   margin: 0;
   color: var(--settings-text) !important;
-  font-size: 16px !important;
-  font-weight: 650 !important;
+  font-size: var(--ui-font-section) !important;
+  font-weight: var(--ui-weight-semibold) !important;
   line-height: 22px !important;
   letter-spacing: -0.018em;
 }
@@ -335,7 +335,7 @@
   max-width: 760px;
   margin: 4px 0 0;
   color: var(--settings-text-secondary) !important;
-  font-size: 13px !important;
+  font-size: var(--ui-font-body) !important;
   line-height: 20px !important;
 }
 
@@ -353,9 +353,9 @@
   min-height: 148px;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--ui-space-7);
   color: var(--settings-text-secondary);
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 22px;
   text-align: center;
 }
@@ -399,7 +399,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   object-fit: contain;
   user-select: none;
 }
@@ -410,7 +410,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--ui-space-2);
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-load-error-panel {
@@ -419,8 +419,8 @@
   min-height: 148px;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 24px;
+  gap: var(--ui-space-5);
+  padding: var(--ui-space-7);
   border: 1px solid #efd8de;
   border-radius: var(--settings-card-radius);
   background: color-mix(in srgb, #c43d5b 5%, var(--settings-surface));
@@ -431,7 +431,7 @@
   display: block;
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   object-fit: contain;
   user-select: none;
 }
@@ -451,7 +451,7 @@
   display: flex;
   min-height: 70px;
   align-items: center;
-  gap: 12px;
+  gap: var(--ui-space-5);
   padding: 12px 16px;
   border: 1px solid var(--settings-border) !important;
   border-radius: var(--settings-card-radius) !important;

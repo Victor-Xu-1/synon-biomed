@@ -18,7 +18,7 @@
   width: 65px;
   height: 65px;
   flex-basis: 65px;
-  border-radius: 15px;
+  border-radius: var(--ui-radius-2xl);
 }
 
 .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid .settings-section__header {
@@ -27,12 +27,12 @@
 }
 
 .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid .settings-section__title {
-  font-size: 20px !important;
+  font-size: var(--ui-font-display) !important;
   line-height: 28px !important;
 }
 
 .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid .settings-section__description {
-  font-size: 16px !important;
+  font-size: var(--ui-font-section) !important;
   line-height: 23px !important;
 }
 
@@ -66,7 +66,7 @@
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .compute-provider-card,
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .compute-endpoint-row {
   border-color: var(--settings-border) !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   background: var(--settings-surface) !important;
   box-shadow: none !important;
 }
@@ -93,10 +93,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--ui-space-5);
   padding: 18px;
   border: 1px dashed var(--settings-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: var(--settings-surface-subtle);
   color: var(--settings-text-secondary);
   text-align: center;

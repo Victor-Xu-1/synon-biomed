@@ -113,7 +113,7 @@ body,
 
 ::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 3px;
+  border-radius: var(--ui-radius-xs);
   transition: background 0.3s;
 }
 

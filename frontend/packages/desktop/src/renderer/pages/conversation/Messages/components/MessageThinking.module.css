@@ -8,7 +8,7 @@
   width: 100%;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
   border: 0;
   background: transparent;
   padding: 0;
@@ -21,7 +21,7 @@
 .header:focus-visible {
   outline: 2px solid rgb(101 84 233 / 32%);
   outline-offset: 3px;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
 }
 
 .disclosure {
@@ -31,7 +31,7 @@
   flex: 0 0 20px;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   background: linear-gradient(135deg, rgb(101 84 233 / 20%), rgb(101 84 233 / 10%));
   color: rgb(101 84 233);
   transition:
@@ -64,18 +64,18 @@
 .sparkles::after {
   position: absolute;
   inset: 0;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: rgb(101 84 233 / 20%);
   filter: blur(4px);
   content: '';
-  z-index: -1;
+  z-index: var(--ui-z-below)-1;
 }
 
 .label {
   flex: 0 0 auto;
   color: rgb(101 84 233);
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--ui-font-meta);
+  font-weight: var(--ui-weight-medium);
   line-height: 18px;
 }
 
@@ -98,7 +98,7 @@
   flex: 1;
   overflow: hidden;
   color: var(--text-tertiary, var(--color-text-3));
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   line-height: 18px;
   opacity: 0.6;
   text-overflow: ellipsis;
@@ -126,8 +126,8 @@
 
 .bodyFrame {
   position: relative;
-  margin-top: 12px;
-  padding-left: 16px;
+  margin-top: var(--ui-space-5);
+  padding-left: var(--ui-space-6);
 }
 
 .bodyRail {
@@ -136,17 +136,17 @@
   bottom: 0;
   left: 0;
   width: 2px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: linear-gradient(to bottom, rgb(101 84 233), rgb(101 84 233 / 50%), transparent);
 }
 
 .body {
   border: 1px solid rgb(101 84 233 / 10%);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
   background: rgb(101 84 233 / 5%);
-  padding: 12px;
+  padding: var(--ui-space-5);
   color: var(--text-secondary, var(--color-text-2));
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
@@ -156,7 +156,7 @@
   display: block;
   width: 100%;
   height: 1px;
-  margin-top: 8px;
+  margin-top: var(--ui-space-4);
   background: linear-gradient(to right, rgb(101 84 233 / 20%), rgb(101 84 233 / 10%), transparent);
 }
 

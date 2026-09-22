@@ -273,7 +273,7 @@
   line-height: 18px;
 }
 
-.environment-description {
+.environment-card__description {
   display: block;
   min-height: 42px;
   margin: 0;

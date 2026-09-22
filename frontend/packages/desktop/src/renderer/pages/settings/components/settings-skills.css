@@ -64,10 +64,12 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   flex-wrap: wrap;
 }
 
+/* The shared merged-library sheet (settings-card-density.css) owns the column
+   count for every tab, so the skills wall no longer states one of its own and
+   the four tabs cannot disagree about it again. */
 .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page .settings-entity-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)) !important;
   align-content: start;
-  gap: 16px !important;
+  gap: var(--settings-card-gap) !important;
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
@@ -239,10 +241,10 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   line-height: 28px;
 }
 
-/* Skills and other entity cards */
+/* Skills and other entity cards. The four-column rhythm itself comes from the
+   shared merged-library sheet so every tab reads the same column count. */
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
   align-items: stretch;
   gap: var(--settings-card-gap) !important;
 }

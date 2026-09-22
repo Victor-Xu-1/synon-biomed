@@ -47,9 +47,9 @@ export function EnvironmentCard({
         <span className='environment-card-icon settings-library-card__icon' aria-hidden='true'>
           <SettingsGeneratedIcon id={environmentIcon(item.id)} className='environment-card-icon-image' />
         </span>
-        <span className='environment-card-title settings-library-card__title'>{text.title}</span>
+        <span className='environment-card__title settings-library-card__title'>{text.title}</span>
       </div>
-      <p className='environment-description settings-library-card__description'>{text.description}</p>
+      <p className='environment-card__description settings-library-card__description'>{text.description}</p>
       {item.status === 'preparing' && item.phasePercent != null && (
         <progress
           className='environment-card-progress'

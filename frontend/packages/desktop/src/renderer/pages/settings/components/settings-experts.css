@@ -49,7 +49,7 @@
   align-content: start;
   align-items: stretch;
   overflow: visible;
-  gap: 20px !important;
+  gap: var(--settings-card-gap) !important;
   border: 0 !important;
   border-radius: 0;
   background: transparent !important;

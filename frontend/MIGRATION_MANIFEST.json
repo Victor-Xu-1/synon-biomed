@@ -5,7 +5,7 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "59a65b136f059376a5ea356ef67585fa79f95dbcf60f7c52459dd3ec9f4c1255",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "b8b13ade6267e804211856b4aafb0a3ac29821810c74ef3a499f711fe4203b6b",
+  "additionFingerprintSHA256": "e47305524492be2dff06aae170bf5afe2f866eb5d89be79414fefbb222c3888c",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -7788,14 +7788,14 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "630650c1cbfd4e2895fcbe402102c050321b9214ce5784d9104990d56cf814c4",
-      "bytes": 23187,
+      "sha256": "c28edbdbbbcf7807553d57807020c25eca7c5e21def4576c416cad647c592f45",
+      "bytes": 24836,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-surfaces.css",
-      "sha256": "a7238ba30122f3cb7d090398da56812e688d354b5c5a1300387f10c18720347e",
-      "bytes": 8382,
+      "sha256": "d2aa64bc57914a5d669a973bc2e082271c8e55eecec286b393d11f023205a125",
+      "bytes": 8939,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7818,8 +7818,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-connectors.css",
-      "sha256": "db25e9c05ee9e1ea2e28bf1b198586d1425d57ae3de797685570d2a5bf687565",
-      "bytes": 9859,
+      "sha256": "04114794d3710c02ff8ee850911fbeea65099c23d8f8cffdc03362536de0ac9b",
+      "bytes": 10077,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7830,8 +7830,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-experts.css",
-      "sha256": "77feb94e66d4399862fe99a0ea4401c7086b8c13a29f362b376dd13facceeac1",
-      "bytes": 4580,
+      "sha256": "e8e8c2664e8ed28e3135a6fffc554c0ff6951dc6febc5a364ab95ee4fa2d5211",
+      "bytes": 4600,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7902,8 +7902,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-skills.css",
-      "sha256": "4cc631bd1d839c08a231a9d5a390862f5b909e7cb3518f61562f461c015b2aa1",
-      "bytes": 7489,
+      "sha256": "c4556d461382dfed4e14f8ace06da9f7c8757484ae817279b4bd034bd678b755",
+      "bytes": 7677,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7938,8 +7938,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/environments/EnvironmentCard.tsx",
-      "sha256": "06408c1be883f6057ba48e2ae9d80680cc257831d5e4d2abbf4e208037bbca54",
-      "bytes": 4821,
+      "sha256": "388c3430870aff310a45cb117be740be75cfdf3a41b79aaef8b29869cb52538f",
+      "bytes": 4828,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7950,8 +7950,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/environments/environments.css",
-      "sha256": "cb43459054c091ff0b9b1299cb153fd45c31146aa057c08d8e5423c698e8d390",
-      "bytes": 11452,
+      "sha256": "420c348f6d421be502dd147ade95b417a7fec97501832cd4261e196c2679c49d",
+      "bytes": 11458,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9792,8 +9792,8 @@
     },
     {
       "path": "tests/unit/settings/settingsVisualContract.test.ts",
-      "sha256": "369e4942d43271abef20664e51d7332ffa7a290df00c43f604dcce8abb4478c7",
-      "bytes": 29385,
+      "sha256": "b568c3d686d58ab610dc3b852100bb8f81f9946e337f65dc01195ae14655af4b",
+      "bytes": 31880,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

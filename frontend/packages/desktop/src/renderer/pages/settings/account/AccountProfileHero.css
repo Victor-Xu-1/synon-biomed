@@ -29,7 +29,7 @@
   display: flex;
   align-items: center;
   gap: var(--ui-space-7);
-  padding: 22px 24px 22px 22px;
+  padding: var(--settings-section-padding);
 }
 
 .account-profile-avatar-wrap {
@@ -135,9 +135,9 @@
   border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, var(--account-accent) 7%, var(--account-panel));
   color: var(--account-accent-strong);
-  font-size: var(--ui-font-micro);
+  font-size: var(--settings-meta-size);
   font-weight: var(--ui-weight-medium);
-  line-height: 15px;
+  line-height: var(--settings-meta-line);
 }
 
 .account-profile-hero__privacy-copy {
@@ -184,7 +184,7 @@
   border-radius: var(--ui-radius-md);
   background: var(--account-panel);
   color: var(--account-text-secondary);
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
   line-height: 18px;
   text-align: left;
   cursor: pointer;
@@ -225,7 +225,7 @@
 .account-profile-editor p {
   margin: 8px 0 0;
   color: var(--account-text-tertiary);
-  font-size: var(--ui-font-micro);
+  font-size: var(--settings-meta-size);
   line-height: 16px;
 }
 

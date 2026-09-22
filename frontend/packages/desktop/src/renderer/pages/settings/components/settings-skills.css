@@ -171,7 +171,7 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   border-radius: var(--ui-radius-pill);
   background: var(--settings-accent-soft);
   color: var(--settings-accent-strong);
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
 }
 
 .settings-skill-market-dialog .arco-modal-content {
@@ -221,7 +221,7 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   align-items: center;
   justify-content: space-between;
   gap: var(--ui-space-6);
-  padding: 24px 26px;
+  padding: var(--settings-section-padding) var(--settings-section-padding);
   color: var(--settings-text-secondary);
 }
 
@@ -242,7 +242,7 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
 /* Skills and other entity cards */
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
   align-items: stretch;
   gap: var(--settings-card-gap) !important;
 }
@@ -325,7 +325,7 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   gap: var(--ui-space-4);
   margin-top: auto;
   color: var(--settings-text-tertiary);
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
   line-height: 19px;
   overflow-wrap: anywhere;
 }

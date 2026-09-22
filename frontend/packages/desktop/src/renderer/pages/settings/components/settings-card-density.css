@@ -15,9 +15,9 @@
       [data-settings-route='tools'],
       [data-settings-route='environments']
     ) {
-    --settings-control-height: 32px;
-    --settings-section-gap: var(--ui-space-3);
-    --settings-card-gap: 10px;
+    --settings-control-height: var(--ui-control-lg);
+    --settings-section-gap: var(--ui-space-7);
+    --settings-card-gap: var(--ui-space-6);
   }
 
   html
@@ -52,8 +52,8 @@
       [data-settings-route='environments']
     )
     .settings-page-header__title {
-    font-size: var(--ui-font-hero) !important;
-    line-height: 28px !important;
+    font-size: var(--settings-page-title-size) !important;
+    line-height: var(--settings-page-title-line) !important;
     letter-spacing: -0.025em;
   }
 
@@ -66,7 +66,7 @@
     )
     :is(.settings-skill-library-total, .mcp-library-total) {
     margin-inline-start: 5px;
-    font-size: var(--ui-font-meta);
+    font-size: var(--settings-meta-size);
     line-height: 16px;
   }
 
@@ -79,8 +79,8 @@
     )
     .settings-page-header__description {
     margin-top: 1px;
-    font-size: var(--ui-font-micro) !important;
-    line-height: 15px !important;
+    font-size: var(--settings-page-description-size) !important;
+    line-height: var(--settings-page-description-line) !important;
   }
 
   html
@@ -103,11 +103,11 @@
     )
     .settings-page-header__actions
     :is(.arco-btn, .settings-action-button) {
-    min-height: 32px !important;
-    height: 32px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     padding-inline: 10px !important;
     border-radius: var(--ui-radius-md) !important;
-    font-size: var(--ui-font-meta) !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 16px !important;
   }
 
@@ -135,8 +135,8 @@
     .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
     :is(.settings-skill-library-search, .mcp-library-search)
     .arco-input-wrapper {
-    min-height: 32px !important;
-    height: 32px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     padding-inline: 9px;
     border-radius: var(--ui-radius-md);
   }
@@ -146,7 +146,7 @@
     .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
     :is(.settings-skill-library-search, .mcp-library-search)
     .arco-input {
-    font-size: var(--ui-font-meta);
+    font-size: var(--settings-meta-size);
     line-height: 16px;
   }
 
@@ -157,17 +157,17 @@
     :is(.arco-btn, select),
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-toolbar :is(select, button),
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-search {
-    min-height: 32px !important;
-    height: 32px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     padding-inline: 9px !important;
     border-radius: var(--ui-radius-md);
-    font-size: var(--ui-font-meta) !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 16px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-search input {
     height: 30px;
-    font-size: var(--ui-font-meta);
+    font-size: var(--settings-meta-size);
   }
 
   html
@@ -185,8 +185,8 @@
 
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health,
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health .text-12px {
-    font-size: 10px !important;
-    line-height: 14px !important;
+    font-size: var(--settings-meta-size) !important;
+    line-height: var(--settings-meta-line) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health .gap-8px {
@@ -195,13 +195,13 @@
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-notice {
     padding: 5px 8px;
-    font-size: 10px;
-    line-height: 14px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-results {
-    font-size: 10px;
-    line-height: 14px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-filter-panel,
@@ -215,8 +215,8 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-filter-panel label,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-filter-panel label {
     gap: var(--ui-space-2);
-    font-size: var(--ui-font-micro);
-    line-height: 15px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html
@@ -224,10 +224,10 @@
     .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='environments'])
     :is(.settings-skill-filter-panel, .environment-filter-panel)
     :is(select, button, .arco-btn) {
-    min-height: 32px !important;
-    height: 32px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     padding-inline: 9px !important;
-    font-size: var(--ui-font-micro) !important;
+    font-size: var(--settings-meta-size) !important;
   }
 
   html
@@ -245,8 +245,8 @@
     width: 28px;
     height: 28px;
     border-radius: var(--ui-radius-md);
-    font-size: var(--ui-font-micro);
-    line-height: 14px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] {
@@ -322,9 +322,9 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    grid-auto-rows: minmax(0, 1fr);
-    gap: 10px !important;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+    grid-auto-rows: auto;
+    gap: var(--settings-card-gap) !important;
     align-content: stretch;
   }
 
@@ -334,21 +334,19 @@
     height: 100%;
     min-height: 0;
     flex: 1;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-grid:not(:empty) {
     height: 100%;
     min-height: 0 !important;
     flex: 1;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-card,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card {
-    min-height: 0 !important;
-    height: 100%;
+    min-height: var(--settings-entity-card-height) !important;
+    height: auto;
     overflow: hidden;
   }
 
@@ -377,8 +375,8 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__title {
     display: -webkit-box;
     overflow: hidden;
-    font-size: var(--ui-font-micro) !important;
-    line-height: 14px !important;
+    font-size: var(--settings-meta-size) !important;
+    line-height: var(--settings-meta-line) !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
@@ -386,16 +384,16 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__description {
     display: -webkit-box;
     overflow: hidden;
-    font-size: 10px !important;
-    line-height: 13px !important;
+    font-size: var(--settings-meta-size) !important;
+    line-height: var(--settings-meta-line) !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__metadata {
     gap: 3px;
-    font-size: 9px;
-    line-height: 11px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__footer {
@@ -404,8 +402,8 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__footer .text-11px {
-    font-size: 9px;
-    line-height: 11px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
@@ -427,8 +425,8 @@
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row > span {
     display: -webkit-box;
     overflow: hidden;
-    font-size: var(--ui-font-micro) !important;
-    line-height: 14px !important;
+    font-size: var(--settings-meta-size) !important;
+    line-height: var(--settings-meta-line) !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
@@ -436,16 +434,16 @@
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__description {
     display: -webkit-box;
     overflow: hidden;
-    font-size: 10px !important;
-    line-height: 13px !important;
+    font-size: var(--settings-meta-size) !important;
+    line-height: var(--settings-meta-line) !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__metadata {
     gap: 3px;
-    font-size: 9px;
-    line-height: 11px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__footer {
@@ -455,8 +453,8 @@
 
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__usage {
     min-height: 22px;
-    font-size: 9px;
-    line-height: 11px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__actions {
@@ -469,7 +467,7 @@
     min-height: 22px !important;
     height: 22px !important;
     padding-inline: 5px !important;
-    font-size: 9px !important;
+    font-size: var(--settings-meta-size) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
@@ -503,14 +501,14 @@
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card h2 {
     display: -webkit-box;
     overflow: hidden;
-    font-size: var(--ui-font-micro) !important;
-    line-height: 14px !important;
+    font-size: var(--settings-meta-size) !important;
+    line-height: var(--settings-meta-line) !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-category {
-    font-size: 9px;
+    font-size: var(--settings-meta-size);
     line-height: 10px;
   }
 
@@ -518,15 +516,15 @@
     display: -webkit-box;
     min-height: 0;
     overflow: hidden;
-    font-size: 10px !important;
-    line-height: 13px !important;
+    font-size: var(--settings-meta-size) !important;
+    line-height: var(--settings-meta-line) !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-packages {
-    font-size: 9px;
-    line-height: 11px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-packages summary {
@@ -544,18 +542,18 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-status {
-    font-size: 8px;
+    font-size: var(--settings-meta-size);
     line-height: 10px;
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-status {
-    font-size: 9px;
+    font-size: var(--settings-meta-size);
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-action {
     min-height: 20px !important;
     padding-inline: 5px !important;
-    font-size: 9px !important;
+    font-size: var(--settings-meta-size) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card > progress,
@@ -581,7 +579,7 @@
     .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
   }
 }
 

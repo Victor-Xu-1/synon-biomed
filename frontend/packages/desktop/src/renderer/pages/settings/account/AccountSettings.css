@@ -1,7 +1,7 @@
 .account-settings {
-  --account-accent: var(--settings-accent, #128f91);
-  --account-accent-strong: var(--settings-accent-strong, #087579);
-  --account-accent-soft: color-mix(in srgb, var(--account-accent) 9%, var(--workspace-canvas, var(--color-bg-1)));
+  --account-accent: var(--settings-module-accent);
+  --account-accent-strong: var(--settings-module-accent);
+  --account-accent-soft: var(--settings-module-accent-soft);
   --account-panel: var(--settings-surface, var(--workspace-canvas, var(--color-bg-1)));
   --account-panel-subtle: color-mix(in srgb, var(--account-accent) 3%, var(--workspace-canvas, var(--color-bg-1)));
   --account-border: var(--settings-border, var(--workspace-border, var(--color-border-2)));
@@ -94,7 +94,7 @@
   border-radius: var(--ui-radius-lg);
   background: color-mix(in srgb, #f4b24d 7%, var(--account-panel));
   color: var(--account-text-secondary);
-  font-size: var(--ui-font-micro);
+  font-size: var(--settings-meta-size);
   line-height: 17px;
 }
 
@@ -136,7 +136,7 @@
   display: block;
   margin-top: 3px;
   color: var(--account-text-tertiary);
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
   line-height: 19px;
 }
 

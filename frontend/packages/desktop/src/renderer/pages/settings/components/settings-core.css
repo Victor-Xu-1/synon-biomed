@@ -8,20 +8,78 @@
  */
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] {
-  --settings-control-height: 46px;
-  --settings-card-radius: 12px;
+  /* Geometry and type are owned here; route styles consume the tokens instead
+     of restating their own density. Values resolve to the shared --ui-* scale. */
+  --settings-control-height: var(--ui-control-lg);
+  --settings-control-radius: var(--ui-radius-md);
+  --settings-card-radius: var(--ui-radius-xl);
   --settings-card-gap: var(--ui-space-6);
   --settings-section-gap: var(--ui-space-7);
-  /* Entity-card typography and geometry move together.  Route styles should
-     consume these tokens instead of changing a font without reserving the
-     matching line box and card space. */
-  --settings-entity-card-padding: 20px;
-  --settings-entity-card-title-size: 15px;
-  --settings-entity-card-title-line: 21px;
-  --settings-entity-card-body-size: 13px;
-  --settings-entity-card-body-line: 19px;
-  --settings-entity-card-height: 256px;
+  --settings-section-padding: 20px;
+  --settings-content-inline: clamp(24px, 2.4vw, 38px);
+  --settings-entity-card-padding: 18px;
+  --settings-entity-card-padding-wide: 20px;
+  --settings-entity-card-height: 236px;
+  /* One type ramp for the whole settings surface. */
+  --settings-page-title-size: 26px;
+  --settings-page-title-line: 34px;
+  --settings-page-title-weight: var(--ui-weight-semibold);
+  --settings-page-description-size: var(--ui-font-subtitle);
+  --settings-page-description-line: var(--ui-line-height-subtitle);
+  --settings-section-title-size: var(--ui-font-section);
+  --settings-section-title-line: var(--ui-line-height-section);
+  --settings-card-title-size: var(--ui-font-title);
+  --settings-card-title-line: var(--ui-line-height-title);
+  /* Entity-card aliases consumed by the connector and expert cards. */
+  --settings-entity-card-title-size: var(--settings-card-title-size);
+  --settings-entity-card-title-line: var(--settings-card-title-line);
+  --settings-entity-card-body-size: var(--ui-font-body);
+  --settings-entity-card-body-line: var(--ui-line-height-body);
+  --settings-meta-size: var(--ui-font-meta);
+  --settings-meta-line: var(--ui-line-height-meta);
+  /* A single accent for the whole surface; modules no longer own a hue. */
+  --settings-module-accent: var(--workspace-accent);
+  --settings-module-accent-soft: var(--workspace-subtle);
+  --settings-status-ready: var(--success);
+  --settings-status-warning: var(--warning);
+  --settings-status-danger: var(--danger);
   --settings-focus: color-mix(in srgb, var(--settings-accent) 52%, transparent);
+}
+
+/* Route-level density files used to shrink three routes into a second visual
+   language (24px titles, 32px controls, 9–11px copy). Those routes now share
+   one ramp with every other settings page. */
+/* One metadata ramp replaces the 8/9/10/11px cluster. */
+.settings-page-wrapper
+  :is(
+    .settings-skill-library-total,
+    .mcp-library-total,
+    .synon-mcp-card__metadata,
+    .synon-mcp-card__usage,
+    .environment-card__meta,
+    [class*='__meta'],
+    [class*='__metadata'],
+    [class*='__hint'],
+    [class*='__count'],
+    .text-8px,
+    .text-9px,
+    .text-10px,
+    .text-11px
+  ) {
+  font-size: var(--settings-meta-size) !important;
+  line-height: var(--settings-meta-line) !important;
+}
+
+/* One section-title ramp: 16/24 everywhere (was 16/22, 16/30, 18/24, 18/25, 18/26). */
+.settings-page-wrapper .settings-page-body :is(h2, .settings-section__title) {
+  font-size: var(--settings-section-title-size) !important;
+  font-weight: var(--ui-weight-semibold) !important;
+  line-height: var(--settings-section-title-line) !important;
+}
+
+/* Every module's content column shares one inline rhythm. */
+.settings-page-wrapper .settings-page-body {
+  padding-inline: var(--settings-content-inline);
 }
 
 /* Keep the shell hierarchy balanced: navigation is one step larger while
@@ -37,9 +95,9 @@
    only inside this scoped visual system. Route-specific card selectors below
    may opt into the smaller 18px entity title token. */
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-body h2 {
-  font-size: var(--ui-font-section) !important;
+  font-size: var(--settings-section-title-size) !important;
   font-weight: var(--ui-weight-semibold) !important;
-  line-height: 22px !important;
+  line-height: var(--settings-section-title-line) !important;
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header {
@@ -58,19 +116,19 @@
   min-width: 0;
   margin: 0;
   color: var(--settings-text) !important;
-  font-size: var(--ui-font-headline) !important;
-  font-weight: var(--ui-weight-bold) !important;
-  line-height: 36px !important;
-  letter-spacing: -0.035em;
+  font-size: var(--settings-page-title-size) !important;
+  font-weight: var(--settings-page-title-weight) !important;
+  line-height: var(--settings-page-title-line) !important;
+  letter-spacing: -0.02em;
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__description {
-  max-width: 880px;
+  max-width: 720px;
   margin: 4px 0 0;
   color: var(--settings-text-secondary) !important;
-  font-size: var(--ui-font-title) !important;
+  font-size: var(--settings-page-description-size) !important;
   font-weight: var(--ui-weight-regular);
-  line-height: 22px !important;
+  line-height: var(--settings-page-description-line) !important;
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-page-header__actions {

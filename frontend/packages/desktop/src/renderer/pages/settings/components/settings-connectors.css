@@ -26,40 +26,46 @@
   color: var(--settings-text);
 }
 
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='blue'] {
-  --mcp-accent: #147cf2;
-  --mcp-soft: #eaf3ff;
+/* One accent for every connector tile; hue no longer encodes the provider. */
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone] {
+  --mcp-accent: var(--settings-module-accent);
+  --mcp-soft: var(--settings-module-accent-soft);
 }
 
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='cyan'] {
-  --mcp-accent: #159cc8;
-  --mcp-soft: #e8f8fc;
+/* One accent for every connector tile; hue no longer encodes the provider. */
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone] {
+  --mcp-accent: var(--settings-module-accent);
+  --mcp-soft: var(--settings-module-accent-soft);
 }
 
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='teal'] {
-  --mcp-accent: #07969b;
-  --mcp-soft: #e6f7f7;
+/* One accent for every connector tile; hue no longer encodes the provider. */
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone] {
+  --mcp-accent: var(--settings-module-accent);
+  --mcp-soft: var(--settings-module-accent-soft);
 }
 
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='green'] {
-  --mcp-accent: #28a455;
-  --mcp-soft: #ebf8ef;
+/* One accent for every connector tile; hue no longer encodes the provider. */
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone] {
+  --mcp-accent: var(--settings-module-accent);
+  --mcp-soft: var(--settings-module-accent-soft);
 }
 
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='amber'],
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='orange'] {
-  --mcp-accent: #d79016;
-  --mcp-soft: #fff7e8;
+/* One accent for every connector tile; hue no longer encodes the provider. */
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone] {
+  --mcp-accent: var(--settings-module-accent);
+  --mcp-soft: var(--settings-module-accent-soft);
 }
 
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='rose'] {
-  --mcp-accent: #d44d82;
-  --mcp-soft: #fff0f6;
+/* One accent for every connector tile; hue no longer encodes the provider. */
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone] {
+  --mcp-accent: var(--settings-module-accent);
+  --mcp-soft: var(--settings-module-accent-soft);
 }
 
-.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone='violet'] {
-  --mcp-accent: #7651c9;
-  --mcp-soft: #f3efff;
+/* One accent for every connector tile; hue no longer encodes the provider. */
+.settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card[data-mcp-tone] {
+  --mcp-accent: var(--settings-module-accent);
+  --mcp-soft: var(--settings-module-accent-soft);
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card > * {
@@ -146,7 +152,7 @@
   margin-top: 0;
   padding-top: 0;
   color: var(--settings-text-tertiary);
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
   line-height: 16px;
   text-align: left;
 }
@@ -228,7 +234,7 @@
   background: var(--settings-surface-subtle) !important;
   color: #6d706b !important;
   font-family: inherit;
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
   font-weight: var(--ui-weight-medium);
   line-height: 20px;
   white-space: nowrap;
@@ -241,15 +247,15 @@
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control[data-state='connected'] {
-  border-color: #b8e7c5 !important;
-  background: color-mix(in srgb, #22b85a 14%, var(--settings-surface)) !important;
-  color: #18783c !important;
+  border-color: color-mix(in srgb, var(--settings-status-ready) 30%, var(--settings-surface)) !important;
+  background: color-mix(in srgb, var(--settings-status-ready) 14%, var(--settings-surface)) !important;
+  color: var(--settings-status-ready) !important;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control[data-state='attention'] {
   border-color: #ffd08a !important;
-  background: color-mix(in srgb, #ff9800 14%, var(--settings-surface)) !important;
-  color: #b45b00 !important;
+  background: color-mix(in srgb, var(--settings-status-warning) 14%, var(--settings-surface)) !important;
+  color: var(--settings-status-warning) !important;
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control[data-state='marketplace'] {
@@ -269,14 +275,14 @@
 .settings-page-wrapper[data-settings-route='tools']
   .synon-mcp-card__status-control[data-state='connected']
   .synon-mcp-card__status-dot {
-  background: #22b85a;
+  background: var(--settings-status-ready);
   box-shadow: 0 0 0 3px rgba(34, 184, 90, 0.12);
 }
 
 .settings-page-wrapper[data-settings-route='tools']
   .synon-mcp-card__status-control[data-state='attention']
   .synon-mcp-card__status-dot {
-  background: #ff9800;
+  background: var(--settings-status-warning);
   box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.13);
 }
 
@@ -293,6 +299,6 @@
   flex-wrap: wrap;
   margin-top: auto;
   color: var(--settings-text-tertiary);
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
   line-height: 19px;
 }

@@ -44,7 +44,7 @@
 
 .settings-page-wrapper[data-settings-route='experts'] .expert-grid {
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   align-items: stretch;
   overflow: visible;
   gap: 20px !important;
@@ -60,8 +60,7 @@
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  height: 220px;
-  min-height: 220px;
+  height: var(--settings-entity-card-height);
   flex-direction: column;
   overflow: hidden;
   padding: 16px !important;
@@ -157,8 +156,8 @@
   border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, var(--settings-card-interaction-accent) 7%, var(--settings-surface));
   color: var(--settings-text-tertiary);
-  font-size: 10px;
-  line-height: 14px;
+  font-size: var(--settings-meta-size);
+  line-height: var(--settings-meta-line);
 }
 
 .settings-page-wrapper[data-settings-route='experts'] .expert-card__description {
@@ -182,7 +181,7 @@
   margin-top: 5px;
   overflow: hidden;
   color: var(--settings-text-tertiary) !important;
-  font-size: var(--ui-font-micro) !important;
+  font-size: var(--settings-meta-size) !important;
   line-height: 16px !important;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -209,8 +208,8 @@
   gap: 1px !important;
   overflow: hidden;
   color: var(--settings-text-tertiary) !important;
-  font-size: var(--ui-font-micro) !important;
-  line-height: 15px !important;
+  font-size: var(--settings-meta-size) !important;
+  line-height: var(--settings-meta-line) !important;
   white-space: nowrap;
 }
 
@@ -256,6 +255,6 @@
 
   .settings-page-wrapper[data-settings-route='experts'] .expert-card {
     height: auto;
-    min-height: 220px;
+    min-height: var(--settings-entity-card-height);
   }
 }

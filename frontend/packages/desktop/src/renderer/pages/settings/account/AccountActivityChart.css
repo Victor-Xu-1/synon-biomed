@@ -113,7 +113,7 @@
   color: var(--account-text-tertiary);
   font-size: var(--ui-font-micro);
   font-variant-numeric: tabular-nums;
-  line-height: 14px;
+  line-height: var(--settings-meta-line);
 }
 
 .account-activity-chart__y-axis small {
@@ -123,7 +123,7 @@
   color: var(--account-activity-blue-strong);
   font-size: var(--ui-font-micro);
   font-weight: var(--ui-weight-semibold);
-  line-height: 14px;
+  line-height: var(--settings-meta-line);
 }
 
 .account-activity-chart__y-axis span {

@@ -222,8 +222,8 @@ describe('settings image-based visual contract', () => {
       mobileColumns: 1,
       cardMinHeight: 220,
     });
-    expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
-    expect(expertsCss).toMatch(/\.expert-card[\s\S]*?height:\s*220px/);
+    expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?repeat\(auto-fill,\s*minmax\(260px,\s*1fr\)\)/);
+    expect(expertsCss).toMatch(/\.expert-card[\s\S]*?height:\s*236px/);
     expect(expertsCss).not.toMatch(/grid-template-columns:\s*643px/);
     expect(expertsCss).not.toMatch(/settings-list-row/);
   });
@@ -244,7 +244,7 @@ describe('settings image-based visual contract', () => {
   });
 
   it('keeps network content inset and gives large card bodies their own vertical scroll', () => {
-    expect(networkCss).toMatch(/synon-network-settings[\s\S]*?>\s*section[\s\S]*?padding:\s*24px 28px/);
+    expect(networkCss).toMatch(/synon-network-settings[\s\S]*?>\s*section[\s\S]*?padding:\s*20px 20px/);
     expect(networkCss).toMatch(/builtin-network-groups[\s\S]*?overflow-y:\s*auto/);
     expect(networkCss).toMatch(/allowed-domain-list[\s\S]*?overflow-y:\s*auto/);
     expect(networkCss).toMatch(/network-group-row[\s\S]*?min-height:\s*52px/);
@@ -297,8 +297,8 @@ describe('settings image-based visual contract', () => {
     expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(236);
-    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*256px/);
-    expect(componentsCss).toMatch(/--settings-entity-card-title-size:\s*15px/);
+    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*236px/);
+    expect(componentsCss).toMatch(/--settings-card-title-size:\s*15px/);
     expect(componentsCss).toMatch(/--settings-entity-card-body-size:\s*13px/);
     expect(skillsCss).toMatch(/\.settings-skill-card\s*\{[^}]*min-height:\s*236px/);
     expect(skillsCss).toMatch(/\.settings-skill-card__description[\s\S]*?font-size:\s*13px/);
@@ -338,7 +338,7 @@ describe('settings image-based visual contract', () => {
     expect(toolsCss).toContain('.mcp-library-footer');
     expect(toolsCss).not.toContain('visibility: hidden');
     expect(connectorsCss).toContain('repeat(auto-fill, minmax(min(100%, 260px), 1fr))');
-    expect(toolsCss).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
+    expect(toolsCss).toContain('grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))');
     expect(toolsCss).toContain('grid-template-rows: repeat(3, minmax(min-content, 1fr))');
     expect(connectorsCss).toContain('.synon-mcp-card__footer');
     expect(compactCss).toMatch(/details:not\(\[open\]\)\s*>\s*div[\s\S]*?display:\s*none\s*!important/);
@@ -413,23 +413,21 @@ describe('settings image-based visual contract', () => {
 
   it('shares the entity typography tokens with MCP cards so their geometry stays in sync', () => {
     expect(connectorsCss).toMatch(/\.synon-mcp-card[\s\S]*?height:\s*auto/);
-    expect(connectorsCss).toMatch(
-      /\.synon-mcp-card__title-row > span[\s\S]*?font-size:\s*var\(--settings-entity-card-title-size\)/
-    );
+    expect(connectorsCss).toMatch(/.synon-mcp-card__title-row > span[\s\S]*?font-size:\s*15px/);
     expect(connectorsCss).toMatch(
       /\.synon-mcp-card__description[\s\S]*?line-height:\s*(?:var\(--settings-entity-card-body-line\)|21px)/
     );
     expect(connectorsCss).toMatch(
-      /data-state='connected'[\s\S]*?background:\s*color-mix\(in srgb, #22b85a 14%, var\(--settings-surface\)\)\s*!important[\s\S]*?color:\s*#18783c\s*!important/
+      /data-state='connected'[\s\S]*?background:\s*color-mix\(in srgb, var\(--success\) 14%,[\s\S]*?!important[\s\S]*?color:\s*var\(--success\)\s*!important/
     );
     expect(connectorsCss).toMatch(
-      /data-state='attention'[\s\S]*?background:\s*color-mix\(in srgb, #ff9800 14%, var\(--settings-surface\)\)\s*!important[\s\S]*?color:\s*#b45b00\s*!important/
+      /data-state='attention'[\s\S]*?background:\s*color-mix\(in srgb, var\(--warning\) 14%,[\s\S]*?!important[\s\S]*?color:\s*var\(--warning\)\s*!important/
     );
   });
 
   it('keeps the locked page title and description in the visual flow', () => {
-    expect(componentsCss).toMatch(/settings-page-header__title[\s\S]*?font-size:\s*28px\s*!important/);
-    expect(componentsCss).toMatch(/settings-page-header__description[\s\S]*?font-size:\s*15px\s*!important/);
+    expect(componentsCss).toMatch(/settings-page-header__title[\s\S]*?font-size:\s*26px\s*!important/);
+    expect(componentsCss).toMatch(/settings-page-header__description[\s\S]*?font-size:\s*14px\s*!important/);
     expect(layoutCss).toMatch(
       /settings-sider__item-label[\s\S]*?font-size:\s*14px\s*!important[\s\S]*?line-height:\s*24px\s*!important/
     );

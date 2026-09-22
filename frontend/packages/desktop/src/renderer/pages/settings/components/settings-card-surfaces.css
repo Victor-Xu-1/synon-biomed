@@ -6,11 +6,11 @@
  */
 
 .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card {
-  --settings-card-interaction-accent: var(--settings-module-accent, #39a4da);
+  --settings-card-interaction-accent: var(--settings-module-accent);
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-  --settings-card-interaction-accent: var(--mcp-accent, var(--settings-module-accent, #39a4da));
+  --settings-card-interaction-accent: var(--settings-module-accent);
 }
 
 .settings-page-wrapper[data-settings-route='experts'] .expert-card {

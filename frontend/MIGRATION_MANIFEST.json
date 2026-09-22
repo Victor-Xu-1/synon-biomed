@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "9916db1c62da5f2d0c644459631c80f1435c6681f8521c654b1f3b8ffb1ff79c",
+  "adaptationFingerprintSHA256": "d42a24941c382f14b200f4c14a6c2e47b64c8ac77d83f836c3f396bc45c360bd",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "f1b31522d6f75c6a37022252eaf47f059f5ffba5e6812a216f23b0ee459b21da",
+  "additionFingerprintSHA256": "bcb2538569c59c8ed7ed987ace7351c00afca7977950ff0542a48df81217313d",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
     "adaptedSourceFiles": 664,
     "removedSourceFiles": 289,
-    "addedFiles": 658
+    "addedFiles": 659
   },
   "adaptations": [
     {
@@ -2103,8 +2103,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/SynonBiomedExpertsSettings/ExpertWorkbench.tsx",
       "sourceSHA256": "d16cf7d5e33fa81c06a9ed7482450fd70309a8441f161575985c24d55f73caf9",
-      "targetSHA256": "99332fb3bdbcfe6372a024e2aaba4c5ef2d4fdf41c6bb0410a9c5ca392710a16",
-      "bytes": 37993,
+      "targetSHA256": "c201dc2df648e29ce0320ad1459d9ce322ec4d9b4ac1d2ff92b168c351670869",
+      "bytes": 38912,
       "reason": "Improve responsive expert rows and compact long descriptions without dropping source detail."
     },
     {
@@ -2187,8 +2187,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/SynonBiomedExpertsSettings/index.tsx",
       "sourceSHA256": "638d51181ac2164288a2d5542ca1ba4083f43aac28d2230ca0ff369014d7f53c",
-      "targetSHA256": "f26f79cc7e1ad56de232bf908d3f793a7ade2f5b96f737bf1954359902d8aac6",
-      "bytes": 2048,
+      "targetSHA256": "d06e3e32ddcb897993bff3ab532af4d75ca86e970aa8324354aea7a6a2721ae4",
+      "bytes": 428,
       "reason": "Expose Go-owned agents, skills, MCP, models, compute, memory, permissions, credentials, storage, and governance settings."
     },
     {
@@ -2201,8 +2201,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/SynonBiomedSkillsSettings.tsx",
       "sourceSHA256": "c3df56872aa6777496e50f80a282ca30eed7a1d43b538bc5eb3e0cf767a635db",
-      "targetSHA256": "ffe8a7e7e2a638f447ecad0934427d40ac944f323bf68e98497c7256de72827c",
-      "bytes": 23742,
+      "targetSHA256": "2b491a3fd86a8372b90dc7f45e53eb59bace74a1943478c02fa770f9df7667a0",
+      "bytes": 23017,
       "reason": "Unify installed Skill sources in one searchable library and consolidate acquisition into one action while preserving personal, import, toggle, and market workflows."
     },
     {
@@ -2222,8 +2222,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/SynonBiomedMcpSettings.tsx",
       "sourceSHA256": "9887b94995b2d8089326b63a078b0fe33e38505bffb7ce36e1ae61647278f939",
-      "targetSHA256": "bd008d533464a4e470ac1d6c25978bc24b4f980de129e1753e8150aa485da333",
-      "bytes": 17249,
+      "targetSHA256": "82dccb7217f75756267ea0c3e422a53bb217a118f5a79fb679d7b84e726a69d1",
+      "bytes": 16255,
       "reason": "Improve MCP connector density, localization, and responsive control layout."
     },
     {
@@ -2334,8 +2334,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/settingsRouteLoaders.ts",
       "sourceSHA256": "2ed520398de13480afe2a53d0c3595338073e98f7dcf2ce27b5ac7896bc778e8",
-      "targetSHA256": "318466236eff6d325f3ac3f68243802067ad20c17bfabcc3bd6f40efbec54645",
-      "bytes": 3726,
+      "targetSHA256": "23bc9c2c853515e62b3a4b90533192696d31b6b72e5400a25ba5c6b1268b0ba6",
+      "bytes": 3709,
       "reason": "Expose Go-owned agents, skills, MCP, models, compute, memory, permissions, credentials, storage, and governance settings."
     },
     {
@@ -4196,8 +4196,8 @@
     {
       "path": "tests/unit/settings/SynonBiomedMcpSettings.dom.test.tsx",
       "sourceSHA256": "e180f2ef876df521f08e312711d87b4b6c8409ec9ad229406d18e4810ca086fb",
-      "targetSHA256": "2a74da879b3e0f56bbe6b40a85f792cf36f843fe4ac4412368d3c504502b0c6d",
-      "bytes": 31072,
+      "targetSHA256": "4255f25ef6c4a97a763bddebe8374478350a4d03c0e5f3ae8ea86fb26337394d",
+      "bytes": 30990,
       "reason": "Verify localized and compact MCP connector presentation."
     },
     {
@@ -4224,8 +4224,8 @@
     {
       "path": "tests/unit/settings/SynonBiomedSkillsSettings.dom.test.tsx",
       "sourceSHA256": "4d5b03c14f1f449e22b2cd134c284df4be04a1a935ae2fd9360ff5307ea653cc",
-      "targetSHA256": "1e13d1b5d773aa8e1bcb5e3add1a0d3e2dcaf9ab68a878259e016ceae407fbd8",
-      "bytes": 20278,
+      "targetSHA256": "401ebdffda59be76a9543384be8814e9100a20ba49475256234718b03c7b441c",
+      "bytes": 20173,
       "reason": "Verify localized Skill source labels and compact rows."
     },
     {
@@ -7583,6 +7583,12 @@
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
+      "path": "packages/desktop/src/renderer/pages/settings/LibrarySettingsPage.tsx",
+      "sha256": "08ceaceb3bdf5f47f6c39228c5a3335b64ea00e28b59836a0a3824bc1a869899",
+      "bytes": 3905,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
       "path": "packages/desktop/src/renderer/pages/settings/MessageChannelsSettings.css",
       "sha256": "03ae5e0a80e2ecd8031e748f7b4bcaf9ed9608563030c8bbd1830d9e362958db",
       "bytes": 10997,
@@ -7602,8 +7608,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ScientificEnvironmentSettings.tsx",
-      "sha256": "4e2980ee8d11ca9ac4cd4881f99796a78df7015e01efa4d3b92d492d3c870fb8",
-      "bytes": 12953,
+      "sha256": "19b7cf31b60103358964d4fc08068fad9091456555d796f9ec06eb7c6b52c754",
+      "bytes": 13008,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7764,8 +7770,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "e4d4d3aee56b972898f466ef08d77cea15a3b8b1f7fb70790025b40ffa700646",
-      "bytes": 19143,
+      "sha256": "34c7e1ef2ed12236e5dfc9be8855c848a077dc0c72aa497888d2dcbb0c7d1ad5",
+      "bytes": 19144,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7806,8 +7812,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-experts.css",
-      "sha256": "80df700da5ffcb1414fe2ad9c56bff601a65c5ff933a48271d85a75e1e14702f",
-      "bytes": 7347,
+      "sha256": "78b55d0ce7a48624061c1e06f6b221717c56c1a05985c42cefa5d2faed56eabc",
+      "bytes": 7383,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7908,7 +7914,7 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settingsVisualContract.ts",
-      "sha256": "a5bfb409c68c3b915e5f23ac534307b0de1a38d911bf6b3c473803944720da0f",
+      "sha256": "8e39450385852d8d3ce2bd9bd3ab72f73c066282e19c849fe79f3c32e875ba84",
       "bytes": 9449,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
@@ -9762,14 +9768,14 @@
     },
     {
       "path": "tests/unit/settings/settingsVisualContract.test.ts",
-      "sha256": "b20d3043bb073001c2a03a80d3444617b749d29b553ebf7e3219bce960a32ee8",
-      "bytes": 25072,
+      "sha256": "b273a7a8f3e087b0ea05311d5327094d7f6888482b7953d732b49b05abe1bc7d",
+      "bytes": 25119,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
       "path": "tests/unit/settings/settingsVisualSystem.test.ts",
-      "sha256": "e41d1734181ab67fe5d5be246a712231bda4be8bfcb1f24598860b513d8446c8",
-      "bytes": 5146,
+      "sha256": "e7b347c5bc652d72487b7f16e7e435d90f635d92781bbbc7ed646b066dab8500",
+      "bytes": 5465,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

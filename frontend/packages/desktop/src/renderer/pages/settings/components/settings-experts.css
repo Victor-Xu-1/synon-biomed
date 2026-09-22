@@ -44,7 +44,9 @@
 
 .settings-page-wrapper[data-settings-route='experts'] .expert-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  align-content: start;
   align-items: stretch;
   overflow: visible;
   gap: 20px !important;

@@ -29,10 +29,6 @@ import { resolveSynonBiomedMcpDescription } from '@/renderer/services/mcp/synonB
 import { McpConnectorCard } from './McpConnectorCard';
 import { McpConnectorConfigurationModal } from './McpConnectorConfigurationModal';
 import { McpLibraryToolbar, type ConnectorFilter, type ConnectorBrowseView } from './McpLibraryToolbar';
-import SettingsPagination from '../components/SettingsPagination';
-
-// Keep page size independent of viewport and card content.
-const MCP_PAGE_SIZE = 12;
 
 const ignoreHandledMutationError = (_error: unknown): undefined => undefined;
 
@@ -51,7 +47,6 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
   const [editingServer, setEditingServer] = useState<SynonBiomedCustomMcpServer | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ConnectorFilter>('all');
-  const [mcpPage, setMcpPage] = useState(1);
   const [browseView, setBrowseView] = useState<ConnectorBrowseView | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const loadGenerationRef = useRef(0);
@@ -236,22 +231,11 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
     });
   }, [customById, filter, i18n.language, search, servers]);
 
-  const mcpTotalPages = Math.max(1, Math.ceil(visibleServers.length / MCP_PAGE_SIZE));
-  const visiblePageServers = useMemo(
-    () => visibleServers.slice((mcpPage - 1) * MCP_PAGE_SIZE, mcpPage * MCP_PAGE_SIZE),
-    [mcpPage, visibleServers]
-  );
-  useEffect(() => {
-    setMcpPage(1);
-  }, [filter, search]);
-
-  useEffect(() => {
-    if (mcpPage > mcpTotalPages) setMcpPage(mcpTotalPages);
-  }, [mcpPage, mcpTotalPages]);
+  const visiblePageServers = visibleServers;
 
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [mcpPage, filter, search]);
+  }, [filter, search]);
 
   const enabledConnectorCount = servers.filter((server) => server.enabled).length;
   const connectedConnectorCount = servers.filter(
@@ -376,19 +360,7 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
           ) : null}
         </Spin>
       </div>
-      <footer className='mcp-library-footer' data-testid='mcp-library-footer'>
-        {visibleServers.length > MCP_PAGE_SIZE ? (
-          <SettingsPagination
-            page={mcpPage}
-            totalPages={mcpTotalPages}
-            onChange={(page) => {
-              setMcpPage(page);
-              if (scrollRef.current) scrollRef.current.scrollTop = 0;
-            }}
-            label={t('settings.synonBiomedMcpPaginationLabel')}
-          />
-        ) : null}
-      </footer>
+      <footer className='mcp-library-footer' data-testid='mcp-library-footer' />
 
       <McpConnectorEditorModal
         visible={editorVisible}

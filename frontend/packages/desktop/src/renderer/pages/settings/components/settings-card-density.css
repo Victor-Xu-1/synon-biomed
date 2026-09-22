@@ -322,7 +322,7 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-auto-rows: auto;
     align-items: stretch;
     align-content: start;
@@ -577,8 +577,8 @@
     .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    grid-auto-rows: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto;
     align-items: stretch;
   }
 }

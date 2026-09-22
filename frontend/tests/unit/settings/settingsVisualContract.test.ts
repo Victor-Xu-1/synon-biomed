@@ -216,13 +216,14 @@ describe('settings image-based visual contract', () => {
     expect(connectorsCss).not.toMatch(/synon-mcp-card:hover/);
   });
 
-  it('uses a four-column expert card grid instead of the retired horizontal rows', () => {
+  it('uses a three-column expert card grid instead of the retired horizontal rows', () => {
     expect(SETTINGS_VISUAL_CONTRACTS.experts.grid).toEqual({
-      desktopColumns: 4,
+      desktopColumns: 3,
       mobileColumns: 1,
       cardMinHeight: 220,
     });
-    expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?repeat\(auto-fill,\s*minmax\(260px,\s*1fr\)\)/);
+    expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    expect(expertsCss).toMatch(/grid-auto-rows:\s*auto/);
     expect(expertsCss).toMatch(/\.expert-card[\s\S]*?height:\s*168px/);
     expect(expertsCss).not.toMatch(/grid-template-columns:\s*643px/);
     expect(expertsCss).not.toMatch(/settings-list-row/);
@@ -293,9 +294,9 @@ describe('settings image-based visual contract', () => {
   });
 
   it('uses readable fluid skill cards while aligning the connector card contract', () => {
-    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.desktopColumns).toBe(4);
+    expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.desktopColumns).toBe(3);
     expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
-    expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
+    expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(3);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(236);
     expect(componentsCss).toMatch(/--settings-entity-card-height:\s*168px/);
     expect(componentsCss).toMatch(/--settings-card-title-size:\s*15px/);

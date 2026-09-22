@@ -662,7 +662,7 @@ describe('SynonBiomedMcpSettingsContent', () => {
     expect(screen.queryByText('No connectors installed yet.')).toBeNull();
   });
 
-  it('keeps pagination outside the scroll area, resets page after filtering and preserves full localized copy', async () => {
+  it('renders the full connector catalog in one scroll area and filters without pagination', async () => {
     const connectors = Array.from({ length: 13 }, (_, i) =>
       connectorFixture(`bundled:item-${i}`, `item-${i}`, `Connector ${i}`)
     );
@@ -690,15 +690,13 @@ describe('SynonBiomedMcpSettingsContent', () => {
     await renderWithI18n(<SynonBiomedMcpSettingsContent />, 'en-US');
     expect(await screen.findByRole('heading', { name: 'Connectors 13' })).toBeVisible();
     expect(screen.getByText('bioRxiv/medRxiv preprints: full text and metadata.')).toBeVisible();
-    const footer = screen.getByTestId('mcp-library-footer');
     const scroll = screen.getByTestId('mcp-library-scroll');
-    expect(scroll).not.toContainElement(footer);
-    fireEvent.click(within(footer).getByRole('button', { name: 'Connector pagination 2', exact: true }));
+    // The entire catalog renders as one scrolling list; there is no pager.
     expect(screen.getByText('Connector 12')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Connector pagination 2', exact: true })).not.toBeInTheDocument();
     scroll.scrollTop = 100;
     fireEvent.change(screen.getByRole('textbox', { name: 'Search connectors...' }), { target: { value: 'preprints' } });
     await waitFor(() => expect(screen.getByText('bioRxiv')).toBeVisible());
-    expect(scroll.scrollTop).toBe(0);
     expect(screen.queryByText('Connector 12')).toBeNull();
     fireEvent.change(screen.getByTestId('synon-biomed-mcp-filter'), { target: { value: 'needs-attention' } });
     expect(screen.getByText('No connectors match the current filters.')).toBeVisible();

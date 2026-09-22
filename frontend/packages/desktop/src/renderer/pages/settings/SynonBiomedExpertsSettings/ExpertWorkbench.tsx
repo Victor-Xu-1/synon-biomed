@@ -28,10 +28,8 @@ import { Close, Search } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from '../components/SettingsPageHeader';
-import SettingsPagination from '../components/SettingsPagination';
+import SynonBiomedExpertProfileModal from './SynonBiomedExpertProfileModal';
 
-/** Three rows of four cards per page, like every other settings catalog. */
-const EXPERT_PAGE_SIZE = 12;
 import {
   SettingsGeneratedArtwork,
   SettingsGeneratedEmptyArtwork,
@@ -43,8 +41,28 @@ import { SettingsToolbar } from '../components/SettingsPrimitives';
 import { compactSettingsDescription } from '../components/settingsPresentation';
 
 type ExpertWorkbenchProps = {
-  onCreate: () => void;
-  refreshToken: number;
+  /** When false, renders without the page-level header (used inside the merged library page). */
+  withHeader?: boolean;
+};
+
+const createRequestedFromHash = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const query = window.location.hash.split('?', 2)[1] ?? '';
+  return new URLSearchParams(query).get('create') === '1';
+};
+
+const clearCreateRequestFromHash = (): void => {
+  if (typeof window === 'undefined' || !window.location.hash.includes('?')) return;
+  const [route, query = ''] = window.location.hash.split('?', 2);
+  const params = new URLSearchParams(query);
+  if (!params.has('create')) return;
+  params.delete('create');
+  const suffix = params.size > 0 ? `?${params.toString()}` : '';
+  window.history.replaceState(
+    window.history.state,
+    '',
+    `${window.location.pathname}${window.location.search}${route}${suffix}`
+  );
 };
 
 type ExpertDraft = {
@@ -106,7 +124,7 @@ function resolveExpertArtwork(
   }
 }
 
-const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToken }) => {
+const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true }) => {
   const { t } = useTranslation();
   const [message, messageContext] = Message.useMessage({ maxCount: 4 });
   const [profiles, setProfiles] = useState<SynonBiomedExpertProfile[]>([]);
@@ -114,7 +132,6 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
   const [connectors, setConnectors] = useState<SynonBiomedMcpServer[]>([]);
   const [expertUsage, setExpertUsage] = useState<SynonBiomedExpertUsageByName | null>(null);
   const [loading, setLoading] = useState(true);
-  const [expertPageState, setExpertPage] = useState(1);
   const [loadError, setLoadError] = useState('');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'personal' | 'builtin'>('all');
@@ -124,6 +141,7 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pendingProfileName, setPendingProfileName] = useState<string | null>(null);
+  const [createVisible, setCreateVisible] = useState(createRequestedFromHash());
   const detailGeneration = useRef(0);
   const catalogGeneration = useRef(0);
   const translationRef = useRef(t);
@@ -189,7 +207,7 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
     return () => {
       catalogGeneration.current += 1;
     };
-  }, [reloadCatalog, refreshToken]);
+  }, [reloadCatalog]);
 
   const openProfile = useCallback(
     async (profile: SynonBiomedExpertProfile) => {
@@ -353,6 +371,19 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
     });
   }, [closeDetail, message, reloadCatalog, selected]);
 
+  const closeCreate = useCallback(() => {
+    setCreateVisible(false);
+    clearCreateRequestFromHash();
+  }, []);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (createRequestedFromHash()) setCreateVisible(true);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const visibleProfiles = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return localizedProfiles.filter((profile) => {
@@ -365,19 +396,12 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
     });
   }, [filter, localizedProfiles, query]);
 
-  useEffect(() => setExpertPage(1), [filter, query]);
-  const expertTotalPages = Math.max(1, Math.ceil(visibleProfiles.length / EXPERT_PAGE_SIZE));
-  const expertPage = Math.min(expertPageState, expertTotalPages);
-  const expertPageProfiles = useMemo(
-    () => visibleProfiles.slice((expertPage - 1) * EXPERT_PAGE_SIZE, expertPage * EXPERT_PAGE_SIZE),
-    [visibleProfiles, expertPage]
-  );
   const groupedProfiles = useMemo(
     () => ({
-      personal: expertPageProfiles.filter((profile) => profile.source === 'user'),
-      builtin: expertPageProfiles.filter((profile) => profile.source !== 'user'),
+      personal: visibleProfiles.filter((profile) => profile.source === 'user'),
+      builtin: visibleProfiles.filter((profile) => profile.source !== 'user'),
     }),
-    [expertPageProfiles]
+    [visibleProfiles]
   );
   const availableSkillCount = skills.length;
   const availableConnectorCount = connectors.filter((connector) => connector.enabled).length;
@@ -626,16 +650,18 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
   return (
     <div data-testid='expert-list-page' className='settings-experts-page flex min-h-0 flex-col gap-24px'>
       {messageContext}
-      <SettingsPageHeader
-        data-testid='experts-header'
-        title={t('settings.expertsSettings.title')}
-        description={t('settings.expertsSettings.description')}
-        actions={
-          <Button type='primary' onClick={onCreate}>
-            {t('settings.expertsSettings.addExpert')}
-          </Button>
-        }
-      />
+      {withHeader ? (
+        <SettingsPageHeader
+          data-testid='experts-header'
+          title={t('settings.expertsSettings.title')}
+          description={t('settings.expertsSettings.description')}
+          actions={
+            <Button type='primary' onClick={() => setCreateVisible(true)}>
+              {t('settings.expertsSettings.addExpert')}
+            </Button>
+          }
+        />
+      ) : null}
       <SettingsToolbar className='experts-toolbar'>
         <Select
           aria-label={t('settings.expertsSettings.filter')}
@@ -713,16 +739,16 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
                 usageByName={expertUsage}
               />
             ) : null}
-            <SettingsPagination
-              page={expertPage}
-              totalPages={expertTotalPages}
-              onChange={setExpertPage}
-              label={t('settings.expertsSettings.paginationLabel')}
-            />
           </div>
         ) : null}
       </div>
       {detailModal}
+      <SynonBiomedExpertProfileModal
+        visible={createVisible}
+        profile={null}
+        onClose={closeCreate}
+        onChanged={() => void reloadCatalog()}
+      />
     </div>
   );
 };
@@ -862,3 +888,6 @@ const CapabilityRow: React.FC<{ label: string; onRemove: () => void }> = ({ labe
 };
 
 export default ExpertWorkbench;
+
+/** Header-less, wrapper-less variant used inside the merged library page. */
+export const ExpertWorkbenchContent: React.FC = () => <ExpertWorkbench withHeader={false} />;

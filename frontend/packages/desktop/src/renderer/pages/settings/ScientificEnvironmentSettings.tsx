@@ -13,15 +13,12 @@ import {
 import { scientificRuntimePresentation } from '@/renderer/utils/scientificRuntimePresentation';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
 import SettingsPageHeader from './components/SettingsPageHeader';
-import SettingsPagination from './components/SettingsPagination';
 import { RefreshButton } from './components/SettingsPrimitives';
 import { useStorageResource } from './storage/useStorageResource';
 import { StorageRuntimeSelectionDialog } from './storage/StorageRuntimeSelectionDialog';
 import { StorageError, StorageLoading } from './storage/StorageFeedback';
 import { EnvironmentCard } from './environments/EnvironmentCard';
 
-/** Three rows of four cards per page, like every other settings catalog. */
-const ENVIRONMENT_PAGE_SIZE = 12;
 import {
   activeEnvironmentStates,
   environmentCategories,
@@ -33,7 +30,20 @@ import {
 import './environments/environments.css';
 
 const load = (signal: AbortSignal) => loadScientificRuntimeSettings({ signal });
-export default function ScientificEnvironmentSettings() {
+interface ScientificEnvironmentSettingsProps {
+  /** When false, renders without SettingsPageWrapper for route/tab embedding. */
+  withWrapper?: boolean;
+  /** When false, omits the page-level header (used inside the merged library page). */
+  withHeader?: boolean;
+  /** When true, renders the refresh/manage actions row inside the content instead of the header. */
+  showActions?: boolean;
+}
+
+export default function ScientificEnvironmentSettings({
+  withWrapper = true,
+  withHeader = true,
+  showActions = false,
+}: ScientificEnvironmentSettingsProps) {
   const { t } = useTranslation();
   const resource = useStorageResource(load);
   const [query, setQuery] = useState('');
@@ -45,7 +55,6 @@ export default function ScientificEnvironmentSettings() {
   const [uninstallTarget, setUninstallTarget] = useState<ScientificRuntimeOption | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [page, setPage] = useState(1);
   const pending = useRef(false);
   const alive = useRef(true);
   useEffect(() => {
@@ -79,13 +88,7 @@ export default function ScientificEnvironmentSettings() {
       haystack.includes(query.trim().toLocaleLowerCase())
     );
   });
-  useEffect(() => setPage(1), [query, category, filter]);
-  const environmentTotalPages = Math.max(1, Math.ceil(filtered.length / ENVIRONMENT_PAGE_SIZE));
-  const environmentPage = Math.min(page, environmentTotalPages);
-  const environmentPageItems = filtered.slice(
-    (environmentPage - 1) * ENVIRONMENT_PAGE_SIZE,
-    environmentPage * ENVIRONMENT_PAGE_SIZE
-  );
+  const environmentPageItems = filtered;
   const filterPanelId = useId();
   const activeFilterCount = filter === 'all' ? 0 : 1;
   const prepare = async () => {
@@ -153,30 +156,33 @@ export default function ScientificEnvironmentSettings() {
       if (alive.current) setBusy(false);
     }
   };
+  const environmentActions = (
+    <>
+      <RefreshButton loading={resource.loading} onClick={() => resource.refresh(false)} />
+      <button
+        type='button'
+        className='settings-action-button'
+        disabled={!resource.data || resource.failed || busy}
+        onClick={() => setSelection(true)}
+      >
+        {t('settings.environments.manageSelection')}
+      </button>
+    </>
+  );
+
   return (
     <SettingsPageWrapper>
-      <div className='environment-library' data-testid='scientific-environments'>
+      {withHeader ? (
         <SettingsPageHeader
-          title={
-            <>
-              {t('settings.environments.title')} <span className='settings-skill-library-total'>{items.length}</span>
-            </>
-          }
+          title={t('settings.environments.title')}
           description={t('settings.environments.description')}
-          actions={
-            <>
-              <RefreshButton loading={resource.loading} onClick={() => resource.refresh(false)} />
-              <button
-                type='button'
-                className='settings-action-button'
-                disabled={!resource.data || resource.failed || busy}
-                onClick={() => setSelection(true)}
-              >
-                {t('settings.environments.manageSelection')}
-              </button>
-            </>
-          }
+          actions={environmentActions}
         />
+      ) : null}
+      <div className='environment-library' data-testid='scientific-environments'>
+        {showActions ? (
+          <div className='environment-content-actions mb-12px flex items-center gap-8px'>{environmentActions}</div>
+        ) : null}
         <div className='environment-toolbar' role='search' aria-label={t('settings.environments.title')}>
           <div className='environment-search'>
             <Search size={15} aria-hidden='true' />
@@ -270,12 +276,6 @@ export default function ScientificEnvironmentSettings() {
                 />
               ))}
             </div>
-            <SettingsPagination
-              page={environmentPage}
-              totalPages={environmentTotalPages}
-              onChange={setPage}
-              label={t('settings.environments.paginationLabel')}
-            />
             {!filtered.length && <div className='environment-empty'>{t('settings.environments.empty')}</div>}
           </>
         )}
@@ -334,3 +334,8 @@ export default function ScientificEnvironmentSettings() {
     </SettingsPageWrapper>
   );
 }
+
+/** Header-less, wrapper-less content used by the merged library page tabs. */
+export const ScientificEnvironmentSettingsContent: React.FC<{ showActions?: boolean }> = ({ showActions = true }) => (
+  <ScientificEnvironmentSettings withWrapper={false} withHeader={false} showActions={showActions} />
+);

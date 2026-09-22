@@ -10,7 +10,6 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from './components/SettingsPageHeader';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
-import SettingsPagination from './components/SettingsPagination';
 import { SkillRow, SkillDraftRow, type SkillInfo } from './skills/SkillLibraryCard';
 import {
   CreatePersonalSkillModal,
@@ -46,12 +45,14 @@ import {
 interface SynonBiomedSkillsSettingsProps {
   /** When false, renders without SettingsPageWrapper for route/tab embedding. */
   withWrapper?: boolean;
+  /** When false, omits the page-level header (used inside the merged library page). */
+  withHeader?: boolean;
 }
 
-// Every card wall shows three rows of four, so catalogs page in twelves.
-const SKILLS_PAGE_SIZE = 12;
-
-const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ withWrapper = true }) => {
+const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
+  withWrapper = true,
+  withHeader = true,
+}) => {
   const { i18n, t } = useTranslation();
   const [message, messageContext] = Message.useMessage({ maxCount: 3 });
   const messageRef = useRef(message);
@@ -74,7 +75,6 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
   const [categoryFilter, setCategoryFilter] = useState<SynonBiomedSkillCategorySelection>('all');
   const [activeSection, setActiveSection] = useState<SkillSourceFilter>('all');
   const [marketVisible, setMarketVisible] = useState(false);
-  const [skillPage, setSkillPage] = useState(1);
   const [pendingSkill, setPendingSkill] = useState<string | null>(null);
   const [pendingSource, setPendingSource] = useState<string | null>(null);
   const [githubVisible, setGithubVisible] = useState(false);
@@ -163,28 +163,11 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
         : [],
     [activeSection, categoryFilter, drafts, filter, searchQuery]
   );
-  const skillTotalPages = Math.max(1, Math.ceil(filteredSkills.length / SKILLS_PAGE_SIZE));
-  const visibleSkills = useMemo(
-    () => filteredSkills.slice((skillPage - 1) * SKILLS_PAGE_SIZE, skillPage * SKILLS_PAGE_SIZE),
-    [filteredSkills, skillPage]
-  );
+  const visibleSkills = filteredSkills;
 
   useLayoutEffect(() => {
     if (listScrollRef.current) listScrollRef.current.scrollTop = 0;
-  }, [skillPage, activeSection, categoryFilter, filter, searchQuery]);
-
-  useEffect(() => {
-    setSkillPage(1);
   }, [activeSection, categoryFilter, filter, searchQuery]);
-
-  const changeSkillPage = (page: number) => {
-    if (listScrollRef.current) listScrollRef.current.scrollTop = 0;
-    setSkillPage(page);
-  };
-
-  useEffect(() => {
-    if (skillPage > skillTotalPages) setSkillPage(skillTotalPages);
-  }, [skillPage, skillTotalPages]);
 
   const updateSkillEnabled = useCallback(
     async (skill: SkillInfo, enabled: boolean) => {
@@ -422,16 +405,18 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
   const mainContent = (
     <div className='settings-skills-page'>
       {messageContext}
-      <SettingsPageHeader
-        data-testid='skills-header'
-        title={
-          <>
-            {t('settings.skillsSettings.title')}{' '}
-            <span className='settings-skill-library-total'>{availableSkills.length + drafts.length}</span>
-          </>
-        }
-        actions={headerActions}
-      />
+      {withHeader ? (
+        <SettingsPageHeader
+          data-testid='skills-header'
+          title={
+            <>
+              {t('settings.skillsSettings.title')}{' '}
+              <span className='settings-skill-library-total'>{availableSkills.length + drafts.length}</span>
+            </>
+          }
+          actions={headerActions}
+        />
+      ) : null}
       <SkillLibraryToolbar
         query={searchQuery}
         onQueryChange={setSearchQuery}
@@ -465,16 +450,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
         <div ref={listScrollRef} className='settings-skill-library-scroll' data-testid='skill-library-scroll'>
           {list}
         </div>
-        <div className='settings-skill-library-footer'>
-          {filteredSkills.length > SKILLS_PAGE_SIZE ? (
-            <SettingsPagination
-              page={skillPage}
-              totalPages={skillTotalPages}
-              onChange={changeSkillPage}
-              label={t('settings.skillsSettings.paginationLabel')}
-            />
-          ) : null}
-        </div>
+        <div className='settings-skill-library-footer' />
       </section>
       <SkillMarketModal
         visible={marketVisible}
@@ -511,6 +487,11 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ w
 
   return withWrapper ? <SettingsPageWrapper>{mainContent}</SettingsPageWrapper> : mainContent;
 };
+
+/** Header-less, wrapper-less content used by the merged library page tabs. */
+export const SynonBiomedSkillsSettingsContent: React.FC = () => (
+  <SynonBiomedSkillsSettings withWrapper={false} withHeader={false} />
+);
 
 function ImportedSources({
   sources,

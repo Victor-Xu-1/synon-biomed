@@ -170,8 +170,8 @@ export default function ScientificEnvironmentSettings({
     </>
   );
 
-  return (
-    <SettingsPageWrapper>
+  const content = (
+    <>
       {withHeader ? (
         <SettingsPageHeader
           title={t('settings.environments.title')}
@@ -331,8 +331,11 @@ export default function ScientificEnvironmentSettings({
           </Modal>
         )}
       </div>
-    </SettingsPageWrapper>
+    </>
   );
+
+  if (!withWrapper) return content;
+  return <SettingsPageWrapper>{content}</SettingsPageWrapper>;
 }
 
 /** Header-less, wrapper-less content used by the merged library page tabs. */

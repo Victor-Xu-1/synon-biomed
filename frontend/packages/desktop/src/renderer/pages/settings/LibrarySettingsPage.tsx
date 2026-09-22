@@ -44,7 +44,7 @@ const LibrarySettingsPage: React.FC = () => {
 
   return (
     <SettingsPageWrapper>
-      <div className='settings-library-page flex min-h-0 flex-col'>
+      <div className='settings-library-page flex min-h-0 w-full flex-col'>
         <div className='settings-library-tabs-row sticky top-0 z-1' style={{ background: 'var(--color-bg-1)' }}>
           <div className='settings-page-header__tabs-row' style={{ paddingTop: 4 }}>
             <div className='settings-page-header__tabs' role='tablist'>

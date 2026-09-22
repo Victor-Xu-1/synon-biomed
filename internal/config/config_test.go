@@ -25,6 +25,17 @@ func TestLoadUsesBoundedRunnerToolRoundDefault(t *testing.T) {
 	}
 }
 
+func TestDefaultHomeUsesPlatformUserHomeWhenHOMEIsUnset(t *testing.T) {
+	t.Setenv("HOME", "")
+	home, err := os.UserHomeDir()
+	if err != nil || strings.TrimSpace(home) == "" {
+		t.Skipf("platform user home is unavailable: %v", err)
+	}
+	if got, want := defaultHome(), filepath.Join(home, ".synon-go"); got != want {
+		t.Fatalf("defaultHome=%q, want %q", got, want)
+	}
+}
+
 func TestLoadDefaultWebSessionOutlivesTwentyFourHourRun(t *testing.T) {
 	t.Setenv("SYNON_CONFIG", "")
 	t.Setenv("SYNON_LINK_AUTH_SESSION_TTL_MINUTES", "")

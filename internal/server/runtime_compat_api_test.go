@@ -417,7 +417,11 @@ func assertEnvironmentRetryRepairsFailedAssets(t *testing.T, root string) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = repairStore.Close() })
-	repairApp := New(Options{FileRoot: filepath.Join(root, "repair-runtime"), Workspace: repairStore, KernelManager: manager}).Handler()
+	repairServer := New(Options{FileRoot: filepath.Join(root, "repair-runtime"), Workspace: repairStore, KernelManager: manager})
+	repairServer.kernelConfinement = func(bool) kernelruntime.ConfinementEvidence {
+		return kernelruntime.ConfinementEvidence{Available: true, Mode: "verified-test-boundary"}
+	}
+	repairApp := repairServer.Handler()
 	retry := runtimeCompatJSON(t, repairApp, http.MethodPost, "/api/environments/retry", "user-1", map[string]any{}, http.StatusOK)
 	retried := retry["retried"].([]any)
 	if len(retried) != 2 || retried[0] != "python-kernel-sidecar" || retried[1] != "synon-biomed-python" ||

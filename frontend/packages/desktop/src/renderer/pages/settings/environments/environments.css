@@ -273,6 +273,18 @@
   line-height: 18px;
 }
 
+.environment-required {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--settings-accent-soft, var(--color-fill-2));
+  color: var(--settings-accent-strong, var(--color-text-1));
+  font-size: 11px;
+  line-height: 17px;
+}
+
 .environment-description {
   display: block;
   min-height: 42px;

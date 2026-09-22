@@ -171,14 +171,18 @@ const OnboardingFlow: React.FC = () => {
           (skill) => allowedSkills.has(skill.name) && skill.enabled
         );
         const defaultScientificRuntimes = Object.fromEntries(
-          next.scientificRuntimes.map((runtime) => [runtime.id, runtime.selected])
+          next.scientificRuntimes.map((runtime) => [runtime.id, runtime.required || runtime.selected])
         );
         const draft = ownerId ? loadOnboardingDraft(ownerId) : null;
         setSnapshot(next);
         setNetworkEnabled(mergeSelection(defaultNetwork, draft?.networkEnabled));
         setConnectorEnabled(mergeSelection(defaultConnectors, draft?.connectorEnabled, allowedConnectors));
         setSkillEnabled(mergeSelection(defaultSkills, draft?.skillEnabled, allowedSkills));
-        setScientificRuntimeEnabled(mergeSelection(defaultScientificRuntimes, draft?.scientificRuntimeEnabled));
+        const restoredScientificRuntimes = mergeSelection(defaultScientificRuntimes, draft?.scientificRuntimeEnabled);
+        for (const runtime of next.scientificRuntimes) {
+          if (runtime.required) restoredScientificRuntimes[runtime.id] = true;
+        }
+        setScientificRuntimeEnabled(restoredScientificRuntimes);
         setStep(draft?.step ?? 0);
         setProfileSummary(draft?.profileSummary ?? '');
         setSelectedTask(draft?.selectedTask ?? '');
@@ -1205,7 +1209,9 @@ const ScientificRuntimeList: React.FC<{
                 <strong>{presentation.title}</strong>
                 <small>{presentation.description}</small>
                 <small className={styles.runtimeMeta}>
-                  {t('guid.onboarding.capabilities.runtimeSize', { size: item.estimatedInstallMB })}
+                  {item.required
+                    ? t('settings.environments.included')
+                    : t('guid.onboarding.capabilities.runtimeSize', { size: item.estimatedInstallMB })}
                   {stateText ? ` · ${stateText}` : ''}
                 </small>
                 {!item.available && (
@@ -1214,6 +1220,7 @@ const ScientificRuntimeList: React.FC<{
               </span>
               <Switch
                 checked={checked}
+                disabled={item.required}
                 aria-label={presentation.title}
                 onChange={(nextChecked) => onChange(item.id, nextChecked)}
               />

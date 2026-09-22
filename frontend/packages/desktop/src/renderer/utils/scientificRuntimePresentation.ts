@@ -2,6 +2,16 @@ import type { TFunction } from 'i18next';
 
 export function scientificRuntimePresentation(id: string, t: TFunction): { title: string; description: string } {
   switch (id) {
+    case 'synon-biomed-python':
+      return {
+        title: t('guid.onboarding.capabilities.runtimePythonTitle'),
+        description: t('guid.onboarding.capabilities.runtimePythonDescription'),
+      };
+    case 'synon-biomed-r':
+      return {
+        title: t('guid.onboarding.capabilities.runtimeRTitle'),
+        description: t('guid.onboarding.capabilities.runtimeRDescription'),
+      };
     case 'common-structure-toolkit':
       return {
         title: t('guid.onboarding.capabilities.runtimeCommonTitle'),

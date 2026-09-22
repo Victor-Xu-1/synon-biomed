@@ -60,15 +60,20 @@ export function StorageRuntimeSelectionDialog({
             <label key={item.id}>
               <Checkbox
                 checked={selected[item.id]}
-                disabled={busy || !item.available}
+                disabled={busy || item.required || !item.available}
                 onChange={(checked) => setSelected((current) => ({ ...current, [item.id]: checked }))}
                 aria-label={presentation.title}
               />
               <span>
                 <strong>{presentation.title}</strong>
                 <small>{presentation.description}</small>
+                {item.required && <small>{t('settings.environments.required')}</small>}
               </span>
-              <small>{t('settings.storageSettings.estimatedSoftwareSize', { value: item.estimatedInstallMB })}</small>
+              <small>
+                {item.required
+                  ? t('settings.environments.included')
+                  : t('settings.storageSettings.estimatedSoftwareSize', { value: item.estimatedInstallMB })}
+              </small>
             </label>
           );
         })}

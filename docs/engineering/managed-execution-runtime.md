@@ -40,6 +40,19 @@ or shell installation path exists.
 
 ## Installation readiness and reuse
 
+The service-owned scientific bootstrap has one authority for the required
+`synon-biomed-python` and `synon-biomed-r` runtimes. It resolves the managed
+root from the current user's `SYNON_HOME` (falling back to the platform user
+data directory), stores active pointers below `conda/envs/`, and stores
+content-addressed generations below `conda/envs/.generations/`. The root is
+configuration-derived; no developer checkout path is part of the contract.
+Both runtimes are provisioned from verified catalog/explicit-lock assets at
+startup, smoke-tested, and then made available to every later task. A later
+task or service restart inventories and verifies the active generation first,
+so it reuses the existing installation rather than downloading a duplicate.
+Optional warmups use the same managed environment supervisor and root but are
+opt-in selections.
+
 An installer transaction is successful only when process creation and every
 package link-script exit succeed. The controlled native asset records its
 official source revision, narrow source change, locked build dependencies,

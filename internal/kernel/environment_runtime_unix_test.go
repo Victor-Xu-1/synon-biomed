@@ -4,7 +4,6 @@ package kernel
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -26,7 +25,7 @@ func TestSessionRuntimeSelectsManagedRAndPythonExecutables(t *testing.T) {
 	root := t.TempDir()
 	condaHome := filepath.Join(root, "conda")
 	envs := filepath.Join(condaHome, "envs")
-	rscript := writeExecutable(t, filepath.Join(envs, "r", "bin", "Rscript"), "#!/bin/sh\nexit 0\n")
+	rscript := writeExecutable(t, filepath.Join(envs, defaultManagedREnvironment, "bin", "Rscript"), "#!/bin/sh\nexit 0\n")
 	python := writeExecutable(t, filepath.Join(envs, "analysis", "bin", "python"), "#!/bin/sh\nexit 0\n")
 	rWorker := filepath.Join(root, "kernel_worker.R")
 	if err := os.WriteFile(rWorker, []byte("# worker\n"), 0o600); err != nil {
@@ -49,8 +48,8 @@ func TestSessionRuntimeSelectsManagedRAndPythonExecutables(t *testing.T) {
 		t.Fatalf("R runtime executable=%q arguments=%#v err=%v", executable, arguments, err)
 	}
 	joined := strings.Join(environment, "\n")
-	rLibrary := filepath.Join(workspace, ".r-libs", "r-kernel", "r")
-	if !strings.Contains(joined, "CONDA_PREFIX="+filepath.Join(envs, "r")) ||
+	rLibrary := filepath.Join(workspace, ".r-libs", "r-kernel", defaultManagedREnvironment)
+	if !strings.Contains(joined, "CONDA_PREFIX="+filepath.Join(envs, defaultManagedREnvironment)) ||
 		!strings.Contains(joined, "R_LIBS_USER="+rLibrary) ||
 		!strings.Contains(joined, "OPERON_WRITABLE_ROOTS="+workspace) ||
 		!strings.Contains(joined, "OPERON_DLOPEN_EXEMPT="+rLibrary) {
@@ -79,7 +78,7 @@ func TestSessionRuntimeSelectsManagedRAndPythonExecutables(t *testing.T) {
 			t.Fatalf("invalid Claude environment name %q was accepted", invalid)
 		}
 	}
-	if !manager.RuntimeReady("r", "r") || !manager.RuntimeReady("python", "analysis") ||
+	if manager.RuntimeReady("r", "r") || !manager.RuntimeReady("python", "analysis") ||
 		manager.RuntimeReady("r", "../escape") || manager.RuntimeReady("unknown", "r") {
 		t.Fatalf("runtime readiness r=%t python=%t escape=%t unknown=%t",
 			manager.RuntimeReady("r", "r"), manager.RuntimeReady("python", "analysis"),
@@ -134,89 +133,30 @@ func TestSessionRuntimeUsesBundledManagedPythonGenerationAuthority(t *testing.T)
 	}
 }
 
-func TestRepairDefaultREnvironmentUsesConfiguredMicromamba(t *testing.T) {
+func TestRepairDefaultREnvironmentRequiresVerifiedBundledCatalog(t *testing.T) {
 	root := t.TempDir()
-	condaHome := filepath.Join(root, "conda")
-	envs := filepath.Join(condaHome, "envs")
 	argumentsPath := filepath.Join(root, "arguments.txt")
-	environmentPath := filepath.Join(root, "environment.txt")
-	micromamba := writeExecutable(t, filepath.Join(root, "micromamba"), fmt.Sprintf(`#!/bin/sh
-set -eu
-printf '%%s\n' "$@" > %q
-env | sort > %q
-prefix=""
-previous=""
-while [ "$#" -gt 0 ]; do
-  if [ "$previous" = "prefix" ]; then
-    prefix="$1"
-    previous=""
-  elif [ "$1" = "-p" ] || [ "$1" = "--prefix" ]; then
-    previous="prefix"
-  fi
-  shift
-done
-test -n "$prefix"
-mkdir -p "$prefix/bin" "$prefix/conda-meta"
-printf '#!/bin/sh\nexit 0\n' > "$prefix/bin/Rscript"
-chmod 755 "$prefix/bin/Rscript"
-printf '{}' > "$prefix/conda-meta/r-base.json"
-`, argumentsPath, environmentPath))
+	micromamba := writeExecutable(t, filepath.Join(root, "micromamba"), "#!/bin/sh\nprintf '%s\\n' \"$@\" > "+argumentsPath+"\nexit 0\n")
 	manager := NewManager(Config{
-		Micromamba: micromamba, CondaHome: condaHome, CondaEnvsPath: envs,
-		DefaultREnv: "r",
+		Micromamba: micromamba, CondaHome: filepath.Join(root, "conda"),
+		CondaEnvsPath: filepath.Join(root, "conda", "envs"), DefaultREnv: "r",
 	})
-	if err := manager.RepairDefaultREnvironment(context.Background()); err != nil {
-		t.Fatal(err)
+	if err := manager.RepairDefaultREnvironment(context.Background()); err == nil {
+		t.Fatal("R repair accepted an unverified dynamic package request")
+	}
+	if _, err := os.Stat(argumentsPath); !os.IsNotExist(err) {
+		t.Fatalf("unverified R repair invoked micromamba: %v", err)
 	}
 	status := manager.RuntimeEnvironmentStatuses(false)
-	var repairedR *RuntimeEnvironmentStatus
+	var managedR *RuntimeEnvironmentStatus
 	for index := range status {
-		if status[index].Language == "r" && status[index].EnvironmentName == "r" {
-			if repairedR != nil {
-				t.Fatalf("duplicate repaired R runtime status=%#v", status)
-			}
-			repairedR = &status[index]
+		if status[index].Language == "r" && status[index].EnvironmentName == defaultManagedREnvironment {
+			managedR = &status[index]
+			break
 		}
 	}
-	if repairedR == nil || repairedR.Status != "failed" || repairedR.Error != "R kernel worker is not configured" {
-		// The R executable is repaired, while the deliberately absent worker is
-		// reported independently rather than hidden by the environment manager.
-		// Other managed runtimes may also appear in this inventory, so bind the
-		// assertion to the R identity instead of a positional list index.
-		t.Fatalf("runtime status=%#v repairedR=%#v", status, repairedR)
-	}
-	if _, err := manager.managedEnvironmentExecutable("r", "Rscript"); err != nil {
-		t.Fatal(err)
-	}
-	if count := managedPackageCount(filepath.Join(envs, "r")); count != 1 {
-		t.Fatalf("managed package count=%d", count)
-	}
-	rawArguments, err := os.ReadFile(argumentsPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	expectedArguments := []string{
-		"--no-rc", "create", "-y", "-p", filepath.Join(envs, "r"),
-		"-c", "conda-forge", "-c", "bioconda", "r-base", "r-jsonlite",
-		"r-tidyverse", "r-jsonlite", "r-ggplot2",
-	}
-	actualArguments := strings.Split(strings.TrimSpace(string(rawArguments)), "\n")
-	if !reflect.DeepEqual(actualArguments, expectedArguments) {
-		t.Fatalf("micromamba arguments=%#v want=%#v", actualArguments, expectedArguments)
-	}
-	rawEnvironment, err := os.ReadFile(environmentPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	joinedEnvironment := string(rawEnvironment)
-	for _, expected := range []string{
-		"HOME=" + condaHome + "\n",
-		"MAMBA_ROOT_PREFIX=" + condaHome + "\n",
-		"CONDA_PKGS_DIRS=" + filepath.Join(condaHome, "pkgs") + "\n",
-	} {
-		if !strings.Contains(joinedEnvironment, expected) {
-			t.Fatalf("micromamba environment missing %q in %q", expected, joinedEnvironment)
-		}
+	if managedR == nil || managedR.Status != "failed" {
+		t.Fatalf("unexpected R runtime status=%#v", status)
 	}
 }
 

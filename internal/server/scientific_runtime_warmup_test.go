@@ -55,19 +55,19 @@ func TestScientificRuntimeWarmupCatalogKeepsEstimatesWithoutSizeCeilings(t *test
 			t.Fatalf("runtime %s request=%#v", definition.ID, request)
 		}
 	}
-	if defaultCount != len(definitions) {
-		t.Fatalf("default runtime selections=%d, want all %d catalog entries", defaultCount, len(definitions))
+	if defaultCount != 0 {
+		t.Fatalf("optional runtime selections=%d, want none by default", defaultCount)
 	}
 	vina, found := scientificRuntimeWarmupDefinitionByID(autoDockVinaRuntimeID)
-	if !found || !vina.DefaultEnabled {
+	if !found || vina.DefaultEnabled {
 		t.Fatalf("Vina runtime default contract=%#v found=%t", vina, found)
 	}
 	common, found := scientificRuntimeWarmupDefinitionByID(commonStructureRuntimeID)
-	if !found || !common.DefaultEnabled {
+	if !found || common.DefaultEnabled {
 		t.Fatalf("common runtime default contract=%#v found=%t", common, found)
 	}
 	electrostatics, found := scientificRuntimeWarmupDefinitionByID(biomolecularElectrostaticsRuntimeID)
-	if !found || !electrostatics.DefaultEnabled || electrostatics.EstimatedInstallBytes >= 1024*1024*1024 {
+	if !found || electrostatics.DefaultEnabled || electrostatics.EstimatedInstallBytes >= 1024*1024*1024 {
 		t.Fatalf("electrostatics runtime size/default contract=%#v found=%t", electrostatics, found)
 	}
 }
@@ -165,17 +165,33 @@ func TestScientificRuntimeWarmupSelectionAPIPersistsOnlyRegisteredChoices(t *tes
 		}
 	}
 	options, ok := initial["options"].([]any)
-	if !ok || len(options) != len(scientificRuntimeWarmupDefinitions()) {
+	if !ok || len(options) != len(scientificRuntimeWarmupDefinitions())+2 {
 		t.Fatalf("runtime options=%#v", initial["options"])
 	}
 	for _, raw := range options {
 		option, ok := raw.(map[string]any)
-		if !ok || option["selected"] != true || option["default_enabled"] != true {
-			t.Fatalf("runtime option is not selected by default: %#v", raw)
+		if !ok {
+			t.Fatalf("runtime option is not an object: %#v", raw)
+		}
+		if option["required"] == true {
+			if option["selected"] != true || option["default_enabled"] != true || option["kind"] != "core" {
+				t.Fatalf("required runtime contract=%#v", option)
+			}
+		} else if option["selected"] != false || option["default_enabled"] != false || option["kind"] != "optional" {
+			t.Fatalf("optional runtime is selected by default: %#v", raw)
 		}
 		if _, found := option["requires_user_selection"]; found {
 			t.Fatalf("runtime option reintroduced a size-gated selection contract: %#v", raw)
 		}
+	}
+	// Clients may submit the complete catalog, including required rows; only
+	// optional choices are persisted.
+	runtimeCompatJSON(t, app, http.MethodPut, "/api/preferences/scientific-runtimes", "local", map[string]any{
+		"enabled_ids": []string{managedPythonScientificRuntimeID, managedRScientificRuntimeID},
+	}, http.StatusOK)
+	selected, configured, err := server.loadScientificRuntimeWarmupSelection()
+	if err != nil || !configured || len(selected) != 0 {
+		t.Fatalf("required runtime selection was persisted: %v configured=%t err=%v", selected, configured, err)
 	}
 
 	stored := runtimeCompatJSON(t, app, http.MethodPut, "/api/preferences/scientific-runtimes", "local", map[string]any{
@@ -184,7 +200,7 @@ func TestScientificRuntimeWarmupSelectionAPIPersistsOnlyRegisteredChoices(t *tes
 	if stored["configured"] != true {
 		t.Fatalf("stored runtime selection=%#v", stored)
 	}
-	selected, configured, err := server.loadScientificRuntimeWarmupSelection()
+	selected, configured, err = server.loadScientificRuntimeWarmupSelection()
 	if err != nil || !configured || len(selected) != 1 || selected[0] != autoDockVinaRuntimeID {
 		t.Fatalf("persisted selection=%v configured=%t err=%v", selected, configured, err)
 	}

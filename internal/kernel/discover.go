@@ -139,7 +139,7 @@ func DiscoverManagerWithPaths(condaHome, condaEnvsPath string) (*Manager, error)
 		ManagedPythonEnvironment: defaultManagedPythonEnvironment,
 		PythonHelperPath:         filepath.Join(assetRoot, "kernels", "cheminfo_render_helpers.py"),
 		SDFValidatorPath:         filepath.Join(assetRoot, "kernels", "sdf_artifact_validator.py"),
-		RWorkerPath:              filepath.Join(assetRoot, "kernels", "kernel_worker.R"), DefaultREnv: "r",
+		RWorkerPath:              filepath.Join(assetRoot, "kernels", "kernel_worker.R"), DefaultREnv: defaultManagedREnvironment,
 		RSharedPackages: []string{"tidyverse", "jsonlite", "ggplot2"},
 	})
 	if err := manager.Verify(); err != nil {

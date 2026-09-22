@@ -39,6 +39,7 @@ export function EnvironmentCard({
             <span className='environment-category'>
               {t('settings.environments.categories.' + environmentCategory(item.id))}
             </span>
+            {item.required && <span className='environment-required'>{t('settings.environments.required')}</span>}
           </div>
         </div>
         <p className='environment-description'>{text.description}</p>
@@ -79,11 +80,13 @@ export function EnvironmentCard({
             {t('settings.storageSettings.' + (environmentStateKeys[item.status] ?? 'softwareUnknown'))}
           </span>
           <span className='environment-size'>
-            {t('settings.storageSettings.estimatedSoftwareSize', { value: item.estimatedInstallMB })}
+            {item.required
+              ? t('settings.environments.included')
+              : t('settings.storageSettings.estimatedSoftwareSize', { value: item.estimatedInstallMB })}
           </span>
         </div>
         <div className='environment-card-actions'>
-          {active && !uninstalling ? (
+          {!item.required && active && !uninstalling ? (
             <button
               type='button'
               className='settings-action-button environment-action environment-action--pause'
@@ -93,27 +96,40 @@ export function EnvironmentCard({
               {t('settings.environments.pause')}
             </button>
           ) : null}
-          <button
-            type='button'
-            className='settings-action-button environment-action'
-            disabled={disabled || !item.available || active}
-            onClick={() => {
-              if (item.status === 'ready') onUninstall(item);
-              else onPrepare(item);
-            }}
-          >
-            {item.status === 'ready'
-              ? t('settings.environments.uninstall')
-              : uninstalling
-                ? t('settings.storageSettings.softwareUninstalling')
-                : active
-                  ? t('settings.environments.preparing')
-                  : t(
-                      item.status === 'failed' || item.status === 'stopped'
-                        ? 'common.retry'
-                        : 'settings.environments.download'
-                    )}
-          </button>
+          {item.required ? (
+            item.status === 'failed' || item.status === 'stopped' ? (
+              <button
+                type='button'
+                className='settings-action-button environment-action'
+                disabled={disabled || !item.available}
+                onClick={() => onPrepare(item)}
+              >
+                {t('common.retry')}
+              </button>
+            ) : null
+          ) : (
+            <button
+              type='button'
+              className='settings-action-button environment-action'
+              disabled={disabled || !item.available || active}
+              onClick={() => {
+                if (item.status === 'ready') onUninstall(item);
+                else onPrepare(item);
+              }}
+            >
+              {item.status === 'ready'
+                ? t('settings.environments.uninstall')
+                : uninstalling
+                  ? t('settings.storageSettings.softwareUninstalling')
+                  : active
+                    ? t('settings.environments.preparing')
+                    : t(
+                        item.status === 'failed' || item.status === 'stopped'
+                          ? 'common.retry'
+                          : 'settings.environments.download'
+                      )}
+            </button>
+          )}
         </div>
       </div>
     </article>

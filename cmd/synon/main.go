@@ -388,9 +388,9 @@ func runServer(info buildinfo.Info, cfg config.Config, tlsResolver *networktls.R
 	}
 	startSupervisor("compute-provider-jobs", app.RunComputeProviderJobSupervisor)
 	fmt.Println("compute provider job supervisor enabled")
-	if app.ManagedPythonProvisioningEnabled() {
-		startSupervisor("managed-python-runtime", app.RunManagedPythonProvisioner)
-		fmt.Println("managed Python runtime supervisor enabled")
+	if app.ManagedScientificRuntimeProvisioningEnabled() {
+		startSupervisor("managed-scientific-runtimes", app.RunManagedScientificRuntimeProvisioner)
+		fmt.Println("managed Python and R runtime supervisor enabled")
 	}
 	if app.KernelIdleReaperEnabled() {
 		startSupervisor("kernel-idle-reaper", app.RunKernelIdleReaper)

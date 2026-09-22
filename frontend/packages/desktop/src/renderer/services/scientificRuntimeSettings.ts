@@ -2,6 +2,8 @@ import { BackendHttpError } from '@/common/adapter/httpBridge';
 
 export type ScientificRuntimeOption = {
   id: string;
+  kind: 'core' | 'optional';
+  required: boolean;
   estimatedInstallBytes: number;
   estimatedInstallMB: number;
   defaultEnabled: boolean;
@@ -55,8 +57,8 @@ export async function loadScientificRuntimeSettings(
       !item ||
       !id ||
       !status ||
-      !bytes ||
-      !mb ||
+      bytes == null ||
+      mb == null ||
       !Number.isSafeInteger(bytes) ||
       !Number.isSafeInteger(mb) ||
       typeof item.default_enabled !== 'boolean' ||
@@ -68,6 +70,8 @@ export async function loadScientificRuntimeSettings(
     const percent = nonnegative(runtime?.phase_percent);
     return {
       id,
+      kind: item.kind === 'core' ? 'core' : 'optional',
+      required: item.required === true,
       status,
       estimatedInstallBytes: bytes,
       estimatedInstallMB: mb,

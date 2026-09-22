@@ -33,6 +33,29 @@ describe('scientific runtime settings protocol', () => {
     await expect(loadScientificRuntimeSettings({ fetchImpl })).rejects.toThrow('invalid');
   });
 
+  it('accepts zero-sized required core runtimes and keeps their contract explicit', async () => {
+    const entry = {
+      id: 'synon-biomed-python',
+      kind: 'core',
+      required: true,
+      estimated_install_bytes: 0,
+      estimated_install_mb: 0,
+      default_enabled: true,
+      selected: true,
+      available: true,
+      runtime: { status: 'ready' },
+    };
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ options: [entry] })));
+    const result = await loadScientificRuntimeSettings({ fetchImpl });
+    expect(result.options[0]).toMatchObject({
+      id: 'synon-biomed-python',
+      kind: 'core',
+      required: true,
+      estimatedInstallBytes: 0,
+      estimatedInstallMB: 0,
+    });
+  });
+
   it('saves explicit choices and retries through the existing authority', async () => {
     const fetchImpl = vi.fn().mockImplementation(async () => new Response('{}'));
     await saveScientificRuntimeSelection({ beta: true, alpha: true, disabled: false }, { fetchImpl });

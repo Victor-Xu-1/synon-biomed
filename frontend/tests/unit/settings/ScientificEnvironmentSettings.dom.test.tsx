@@ -25,6 +25,18 @@ const item = {
   status: 'waiting_for_selection',
   packages: [{ manager: 'pip', spec: 'vina==1.2.7' }],
 };
+const coreItem = {
+  id: 'synon-biomed-python',
+  kind: 'core' as const,
+  required: true,
+  estimatedInstallBytes: 0,
+  estimatedInstallMB: 0,
+  defaultEnabled: true,
+  selected: true,
+  available: true,
+  status: 'ready',
+  packages: [{ manager: 'conda', spec: 'python' }],
+};
 describe('scientific environment library', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -113,6 +125,18 @@ describe('scientific environment library', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '确认卸载' }));
     await waitFor(() => expect(mocks.uninstall).toHaveBeenCalledWith('autodock-vina'));
+  });
+
+  it('keeps required core runtimes visible but outside optional selection actions', async () => {
+    mocks.load.mockResolvedValue({ configured: false, options: [coreItem, item] });
+    await renderWithSettingsI18n(<ScientificEnvironmentSettings />, 'en-US');
+    expect(await screen.findByText('Synon Biomed Python')).toBeInTheDocument();
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Manage predownloads' }));
+    const dialog = await screen.findByRole('dialog');
+    const coreCheckbox = within(dialog).getAllByRole('checkbox')[0];
+    expect(coreCheckbox).toBeChecked();
+    expect(coreCheckbox).toBeDisabled();
   });
   it('polls observed preparation and stops polling after network failure', async () => {
     mocks.load.mockResolvedValueOnce({

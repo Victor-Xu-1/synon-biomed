@@ -647,6 +647,9 @@ func defaultHome() string {
 	if home := os.Getenv("HOME"); home != "" {
 		return filepath.Join(home, ".synon-go")
 	}
+	if home, err := os.UserHomeDir(); err == nil && strings.TrimSpace(home) != "" {
+		return filepath.Join(home, ".synon-go")
+	}
 	return ".synon-go"
 }
 

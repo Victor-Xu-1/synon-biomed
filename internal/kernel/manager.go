@@ -40,7 +40,6 @@ type Config struct {
 	SDFValidatorPath         string
 	RWorkerPath              string
 	DefaultREnv              string
-	DefaultREnvPackages      []string
 	RSharedLibsBase          string
 	RSharedPackages          []string
 	DisableROperationLog     bool
@@ -103,8 +102,8 @@ type Manager struct {
 	restartMu      sync.Mutex
 	pendingRestart map[string]pendingKernelRestart
 
-	managedPythonMu                   sync.Mutex
-	managedPythonProvision            *managedPythonProvision
+	managedPythonState                managedRuntimeProvisioningState
+	managedRState                     managedRuntimeProvisioningState
 	scientificRuntimeMu               sync.Mutex
 	managedEnvironmentMu              sync.Mutex
 	managedEnvironmentSupervisor      context.Context
@@ -155,12 +154,17 @@ func (m *Manager) currentStdoutObserver() func(ExecStdoutChunk) {
 	return m.stdoutObserver
 }
 
-type managedPythonProvision struct {
+type managedRuntimeProvision struct {
 	done           chan struct{}
 	err            error
 	phase          string
 	startedAt      time.Time
 	lastProgressAt time.Time
+}
+
+type managedRuntimeProvisioningState struct {
+	mu        sync.Mutex
+	provision *managedRuntimeProvision
 }
 
 type pendingKernelRestart struct {
@@ -220,7 +224,12 @@ func NewManager(config Config) *Manager {
 	}
 	config.RWorkerPath = cleanOptionalPath(config.RWorkerPath)
 	if strings.TrimSpace(config.DefaultREnv) == "" {
-		config.DefaultREnv = "r"
+		config.DefaultREnv = defaultManagedREnvironment
+	}
+	if strings.TrimSpace(config.CondaHome) == "" && strings.TrimSpace(config.CondaEnvsPath) != "" {
+		// Keep installer caches beside an explicitly supplied environment root;
+		// never fall back to a relative `pkgs` directory or the process cwd.
+		config.CondaHome = filepath.Dir(filepath.Clean(config.CondaEnvsPath))
 	}
 	if strings.TrimSpace(config.CondaEnvsPath) == "" && strings.TrimSpace(config.CondaHome) != "" {
 		config.CondaEnvsPath = filepath.Join(config.CondaHome, "envs")

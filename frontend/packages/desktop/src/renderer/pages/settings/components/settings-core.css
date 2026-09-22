@@ -27,7 +27,11 @@
   --settings-entity-card-padding-wide: 20px;
   /* Compact floor: cards grow with their content instead of reserving a
      fixed 236px sheet that left a void above the footer. */
-  --settings-entity-card-height: 168px;
+  --settings-entity-card-height: 192px;
+  /* The merged library page (`.settings-library-route`) runs one step roomier.
+     Its cards stack a two-line description and a footer row, so they take this
+     192px floor while every standalone settings page keeps the 168px above. */
+  --settings-library-card-height: 192px;
   /* One type ramp for the whole settings surface. */
   --settings-page-title-size: 26px;
   --settings-page-title-line: 34px;

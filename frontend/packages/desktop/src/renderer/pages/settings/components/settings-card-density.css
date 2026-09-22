@@ -349,11 +349,17 @@
    * metric is a token, so the tabs cannot drift apart again, and the height
    * comes from `min-height` on the shared card token while the grids keep
    * `grid-auto-rows: auto`.
+   *
+   * The floor is `--settings-library-card-height` (192px), one step roomier
+   * than the 168px `--settings-entity-card-height` the standalone settings
+   * pages keep: heading 36 + 8 copy gap + 40 two-line copy + 33 footer + 40
+   * padding = 157px, so the copy and the status row always fit whole and the
+   * spare room lands as breathing space above the footer hairline.
    */
   html body .settings-page-wrapper .settings-library-card {
     display: flex;
     box-sizing: border-box;
-    min-height: var(--settings-entity-card-height) !important;
+    min-height: var(--settings-library-card-height) !important;
     height: auto;
     flex-direction: column;
     gap: 0;
@@ -418,11 +424,14 @@
   }
 
   /* Two clamped lines at a fixed height keep every card's body the same size.
-     The margin is forced so a route rule cannot collapse the gap under the
-     heading and unbalance the four tabs. */
+     Both bounds are pinned, so the copy zone can neither grow into a third
+     line nor be squeezed by the row's other cards; the margin is forced so a
+     route rule cannot collapse the gap under the heading and unbalance the
+     four tabs. */
   html body .settings-page-wrapper .settings-library-card .settings-library-card__description {
     display: -webkit-box;
     min-height: calc(var(--ui-line-height-body) * 2);
+    max-height: calc(var(--ui-line-height-body) * 2);
     margin: var(--ui-space-4) 0 0 !important;
     overflow: hidden;
     color: var(--settings-text-secondary) !important;
@@ -472,6 +481,7 @@
   html body .settings-page-wrapper .settings-library-card .settings-library-card__meta > * {
     min-width: 0;
     overflow: hidden;
+    white-space: nowrap;
     text-overflow: ellipsis;
   }
 

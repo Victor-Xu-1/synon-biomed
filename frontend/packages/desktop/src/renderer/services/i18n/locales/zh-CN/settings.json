@@ -735,6 +735,7 @@
   "cronNotificationEnabled": "定时任务完成通知",
   "promptTimeout": "LLM 请求超时时间（秒）",
   "groupAiCore": "AI 核心",
+  "scientificToolkit": "科学工具集",
   "groupApp": "应用",
   "groupAbout": "其他",
   "gemini": "Gemini CLI",

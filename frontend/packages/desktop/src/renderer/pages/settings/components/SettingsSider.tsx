@@ -12,19 +12,26 @@ import {
 import {
   navigateSettingsRoute,
   readSettingsRoute,
+  resolveSiderEntryId,
   subscribeToSettingsRoute,
 } from '@/renderer/pages/settings/settingsNavigation';
 import { SettingsGeneratedNavIcon } from './SettingsGeneratedAsset';
 
+/**
+ * The sider's entries, in display order.
+ *
+ * Experts, skills, connectors and scientific environments now share one merged
+ * catalog page, so they collapse into the single `experts` entry labelled
+ * "科学工具集". The other three stay route-only: `#/settings/skills`,
+ * `#/settings/tools` and `#/settings/environments` still open the merged page
+ * with their own tab preselected, they simply have no sider row of their own.
+ */
 export const BUILTIN_TAB_IDS = [
   'experts',
-  'skills',
-  'tools',
   'models',
   'compute',
   'governance',
   'network',
-  'environments',
   'credentials',
   'storage',
   'general',
@@ -60,23 +67,13 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
 
   const { menus, groupHeaderAt } = useMemo(() => {
     const builtinMap: Record<(typeof BUILTIN_TAB_IDS)[number], SiderItem> = {
+      // One row for the whole merged library. The connector/tool glyph reads as
+      // "toolkit", which is what the four merged tabs now are.
       experts: {
         id: 'experts',
-        label: t('settings.synonBiomedExperts'),
-        icon: <SettingsGeneratedNavIcon id='experts' />,
-        path: 'experts',
-      },
-      skills: {
-        id: 'skills',
-        label: t('settings.skills'),
-        icon: <SettingsGeneratedNavIcon id='skills' />,
-        path: 'skills',
-      },
-      tools: {
-        id: 'tools',
-        label: t('settings.tools'),
+        label: t('settings.scientificToolkit'),
         icon: <SettingsGeneratedNavIcon id='tools' />,
-        path: 'tools',
+        path: 'experts',
       },
       models: {
         id: 'models',
@@ -101,12 +98,6 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
         label: t('settings.network'),
         icon: <SettingsGeneratedNavIcon id='network' />,
         path: 'network',
-      },
-      environments: {
-        id: 'environments',
-        label: t('settings.environments.title'),
-        icon: <SettingsGeneratedNavIcon id='environments' />,
-        path: 'environments',
       },
       credentials: {
         id: 'credentials',
@@ -149,7 +140,7 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
       })}
     >
       {menus.map((item, index) => {
-        const isSelected = activeRoute === item.id;
+        const isSelected = resolveSiderEntryId(activeRoute) === item.id;
         const groupHeaderKey = groupHeaderAt.get(index);
         const groupHeader =
           groupHeaderKey && !collapsed ? (

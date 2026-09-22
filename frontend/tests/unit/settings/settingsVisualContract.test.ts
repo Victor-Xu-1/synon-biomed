@@ -269,7 +269,7 @@ describe('settings image-based visual contract', () => {
     expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?gap:\s*16px/);
     // The expert tile no longer pins its own height; the shared merged-library
     // card anatomy owns it so all four tabs stay exactly equal.
-    expect(expertsCss).not.toMatch(/(?<![-\w])height:\s*168px/);
+    expect(expertsCss).not.toMatch(/(?<![-\w])height:\s*192px/);
     expect(expertsCss).not.toMatch(/grid-template-columns:\s*643px/);
     expect(expertsCss).not.toMatch(/settings-list-row/);
   });
@@ -278,7 +278,10 @@ describe('settings image-based visual contract', () => {
     // Same three parts on every card: heading (icon + title), a two-line
     // description, then a footer holding one metadata line and one 24px pill
     // control. Every metric is a token, so the tabs cannot drift apart again.
-    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*168px\s*!important/);
+    // The merged library floor is 192px — 24px roomier than the 192px entity
+    // token the standalone settings pages keep — so the two-line copy and the
+    // status row always fit whole.
+    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*192px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*padding:\s*20px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__heading\s*\{[^}]*min-height:\s*36px/);
     // The heading owns the title ramp, so the icon slot, the title slot and the
@@ -293,10 +296,21 @@ describe('settings image-based visual contract', () => {
     expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*font-weight:\s*400\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*-webkit-line-clamp:\s*2/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*min-height:\s*calc\(20px \* 2\)/);
+    // The copy zone is pinned at exactly two lines, so no route can grow it
+    // into a third line row and push the status row out of the card.
+    expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*max-height:\s*calc\(20px \* 2\)/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__meta\s*\{[^}]*font-size:\s*12px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__meta\s*\{[^}]*white-space:\s*nowrap/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__meta\s*\{[^}]*min-width:\s*0/);
+    expect(cardDensityCss).toMatch(
+      /\.settings-library-card__meta > \*\s*\{[^}]*min-width:\s*0;[^}]*overflow:\s*hidden;[^}]*white-space:\s*nowrap;[^}]*text-overflow:\s*ellipsis/
+    );
     expect(cardDensityCss).toMatch(/\.settings-library-card__footer\s*\{[^}]*min-height:\s*33px/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__footer\s*\{[^}]*flex-wrap:\s*nowrap/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__control\s*\{[^}]*height:\s*24px/);
+    // The one control is pinned so the pill/capsule can never be squeezed by
+    // the metadata line beside it.
+    expect(cardDensityCss).toMatch(/\.settings-library-card__control\s*\{[^}]*flex:\s*0 0 auto/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__control\s*\{[^}]*border-radius:\s*999px/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__control\s*\{[^}]*font-size:\s*12px\s*!important/);
     // The footer owns the 12px metadata ramp, so the bottom row reads the same
@@ -388,13 +402,13 @@ describe('settings image-based visual contract', () => {
     expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(236);
-    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*168px/);
+    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*192px/);
     expect(componentsCss).toMatch(/--settings-card-title-size:\s*15px/);
     expect(componentsCss).toMatch(/--settings-entity-card-body-size:\s*13px/);
     // The skill tile takes its height and type ramp from the shared merged-library
     // anatomy rather than pinning a route-specific min-height of its own.
     expect(skillsCss).not.toMatch(/\.settings-skill-card\s*\{[^}]*min-height:\s*236px/);
-    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*168px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*192px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*font-size:\s*13px\s*!important/);
     expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*overflow-wrap:\s*anywhere/);
     expect(skillsCss).toMatch(/\.settings-skill-library-scroll[\s\S]*?overflow-y:\s*auto/);

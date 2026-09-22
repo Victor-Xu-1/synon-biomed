@@ -761,8 +761,9 @@ html body .settings-page-wrapper.settings-library-route .environment-library {
   margin-top: 12px;
 }
 
-/* The compact footer shows only its control: a 202px column cannot fit the
-   meta row, and half-ellipsed fragments read as broken text. */
+/* Let the footer meta wrap onto as many lines as it needs. */
 .settings-library-route .settings-library-card__meta {
-  display: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }

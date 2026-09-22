@@ -34,7 +34,7 @@ describe('settings visual system', () => {
   it('owns one type ramp, one control height and one container rhythm', () => {
     for (const declaration of [
       '--settings-control-height: var(--ui-control-lg)',
-      '--settings-card-radius: var(--ui-radius-xl)',
+      '--settings-card-radius: var(--ui-radius-2xl)',
       '--settings-card-gap: var(--ui-space-6)',
       '--settings-section-gap: var(--ui-space-7)',
       '--settings-entity-card-height: 168px',

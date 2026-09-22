@@ -399,7 +399,7 @@ describe('shared visual shell contract', () => {
       /:is\([\s\S]*?\.arco-card,[\s\S]*?\.arco-modal,[\s\S]*?\.arco-drawer,[\s\S]*?\)\s*\{[^}]*border-width:\s*1px[^}]*border-color:\s*transparent/i
     );
     expect(shellCss).not.toContain('.settings-list');
-    expect(settingsCoreCss).toMatch(/\.settings-list\s*\{[^}]*border-radius:\s*12px\s*!important/i);
+    expect(settingsCoreCss).toMatch(/\.settings-list\s*\{[^}]*border-radius:\s*16px\s*!important/i);
     expect(settingsCardSurfacesCss).toMatch(
       /\.settings-summary-strip,[\s\S]*?\.settings-section,[\s\S]*?\)\s*\{[^}]*border-radius:\s*(?:16px|var\(--ui-radius-2xl\))\s*!important/i
     );

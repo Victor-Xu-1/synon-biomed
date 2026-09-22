@@ -7,11 +7,6 @@ import { fileURLToPath } from 'node:url';
  * through the canonical primitives, so contracts read stylesheets with the
  * primitives inlined back to numbers - the pinned value stays the assertion.
  */
-const tokenSource = readFileSync(
-  path.join(fileURLToPath(new URL('../../../packages/desktop/src/renderer/', import.meta.url)), 'styles/tokens.css'),
-  'utf8'
-);
-
 const rendererDir = fileURLToPath(new URL('../../../packages/desktop/src/renderer/', import.meta.url));
 
 const primitiveValues = new Map<string, string>();

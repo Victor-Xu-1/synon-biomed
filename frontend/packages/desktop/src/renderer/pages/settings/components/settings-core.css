@@ -12,7 +12,13 @@
      of restating their own density. Values resolve to the shared --ui-* scale. */
   --settings-control-height: var(--ui-control-lg);
   --settings-control-radius: var(--ui-radius-md);
-  --settings-card-radius: var(--ui-radius-xl);
+  /* Apple-style card chrome: generous radius, hairline border, soft depth. */
+  --settings-card-radius: var(--ui-radius-2xl);
+  --settings-card-border: rgb(0 0 0 / 6%);
+  --settings-card-border-hover: rgb(0 0 0 / 12%);
+  --settings-card-shadow: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 24px rgb(0 0 0 / 5%);
+  --settings-card-shadow-hover: 0 2px 6px rgb(0 0 0 / 6%), 0 14px 32px rgb(0 0 0 / 9%);
+  --settings-card-padding: 20px;
   --settings-card-gap: var(--ui-space-6);
   --settings-section-gap: var(--ui-space-7);
   --settings-section-padding: 20px;
@@ -516,4 +522,74 @@
   border: 1px solid var(--settings-border) !important;
   border-radius: var(--settings-card-radius) !important;
   background: var(--settings-surface) !important;
+}
+
+/*
+ * One card, one size, one chrome.
+ * -------------------------------
+ * Every settings catalog renders the same card: four columns per row, rows of
+ * equal height, and each card filling its row, so a page of twelve is uniform
+ * even when the copy is not. The surface follows the Apple card language -
+ * 16px continuous radius, hairline boundary, soft two-layer shadow, generous
+ * padding, and a quiet 1px lift on hover.
+ */
+.settings-page-wrapper :is(.synon-mcp-card, .settings-skill-card, .environment-card, .expert-card, .compute-card) {
+  display: flex;
+  height: 100%;
+  min-height: var(--settings-entity-card-height);
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  box-sizing: border-box;
+  padding: var(--settings-card-padding) !important;
+  border: 1px solid var(--settings-card-border) !important;
+  border-radius: var(--settings-card-radius) !important;
+  background: var(--settings-surface) !important;
+  box-shadow: var(--settings-card-shadow) !important;
+  transition:
+    box-shadow 200ms ease,
+    transform 200ms ease,
+    border-color 200ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-page-wrapper
+    :is(.synon-mcp-card, .settings-skill-card, .environment-card, .expert-card, .compute-card):hover {
+    transform: translateY(-1px);
+    border-color: var(--settings-card-border-hover) !important;
+    box-shadow: var(--settings-card-shadow-hover) !important;
+  }
+}
+
+.settings-page-wrapper
+  :is(.synon-mcp-card, .settings-skill-card, .environment-card, .expert-card, .compute-card):active {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-page-wrapper :is(.synon-mcp-card, .settings-skill-card, .environment-card, .expert-card, .compute-card) {
+    transition: none !important;
+  }
+}
+
+/* Two lines of copy keep every card the same rhythm. */
+.settings-page-wrapper
+  :is(
+    .synon-mcp-card__description,
+    .settings-skill-card__description,
+    .environment-card__description,
+    .expert-card__description
+  ) {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .settings-page-wrapper {
+    --settings-card-border: rgb(255 255 255 / 10%);
+    --settings-card-border-hover: rgb(255 255 255 / 18%);
+    --settings-card-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 32%);
+    --settings-card-shadow-hover: 0 2px 6px rgb(0 0 0 / 36%), 0 14px 32px rgb(0 0 0 / 40%);
+  }
 }

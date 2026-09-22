@@ -323,6 +323,8 @@
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-auto-rows: 1fr;
+    align-items: stretch;
     grid-auto-rows: auto;
     gap: var(--settings-card-gap) !important;
     align-content: stretch;
@@ -345,8 +347,8 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-card,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card {
-    min-height: var(--settings-entity-card-height) !important;
-    height: auto;
+    min-height: 0 !important;
+    height: 100%;
     overflow: hidden;
   }
 
@@ -580,6 +582,8 @@
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-auto-rows: 1fr;
+    align-items: stretch;
   }
 }
 

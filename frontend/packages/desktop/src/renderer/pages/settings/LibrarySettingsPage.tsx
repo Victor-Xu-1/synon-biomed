@@ -43,7 +43,10 @@ const LibrarySettingsPage: React.FC = () => {
   };
 
   return (
-    <SettingsPageWrapper>
+    // `settings-library-route` marks the merged page so the route-scoped
+    // bounded-sheet CSS (skills/tools/environments) can relax into one
+    // document-flow page that scrolls as a whole.
+    <SettingsPageWrapper className='settings-library-route'>
       <div className='settings-library-page flex min-h-0 w-full flex-col'>
         <div className='settings-library-tabs-row sticky top-0 z-1' style={{ background: 'var(--color-bg-1)' }}>
           <div className='settings-page-header__tabs-row' style={{ paddingTop: 4 }}>

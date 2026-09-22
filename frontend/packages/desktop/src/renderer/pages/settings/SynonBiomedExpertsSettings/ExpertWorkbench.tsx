@@ -28,6 +28,7 @@ import { Close, Search } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from '../components/SettingsPageHeader';
+import SettingsLibraryTabHeader from '../components/SettingsLibraryTabHeader';
 import SynonBiomedExpertProfileModal from './SynonBiomedExpertProfileModal';
 
 import {
@@ -43,6 +44,8 @@ import { compactSettingsDescription } from '../components/settingsPresentation';
 type ExpertWorkbenchProps = {
   /** When false, renders without the page-level header (used inside the merged library page). */
   withHeader?: boolean;
+  /** When true (with withHeader=false), renders the merged-page one-line compact header. */
+  compactHeader?: boolean;
 };
 
 const createRequestedFromHash = (): boolean => {
@@ -124,7 +127,7 @@ function resolveExpertArtwork(
   }
 }
 
-const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true }) => {
+const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true, compactHeader = false }) => {
   const { t } = useTranslation();
   const [message, messageContext] = Message.useMessage({ maxCount: 4 });
   const [profiles, setProfiles] = useState<SynonBiomedExpertProfile[]>([]);
@@ -661,6 +664,16 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true }) 
             </Button>
           }
         />
+      ) : compactHeader ? (
+        <SettingsLibraryTabHeader
+          title={t('settings.expertsSettings.title')}
+          count={profiles.length}
+          actions={
+            <Button type='primary' onClick={() => setCreateVisible(true)}>
+              {t('settings.expertsSettings.addExpert')}
+            </Button>
+          }
+        />
       ) : null}
       <SettingsToolbar className='experts-toolbar'>
         <Select
@@ -890,4 +903,4 @@ const CapabilityRow: React.FC<{ label: string; onRemove: () => void }> = ({ labe
 export default ExpertWorkbench;
 
 /** Header-less, wrapper-less variant used inside the merged library page. */
-export const ExpertWorkbenchContent: React.FC = () => <ExpertWorkbench withHeader={false} />;
+export const ExpertWorkbenchContent: React.FC = () => <ExpertWorkbench withHeader={false} compactHeader />;

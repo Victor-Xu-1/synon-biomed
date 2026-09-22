@@ -13,6 +13,7 @@ import {
 import { scientificRuntimePresentation } from '@/renderer/utils/scientificRuntimePresentation';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
 import SettingsPageHeader from './components/SettingsPageHeader';
+import SettingsLibraryTabHeader from './components/SettingsLibraryTabHeader';
 import { RefreshButton } from './components/SettingsPrimitives';
 import { useStorageResource } from './storage/useStorageResource';
 import { StorageRuntimeSelectionDialog } from './storage/StorageRuntimeSelectionDialog';
@@ -35,6 +36,8 @@ interface ScientificEnvironmentSettingsProps {
   withWrapper?: boolean;
   /** When false, omits the page-level header (used inside the merged library page). */
   withHeader?: boolean;
+  /** When true (with withHeader=false), renders the merged-page one-line compact header. */
+  compactHeader?: boolean;
   /** When true, renders the refresh/manage actions row inside the content instead of the header. */
   showActions?: boolean;
 }
@@ -42,6 +45,7 @@ interface ScientificEnvironmentSettingsProps {
 export default function ScientificEnvironmentSettings({
   withWrapper = true,
   withHeader = true,
+  compactHeader = false,
   showActions = false,
 }: ScientificEnvironmentSettingsProps) {
   const { t } = useTranslation();
@@ -176,6 +180,12 @@ export default function ScientificEnvironmentSettings({
         <SettingsPageHeader
           title={t('settings.environments.title')}
           description={t('settings.environments.description')}
+          actions={environmentActions}
+        />
+      ) : compactHeader ? (
+        <SettingsLibraryTabHeader
+          title={t('settings.environments.title')}
+          count={items.length}
           actions={environmentActions}
         />
       ) : null}
@@ -339,6 +349,6 @@ export default function ScientificEnvironmentSettings({
 }
 
 /** Header-less, wrapper-less content used by the merged library page tabs. */
-export const ScientificEnvironmentSettingsContent: React.FC<{ showActions?: boolean }> = ({ showActions = true }) => (
-  <ScientificEnvironmentSettings withWrapper={false} withHeader={false} showActions={showActions} />
+export const ScientificEnvironmentSettingsContent: React.FC<{ showActions?: boolean }> = ({ showActions = false }) => (
+  <ScientificEnvironmentSettings withWrapper={false} withHeader={false} compactHeader showActions={showActions} />
 );

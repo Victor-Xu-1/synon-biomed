@@ -3,6 +3,7 @@ import { Down, Plus, Refresh, Search } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from '../components/SettingsPageHeader';
+import SettingsLibraryTabHeader from '../components/SettingsLibraryTabHeader';
 
 export type ConnectorFilter = 'all' | 'connected' | 'needs-attention' | 'custom';
 export type ConnectorBrowseView = 'optional' | 'marketplace';
@@ -20,43 +21,48 @@ interface Props {
   loading: boolean;
   reconciling: boolean;
   health: React.ReactNode;
+  /** When true, renders the merged-page one-line compact header. */
+  compactHeader?: boolean;
 }
 
 /** The installed library stays mounted while users browse additional connectors. */
 export function McpLibraryToolbar(props: Props) {
   const { t } = useTranslation();
+  const addAction = (
+    <Dropdown
+      trigger='click'
+      position='br'
+      droplist={
+        <Menu
+          onClickMenuItem={(key) => (key === 'custom' ? props.onCreate() : props.onBrowse(key as ConnectorBrowseView))}
+        >
+          <Menu.Item key='custom'>{t('settings.synonBiomedMcpCustom')}</Menu.Item>
+          <Menu.Item key='optional'>{t('settings.synonBiomedMcpOptionalTab')}</Menu.Item>
+          <Menu.Item key='marketplace'>{t('settings.synonBiomedMcpMarketplaceTab')}</Menu.Item>
+        </Menu>
+      }
+    >
+      <Button type='primary' icon={<Plus size={15} />} data-testid='synon-biomed-mcp-add'>
+        {t('settings.synonBiomedMcpAddConnector')}
+        <Down size={14} />
+      </Button>
+    </Dropdown>
+  );
   return (
     <>
-      <SettingsPageHeader
-        data-testid='tools-header'
-        title={
-          <>
-            {t('settings.tools')} <span className='mcp-library-total'>{props.count}</span>
-          </>
-        }
-        actions={
-          <Dropdown
-            trigger='click'
-            position='br'
-            droplist={
-              <Menu
-                onClickMenuItem={(key) =>
-                  key === 'custom' ? props.onCreate() : props.onBrowse(key as ConnectorBrowseView)
-                }
-              >
-                <Menu.Item key='custom'>{t('settings.synonBiomedMcpCustom')}</Menu.Item>
-                <Menu.Item key='optional'>{t('settings.synonBiomedMcpOptionalTab')}</Menu.Item>
-                <Menu.Item key='marketplace'>{t('settings.synonBiomedMcpMarketplaceTab')}</Menu.Item>
-              </Menu>
-            }
-          >
-            <Button type='primary' icon={<Plus size={15} />} data-testid='synon-biomed-mcp-add'>
-              {t('settings.synonBiomedMcpAddConnector')}
-              <Down size={14} />
-            </Button>
-          </Dropdown>
-        }
-      />
+      {props.compactHeader ? (
+        <SettingsLibraryTabHeader title={t('settings.tools')} count={props.count} actions={addAction} />
+      ) : (
+        <SettingsPageHeader
+          data-testid='tools-header'
+          title={
+            <>
+              {t('settings.tools')} <span className='mcp-library-total'>{props.count}</span>
+            </>
+          }
+          actions={addAction}
+        />
+      )}
       <div className='mcp-library-toolbar' role='search' aria-label={t('settings.synonBiomedMcpConnectors')}>
         <div className='mcp-library-search'>
           <Input

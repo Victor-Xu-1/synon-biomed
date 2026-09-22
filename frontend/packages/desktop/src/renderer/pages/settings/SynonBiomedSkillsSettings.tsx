@@ -9,6 +9,7 @@ import { FileZip, Github, Refresh } from '@icon-park/react';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from './components/SettingsPageHeader';
+import SettingsLibraryTabHeader from './components/SettingsLibraryTabHeader';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
 import { SkillRow, SkillDraftRow, type SkillInfo } from './skills/SkillLibraryCard';
 import {
@@ -47,11 +48,14 @@ interface SynonBiomedSkillsSettingsProps {
   withWrapper?: boolean;
   /** When false, omits the page-level header (used inside the merged library page). */
   withHeader?: boolean;
+  /** When true (with withHeader=false), renders the merged-page one-line compact header. */
+  compactHeader?: boolean;
 }
 
 const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
   withWrapper = true,
   withHeader = true,
+  compactHeader = false,
 }) => {
   const { i18n, t } = useTranslation();
   const [message, messageContext] = Message.useMessage({ maxCount: 3 });
@@ -416,6 +420,12 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
           }
           actions={headerActions}
         />
+      ) : compactHeader ? (
+        <SettingsLibraryTabHeader
+          title={t('settings.skillsSettings.title')}
+          count={availableSkills.length + drafts.length}
+          actions={headerActions}
+        />
       ) : null}
       <SkillLibraryToolbar
         query={searchQuery}
@@ -490,7 +500,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
 
 /** Header-less, wrapper-less content used by the merged library page tabs. */
 export const SynonBiomedSkillsSettingsContent: React.FC = () => (
-  <SynonBiomedSkillsSettings withWrapper={false} withHeader={false} />
+  <SynonBiomedSkillsSettings withWrapper={false} withHeader={false} compactHeader />
 );
 
 function ImportedSources({

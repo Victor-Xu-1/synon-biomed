@@ -32,7 +32,14 @@ import { McpLibraryToolbar, type ConnectorFilter, type ConnectorBrowseView } fro
 
 const ignoreHandledMutationError = (_error: unknown): undefined => undefined;
 
-export const SynonBiomedMcpSettingsContent: React.FC = () => {
+type SynonBiomedMcpSettingsContentProps = {
+  /** When true, renders the merged-page one-line compact header. */
+  compactHeader?: boolean;
+};
+
+export const SynonBiomedMcpSettingsContent: React.FC<SynonBiomedMcpSettingsContentProps> = ({
+  compactHeader = false,
+}) => {
   const { t, i18n } = useTranslation();
   const [servers, setServers] = useState<SynonBiomedMcpServer[]>([]);
   const [customServers, setCustomServers] = useState<SynonBiomedCustomMcpServer[]>([]);
@@ -250,6 +257,7 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
   return (
     <div className='mcp-library' data-testid='synon-biomed-mcp-settings'>
       <McpLibraryToolbar
+        compactHeader={compactHeader}
         count={servers.length}
         customCount={customServers.length}
         search={search}

@@ -5,7 +5,7 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "58c3de5e401ff4d2864e692a4b97a197f5cedb41984a682084c868278602a66a",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "f05d2d0690d5ce707a80c71104e0292e4df6f8fdee5677bbfec9c3f48976ab2d",
+  "additionFingerprintSHA256": "6daec45705d4c1fc52d3257cc286c7b1eadda48f4e567b8725ec48bc2beebed7",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -7776,7 +7776,7 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "a8ab5f85dce35d24e4877aab56b1b04c0064ffc76b0a49342d86ab4afd9e1210",
+      "sha256": "b6f9683f07d91bded16d5d3528a42a205d10740e5c95241621462de5235ac71e",
       "bytes": 22738,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
@@ -7818,7 +7818,7 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-experts.css",
-      "sha256": "78b55d0ce7a48624061c1e06f6b221717c56c1a05985c42cefa5d2faed56eabc",
+      "sha256": "78636656fca48d190032e93645d237fc531a98b21de5fe291060672e96129229",
       "bytes": 7383,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
@@ -7920,7 +7920,7 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settingsVisualContract.ts",
-      "sha256": "8e39450385852d8d3ce2bd9bd3ab72f73c066282e19c849fe79f3c32e875ba84",
+      "sha256": "a5bfb409c68c3b915e5f23ac534307b0de1a38d911bf6b3c473803944720da0f",
       "bytes": 9449,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
@@ -9774,14 +9774,14 @@
     },
     {
       "path": "tests/unit/settings/settingsVisualContract.test.ts",
-      "sha256": "b273a7a8f3e087b0ea05311d5327094d7f6888482b7953d732b49b05abe1bc7d",
-      "bytes": 25119,
+      "sha256": "edf894baf8bbd922b1628b3a60164b1deb12f1ebcaf3e8833c8541ceb44fa38b",
+      "bytes": 25118,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
       "path": "tests/unit/settings/settingsVisualSystem.test.ts",
-      "sha256": "e7b347c5bc652d72487b7f16e7e435d90f635d92781bbbc7ed646b066dab8500",
-      "bytes": 5465,
+      "sha256": "c235ca47f832f9182d1c9993a97a01da0cc41b480aed200a0daf3c70b68e4c67",
+      "bytes": 5463,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

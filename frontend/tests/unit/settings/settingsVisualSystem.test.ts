@@ -93,11 +93,11 @@ describe('settings visual system', () => {
 
   it('keeps one card grid and one metadata ramp', () => {
     const all = moduleCss.map(([, css]) => css).join('\n');
-    expect(all).toMatch(/grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    expect(all).toMatch(/grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
     expect(all).not.toMatch(/font-size:\s*(?:8|9|10|11|18)px/);
   });
 
-  it('drops pagination and renders the merged catalog as a single scrolling three-column wall', () => {
+  it('drops pagination and renders the merged catalog as a single scrolling four-column wall', () => {
     for (const relative of [
       'SynonBiomedSkillsSettings.tsx',
       'SynonBiomedExpertsSettings/ExpertWorkbench.tsx',
@@ -108,8 +108,8 @@ describe('settings visual system', () => {
       expect(source, relative).not.toMatch(/PAGE_SIZE = 12;/);
       expect(source, relative).not.toContain('SettingsPagination');
     }
-    // The shared card density sheet now uses a three-column wall.
-    expect(densityCss).toMatch(/grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    // The shared card density sheet now uses a four-column wall.
+    expect(densityCss).toMatch(/grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
     expect(densityCss).toMatch(/grid-auto-rows:\s*auto/);
     expect(densityCss).not.toMatch(/grid-auto-rows:\s*1fr/);
   });

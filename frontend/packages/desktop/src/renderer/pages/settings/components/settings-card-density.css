@@ -322,7 +322,7 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     grid-auto-rows: auto;
     align-items: stretch;
     align-content: start;
@@ -577,7 +577,7 @@
     .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     grid-auto-rows: auto;
     align-items: stretch;
   }
@@ -598,7 +598,7 @@
  * scroll. The overrides below neutralize the fixed height chain and the nested
  * scroll clipping: the wrapper becomes the single scroll container and every
  * tab lays out in normal document flow. Card chrome (--settings-card-*) and
- * the 3-column grids above are untouched (grid-auto-rows stays auto).
+ * the 4-column grids above are untouched (grid-auto-rows stays auto).
  */
 @media (min-width: 768px) {
   html body .settings-page-wrapper.settings-library-route {

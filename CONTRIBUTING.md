@@ -20,6 +20,9 @@ reviewable pull requests; changes must not be pushed directly to `main`.
 3. Use Conventional Commit-style pull request titles (`fix:`, `feat:`,
    `docs:`, `test:`, or `chore:`). Product releases currently remain on the
    `v0.1.x` patch line; version policy changes require a separate reviewed PR.
+   Keep ordinary commit titles neutral: do not include a product version,
+   "community source" label, or release slogan unless the change is the
+   dedicated version-proposal/release commit.
 4. Add a behavior-level regression test for every new behavior or bug fix.
 5. Run the smallest relevant checks locally before pushing. Typical commands:
 

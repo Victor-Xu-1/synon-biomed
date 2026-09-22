@@ -1,6 +1,6 @@
-# Synon Biomed v0.1.1 Operations Runbook
+# Synon Biomed Operations Runbook
 
-This runbook targets Synon Biomed v0.1.1. The packaged release contract is
+This runbook targets the current Synon Biomed source and runtime contracts. The packaged release contract is
 [`release-acceptance-contract.md`](release-acceptance-contract.md). A successful
 build or a historical non-Web compatibility report is not sufficient to
 authorize a release.
@@ -14,7 +14,7 @@ authorize a release.
 - The default operator username is `local`. There is no compiled-in password; set a unique deployment password.
 - The production runner uses the active saved workspace model provider. `go_builtin` is a test/development authority only.
 
-## Public community source checkout
+## Public source checkout
 
 ### Skills library
 
@@ -122,8 +122,8 @@ normal authenticated session and CSRF protection.
 
 ### Source startup
 
-The public community repository is `Victor-Xu-1/synon-biomed`.
-Source version v0.1.1 does not itself designate a tagged or packaged GitHub
+The public repository is `Victor-Xu-1/synon-biomed`.
+A source checkout does not itself designate a tagged or packaged GitHub
 Release. Do not present a workflow artifact, a source archive, or `make build`
 output as an installable product release. Use an Ubuntu/WSL source checkout
 with Git, Go >=1.26, Node.js >=22.22 and <25, and npm:
@@ -308,14 +308,16 @@ a systemd user manager and host sandbox support. The existing native install
 and upgrade procedures below remain authoritative.
 
 Install [ORAS](https://oras.land/docs/installation) and select an actually
-published version. For example, after `v0.1.1` has been published:
+published version. Set `SYNON_RELEASE_VERSION` to that published tag before
+running the example below:
 
 ```bash
+export SYNON_RELEASE_VERSION=vX.Y.Z
 mkdir -p /tmp/synon-download
-oras pull ghcr.io/victor-xu-1/synon-biomed:v0.1.1 --output /tmp/synon-download
+oras pull "ghcr.io/victor-xu-1/synon-biomed:${SYNON_RELEASE_VERSION}" --output /tmp/synon-download
 cd /tmp/synon-download
-sha256sum --check synon-biomed-v0.1.1-linux-amd64.tar.gz.sha256
-sha256sum --check synon-biomed-v0.1.1-windows-amd64.tar.gz.sha256
+sha256sum --check "synon-biomed-${SYNON_RELEASE_VERSION#v}-linux-amd64.tar.gz.sha256"
+sha256sum --check "synon-biomed-${SYNON_RELEASE_VERSION#v}-windows-amd64.tar.gz.sha256"
 ```
 
 For automated deployment, pin `ghcr.io/victor-xu-1/synon-biomed@sha256:DIGEST`
@@ -351,14 +353,16 @@ The provenance is an in-toto/SLSA statement with SHA-256 source and binary subje
 ## Linux or WSL installation
 
 ```bash
-./scripts/install-release.sh ./synon-biomed-v0.1.1-linux-amd64.tar.gz "$HOME/.local/opt/synon-biomed-v0.1.1"
-"$HOME/.local/opt/synon-biomed-v0.1.1/synon-go" --health-json
+export SYNON_RELEASE_VERSION="${SYNON_RELEASE_VERSION:-vX.Y.Z}"
+export SYNON_RELEASE_DIR="$HOME/.local/opt/synon-biomed"
+./scripts/install-release.sh ./synon-biomed-${SYNON_RELEASE_VERSION#v}-linux-amd64.tar.gz "$SYNON_RELEASE_DIR"
+"$SYNON_RELEASE_DIR/synon-go" --health-json
 ```
 
 Install a hardened systemd user service:
 
 ```bash
-"$HOME/.local/opt/synon-biomed-v0.1.1/scripts/install-systemd-user.sh" "$HOME/.local/opt/synon-biomed-v0.1.1" "$HOME/.local/state/synon-go"
+"$SYNON_RELEASE_DIR/scripts/install-systemd-user.sh" "$SYNON_RELEASE_DIR" "$HOME/.local/state/synon-go"
 ```
 
 The installer creates:
@@ -460,7 +464,7 @@ Only run `synon-go model-smoke --target runner --run --require-all --json` with 
 
 ## Message channels
 
-Set `SYNON_ENABLED_ADAPTERS` and the matching credentials for Feishu or WeChat. Telegram and DingTalk are not supported by the v0.1.1 runtime. An enabled channel fails startup when its inbound/outbound credential set is incomplete.
+Set `SYNON_ENABLED_ADAPTERS` and the matching credentials for Feishu or WeChat. Telegram and DingTalk are not supported by the current runtime. An enabled channel fails startup when its inbound/outbound credential set is incomplete.
 
 Inbound users must be paired before a task/session is created. Each accepted chat binds to `im:<platform>:<chat-id>`. Outbound route metadata and terminal delivery checkpoints are durable. WeChat context tokens are stored only in the encrypted secret vault and are hidden from public secret APIs.
 
@@ -490,8 +494,8 @@ audit path:
 ```bash
 python3 -B scripts/p9_external_acceptance.py \
   --mode plan \
-  --synon-binary "$HOME/.local/opt/synon-biomed-v0.1.1/synon-go" \
-  --live-im-binary "$HOME/.local/opt/synon-biomed-v0.1.1/synon-go-live-im-smoke" \
+  --synon-binary "$SYNON_RELEASE_DIR/synon-go" \
+  --live-im-binary "$SYNON_RELEASE_DIR/synon-go-live-im-smoke" \
   --runtime-url http://127.0.0.1:8765 \
   --output "$HOME/.local/state/synon-go/p9-external-plan.json"
 ```
@@ -510,8 +514,8 @@ exact one-shot authorization phrase:
 export SYNON_EXTERNAL_TEST_AUTHORIZED=I_ACCEPT_NETWORK_COST_AND_MESSAGES
 python3 -B scripts/p9_external_acceptance.py \
   --mode run \
-  --synon-binary "$HOME/.local/opt/synon-biomed-v0.1.1/synon-go" \
-  --live-im-binary "$HOME/.local/opt/synon-biomed-v0.1.1/synon-go-live-im-smoke" \
+  --synon-binary "$SYNON_RELEASE_DIR/synon-go" \
+  --live-im-binary "$SYNON_RELEASE_DIR/synon-go-live-im-smoke" \
   --runtime-url http://127.0.0.1:8765 \
   --timeout-seconds 30 \
   --max-attempts 1 \
@@ -535,9 +539,9 @@ to require only the two Go binaries.
 
 ```bash
 systemctl --user stop synon-go.service
-./scripts/backup-release.sh "$HOME/.local/opt/synon-biomed-v0.1.1" /secure/backup/synon-biomed-release
+./scripts/backup-release.sh "$SYNON_RELEASE_DIR" /secure/backup/synon-biomed-release
 tar --xattrs --acls -C "$HOME/.local/state" -czf /secure/backup/synon-go-state.tar.gz synon-go
-./scripts/install-release.sh ./new-release.tar.gz "$HOME/.local/opt/synon-biomed-v0.1.1"
+./scripts/install-release.sh ./new-release.tar.gz "$SYNON_RELEASE_DIR"
 systemctl --user start synon-go.service
 curl --noproxy '*' --fail --silent http://127.0.0.1:8765/api/health
 ```
@@ -548,7 +552,7 @@ Do not store state inside the release directory. Release rollback does not impli
 
 ```bash
 systemctl --user stop synon-go.service
-./scripts/rollback-release.sh "$HOME/.local/opt/synon-biomed-v0.1.1" /secure/backup/synon-biomed-release
+./scripts/rollback-release.sh "$SYNON_RELEASE_DIR" /secure/backup/synon-biomed-release
 systemctl --user start synon-go.service
 ```
 
@@ -557,8 +561,8 @@ Restore a state backup only when the target binary cannot read the upgraded sche
 Remove the service before the release:
 
 ```bash
-"$HOME/.local/opt/synon-biomed-v0.1.1/scripts/uninstall-systemd-user.sh"
-./scripts/uninstall-release.sh "$HOME/.local/opt/synon-biomed-v0.1.1"
+"$SYNON_RELEASE_DIR/scripts/uninstall-systemd-user.sh"
+./scripts/uninstall-release.sh "$SYNON_RELEASE_DIR"
 ```
 
 The service environment and `SYNON_HOME` are intentionally preserved. Delete them only after a separate retention decision and verified backup.
@@ -566,12 +570,14 @@ The service environment and `SYNON_HOME` are intentionally preserved. Delete the
 ## Windows installation
 
 ```powershell
+$env:SYNON_RELEASE_VERSION = if ($env:SYNON_RELEASE_VERSION) { $env:SYNON_RELEASE_VERSION } else { 'vX.Y.Z' }
+$env:SYNON_RELEASE_DIR = if ($env:SYNON_RELEASE_DIR) { $env:SYNON_RELEASE_DIR } else { 'C:\Tools\SynonBiomed' }
 powershell -ExecutionPolicy Bypass -File .\scripts\install-release.ps1 `
-  -Archive .\synon-biomed-v0.1.1-windows-amd64.tar.gz `
-  -InstallDir C:\Tools\synon-biomed-v0.1.1
-C:\Tools\synon-biomed-v0.1.1\synon-go.exe --health-json
-C:\Tools\synon-biomed-v0.1.1\synon-go.exe release-manifest verify `
-  --root C:\Tools\synon-biomed-v0.1.1
+  -Archive ".\synon-biomed-$($env:SYNON_RELEASE_VERSION.TrimStart('v'))-windows-amd64.tar.gz" `
+  -InstallDir $env:SYNON_RELEASE_DIR
+$env:SYNON_RELEASE_DIR\synon-go.exe --health-json
+$env:SYNON_RELEASE_DIR\synon-go.exe release-manifest verify `
+  --root $env:SYNON_RELEASE_DIR
 ```
 
 Use `scripts/manage-release.ps1` for backup, rollback, and uninstall. The package does not automatically install a Windows service; run interactively or register it with an operator-managed service account and an ACL-protected environment.

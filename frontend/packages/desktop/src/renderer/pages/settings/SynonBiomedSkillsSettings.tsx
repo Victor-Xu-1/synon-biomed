@@ -6,10 +6,12 @@
 
 import { Button, Dropdown, Menu, Message, Modal, Spin } from '@arco-design/web-react';
 import { FileZip, Github, Refresh } from '@icon-park/react';
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from './components/SettingsPageHeader';
 import SettingsLibraryTabHeader from './components/SettingsLibraryTabHeader';
+import SettingsLibraryFilterSelect from './components/SettingsLibraryFilterSelect';
+import SettingsLibraryFilterToggle from './components/SettingsLibraryFilterToggle';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
 import { SkillRow, SkillDraftRow, type SkillInfo } from './skills/SkillLibraryCard';
 import {
@@ -78,6 +80,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
   const [filter, setFilter] = useState<SkillStatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<SynonBiomedSkillCategorySelection>('all');
   const [activeSection, setActiveSection] = useState<SkillSourceFilter>('all');
+  const [compactFiltersExpanded, setCompactFiltersExpanded] = useState(false);
   const [marketVisible, setMarketVisible] = useState(false);
   const [pendingSkill, setPendingSkill] = useState<string | null>(null);
   const [pendingSource, setPendingSource] = useState<string | null>(null);
@@ -89,6 +92,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
     draft: boolean;
     editable: boolean;
   } | null>(null);
+  const compactFilterPanelId = useId();
 
   const fetchData = useCallback(async () => {
     const generation = ++loadGenerationRef.current;
@@ -168,6 +172,19 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
     [activeSection, categoryFilter, drafts, filter, searchQuery]
   );
   const visibleSkills = filteredSkills;
+  const sourceOptions: Array<{ value: SkillSourceFilter; label: string }> = [
+    { value: 'all', label: t('settings.skillsSettings.allSources') },
+    { value: 'recommended', label: t('settings.skillsSettings.sources.builtin') },
+    { value: 'imported', label: t('settings.skillsSettings.imported') },
+    { value: 'personal', label: t('settings.skillsSettings.sources.personal') },
+  ];
+  const sourceCounts: Record<SkillSourceFilter, number> = {
+    all: availableSkills.length + drafts.length,
+    recommended: sectionSkills.recommended.length,
+    imported: sectionSkills.imported.length,
+    personal: sectionSkills.personal.length + drafts.length,
+  };
+  const activeFilterCount = Number(activeSection !== 'all') + Number(filter !== 'all');
 
   useLayoutEffect(() => {
     if (listScrollRef.current) listScrollRef.current.scrollTop = 0;
@@ -424,6 +441,71 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
         <SettingsLibraryTabHeader
           title={t('settings.skillsSettings.title')}
           count={availableSkills.length + drafts.length}
+          filters={
+            <>
+              <SettingsLibraryFilterSelect
+                aria-label={t('settings.skillsSettings.researchField')}
+                data-testid='skill-category-filter'
+                value={categoryFilter}
+                onChange={(value) => setCategoryFilter(value as SynonBiomedSkillCategorySelection)}
+              >
+                {categoryOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </SettingsLibraryFilterSelect>
+              <SettingsLibraryFilterToggle
+                data-testid='synon-biomed-skills-filter'
+                expanded={compactFiltersExpanded}
+                controls={compactFilterPanelId}
+                activeCount={activeFilterCount}
+                onClick={() => setCompactFiltersExpanded((value) => !value)}
+              />
+            </>
+          }
+          filterPanel={
+            compactFiltersExpanded ? (
+              <div id={compactFilterPanelId} role='group' aria-label={t('settings.skillsSettings.filters')}>
+                <label>
+                  <span>{t('settings.skillsSettings.sourceFilter')}</span>
+                  <SettingsLibraryFilterSelect
+                    aria-label={t('settings.skillsSettings.sourceFilter')}
+                    value={activeSection}
+                    onChange={(value) => setActiveSection(value as SkillSourceFilter)}
+                  >
+                    {sourceOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} ({sourceCounts[option.value]})
+                      </option>
+                    ))}
+                  </SettingsLibraryFilterSelect>
+                </label>
+                <label>
+                  <span>{t('settings.skillsSettings.statusFilter')}</span>
+                  <SettingsLibraryFilterSelect
+                    aria-label={t('settings.skillsSettings.statusFilter')}
+                    value={filter}
+                    onChange={(value) => setFilter(value as SkillStatusFilter)}
+                  >
+                    <option value='all'>{t('settings.skillsSettings.all')}</option>
+                    <option value='enabled'>{t('settings.skillsSettings.enabled')}</option>
+                    <option value='disabled'>{t('settings.skillsSettings.disabled')}</option>
+                  </SettingsLibraryFilterSelect>
+                </label>
+                <Button
+                  type='text'
+                  disabled={activeFilterCount === 0}
+                  onClick={() => {
+                    setActiveSection('all');
+                    setFilter('all');
+                  }}
+                >
+                  {t('settings.skillsSettings.resetFilters')}
+                </Button>
+              </div>
+            ) : null
+          }
           actions={headerActions}
         />
       ) : null}
@@ -435,12 +517,7 @@ const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({
           categories={categoryOptions}
           onCategoryChange={setCategoryFilter}
           source={activeSection}
-          sourceCounts={{
-            all: availableSkills.length + drafts.length,
-            recommended: sectionSkills.recommended.length,
-            imported: sectionSkills.imported.length,
-            personal: sectionSkills.personal.length + drafts.length,
-          }}
+          sourceCounts={sourceCounts}
           onSourceChange={setActiveSection}
           status={filter}
           onStatusChange={setFilter}

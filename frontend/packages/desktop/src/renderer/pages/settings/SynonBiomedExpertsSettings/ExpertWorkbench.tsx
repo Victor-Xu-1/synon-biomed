@@ -29,6 +29,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from '../components/SettingsPageHeader';
 import SettingsLibraryTabHeader from '../components/SettingsLibraryTabHeader';
+import SettingsLibraryFilterSelect from '../components/SettingsLibraryFilterSelect';
 import SynonBiomedExpertProfileModal from './SynonBiomedExpertProfileModal';
 
 import {
@@ -75,6 +76,9 @@ type ExpertDraft = {
   skillNames: string[];
   connectorIds: string[];
 };
+
+/** The expert catalog's own category filter: every profile, custom or built-in. */
+type ExpertSourceFilter = 'all' | 'personal' | 'builtin';
 
 const { TabPane } = Tabs;
 
@@ -137,7 +141,7 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true, co
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'personal' | 'builtin'>('all');
+  const [filter, setFilter] = useState<ExpertSourceFilter>('all');
   const [selected, setSelected] = useState<SynonBiomedExpertProfile | null>(null);
   const [draft, setDraft] = useState<ExpertDraft | null>(null);
   const [baseline, setBaseline] = useState<ExpertDraft | null>(null);
@@ -668,6 +672,26 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true, co
         <SettingsLibraryTabHeader
           title={t('settings.expertsSettings.title')}
           count={profiles.length}
+          filters={
+            <SettingsLibraryFilterSelect
+              aria-label={t('settings.expertsSettings.filter')}
+              data-testid='experts-category-filter'
+              value={filter}
+              onChange={(value) => setFilter(value as ExpertSourceFilter)}
+            >
+              <option value='all'>{t('settings.expertsSettings.filterAll', { count: profiles.length })}</option>
+              <option value='personal'>
+                {t('settings.expertsSettings.filterPersonal', {
+                  count: profiles.filter((profile) => profile.source === 'user').length,
+                })}
+              </option>
+              <option value='builtin'>
+                {t('settings.expertsSettings.filterBuiltin', {
+                  count: profiles.filter((profile) => profile.source !== 'user').length,
+                })}
+              </option>
+            </SettingsLibraryFilterSelect>
+          }
           actions={
             <Button type='primary' onClick={() => setCreateVisible(true)}>
               {t('settings.expertsSettings.addExpert')}

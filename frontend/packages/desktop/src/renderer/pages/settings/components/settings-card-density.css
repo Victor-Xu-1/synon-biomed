@@ -651,13 +651,14 @@
 
 /*
  * Merged library page tab header: one compact line per module — title,
- * optional count badge, primary action on the right. Long descriptions are
+ * optional count badge, this module's category filter controls, and the
+ * primary action on the right. Long descriptions and result summaries are
  * intentionally omitted; standalone pages keep SettingsPageHeader untouched.
  */
 .settings-library-tab-header__row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-height: 40px;
 }
 
@@ -689,8 +690,90 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: var(--ui-space-3);
+  gap: 8px;
+  /* The filter cluster owns the right alignment, so the primary action always
+     sits exactly 8px to the right of the last filter control. */
+  margin-inline-start: 0;
+}
+
+/* One filter cluster per tab: category dropdown first, optional refinement
+   toggle second, then the primary action. */
+.settings-library-tab-header__filters {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
   margin-inline-start: auto;
+}
+
+/* The single category dropdown every merged tab header shares. One element,
+   one height, radius, type size and padding keeps the four tabs identical even
+   though each module filters on its own field. */
+.settings-library-filter-select {
+  box-sizing: border-box;
+  width: 160px;
+  height: var(--ui-control-md);
+  min-width: 0;
+  padding: 0 var(--ui-control-padding-x);
+  border: 1px solid var(--settings-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  font: inherit;
+  font-size: var(--ui-font-body);
+  text-overflow: ellipsis;
+}
+
+.settings-library-filter-select:focus-visible {
+  outline: 2px solid var(--settings-accent);
+  outline-offset: 2px;
+}
+
+/* The single refinement disclosure shared by the tabs that refine beyond their
+   category, matched to the shared dropdown height. */
+.settings-library-tab-header__filters .settings-library-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-4);
+  height: var(--ui-control-md);
+  white-space: nowrap;
+}
+
+.settings-library-filter-count {
+  display: inline-flex;
+  min-width: 18px;
+  min-height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--settings-accent-soft, var(--color-fill-2));
+  color: var(--settings-accent-strong, var(--color-text-1));
+  font-size: var(--settings-meta-size);
+  line-height: var(--ui-line-height-meta);
+}
+
+/* Disclosed refinements stay under the one-line control row, so the header
+   keeps its 40px rhythm until the user asks for them. */
+.settings-library-tab-header__filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ui-space-5);
+  margin-top: var(--ui-space-5);
+  padding: var(--ui-space-6);
+  border: 1px solid var(--settings-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--settings-surface-subtle, var(--settings-surface));
+}
+
+.settings-library-tab-header__filter-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+  color: var(--settings-text-secondary);
+  font-size: var(--ui-font-body);
 }
 
 /*

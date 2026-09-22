@@ -4,6 +4,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from '../components/SettingsPageHeader';
 import SettingsLibraryTabHeader from '../components/SettingsLibraryTabHeader';
+import SettingsLibraryFilterSelect from '../components/SettingsLibraryFilterSelect';
 
 export type ConnectorFilter = 'all' | 'connected' | 'needs-attention' | 'custom';
 export type ConnectorBrowseView = 'optional' | 'marketplace';
@@ -51,7 +52,28 @@ export function McpLibraryToolbar(props: Props) {
   return (
     <>
       {props.compactHeader ? (
-        <SettingsLibraryTabHeader title={t('settings.tools')} count={props.count} actions={addAction} />
+        <SettingsLibraryTabHeader
+          title={t('settings.tools')}
+          count={props.count}
+          filters={
+            <SettingsLibraryFilterSelect
+              aria-label={t('settings.skillsSettings.filters')}
+              data-testid='synon-biomed-mcp-filter'
+              value={props.filter}
+              onChange={(value) => props.onFilter(value as ConnectorFilter)}
+            >
+              <option value='all'>
+                {t('settings.synonBiomedMcpAll')} ({props.count})
+              </option>
+              <option value='connected'>{t('settings.synonBiomedMcpConnected')}</option>
+              <option value='needs-attention'>{t('settings.synonBiomedMcpNeedsAttention')}</option>
+              <option value='custom'>
+                {t('settings.synonBiomedMcpCustom')} ({props.customCount})
+              </option>
+            </SettingsLibraryFilterSelect>
+          }
+          actions={addAction}
+        />
       ) : (
         <SettingsPageHeader
           data-testid='tools-header'

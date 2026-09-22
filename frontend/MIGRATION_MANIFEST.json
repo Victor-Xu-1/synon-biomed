@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "58c3de5e401ff4d2864e692a4b97a197f5cedb41984a682084c868278602a66a",
+  "adaptationFingerprintSHA256": "4c4935a94c30bd252b4a532f1d084622dc209cf1ff415c29e1425183fbbf25c5",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "6daec45705d4c1fc52d3257cc286c7b1eadda48f4e567b8725ec48bc2beebed7",
+  "additionFingerprintSHA256": "16490c9cb681143d759730a7e56cfaa8c72c749bee2cfe9bb0ffc97e2b46e6e1",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
     "adaptedSourceFiles": 664,
     "removedSourceFiles": 289,
-    "addedFiles": 660
+    "addedFiles": 663
   },
   "adaptations": [
     {
@@ -2103,8 +2103,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/SynonBiomedExpertsSettings/ExpertWorkbench.tsx",
       "sourceSHA256": "d16cf7d5e33fa81c06a9ed7482450fd70309a8441f161575985c24d55f73caf9",
-      "targetSHA256": "2549e09342884217802ec94ef1942c3fe45b4ed16b4cb184b525e256216f3437",
-      "bytes": 39598,
+      "targetSHA256": "6d49f9134be25dc52ef94b3f05d3a7fd32f34daeeab3dd0726b8853c92c4b876",
+      "bytes": 40749,
       "reason": "Improve responsive expert rows and compact long descriptions without dropping source detail."
     },
     {
@@ -2201,8 +2201,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/SynonBiomedSkillsSettings.tsx",
       "sourceSHA256": "c3df56872aa6777496e50f80a282ca30eed7a1d43b538bc5eb3e0cf767a635db",
-      "targetSHA256": "55d2b63ef80fe4115029ed14c49c188ed5771efe389a387856e7945217c2685e",
-      "bytes": 23547,
+      "targetSHA256": "da6cbde6dbb5c680f3dfacd9308c1409d4bf6fc8754033d6ce571178b4d5c924",
+      "bytes": 27288,
       "reason": "Unify installed Skill sources in one searchable library and consolidate acquisition into one action while preserving personal, import, toggle, and market workflows."
     },
     {
@@ -7608,8 +7608,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ScientificEnvironmentSettings.tsx",
-      "sha256": "061f2fab95b61eb1d9e4ce9821f02607ec4b95fe9159fe44df2e430128a6ed75",
-      "bytes": 14279,
+      "sha256": "927200701d1a308eb98970f681170e77404b2ddf39fd322ba7592e47d1921529",
+      "bytes": 16607,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7632,8 +7632,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpLibraryToolbar.tsx",
-      "sha256": "1b821e7b2f759c164483c22c580e72ad5229ac7b1f0a70db548b9cf6ee733aeb",
-      "bytes": 4057,
+      "sha256": "37590e8c6f15deacaaf9d7c637bddbc649e41af50d449237462126a9738f8a6d",
+      "bytes": 4989,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7733,9 +7733,21 @@
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
+      "path": "packages/desktop/src/renderer/pages/settings/components/SettingsLibraryFilterSelect.tsx",
+      "sha256": "0adaffd3bf35d4be8c5c62ab133f4976fd510457e5c1a4e6359db81b7724eb63",
+      "bytes": 1220,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
+      "path": "packages/desktop/src/renderer/pages/settings/components/SettingsLibraryFilterToggle.tsx",
+      "sha256": "29f1140b869b135758f3caf8f83daf841f4e938cc34ee6a7bb8caf941ddb2975",
+      "bytes": 1592,
+      "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
+    },
+    {
       "path": "packages/desktop/src/renderer/pages/settings/components/SettingsLibraryTabHeader.tsx",
-      "sha256": "496f16ae588c096826e4d11abc84ea1506065fa716fb576f40aa351c6e8e4e4e",
-      "bytes": 1464,
+      "sha256": "bec02fe0b82f1e840eb729b004852346ed2449bd5a7847c58824bb3e8a35eac9",
+      "bytes": 2017,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7776,8 +7788,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "b6f9683f07d91bded16d5d3528a42a205d10740e5c95241621462de5235ac71e",
-      "bytes": 22738,
+      "sha256": "3e59dc7569ee4151e8b32ee76e36fb9e3649542d47a180e309582015f021c222",
+      "bytes": 25390,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9753,6 +9765,12 @@
       "sha256": "5c9d893d8eb82bc6eccac4d52e490d586bcbdf771802fb1940d821e78162c0ff",
       "bytes": 77,
       "reason": "Expose the shared localized test renderer from the settings test boundary."
+    },
+    {
+      "path": "tests/unit/settings/settingsLibraryTabHeaderContract.test.ts",
+      "sha256": "e2a03be1e841ece616a80e6980116812f6f23e6474615571fd1b37b06f281fd2",
+      "bytes": 6150,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
       "path": "tests/unit/settings/settingsNavigation.dom.test.ts",

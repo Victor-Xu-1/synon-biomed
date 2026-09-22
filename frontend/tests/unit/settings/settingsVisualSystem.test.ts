@@ -93,8 +93,21 @@ describe('settings visual system', () => {
 
   it('keeps one card grid and one metadata ramp', () => {
     const all = moduleCss.map(([, css]) => css).join('\n');
-    expect(all).not.toMatch(/grid-template-columns:\s*repeat\((?:4|5),\s*minmax\(0,\s*1fr\)\)/);
+    expect(all).toMatch(/grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
     expect(all).not.toMatch(/font-size:\s*(?:8|9|10|11|18)px/);
+  });
+
+  it('pages every card catalog in twelves (three rows of four)', () => {
+    for (const relative of [
+      'SynonBiomedSkillsSettings.tsx',
+      'SynonBiomedExpertsSettings/ExpertWorkbench.tsx',
+      'ScientificEnvironmentSettings.tsx',
+      'ToolsSettings/SynonBiomedMcpSettings.tsx',
+    ]) {
+      const source = readFileSync(path.join(settingsDir, relative), 'utf8');
+      expect(source, relative).toMatch(/PAGE_SIZE = 12;/);
+      expect(source, relative).toContain('SettingsPagination');
+    }
   });
 });
 

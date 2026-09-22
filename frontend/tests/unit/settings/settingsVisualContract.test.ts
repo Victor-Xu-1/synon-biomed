@@ -223,7 +223,7 @@ describe('settings image-based visual contract', () => {
       cardMinHeight: 220,
     });
     expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?repeat\(auto-fill,\s*minmax\(260px,\s*1fr\)\)/);
-    expect(expertsCss).toMatch(/\.expert-card[\s\S]*?height:\s*236px/);
+    expect(expertsCss).toMatch(/\.expert-card[\s\S]*?height:\s*168px/);
     expect(expertsCss).not.toMatch(/grid-template-columns:\s*643px/);
     expect(expertsCss).not.toMatch(/settings-list-row/);
   });

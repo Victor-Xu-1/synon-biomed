@@ -13,11 +13,15 @@ import {
 import { scientificRuntimePresentation } from '@/renderer/utils/scientificRuntimePresentation';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
 import SettingsPageHeader from './components/SettingsPageHeader';
+import SettingsPagination from './components/SettingsPagination';
 import { RefreshButton } from './components/SettingsPrimitives';
 import { useStorageResource } from './storage/useStorageResource';
 import { StorageRuntimeSelectionDialog } from './storage/StorageRuntimeSelectionDialog';
 import { StorageError, StorageLoading } from './storage/StorageFeedback';
 import { EnvironmentCard } from './environments/EnvironmentCard';
+
+/** Three rows of four cards per page, like every other settings catalog. */
+const ENVIRONMENT_PAGE_SIZE = 12;
 import {
   activeEnvironmentStates,
   environmentCategories,
@@ -41,6 +45,7 @@ export default function ScientificEnvironmentSettings() {
   const [uninstallTarget, setUninstallTarget] = useState<ScientificRuntimeOption | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [page, setPage] = useState(1);
   const pending = useRef(false);
   const alive = useRef(true);
   useEffect(() => {
@@ -74,6 +79,13 @@ export default function ScientificEnvironmentSettings() {
       haystack.includes(query.trim().toLocaleLowerCase())
     );
   });
+  useEffect(() => setPage(1), [query, category, filter]);
+  const environmentTotalPages = Math.max(1, Math.ceil(filtered.length / ENVIRONMENT_PAGE_SIZE));
+  const environmentPage = Math.min(page, environmentTotalPages);
+  const environmentPageItems = filtered.slice(
+    (environmentPage - 1) * ENVIRONMENT_PAGE_SIZE,
+    environmentPage * ENVIRONMENT_PAGE_SIZE
+  );
   const filterPanelId = useId();
   const activeFilterCount = filter === 'all' ? 0 : 1;
   const prepare = async () => {
@@ -241,7 +253,7 @@ export default function ScientificEnvironmentSettings() {
               {t('settings.environments.results', { count: filtered.length, total: items.length })}
             </div>
             <div className='environment-grid' role='list'>
-              {filtered.map((item) => (
+              {environmentPageItems.map((item) => (
                 <EnvironmentCard
                   key={item.id}
                   item={item}
@@ -258,6 +270,12 @@ export default function ScientificEnvironmentSettings() {
                 />
               ))}
             </div>
+            <SettingsPagination
+              page={environmentPage}
+              totalPages={environmentTotalPages}
+              onChange={setPage}
+              label={t('settings.environments.paginationLabel')}
+            />
             {!filtered.length && <div className='environment-empty'>{t('settings.environments.empty')}</div>}
           </>
         )}

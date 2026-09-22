@@ -3955,6 +3955,7 @@ export type I18nKey =
   | 'settings.environments.notice'
   | 'settings.environments.packages'
   | 'settings.environments.packagesUnavailable'
+  | 'settings.environments.paginationLabel'
   | 'settings.environments.pause'
   | 'settings.environments.preparing'
   | 'settings.environments.results'

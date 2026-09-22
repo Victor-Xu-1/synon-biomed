@@ -48,8 +48,8 @@ interface SynonBiomedSkillsSettingsProps {
   withWrapper?: boolean;
 }
 
-// Keep page size stable across responsive layouts.
-const SKILLS_PAGE_SIZE = 15;
+// Every card wall shows three rows of four, so catalogs page in twelves.
+const SKILLS_PAGE_SIZE = 12;
 
 const SynonBiomedSkillsSettings: React.FC<SynonBiomedSkillsSettingsProps> = ({ withWrapper = true }) => {
   const { i18n, t } = useTranslation();

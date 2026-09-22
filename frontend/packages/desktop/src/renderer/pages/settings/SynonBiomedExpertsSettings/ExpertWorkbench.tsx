@@ -28,6 +28,10 @@ import { Close, Search } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from '../components/SettingsPageHeader';
+import SettingsPagination from '../components/SettingsPagination';
+
+/** Three rows of four cards per page, like every other settings catalog. */
+const EXPERT_PAGE_SIZE = 12;
 import {
   SettingsGeneratedArtwork,
   SettingsGeneratedEmptyArtwork,
@@ -110,6 +114,7 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
   const [connectors, setConnectors] = useState<SynonBiomedMcpServer[]>([]);
   const [expertUsage, setExpertUsage] = useState<SynonBiomedExpertUsageByName | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expertPageState, setExpertPage] = useState(1);
   const [loadError, setLoadError] = useState('');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'personal' | 'builtin'>('all');
@@ -360,12 +365,19 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
     });
   }, [filter, localizedProfiles, query]);
 
+  useEffect(() => setExpertPage(1), [filter, query]);
+  const expertTotalPages = Math.max(1, Math.ceil(visibleProfiles.length / EXPERT_PAGE_SIZE));
+  const expertPage = Math.min(expertPageState, expertTotalPages);
+  const expertPageProfiles = useMemo(
+    () => visibleProfiles.slice((expertPage - 1) * EXPERT_PAGE_SIZE, expertPage * EXPERT_PAGE_SIZE),
+    [visibleProfiles, expertPage]
+  );
   const groupedProfiles = useMemo(
     () => ({
-      personal: visibleProfiles.filter((profile) => profile.source === 'user'),
-      builtin: visibleProfiles.filter((profile) => profile.source !== 'user'),
+      personal: expertPageProfiles.filter((profile) => profile.source === 'user'),
+      builtin: expertPageProfiles.filter((profile) => profile.source !== 'user'),
     }),
-    [visibleProfiles]
+    [expertPageProfiles]
   );
   const availableSkillCount = skills.length;
   const availableConnectorCount = connectors.filter((connector) => connector.enabled).length;
@@ -701,6 +713,12 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
                 usageByName={expertUsage}
               />
             ) : null}
+            <SettingsPagination
+              page={expertPage}
+              totalPages={expertTotalPages}
+              onChange={setExpertPage}
+              label={t('settings.expertsSettings.paginationLabel')}
+            />
           </div>
         ) : null}
       </div>

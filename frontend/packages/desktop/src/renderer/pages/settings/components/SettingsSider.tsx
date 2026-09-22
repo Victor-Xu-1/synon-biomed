@@ -37,10 +37,7 @@ export const BUILTIN_TAB_IDS = [
   'general',
 ] as const;
 
-const GROUP_HEADER_BEFORE: Record<string, string> = {
-  experts: 'settings.groupAiCore',
-  credentials: 'settings.groupWorkspace',
-};
+const GROUP_HEADER_BEFORE: Record<string, string> = {};
 
 type SiderItem = {
   id: SettingsRouteId;

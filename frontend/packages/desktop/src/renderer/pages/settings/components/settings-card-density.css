@@ -760,3 +760,9 @@ html body .settings-page-wrapper.settings-library-route .environment-library {
   gap: 12px;
   margin-top: 12px;
 }
+
+/* The compact footer shows only its control: a 202px column cannot fit the
+   meta row, and half-ellipsed fragments read as broken text. */
+.settings-library-route .settings-library-card__meta {
+  display: none !important;
+}

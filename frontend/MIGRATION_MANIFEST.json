@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "73fdf100c36e499bc41ed21f355e53e051800a0ec6bc5d5190b7c72ac28a8c3c",
+  "adaptationFingerprintSHA256": "a02b64dc31ac154d4997e778ea6521576fcd17a75ee78714ebc83804768b6786",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "ec9b43022575b77463f35c78e119dbc60f521968e3d883fc0f8dabf5ee5e3cf5",
+  "additionFingerprintSHA256": "f859e8a012b162a686c2acb0f11753f2b456e199c8e26d64b6622754d6eb5e9b",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -2271,8 +2271,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/SettingsSider.tsx",
       "sourceSHA256": "62edcc13c1bc2d7ef478cc698f73b55f2c9d07b76b694ea66acaa3cee586172c",
-      "targetSHA256": "bbdcdfbf3fe1c709f38a5f6209ef3857648615eb921404dd85391cafe96e00fc",
-      "bytes": 6852,
+      "targetSHA256": "ee76e93c3dffa563aa8a9b7e734866ec9089ca9ac1f18d408fae301a01324876",
+      "bytes": 6774,
       "reason": "Align settings navigation icon states with the shared visual tokens."
     },
     {
@@ -7788,8 +7788,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-card-density.css",
-      "sha256": "e125a946b11a0c98e84d7987236859094e606051026af583429aa4b91f53a43e",
-      "bytes": 25425,
+      "sha256": "3a22a7c97e98dda95bd673f514423e4b83f76c40ce392c33e2ad28ae7580a9b0",
+      "bytes": 25652,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {

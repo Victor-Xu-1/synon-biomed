@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"unicode"
@@ -644,6 +645,11 @@ func (c Config) Address() string {
 }
 
 func defaultHome() string {
+	if runtime.GOOS == "windows" {
+		if home, err := os.UserHomeDir(); err == nil && strings.TrimSpace(home) != "" {
+			return filepath.Join(home, ".synon-go")
+		}
+	}
 	if home := os.Getenv("HOME"); home != "" {
 		return filepath.Join(home, ".synon-go")
 	}

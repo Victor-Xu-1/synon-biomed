@@ -310,6 +310,7 @@ func (m *Manager) RuntimeReady(language, environment string) bool {
 		_, err := m.managedEnvironmentExecutable(environment, "python")
 		return err == nil
 	case "r":
+		requestedEnvironment := strings.TrimSpace(environment)
 		environment = m.canonicalManagedREnvironment(environment)
 		worker := strings.TrimSpace(m.config.RWorkerPath)
 		if worker == "" {
@@ -320,6 +321,15 @@ func (m *Manager) RuntimeReady(language, environment string) bool {
 			return false
 		}
 		if environment == managedRName(m.config) {
+			// Keep a narrow read-only migration path for an older `r` prefix when
+			// the verified bundled installer is not configured. The service-owned
+			// bundled path remains authoritative whenever provisioning is enabled;
+			// execution admission still calls EnsureManagedREnvironment and never
+			// treats this legacy fallback as the required core runtime.
+			if !m.ManagedRProvisioningEnabled() &&
+				(requestedEnvironment == "r" || requestedEnvironment == "claude-science-r") {
+				return m.legacyRExecutableAvailable(requestedEnvironment)
+			}
 			return m.managedRRuntimeReady() == nil
 		}
 		_, err = m.managedEnvironmentExecutable(environment, "Rscript")

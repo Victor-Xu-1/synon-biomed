@@ -779,7 +779,7 @@ html body .settings-page-wrapper.settings-library-route .environment-library {
   overflow: visible !important;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 .settings-library-route .settings-library-card__control {
   flex-shrink: 0;

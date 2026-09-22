@@ -37,7 +37,7 @@ describe('settings visual system', () => {
       '--settings-card-radius: var(--ui-radius-2xl)',
       '--settings-card-gap: var(--ui-space-6)',
       '--settings-section-gap: var(--ui-space-7)',
-      '--settings-entity-card-height: 216px',
+      '--settings-entity-card-height: 232px',
       '--settings-page-title-size: 26px',
       '--settings-page-title-line: 34px',
       '--settings-page-description-size: var(--ui-font-subtitle)',

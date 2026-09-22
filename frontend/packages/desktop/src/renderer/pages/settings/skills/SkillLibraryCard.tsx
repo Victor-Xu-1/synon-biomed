@@ -9,7 +9,6 @@ import {
 import { resolveSkillDescription } from '@/renderer/services/skills/synonBiomedSkillDescriptions';
 import type { SynonBiomedSkillDraft } from '@/renderer/services/skills/synonBiomedSkillLibrary';
 import type { SynonBiomedSkillUsage } from '@/renderer/services/skills/synonBiomedSkillUsage';
-import { skillSourceLabel } from './skillSourceLabel';
 
 export interface SkillInfo {
   name: string;
@@ -73,9 +72,7 @@ export function SkillRow({
 }) {
   const { i18n, t } = useTranslation();
   const displayName = skill.displayName || skill.name;
-  const metadata = [getSynonBiomedSkillCategoryLabel(skill.category, i18n.language), skill.license]
-    .filter(Boolean)
-    .join(' · ');
+  const categoryLabel = getSynonBiomedSkillCategoryLabel(skill.category, i18n.language);
   const description = resolveSkillDescription(skill.name, skill.description, i18n.language, skill.description_i18n);
   return (
     <div
@@ -83,7 +80,7 @@ export function SkillRow({
       role='button'
       tabIndex={0}
       aria-label={t('settings.skillsSettings.viewNamed', { name: displayName })}
-      className='settings-entity-card settings-skill-card'
+      className='settings-entity-card settings-skill-card settings-library-card'
       onClick={() => onOpen(skill)}
       onKeyDown={(event) => {
         if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
@@ -92,29 +89,22 @@ export function SkillRow({
         }
       }}
     >
-      <div className='settings-skill-card__content min-w-0 flex-1'>
-        <div className='settings-skill-card__heading'>
-          <span className='settings-skill-card__icon' aria-hidden='true'>
-            <SettingsGeneratedIcon id={resolveSkillIcon(skill)} className='settings-skill-card__icon-image' />
-          </span>
-          <span className='settings-skill-card__title'>{displayName}</span>
-        </div>
-        <p className='settings-skill-card__description'>{description}</p>
-        <div className='settings-skill-card__metadata'>
-          {metadata ? <span>{metadata}</span> : null}
-          {skillSourceLabel(skill.source, t) ? (
-            <Tag size='small' color='gray'>
-              {skillSourceLabel(skill.source, t)}
-            </Tag>
-          ) : null}
-        </div>
+      <div className='settings-skill-card__heading settings-library-card__heading'>
+        <span className='settings-skill-card__icon settings-library-card__icon' aria-hidden='true'>
+          <SettingsGeneratedIcon id={resolveSkillIcon(skill)} className='settings-skill-card__icon-image' />
+        </span>
+        <span className='settings-skill-card__title settings-library-card__title'>{displayName}</span>
       </div>
+      <p className='settings-skill-card__description settings-library-card__description'>{description}</p>
       <div
-        className='settings-skill-card__footer flex min-w-0 items-center justify-between gap-8px border-t border-arco-2 pt-8px'
+        className='settings-skill-card__footer settings-library-card__footer'
         onClick={(event) => event.stopPropagation()}
       >
-        <SkillUsageSummary skillName={skill.name} usage={usage} available={usageAvailable} />
-        <div className='flex shrink-0 items-center gap-4px'>
+        <span className='settings-skill-card__meta settings-library-card__meta'>
+          {categoryLabel ? <span className='settings-skill-card__category'>{categoryLabel}</span> : null}
+          <SkillUsageSummary skillName={skill.name} usage={usage} available={usageAvailable} />
+        </span>
+        <span className='settings-library-card__control'>
           {personal ? (
             <Button
               type='text'
@@ -127,14 +117,13 @@ export function SkillRow({
             </Button>
           ) : null}
           <Switch
-            size='small'
             checked={skill.enabled !== false}
             loading={pendingSkill === skill.name}
             disabled={pendingSkill !== null && pendingSkill !== skill.name}
             aria-label={t('settings.skillsSettings.enableNamed', { name: displayName })}
             onChange={(enabled) => void onToggle(skill, enabled)}
           />
-        </div>
+        </span>
       </div>
     </div>
   );
@@ -155,24 +144,16 @@ function SkillUsageSummary({
         date: formatSkillUsageDate(usage.lastUsedAt, i18n.language),
       })
     : t('settings.skillsSettings.usageNever');
+  const count = t('settings.skillsSettings.usageCount', { count: usage?.invocationCount ?? 0 });
 
   return (
-    <div
+    <span
       data-testid={`synon-biomed-skill-usage-${normalizeTestId(skillName)}`}
-      className='min-w-0 flex flex-col items-start gap-2px text-left text-11px text-t-tertiary'
-      title={
-        available
-          ? `${lastUsed} · ${t('settings.skillsSettings.usageCount', { count: usage?.invocationCount ?? 0 })}`
-          : t('settings.skillsSettings.usageUnavailable')
-      }
+      className='settings-skill-card__usage'
+      title={available ? `${lastUsed} · ${count}` : t('settings.skillsSettings.usageUnavailable')}
     >
-      <span className='max-w-full truncate'>
-        {available ? lastUsed : t('settings.skillsSettings.usageUnavailable')}
-      </span>
-      <span className='tabular-nums'>
-        {available ? t('settings.skillsSettings.usageCount', { count: usage?.invocationCount ?? 0 }) : '—'}
-      </span>
-    </div>
+      {available ? `${lastUsed} · ${count}` : t('settings.skillsSettings.usageUnavailable')}
+    </span>
   );
 }
 
@@ -195,20 +176,24 @@ export function SkillDraftRow({
     <button
       type='button'
       data-testid={`synon-biomed-skill-draft-${normalizeTestId(draft.name)}`}
-      className='settings-entity-card settings-skill-card settings-skill-card--draft'
+      className='settings-entity-card settings-skill-card settings-skill-card--draft settings-library-card'
       onClick={() => onOpen(draft)}
     >
-      <span className='settings-skill-card__heading'>
-        <span className='settings-skill-card__icon' aria-hidden='true'>
+      <span className='settings-skill-card__heading settings-library-card__heading'>
+        <span className='settings-skill-card__icon settings-library-card__icon' aria-hidden='true'>
           <SettingsGeneratedIcon id='skills' className='settings-skill-card__icon-image' />
         </span>
-        <span className='settings-skill-card__title'>{draft.displayName}</span>
+        <span className='settings-skill-card__title settings-library-card__title'>{draft.displayName}</span>
       </span>
-      <span className='settings-skill-card__description'>{draft.description || draft.name}</span>
-      <span className='settings-skill-card__metadata'>
-        <Tag size='small' color='orange'>
-          {t('settings.skillsSettings.draft')}
-        </Tag>
+      <span className='settings-skill-card__description settings-library-card__description'>
+        {draft.description || draft.name}
+      </span>
+      <span className='settings-skill-card__footer settings-library-card__footer'>
+        <span className='settings-skill-card__meta settings-library-card__meta'>
+          <Tag size='small' color='orange'>
+            {t('settings.skillsSettings.draft')}
+          </Tag>
+        </span>
       </span>
     </button>
   );

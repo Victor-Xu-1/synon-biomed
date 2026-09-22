@@ -15,7 +15,6 @@ import SettingsPageWrapper from './components/SettingsPageWrapper';
 import SettingsPageHeader from './components/SettingsPageHeader';
 import SettingsLibraryTabHeader from './components/SettingsLibraryTabHeader';
 import SettingsLibraryFilterSelect from './components/SettingsLibraryFilterSelect';
-import SettingsLibraryFilterToggle from './components/SettingsLibraryFilterToggle';
 import { RefreshButton } from './components/SettingsPrimitives';
 import { useStorageResource } from './storage/useStorageResource';
 import { StorageRuntimeSelectionDialog } from './storage/StorageRuntimeSelectionDialog';
@@ -97,6 +96,14 @@ export default function ScientificEnvironmentSettings({
   const environmentPageItems = filtered;
   const filterPanelId = useId();
   const activeFilterCount = filter === 'all' ? 0 : 1;
+  // The merged-page header keeps exactly one control: the research-domain
+  // filter, with the inventory count of each domain it can select.
+  const environmentCategoryOptions = environmentCategories
+    .filter((id) => id === 'all' || items.some((item) => environmentCategory(item.id) === id))
+    .map((id) => ({
+      id,
+      count: id === 'all' ? items.length : items.filter((item) => environmentCategory(item.id) === id).length,
+    }));
   const prepare = async () => {
     if (!target || pending.current) return;
     pending.current = true;
@@ -201,52 +208,18 @@ export default function ScientificEnvironmentSettings({
           title={t('settings.environments.title')}
           count={items.length}
           filters={
-            <>
-              <SettingsLibraryFilterSelect
-                aria-label={t('settings.environments.category')}
-                data-testid='environment-category-filter'
-                value={category}
-                onChange={(value) => setCategory(value as EnvironmentCategory)}
-              >
-                {environmentCategories
-                  .filter((id) => id === 'all' || items.some((item) => environmentCategory(item.id) === id))
-                  .map((id) => (
-                    <option key={id} value={id}>
-                      {t('settings.environments.categories.' + id)}
-                    </option>
-                  ))}
-              </SettingsLibraryFilterSelect>
-              <SettingsLibraryFilterToggle
-                data-testid='environment-filter-toggle'
-                expanded={filtersExpanded}
-                controls={filterPanelId}
-                activeCount={activeFilterCount}
-                onClick={() => setFiltersExpanded((value) => !value)}
-              />
-            </>
-          }
-          filterPanel={
-            filtersExpanded ? (
-              <div id={filterPanelId} role='group' aria-label={t('settings.skillsSettings.filters')}>
-                <label>
-                  <span>{t('settings.environments.status')}</span>
-                  <SettingsLibraryFilterSelect
-                    aria-label={t('settings.environments.status')}
-                    value={filter}
-                    onChange={(value) => setFilter(value as EnvironmentFilter)}
-                  >
-                    {(['all', 'ready', 'available', 'active', 'failed'] as const).map((id) => (
-                      <option key={id} value={id}>
-                        {t('settings.environments.filters.' + id)}
-                      </option>
-                    ))}
-                  </SettingsLibraryFilterSelect>
-                </label>
-                <Button type='text' disabled={activeFilterCount === 0} onClick={() => setFilter('all')}>
-                  {t('settings.skillsSettings.resetFilters')}
-                </Button>
-              </div>
-            ) : null
+            <SettingsLibraryFilterSelect
+              aria-label={t('settings.environments.category')}
+              data-testid='environment-category-filter'
+              value={category}
+              onChange={(value) => setCategory(value as EnvironmentCategory)}
+            >
+              {environmentCategoryOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {t('settings.environments.categories.' + option.id)} ({option.count})
+                </option>
+              ))}
+            </SettingsLibraryFilterSelect>
           }
           actions={compactRefreshAction}
         />

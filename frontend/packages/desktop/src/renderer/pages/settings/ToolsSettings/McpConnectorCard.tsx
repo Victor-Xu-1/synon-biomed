@@ -9,6 +9,7 @@ import type {
 } from '@/renderer/services/synonBiomedCapabilities';
 import { resolveSynonBiomedMcpDescription } from '@/renderer/services/mcp/synonBiomedMcpDescriptions';
 import { McpConnectorVisualMark, resolveMcpConnectorVisual } from './mcpConnectorVisuals';
+import { resolveConnectorDomain } from './connectorDomains';
 import { connectorConfigurationState } from './mcpConnectorConfiguration';
 
 export const McpConnectorCard: React.FC<{
@@ -50,12 +51,13 @@ export const McpConnectorCard: React.FC<{
   const connectionLabel = t(`settings.mcpConfiguration.states.${connectorConfigurationState(server)}`);
   const usageDetails = formatMcpUsageDetails(server.usage, i18n.language, t);
   const usageSummary = `${usageDetails.lastUsed} · ${usageDetails.count}`;
+  const domainLabel = t(`settings.synonBiomedMcpDomains.${resolveConnectorDomain(server, custom !== null)}`);
+  // The bottom row owns exactly one control — the connection capsule, which is
+  // also this connector's enable switch. The configuration action lives in the
+  // same overflow menu as the connector's other maintenance actions.
+  const metaSummary = `${domainLabel} · ${usageSummary}`;
   const primaryActionKind =
     server.authRequired || server.oauthSupported || server.apiKeyConfigurable ? 'configure' : 'permissions';
-  const primaryAction = () => {
-    if (primaryActionKind === 'configure') onConfigure(server);
-    else onPermissions(server);
-  };
   const hasSecondaryActions =
     primaryActionKind !== 'permissions' ||
     (server.oauthSupported && authorized) ||
@@ -64,7 +66,10 @@ export const McpConnectorCard: React.FC<{
   const actionMenu = (
     <Menu
       onClickMenuItem={(key) => {
-        if (key === 'permissions') onPermissions(server);
+        if (key === 'primary') {
+          if (primaryActionKind === 'configure') onConfigure(server);
+          else onPermissions(server);
+        } else if (key === 'permissions') onPermissions(server);
         else if (key === 'disconnect') onDisconnect(server);
         else if (key === 'attach') {
           if (server.attachedAgents.length) onDetachAll(server);
@@ -73,6 +78,9 @@ export const McpConnectorCard: React.FC<{
         else if (key === 'delete' && custom) onDelete(custom);
       }}
     >
+      <Menu.Item key='primary' data-testid={`synon-biomed-mcp-${primaryActionKind}-${normalizeTestId(server.name)}`}>
+        {t('settings.synonBiomedMcpConfigure')}
+      </Menu.Item>
       {primaryActionKind !== 'permissions' ? (
         <Menu.Item key='permissions' data-testid={`synon-biomed-mcp-permissions-${normalizeTestId(server.name)}`}>
           {t('settings.synonBiomedMcpPermissions')}
@@ -118,62 +126,45 @@ export const McpConnectorCard: React.FC<{
       data-mcp-tone={connectorVisual.tone}
       data-mcp-visual={connectorVisual.glyph}
       data-mcp-connection-state={connectionState}
+      data-mcp-domain={resolveConnectorDomain(server, custom !== null)}
       data-mcp-usage-summary={usageSummary}
-      className='synon-mcp-card flex min-w-0 flex-col border border-arco-2 bg-fill-1 transition-colors'
+      className='synon-mcp-card settings-library-card flex min-w-0 flex-col border border-arco-2 bg-fill-1 transition-colors'
     >
-      <div className='synon-mcp-card__top flex min-w-0 items-center'>
-        <div className='synon-mcp-card__icon flex shrink-0 items-center justify-center'>
+      <div className='synon-mcp-card__top settings-library-card__heading flex min-w-0 items-center'>
+        <div className='synon-mcp-card__icon settings-library-card__icon flex shrink-0 items-center justify-center'>
           <McpConnectorVisualMark visual={connectorVisual} />
         </div>
-        <div className='synon-mcp-card__identity min-w-0 flex-1'>
+        <div className='synon-mcp-card__identity settings-library-card__title-slot min-w-0 flex-1'>
           <div className='synon-mcp-card__title-row'>
-            <span className='min-w-0 font-650 text-t-primary' title={server.displayName}>
+            <span className='settings-library-card__title min-w-0' title={server.displayName}>
               {server.displayName}
             </span>
           </div>
         </div>
       </div>
-      <p className='synon-mcp-card__description' title={displayDescription}>
+      <p className='synon-mcp-card__description settings-library-card__description' title={displayDescription}>
         {displayDescription}
       </p>
-      <div className='synon-mcp-card__metadata'>
-        <span>
-          {custom || server.source === 'custom'
-            ? t('settings.synonBiomedMcpCustom')
-            : t('settings.synonBiomedMcpRecommended')}
-        </span>
-        <span>{t('settings.synonBiomedMcpTransportSummary', { transport: server.transport })}</span>
-      </div>
-      <div className='synon-mcp-card__footer'>
-        <div className='synon-mcp-card__usage' aria-label={usageSummary}>
+      <div className='synon-mcp-card__footer settings-library-card__footer'>
+        <span className='synon-mcp-card__meta settings-library-card__meta' title={metaSummary}>
+          <span className='synon-mcp-card__domain'>{domainLabel}</span>
           <span>{usageDetails.lastUsed}</span>
           <span>{usageDetails.count}</span>
-        </div>
-        <div className='synon-mcp-card__actions flex items-center justify-between'>
-          <div className='synon-mcp-card__action-cluster flex items-center'>
-            <Button
-              size='small'
-              type='secondary'
-              className='synon-mcp-card__configure'
-              data-testid={`synon-biomed-mcp-${primaryActionKind}-${normalizeTestId(server.name)}`}
-              onClick={primaryAction}
-            >
-              {t('settings.synonBiomedMcpConfigure')}
-            </Button>
-            {hasSecondaryActions ? (
-              <Dropdown droplist={actionMenu} trigger='click' position='br' getPopupContainer={() => document.body}>
-                <Button
-                  size='small'
-                  type='text'
-                  shape='circle'
-                  className='synon-mcp-card__more'
-                  data-testid={`synon-biomed-mcp-more-${normalizeTestId(server.name)}`}
-                  aria-label={t('common.more')}
-                  icon={<MoreOne size='15' />}
-                />
-              </Dropdown>
-            ) : null}
-          </div>
+        </span>
+        <span className='settings-library-card__control synon-mcp-card__action-cluster flex shrink-0 items-center'>
+          {hasSecondaryActions ? (
+            <Dropdown droplist={actionMenu} trigger='click' position='br' getPopupContainer={() => document.body}>
+              <Button
+                size='small'
+                type='text'
+                shape='circle'
+                className='synon-mcp-card__more'
+                data-testid={`synon-biomed-mcp-more-${normalizeTestId(server.name)}`}
+                aria-label={t('common.more')}
+                icon={<MoreOne size='15' />}
+              />
+            </Dropdown>
+          ) : null}
           <button
             type='button'
             role='switch'
@@ -182,7 +173,7 @@ export const McpConnectorCard: React.FC<{
             aria-label={t('settings.synonBiomedMcpToggleEnabled', { name: server.displayName })}
             title={usageSummary}
             disabled={busy}
-            className='synon-mcp-card__status-control'
+            className='synon-mcp-card__status-control settings-library-card__control'
             data-state={connectionState}
             data-testid={`synon-biomed-mcp-enabled-${normalizeTestId(server.name)}`}
             onClick={() => onToggle(server, !server.enabled)}
@@ -190,7 +181,7 @@ export const McpConnectorCard: React.FC<{
             <span className='synon-mcp-card__status-dot' aria-hidden='true' />
             <span>{connectionLabel}</span>
           </button>
-        </div>
+        </span>
       </div>
     </article>
   );

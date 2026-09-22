@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from '../components/SettingsPageHeader';
 import SettingsLibraryTabHeader from '../components/SettingsLibraryTabHeader';
 import SettingsLibraryFilterSelect from '../components/SettingsLibraryFilterSelect';
+import type { ConnectorDomainId } from './connectorDomains';
 
 export type ConnectorFilter = 'all' | 'connected' | 'needs-attention' | 'custom';
 export type ConnectorBrowseView = 'optional' | 'marketplace';
@@ -16,6 +17,10 @@ interface Props {
   onSearch: (value: string) => void;
   filter: ConnectorFilter;
   onFilter: (value: ConnectorFilter) => void;
+  /** Merged-page domain filter: the single control that tab header keeps. */
+  domainFilter: ConnectorDomainId;
+  onDomainFilter: (value: ConnectorDomainId) => void;
+  domainOptions: { id: ConnectorDomainId; count: number }[];
   onCreate: () => void;
   onBrowse: (view: ConnectorBrowseView) => void;
   onReconcile: () => void;
@@ -57,19 +62,16 @@ export function McpLibraryToolbar(props: Props) {
           count={props.count}
           filters={
             <SettingsLibraryFilterSelect
-              aria-label={t('settings.skillsSettings.filters')}
+              aria-label={t('settings.synonBiomedMcpDomain')}
               data-testid='synon-biomed-mcp-filter'
-              value={props.filter}
-              onChange={(value) => props.onFilter(value as ConnectorFilter)}
+              value={props.domainFilter}
+              onChange={(value) => props.onDomainFilter(value as ConnectorDomainId)}
             >
-              <option value='all'>
-                {t('settings.synonBiomedMcpAll')} ({props.count})
-              </option>
-              <option value='connected'>{t('settings.synonBiomedMcpConnected')}</option>
-              <option value='needs-attention'>{t('settings.synonBiomedMcpNeedsAttention')}</option>
-              <option value='custom'>
-                {t('settings.synonBiomedMcpCustom')} ({props.customCount})
-              </option>
+              {props.domainOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {t(`settings.synonBiomedMcpDomains.${option.id}`)} ({option.count})
+                </option>
+              ))}
             </SettingsLibraryFilterSelect>
           }
           actions={addAction}

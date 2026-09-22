@@ -759,9 +759,6 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true, co
                 onOpen={openProfile}
                 onToggle={toggleEnabled}
                 pendingProfileName={pendingProfileName}
-                availableSkillCount={availableSkillCount}
-                availableConnectorCount={availableConnectorCount}
-                connectors={connectors}
                 usageByName={expertUsage}
               />
             ) : null}
@@ -772,9 +769,6 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true, co
                 onOpen={openProfile}
                 onToggle={toggleEnabled}
                 pendingProfileName={pendingProfileName}
-                availableSkillCount={availableSkillCount}
-                availableConnectorCount={availableConnectorCount}
-                connectors={connectors}
                 usageByName={expertUsage}
               />
             ) : null}
@@ -798,73 +792,58 @@ const ExpertGroup: React.FC<{
   onOpen: (profile: SynonBiomedExpertProfile) => void;
   onToggle: (profile: SynonBiomedExpertProfile, enabled: boolean) => void;
   pendingProfileName: string | null;
-  availableSkillCount: number;
-  availableConnectorCount: number;
-  connectors: SynonBiomedMcpServer[];
   usageByName: SynonBiomedExpertUsageByName | null;
-}> = ({
-  title,
-  profiles,
-  onOpen,
-  onToggle,
-  pendingProfileName,
-  availableSkillCount,
-  availableConnectorCount,
-  connectors,
-  usageByName,
-}) => {
+}> = ({ title, profiles, onOpen, onToggle, pendingProfileName, usageByName }) => {
   const { t } = useTranslation();
   return (
     <section className='expert-group pt-18px'>
       <h2 className='mb-6px mt-0 px-8px text-12px font-500 text-t-tertiary'>{title}</h2>
       <div className='expert-grid'>
         {profiles.map((profile) => (
-          <div key={profile.name} data-testid={`expert-card-${profile.name}`} className='expert-card group'>
+          <div
+            key={profile.name}
+            data-testid={`expert-card-${profile.name}`}
+            className='expert-card settings-library-card group'
+          >
             <SettingsGeneratedArtwork id={resolveExpertArtwork(profile)} className='expert-card__artwork' />
             <button
               type='button'
-              className='expert-card__main border-0 bg-transparent text-left focus-visible:outline-2 focus-visible:outline-offset-2'
+              className='expert-card__main settings-library-card__body border-0 bg-transparent text-left focus-visible:outline-2 focus-visible:outline-offset-2'
               onClick={() => onOpen(profile)}
             >
-              <span className='expert-card__heading'>
-                <span className='settings-list-icon expert-card__icon'>
+              <span className='expert-card__heading settings-library-card__heading'>
+                <span className='settings-list-icon expert-card__icon settings-library-card__icon'>
                   <SettingsGeneratedIcon
                     id={resolveExpertIcon(profile)}
                     className='settings-list-generated-icon expert-card__icon-image'
                   />
                 </span>
-                <span className='expert-card__title-row'>
-                  <span className='expert-card__title'>{profile.displayName}</span>
+                <span className='expert-card__title-row settings-library-card__title-slot'>
+                  <span className='expert-card__title settings-library-card__title'>{profile.displayName}</span>
                   {profile.name === 'OPERON' ? (
                     <span className='expert-card__default-badge'>{t('settings.expertsSettings.default')}</span>
                   ) : null}
                 </span>
               </span>
-              <span className='expert-card__description' title={profile.description}>
+              <span className='expert-card__description settings-library-card__description' title={profile.description}>
                 {compactSettingsDescription(profile.description, {
                   maxLength: 104,
                   stripPrefixes: [profile.displayName, profile.name],
                 })}
               </span>
-              <span className='expert-card__capabilities'>
-                {t('settings.expertsSettings.capabilityCoverage.summary', {
-                  skills: profile.skillNames.length,
-                  availableSkills: availableSkillCount,
-                  connectors: connectorIdsFor(profile, connectors).length,
-                  availableConnectors: availableConnectorCount,
-                })}
-              </span>
             </button>
-            <div className='expert-card__footer'>
+            <div className='expert-card__footer settings-library-card__footer'>
               <ExpertUsageSummary profileName={profile.name} usageByName={usageByName} />
-              <Switch
-                className='expert-card__switch shrink-0'
-                aria-label={t('settings.expertsSettings.enableNamed', { name: profile.displayName })}
-                checked={profile.enabled}
-                loading={pendingProfileName === profile.name}
-                disabled={profile.source !== 'user' || pendingProfileName !== null}
-                onChange={(enabled) => onToggle(profile, enabled)}
-              />
+              <span className='settings-library-card__control'>
+                <Switch
+                  className='expert-card__switch shrink-0'
+                  aria-label={t('settings.expertsSettings.enableNamed', { name: profile.displayName })}
+                  checked={profile.enabled}
+                  loading={pendingProfileName === profile.name}
+                  disabled={profile.source !== 'user' || pendingProfileName !== null}
+                  onChange={(enabled) => onToggle(profile, enabled)}
+                />
+              </span>
             </div>
           </div>
         ))}
@@ -882,7 +861,7 @@ const ExpertUsageSummary: React.FC<{
   const formattedLastUsedAt = usage?.lastUsedAt ? formatExpertLastUsedAt(usage.lastUsedAt, i18n.language) : '';
 
   return (
-    <div className='expert-card__usage hidden shrink-0 items-center gap-12px whitespace-nowrap text-11px text-t-tertiary sm:flex'>
+    <span className='expert-card__usage settings-library-card__meta hidden shrink-0 items-center sm:flex'>
       <span data-testid={'expert-usage-count-' + profileName}>
         {usageByName === null
           ? t('settings.expertsSettings.usage.unavailable')
@@ -895,7 +874,7 @@ const ExpertUsageSummary: React.FC<{
             ? t('settings.expertsSettings.usage.lastUsed', { time: formattedLastUsedAt })
             : t('settings.expertsSettings.usage.never')}
       </span>
-    </div>
+    </span>
   );
 };
 

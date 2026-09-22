@@ -134,21 +134,9 @@ html body .settings-page-wrapper[data-settings-route='tools'] .settings-page-con
   }
 }
 
-@container (min-width: 1250px) {
-  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card {
-    padding: var(--settings-section-padding) !important;
-  }
-
-  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card__title-row > span {
-    font-size: var(--ui-font-lead) !important;
-    line-height: 25px !important;
-  }
-
-  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card__description {
-    font-size: var(--ui-font-title) !important;
-    line-height: 25px !important;
-  }
-}
+/* A wide container used to inflate the connector title and body to a lead size.
+   The merged library page needs one type ramp across all four tabs, so the
+   card typography now comes only from settings-card-density.css. */
 
 .mcp-library-footer {
   min-height: 48px;

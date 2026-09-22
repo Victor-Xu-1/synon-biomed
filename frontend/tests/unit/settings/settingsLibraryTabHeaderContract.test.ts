@@ -6,11 +6,13 @@
 
 /**
  * The merged library page keeps one compact tab header for experts, skills,
- * connectors and environments. Every module must keep its own category filter,
- * because a filterless catalog is unusable — but only the filters come back.
- * The search box, result summary, health row and secondary maintenance
- * controls stay on the standalone routes, so this contract pins the header
- * shape instead of trusting the next edit to remember it.
+ * connectors and environments. Every module must keep its own domain/category
+ * filter, because a filterless catalog is unusable — and it must be exactly
+ * one control, a single dropdown. A second refinement disclosure (a "filters"
+ * toggle bolted next to the category select) is explicitly forbidden: one tab,
+ * one filter. The search box, result summary, health row and secondary
+ * maintenance controls stay on the standalone routes, so this contract pins the
+ * header shape instead of trusting the next edit to remember it.
  */
 
 import { readFileSync } from 'node:fs';
@@ -30,9 +32,10 @@ const tabSources = {
 
 const headerSource = read('components/SettingsLibraryTabHeader.tsx');
 const sharedSelectSource = read('components/SettingsLibraryFilterSelect.tsx');
-const sharedToggleSource = read('components/SettingsLibraryFilterToggle.tsx');
 const headerCss = read('components/settings-card-density.css');
 const skillToolbarSource = read('skills/SkillLibraryToolbar.tsx');
+
+const countOccurrences = (source: string, marker: string): number => source.split(marker).length - 1;
 
 describe('merged library tab headers', () => {
   it('gives every tab one header with a category filter slot', () => {
@@ -43,22 +46,24 @@ describe('merged library tab headers', () => {
     }
   });
 
-  it('keeps one refinement disclosure only on the tabs that refine beyond their category', () => {
-    // Experts and connectors are fully described by their single category dropdown.
-    expect(tabSources.experts).not.toContain('<SettingsLibraryFilterToggle');
-    expect(tabSources.connectors).not.toContain('<SettingsLibraryFilterToggle');
-    expect(tabSources.experts).not.toContain('filterPanel=');
-    expect(tabSources.connectors).not.toContain('filterPanel=');
-    // Skills and environments keep the source/status refinements they always had.
-    expect(tabSources.skills).toContain('<SettingsLibraryFilterToggle');
-    expect(tabSources.environments).toContain('<SettingsLibraryFilterToggle');
-    expect(tabSources.skills).toContain('filterPanel=');
-    expect(tabSources.environments).toContain('filterPanel=');
+  it('keeps exactly one domain filter control per tab and no refinement toggle', () => {
+    // The single domain/category dropdown is the only filter control the merged
+    // header may render — not two, and never a second disclosure next to it.
+    for (const [tab, source] of Object.entries(tabSources)) {
+      expect(countOccurrences(source, '<SettingsLibraryFilterSelect'), `${tab} filter selects`).toBe(1);
+      expect(source, tab).not.toContain('<SettingsLibraryFilterToggle');
+      expect(source, tab).not.toContain("className='settings-library-filter-toggle");
+    }
+  });
+
+  it('has retired the refinement toggle component and its header panel slot', () => {
+    expect(() => read('components/SettingsLibraryFilterToggle.tsx')).toThrow();
+    expect(headerSource).not.toContain('filterPanel');
+    expect(headerSource).not.toContain('settings-library-tab-header__filter-panel');
   });
 
   it('renders every header filter through the one shared dropdown', () => {
     expect(sharedSelectSource).toContain('settings-library-filter-select');
-    expect(sharedToggleSource).toContain('settings-library-filter-toggle');
     expect(headerSource).toContain('settings-library-tab-header__filters');
     // No tab restates its own header dropdown.
     for (const [tab, source] of Object.entries(tabSources)) {
@@ -86,9 +91,8 @@ describe('merged library tab headers', () => {
   it('adds no search box, result summary or maintenance control to the merged header', () => {
     expect(headerSource).not.toMatch(/<input|<Input\b|type='search'/);
     expect(sharedSelectSource).not.toMatch(/<Input\b|type='search'/);
-    expect(sharedToggleSource).not.toMatch(/<Input\b|type='search'/);
-    // Disclosed refinements stay inside the header's own panel slot.
-    expect(headerSource).toContain('settings-library-tab-header__filter-panel');
+    // There is no disclosure panel left for extra refinements to hide inside.
+    expect(headerSource).not.toContain('filter-panel');
     for (const [tab, source] of Object.entries(tabSources)) {
       expect(source, tab).not.toContain('settings-library-tab-header__summary');
     }

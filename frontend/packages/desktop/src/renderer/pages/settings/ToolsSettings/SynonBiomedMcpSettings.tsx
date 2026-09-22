@@ -29,6 +29,7 @@ import { resolveSynonBiomedMcpDescription } from '@/renderer/services/mcp/synonB
 import { McpConnectorCard } from './McpConnectorCard';
 import { McpConnectorConfigurationModal } from './McpConnectorConfigurationModal';
 import { McpLibraryToolbar, type ConnectorFilter, type ConnectorBrowseView } from './McpLibraryToolbar';
+import { CONNECTOR_DOMAIN_IDS, resolveConnectorDomain, type ConnectorDomainId } from './connectorDomains';
 
 const ignoreHandledMutationError = (_error: unknown): undefined => undefined;
 
@@ -54,12 +55,28 @@ export const SynonBiomedMcpSettingsContent: React.FC<SynonBiomedMcpSettingsConte
   const [editingServer, setEditingServer] = useState<SynonBiomedCustomMcpServer | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ConnectorFilter>('all');
+  const [domainFilter, setDomainFilter] = useState<ConnectorDomainId>('all');
   const [browseView, setBrowseView] = useState<ConnectorBrowseView | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const loadGenerationRef = useRef(0);
   const initializationPollsRef = useRef(0);
 
   const customById = useMemo(() => new Map(customServers.map((server) => [server.id, server])), [customServers]);
+  const domainOf = useCallback(
+    (server: SynonBiomedMcpServer) => resolveConnectorDomain(server, customById.has(server.id)),
+    [customById]
+  );
+  const domainOptions = useMemo(() => {
+    const counts = new Map<ConnectorDomainId, number>();
+    for (const server of servers) {
+      const domain = domainOf(server);
+      counts.set(domain, (counts.get(domain) ?? 0) + 1);
+    }
+    return CONNECTOR_DOMAIN_IDS.filter((id) => id === 'all' || (counts.get(id) ?? 0) > 0).map((id) => ({
+      id,
+      count: id === 'all' ? servers.length : (counts.get(id) ?? 0),
+    }));
+  }, [domainOf, servers]);
 
   const loadServers = useCallback(async () => {
     const generation = ++loadGenerationRef.current;
@@ -230,13 +247,14 @@ export const SynonBiomedMcpSettingsContent: React.FC<SynonBiomedMcpSettingsConte
         !`${server.displayName} ${server.name} ${description} ${server.source}`.toLowerCase().includes(query)
       )
         return false;
+      if (domainFilter !== 'all' && domainOf(server) !== domainFilter) return false;
       if (filter === 'connected') return server.enabled && server.connectionStatus === 'connected';
       if (filter === 'needs-attention')
         return !server.enabled || !server.health.ok || server.connectionStatus !== 'connected';
       if (filter === 'custom') return customById.has(server.id) || server.source === 'custom';
       return true;
     });
-  }, [customById, filter, i18n.language, search, servers]);
+  }, [customById, domainFilter, domainOf, filter, i18n.language, search, servers]);
 
   const visiblePageServers = visibleServers;
 
@@ -264,6 +282,9 @@ export const SynonBiomedMcpSettingsContent: React.FC<SynonBiomedMcpSettingsConte
         onSearch={setSearch}
         filter={filter}
         onFilter={setFilter}
+        domainFilter={domainFilter}
+        onDomainFilter={setDomainFilter}
+        domainOptions={domainOptions}
         onCreate={() => {
           setEditingServer(null);
           setEditorVisible(true);

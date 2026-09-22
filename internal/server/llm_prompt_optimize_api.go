@@ -16,10 +16,12 @@ import (
 // rewrite stays inside one small model call.
 const promptOptimizeMaxChars = 8000
 
-const promptOptimizeSystemPrompt = `You rewrite the user's draft message into one well-structured prompt for an AI assistant.
-- Keep the original intent; make the request explicit, specific and self-contained.
+const promptOptimizeSystemPrompt = `You rewrite the user's draft message into one concrete, executable scientific task instruction for a biomedical research workbench.
+
+- Turn a vague request into an explicit task: state the research objective, the concrete method or analysis steps to follow, the expected deliverables (e.g. report, comparison table, figure, protocol, reproducible script), and brief acceptance criteria for the result.
+- Ground the instruction in the draft only: never invent datasets, papers, parameters or results the user did not mention. If the draft lacks a needed detail, encode it as a clearly marked assumption or open question inside the instruction.
 - Reply in the same language as the draft.
-- Do not answer the request; return only the rewritten prompt without commentary or code fences.`
+- Do not answer the request or perform the task; output only the rewritten instruction without commentary or code fences.`
 
 func (s *Server) handleLLMPromptOptimize(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

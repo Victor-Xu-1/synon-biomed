@@ -327,7 +327,7 @@ func (m *Manager) RuntimeReady(language, environment string) bool {
 			// execution admission still calls EnsureManagedREnvironment and never
 			// treats this legacy fallback as the required core runtime.
 			if !m.ManagedRProvisioningEnabled() &&
-				(requestedEnvironment == "r" || requestedEnvironment == "claude-science-r") {
+				(requestedEnvironment == "r" || isPersistedRRuntimeAlias(requestedEnvironment)) {
 				return m.legacyRExecutableAvailable(requestedEnvironment)
 			}
 			return m.managedRRuntimeReady() == nil
@@ -377,7 +377,7 @@ func (m *Manager) managedEnvironmentRuntime(environment, executable string) (str
 
 func (m *Manager) canonicalManagedREnvironment(environment string) string {
 	environment = strings.TrimSpace(environment)
-	if environment == "" || environment == "r" || environment == "claude-science-r" {
+	if environment == "" || environment == "r" || isPersistedRRuntimeAlias(environment) {
 		return managedRName(m.config)
 	}
 	return environment

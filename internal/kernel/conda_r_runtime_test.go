@@ -66,6 +66,10 @@ func TestManagedRNameCanonicalizesLegacyAliases(t *testing.T) {
 			t.Fatalf("R alias %q resolved to %q", alias, got)
 		}
 	}
+	manager := NewManager(Config{DefaultREnv: "custom-r"})
+	if got := manager.canonicalManagedREnvironment("claude-science-r"); got != "custom-r" {
+		t.Fatalf("persisted R alias resolved to %q instead of configured environment", got)
+	}
 }
 
 func TestManagedRGenerationValidationUsesBundledMarkerAuthority(t *testing.T) {

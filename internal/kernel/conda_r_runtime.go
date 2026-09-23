@@ -35,7 +35,7 @@ type managedRRuntime struct {
 
 func managedRName(config Config) string {
 	switch value := strings.TrimSpace(config.DefaultREnv); value {
-	case "", "r", "claude-science-r":
+	case "", "r":
 		return defaultManagedREnvironment
 	default:
 		return canonicalCondaRuntimeName(value)

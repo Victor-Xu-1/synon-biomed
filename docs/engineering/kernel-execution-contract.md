@@ -72,12 +72,15 @@ explicit stdin/stdout/stderr handles, writes only its temporary workspace,
 reads a separately granted temporary read-only tree, and cannot read an
 ungranted private file or connect directly to a local TCP listener. A
 server-owned lease receipt supports revoking temporary ACLs and deleting the
-profile after normal exit, cancellation, or a crashed host. These tests do
-not establish a complete managed Python/R runtime boundary. The launcher is
-not admitted by the kernel manager until verified runtime generations,
-dynamic mounts and protected paths, auxiliary provider channels, and an
-approved-egress broker have equivalent enforcement and native tests. No
-network request is silently allowed or dropped: without a broker, an
+profile after normal exit, cancellation, or a crashed host. The candidate
+launcher derives narrow read-only grants for a managed runtime and worker
+assets, checks frozen mount identity, grants only a trusted frozen R operation
+log for external writes, and starts Python with `-I`. These code and
+AppContainer-helper tests do not establish a complete managed Python/R
+runtime boundary. The kernel manager still refuses native Windows execution:
+protected-path denial, auxiliary provider channels, approved egress, and
+actual installed-interpreter startup/recovery lack equivalent native evidence.
+No network request is silently allowed or dropped: without a broker, an
 approved-egress request fails closed. Managed environment installation and
 native kernel execution remain separate readiness facts.
 
@@ -88,8 +91,9 @@ worker with `-I -S` to isolate the process/transport boundary, verifies a
 completed cell, denied direct network access, EOF and cancellation, and checks
 ACL cleanup. It does not verify the production `-I` startup path: the installed
 generation's site startup and Python-created private subdirectories still need
-native readiness tests. Frozen single-file mounts, including the default R
-operation log, remain unavailable rather than losing their handle authority.
+native readiness tests. The candidate now validates frozen single-file mount
+identity and R operation-log write scope; their behavior under an installed R
+generation still requires native testing.
 
 See the public [Linux seccomp interface](https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html)
 and [Python signal semantics](https://docs.python.org/3/library/signal.html).

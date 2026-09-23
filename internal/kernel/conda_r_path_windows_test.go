@@ -146,6 +146,20 @@ func windowsManagedRTestAssetRoot(t *testing.T) string {
 	return ""
 }
 
+func TestWindowsBundledInstallerStartsWithoutDownload(t *testing.T) {
+	assetRoot := windowsManagedRTestAssetRoot(t)
+	installer := filepath.Join(assetRoot, "micromamba", "windows-x86_64", "micromamba.exe")
+	manager := NewManager(Config{
+		Micromamba: installer,
+		CondaHome:  filepath.Join(t.TempDir(), "conda"),
+	})
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	if err := manager.runManagedEnvironmentCommand(ctx, "--version"); err != nil {
+		t.Fatalf("bundled Windows installer did not start: %v", err)
+	}
+}
+
 // This opt-in test requires a caller-owned, absent state root with roughly the
 // same depth as the default user home. It never uses the running service's data.
 func TestRealWindowsManagedRColdInstallImportAndReuse(t *testing.T) {

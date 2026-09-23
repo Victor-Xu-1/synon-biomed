@@ -47,13 +47,15 @@ func TestDarwinKernelEgressPolicyRequiresBroker(t *testing.T) {
 	for _, fixture := range []struct {
 		name     string
 		allowed  []string
+		denied   []string
 		upstream string
 	}{
 		{name: "approved domain", allowed: []string{"example.com"}},
+		{name: "denied domain", denied: []string{"private.example.com"}},
 		{name: "upstream proxy", upstream: "https://proxy.example.com"},
 	} {
 		t.Run(fixture.name, func(t *testing.T) {
-			proxy, err := startKernelEgressProxy(t.TempDir(), "darwin-egress", fixture.allowed, nil, fixture.upstream)
+			proxy, err := startKernelEgressProxy(t.TempDir(), "darwin-egress", fixture.allowed, fixture.denied, fixture.upstream)
 			if proxy != nil || !errors.Is(err, ErrConfinementUnavailable) {
 				t.Fatalf("unbrokered egress must fail: proxy=%v err=%v", proxy, err)
 			}

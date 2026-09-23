@@ -15,8 +15,12 @@ type kernelEgressProxy struct {
 	port int
 }
 
-func startKernelEgressProxy(_ string, _ string, allowed, _ []string, upstreamProxy ...string) (*kernelEgressProxy, error) {
-	if len(allowed) != 0 || len(upstreamProxy) != 0 && strings.TrimSpace(upstreamProxy[0]) != "" {
+func startKernelEgressProxy(_ string, _ string, allowed, denied []string, upstreamProxy ...string) (*kernelEgressProxy, error) {
+	policyRequested := len(allowed) != 0 || len(denied) != 0
+	for _, upstream := range upstreamProxy {
+		policyRequested = policyRequested || strings.TrimSpace(upstream) != ""
+	}
+	if policyRequested {
 		return nil, fmt.Errorf("%w: macOS kernel egress broker is unavailable", ErrConfinementUnavailable)
 	}
 	return nil, nil

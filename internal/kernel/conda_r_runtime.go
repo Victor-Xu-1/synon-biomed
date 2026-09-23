@@ -78,7 +78,7 @@ func (m *Manager) ManagedRProvisioningDetails() ManagedPythonProvisioningDetails
 	if m == nil {
 		return ManagedPythonProvisioningDetails{Status: "unavailable"}
 	}
-	return managedRuntimeProvisioningDetails(&m.managedRState, m.ManagedRProvisioningEnabled())
+	return managedRuntimeProvisioningDetails(&m.managedRState, m.ManagedRProvisioningEnabled(), m.managedRRuntimeReady)
 }
 
 func (m *Manager) setManagedRProvisioningPhase(phase string) {

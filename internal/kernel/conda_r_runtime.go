@@ -10,7 +10,22 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 )
+
+const managedRReadinessCacheTTL = 5 * time.Second
+
+// managedRReadinessCache holds one successful probe for one Manager. The
+// marker/pointer and executable identity are still checked on every read;
+// success expires quickly, and a new process starts with no cached evidence.
+type managedRReadinessCache struct {
+	mu         sync.Mutex
+	prefix     string
+	executable string
+	info       os.FileInfo
+	checkedAt  time.Time
+}
 
 var managedRRequiredPackages = []string{
 	"r-base",
@@ -242,6 +257,9 @@ func (m *Manager) smokeManagedR(ctx context.Context, runtime managedRRuntime, pr
 }
 
 func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	m.environmentMu.Lock()
 	defer m.environmentMu.Unlock()
 	m.setManagedRProvisioningPhase("verifying-assets")
@@ -263,6 +281,9 @@ func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
 		return fmt.Errorf("lock managed R installation: %w", err)
 	}
 	defer release()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	active := filepath.Join(m.config.CondaEnvsPath, runtime.entry.Name)
 	m.setManagedRProvisioningPhase("checking-active-generation")
 	if err := m.verifyManagedRGeneration(runtime, active); err == nil {
@@ -270,63 +291,88 @@ func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		rscript, err := managedRExecutableAtPrefix(resolvedActive)
-		if err != nil {
-			return err
+		// Earlier installers could move a Conda R prefix after installation.
+		// Its marker and Rscript file still exist, but the binary embeds the
+		// vanished install prefix. Never reuse it without executing R.
+		if err := m.smokeManagedR(ctx, runtime, resolvedActive); err == nil {
+			rscript, err := managedRExecutableAtPrefix(resolvedActive)
+			if err != nil {
+				return err
+			}
+			return m.repairRSharedLibrary(ctx, rscript)
+		} else if ctx.Err() != nil {
+			return ctx.Err()
 		}
-		return m.repairRSharedLibrary(ctx, rscript)
 	}
 	generationPath := m.managedRGenerationPath(runtime)
-	generationReady, quarantinedGeneration, err := prepareManagedRuntimeGeneration(generationPath, func() error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	generationReady, _, err := prepareManagedRuntimeGeneration(generationPath, func() error {
 		return m.verifyManagedRGeneration(runtime, generationPath)
 	})
 	if err != nil {
 		return fmt.Errorf("inspect managed R generation: %w", err)
 	}
-	if quarantinedGeneration != "" {
-		defer func() { _ = os.RemoveAll(quarantinedGeneration) }()
+	// The old generation may contain unknown local data. The preparation step
+	// moves it aside under the install lock; do not silently delete it.
+	if generationReady {
+		// A marker alone cannot establish that a preexisting Conda prefix is
+		// still executable. A cancelled probe is inconclusive and must never
+		// cause a healthy active generation to be moved aside.
+		if err := m.smokeManagedR(ctx, runtime, generationPath); err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			if _, err := quarantineManagedRuntimeGeneration(generationPath); err != nil {
+				return fmt.Errorf("quarantine unusable managed R generation: %w", err)
+			}
+			generationReady = false
+		}
 	}
 	if !generationReady {
-		staging, err := os.MkdirTemp(generationRoot, ".staging-")
-		if err != nil {
-			return err
-		}
-		defer os.RemoveAll(staging)
 		m.setManagedRProvisioningPhase("installing-bundled-generation")
-		if err := m.runManagedEnvironmentCommand(ctx, "--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath); err != nil {
+		// Conda R embeds its installation prefix in launchers and scripts.
+		// Install directly at the stable generation path; renaming a complete
+		// Conda prefix would leave those references pointing at a dead path.
+		if err := m.runManagedEnvironmentCommand(ctx, "--no-rc", "create", "-y", "-p", generationPath, "-f", runtime.explicitPath); err != nil {
 			return fmt.Errorf("install managed R generation: %w", err)
 		}
 		m.setManagedRProvisioningPhase("running-scientific-smoke-test")
-		if err := m.smokeManagedR(ctx, runtime, staging); err != nil {
+		if err := m.smokeManagedR(ctx, runtime, generationPath); err != nil {
 			return err
 		}
-		if err := writeManagedRuntimeMarker(filepath.Join(staging, managedRuntimeMarkerName), m.managedRMarker(runtime)); err != nil {
+	}
+	rscript, err := managedRExecutableAtPrefix(generationPath)
+	if err != nil {
+		return err
+	}
+	// Shared-library staging is part of first-run readiness on Linux. Do it
+	// before publishing the pointer so a failed or cancelled copy cannot make
+	// a newly installed generation appear ready.
+	if err := m.repairRSharedLibrary(ctx, rscript); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if !generationReady {
+		if err := writeManagedRuntimeMarker(filepath.Join(generationPath, managedRuntimeMarkerName), m.managedRMarker(runtime)); err != nil {
 			return err
 		}
-		m.setManagedRProvisioningPhase("publishing-generation")
-		if err := os.Rename(staging, generationPath); err != nil {
-			if verifyErr := m.verifyManagedRGeneration(runtime, generationPath); verifyErr != nil {
-				return fmt.Errorf("publish managed R generation: %w (existing generation: %v)", err, verifyErr)
-			}
-		}
+	}
+	if err := m.verifyManagedRGeneration(runtime, generationPath); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	m.setManagedRProvisioningPhase("activating-generation")
 	if err := activateManagedRuntimeGeneration(active, generationPath); err != nil {
 		return fmt.Errorf("activate managed R generation: %w", err)
 	}
 	m.setManagedRProvisioningPhase("verifying-generation")
-	if err := m.verifyManagedRGeneration(runtime, active); err != nil {
-		return err
-	}
-	resolvedActive, err := resolveManagedRuntimeGeneration(active)
-	if err != nil {
-		return err
-	}
-	rscript, err := managedRExecutableAtPrefix(resolvedActive)
-	if err != nil {
-		return err
-	}
-	return m.repairRSharedLibrary(ctx, rscript)
+	return m.verifyManagedRGeneration(runtime, active)
 }
 
 func (m *Manager) managedRRuntimeReady() error {
@@ -334,7 +380,51 @@ func (m *Manager) managedRRuntimeReady() error {
 	if err != nil {
 		return err
 	}
-	return m.verifyManagedRGeneration(runtime, filepath.Join(m.config.CondaEnvsPath, runtime.entry.Name))
+	active := filepath.Join(m.config.CondaEnvsPath, runtime.entry.Name)
+	if err := m.verifyManagedRGeneration(runtime, active); err != nil {
+		return err
+	}
+	prefix, err := resolveManagedRuntimeGeneration(active)
+	if err != nil {
+		return err
+	}
+	rscript, err := managedRExecutableAtPrefix(prefix)
+	if err != nil {
+		return err
+	}
+	info, err := os.Stat(rscript)
+	if err != nil {
+		return err
+	}
+	cache := &m.managedRReadiness
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+	if cache.info != nil && cache.prefix == prefix && cache.executable == rscript &&
+		time.Since(cache.checkedAt) < managedRReadinessCacheTTL &&
+		os.SameFile(cache.info, info) && cache.info.Size() == info.Size() && cache.info.ModTime().Equal(info.ModTime()) {
+		return nil
+	}
+	cache.info = nil
+	ctx, cancel := context.WithTimeout(context.Background(), managedEnvironmentHealthTimeout)
+	defer cancel()
+	if err := m.smokeManagedR(ctx, runtime, prefix); err != nil {
+		return err
+	}
+	// Avoid caching a probe whose executable or active pointer changed while
+	// R was starting. The next caller must retry from the current authority.
+	currentInfo, err := os.Stat(rscript)
+	if err != nil || !os.SameFile(info, currentInfo) || info.Size() != currentInfo.Size() || !info.ModTime().Equal(currentInfo.ModTime()) {
+		return errors.New("managed R executable changed during readiness validation")
+	}
+	if err := m.verifyManagedRGeneration(runtime, active); err != nil {
+		return err
+	}
+	currentPrefix, err := resolveManagedRuntimeGeneration(active)
+	if err != nil || currentPrefix != prefix {
+		return errors.New("managed R active generation changed during readiness validation")
+	}
+	cache.prefix, cache.executable, cache.info, cache.checkedAt = prefix, rscript, currentInfo, time.Now()
+	return nil
 }
 
 func (m *Manager) ManagedRActiveGeneration() (string, error) {

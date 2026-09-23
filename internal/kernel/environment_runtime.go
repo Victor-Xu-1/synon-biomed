@@ -778,7 +778,7 @@ func (m *Manager) repairRSharedLibrary(ctx context.Context, rscript string) erro
 	}
 	defer os.RemoveAll(staging)
 	copyScript := `args <- commandArgs(trailingOnly=TRUE); target <- args[[1L]]; requested <- args[-1L]; installed <- utils::installed.packages(); dependencies <- tools::package_dependencies(requested, db=installed, recursive=TRUE); packages <- unique(c(requested, unlist(dependencies, use.names=FALSE))); packages <- packages[packages %in% rownames(installed)]; if (!all(requested %in% packages)) quit(status=2L); dir.create(target, recursive=TRUE, showWarnings=FALSE); for (package in packages) { source <- tryCatch(find.package(package, quiet=TRUE), error=function(condition) ""); if (!nzchar(source) || !isTRUE(file.copy(source, target, recursive=TRUE, copy.mode=TRUE))) quit(status=3L) }`
-	arguments := append([]string{"--vanilla", "-e", copyScript, "--args", staging}, packages...)
+	arguments := rSharedPackageExpressionArgs(copyScript, staging, packages)
 	if err := m.runManagedEnvironmentProcessWithEnv(ctx, rscript, kernelEnvironment(nil), arguments...); err != nil {
 		return fmt.Errorf("stage shared R packages: %w", err)
 	}
@@ -793,11 +793,17 @@ func (m *Manager) repairRSharedLibrary(ctx context.Context, rscript string) erro
 
 func (m *Manager) verifyRSharedPackages(ctx context.Context, rscript, library string, packages []string) error {
 	verifyScript := `args <- commandArgs(trailingOnly=TRUE); library <- args[[1L]]; requested <- args[-1L]; installed <- utils::installed.packages(); dependencies <- tools::package_dependencies(requested, db=installed, recursive=TRUE); packages <- unique(c(requested, unlist(dependencies, use.names=FALSE))); packages <- packages[packages %in% rownames(installed)]; ok <- all(requested %in% packages) && all(vapply(packages, function(package) nzchar(tryCatch(find.package(package, lib.loc=library, quiet=TRUE), error=function(condition) "")), logical(1L))); quit(status=if (ok) 0L else 4L)`
-	arguments := append([]string{"--vanilla", "-e", verifyScript, "--args", library}, packages...)
+	arguments := rSharedPackageExpressionArgs(verifyScript, library, packages)
 	if err := m.runManagedEnvironmentProcessWithEnv(ctx, rscript, kernelEnvironment(nil), arguments...); err != nil {
 		return fmt.Errorf("verify shared R packages: %w", err)
 	}
 	return nil
+}
+
+func rSharedPackageExpressionArgs(script, library string, packages []string) []string {
+	// Rscript -e treats every following token as a trailing argument, including
+	// a literal --args. The library must be commandArgs(TRUE)[[1L]].
+	return append([]string{"--vanilla", "-e", script, library}, packages...)
 }
 
 func managedPackageCount(prefix string) int {

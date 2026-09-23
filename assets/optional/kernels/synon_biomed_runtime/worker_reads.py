@@ -26,7 +26,7 @@ class ExecutionReadWitness:
         if event != "open" or not args or not isinstance(args[0], (str, bytes)):
             return
         flags = args[2] if len(args) > 2 else 0
-        if isinstance(flags, int) and flags & os.O_ACCMODE == os.O_WRONLY:
+        if isinstance(flags, int) and flags & (os.O_WRONLY | os.O_RDWR) == os.O_WRONLY:
             return
         with self._lock:
             state = self._active

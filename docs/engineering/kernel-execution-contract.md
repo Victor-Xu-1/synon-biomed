@@ -81,6 +81,16 @@ network request is silently allowed or dropped: without a broker, an
 approved-egress request fails closed. Managed environment installation and
 native kernel execution remain separate readiness facts.
 
+The opt-in Windows interpreter probe sets `SYNON_TEST_WINDOWS_PYTHON_EXE` to an
+installed Python generation's executable and `SYNON_TEST_WINDOWS_KERNEL_ASSETS`
+to an ordinary drive-rooted copy of the current kernel assets. It runs the
+worker with `-I -S` to isolate the process/transport boundary, verifies a
+completed cell, denied direct network access, EOF and cancellation, and checks
+ACL cleanup. It does not verify the production `-I` startup path: the installed
+generation's site startup and Python-created private subdirectories still need
+native readiness tests. Frozen single-file mounts, including the default R
+operation log, remain unavailable rather than losing their handle authority.
+
 See the public [Linux seccomp interface](https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html)
 and [Python signal semantics](https://docs.python.org/3/library/signal.html).
 These describe platform APIs, not an imported execution implementation.

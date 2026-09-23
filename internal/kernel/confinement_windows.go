@@ -70,8 +70,11 @@ func validateWindowsConfinementRequest(workspaceDir, executable string, argument
 		if err := validateWindowsKernelPath(mount.Path, true, mount.regular); err != nil {
 			return fmt.Errorf("kernel mount: %w", err)
 		}
-		if mount.frozen != nil || (mount.trusted && mount.Writable) {
-			return errors.New("kernel mount authority is invalid on Windows")
+		if mount.frozen != nil {
+			return fmt.Errorf("%w: Windows frozen mount handles have no AppContainer equivalent", ErrConfinementUnavailable)
+		}
+		if mount.trusted && mount.Writable {
+			return fmt.Errorf("%w: Windows trusted writable mounts have no AppContainer equivalent", ErrConfinementUnavailable)
 		}
 		if windowsKernelPathsOverlap(mount.Path, workspaceDir) {
 			// NTFS grants on a writable parent do not provide the read-only

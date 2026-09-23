@@ -119,3 +119,33 @@ func TestWindowsConfinementGrantsDoNotWidenExecutableParent(t *testing.T) {
 		t.Fatalf("unexpected AppContainer grants: %+v", grants)
 	}
 }
+
+func TestWindowsFrozenMountsFailClosed(t *testing.T) {
+	workspace := t.TempDir()
+	executable := windowsConfinementTestExecutable(t)
+	operationLog, err := os.CreateTemp(t.TempDir(), "operation-log-*.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer operationLog.Close()
+	sharedLibrary := t.TempDir()
+	sharedHandle, err := os.Open(sharedLibrary)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sharedHandle.Close()
+	for _, fixture := range []struct {
+		name  string
+		mount WorkerMount
+	}{
+		{"writable operation log", WorkerMount{Path: operationLog.Name(), Writable: true, regular: true, trusted: true, frozen: operationLog}},
+		{"read-only shared library", WorkerMount{Path: sharedLibrary, trusted: true, frozen: sharedHandle}},
+	} {
+		t.Run(fixture.name, func(t *testing.T) {
+			err := validateWindowsConfinementRequest(workspace, executable, nil, nil, []WorkerMount{fixture.mount}, nil, nil)
+			if !errors.Is(err, ErrConfinementUnavailable) {
+				t.Fatalf("unrepresented frozen mount must fail closed: %v", err)
+			}
+		})
+	}
+}

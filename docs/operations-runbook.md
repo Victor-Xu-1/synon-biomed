@@ -17,11 +17,14 @@ authorize a release.
   runtimes.
 - Runtime state is external to the release directory. Set `SYNON_HOME` to a dedicated state directory and preserve it across upgrades.
 - On native Windows, the installer keeps its package cache under the current
-  user's runtime state root (`p` beside `conda` by default) to reduce extraction
-  path length. It does not require a nondefault short `SYNON_HOME`. Deep paths
-  may still expose upstream installer or filesystem limits; if installation
-  fails, preserve the actual installer error and inspect the configured state
-  path before retrying. Do not change the package lock or move a live cache.
+  user's runtime state root (`p` beside `conda` by default) and uses a compact
+  32-hex directory key for the required R generation to reduce extraction and
+  installed-prefix path length. The R marker and externally reported generation
+  remain the full 64-hex SHA-256. It does not require a nondefault short
+  `SYNON_HOME`. Deep paths may still expose upstream installer or filesystem
+  limits; if installation fails, preserve the actual installer error and
+  inspect both the configured state and package-cache paths before retrying.
+  Do not change the package lock or move a live cache.
 - Native Windows/macOS packages include the platform-bound Python/R installer
   assets, but the current kernel confinement boundary is Linux/WSL-only.
   Do not treat a successful native Python/R installation or its core-runtime
@@ -134,8 +137,9 @@ that a scientific task or result has been validated.
 
 Package caches and environment generations use the configured data/conda roots
 shown in Storage. The default root is resolved per user from `SYNON_HOME` or
-the platform user data directory; product code and release assets never embed a
-developer's absolute path. The layout is stable and shared by all tasks:
+the user's `.synon-go` directory (`%USERPROFILE%\.synon-go` on Windows);
+product code and release assets never embed a developer's absolute path. The
+layout is stable and shared by all tasks:
 `${SYNON_HOME}/conda/envs/<environment>` is the active pointer and
 `${SYNON_HOME}/conda/envs/.generations/<environment>/<generation>` stores the
 immutable generation. Reopening or restarting the application verifies and
@@ -143,6 +147,15 @@ reuses a matching generation instead of downloading it again. A task discovers
 software through its existing tools and executes under the same managed
 environment authority; task outputs remain in the task/project artifact
 workflow, not in the software installation directory.
+On native Windows, the required R generation's final directory component is
+only the first 32 hex characters of its SHA-256; its marker, session identity,
+and generation returned to callers remain the full 64 characters. Reuse checks
+the resolved final path and full marker. A different full generation occupying
+the same short directory key is preserved and rejected, not overwritten.
+An older 64-character R directory is not reused as the new active layout and
+may require a fresh install; inspect and preserve the old directory and any
+user data before deciding on cleanup. For path failures, inspect the actual
+Conda prefix and `${SYNON_HOME}/p` cache path before changing configuration.
 The authenticated `/api/preferences/scientific-runtimes` endpoint provides
 status with GET, saves registered `enabled_ids` with PUT, and retries one selected
 optional environment with POST `{ "id": "..." }`; the same POST can retry a
@@ -288,7 +301,10 @@ runtime's `waiting_for_selection`, `scheduled`, `preparing`, `retrying`,
 failures use a finite retry schedule and do not make the Web gateway unhealthy.
 The same selected runtime is attempted again after a service restart; no
 alternate scientific engine is silently substituted. Native Windows packages
-do not include Micromamba, so local scientific warmups report `disabled` there.
+include the platform-bound Micromamba installer and can prepare the required
+Python/R environments. This does not make local scientific kernel execution
+ready on Windows: until native confinement is separately verified, use
+Linux/WSL for those task execution paths.
 
 `Ctrl+C` or `synon stop` stops only the exact backend/frontend hosts created by
 this invocation; `synon status` reports the verified owner.
@@ -1017,6 +1033,7 @@ Never paste the secret vault, environment file, channel tokens, model keys, or u
 | Service cannot write a workspace | systemd `ReadWritePaths` and `SYNON_HOME` | Add only the required absolute path through a unit override |
 | Release install rejected | Manifest, provenance, archive traversal, binary health | Do not bypass validation; obtain a clean archive |
 | Optional kernel/MCP unavailable | Optional asset manifest and declared runtime | Install that sidecar runtime separately; core remains native |
+| Native Windows R install reports a path or generation collision | Resolved state root, `conda/envs/.generations/synon-biomed-r` directory, marker's full generation, and `p` package cache | Preserve the failed prefix and installer error; do not rename/delete an active cache or old generation. Use a separate state root only after assessing existing data and path length. |
 
 ### File-tool feedback and structured source inspection
 

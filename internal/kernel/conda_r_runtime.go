@@ -169,7 +169,7 @@ func loadManagedRRuntime(config Config) (managedRRuntime, error) {
 }
 
 func (m *Manager) managedRGenerationPath(runtime managedRRuntime) string {
-	return filepath.Join(m.config.CondaEnvsPath, ".generations", runtime.entry.Name, runtime.activationGeneration)
+	return filepath.Join(m.config.CondaEnvsPath, ".generations", runtime.entry.Name, managedRGenerationDirectoryName(runtime.activationGeneration))
 }
 
 func (m *Manager) managedRMarker(runtime managedRRuntime) managedRuntimeMarker {
@@ -308,6 +308,9 @@ func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	if err := rejectManagedRGenerationPathCollision(generationPath, runtime.activationGeneration); err != nil {
+		return err
+	}
 	generationReady, _, err := prepareManagedRuntimeGeneration(generationPath, func() error {
 		return m.verifyManagedRGeneration(runtime, generationPath)
 	})
@@ -432,7 +435,7 @@ func (m *Manager) ManagedRActiveGeneration() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if filepath.Base(prefix) != runtime.activationGeneration {
+	if filepath.Base(prefix) != managedRGenerationDirectoryName(runtime.activationGeneration) {
 		return "", errors.New("managed R active generation is invalid")
 	}
 	return runtime.activationGeneration, nil
@@ -456,7 +459,7 @@ func (m *Manager) managedRActivePrefix() (string, managedRRuntime, error) {
 		return "", managedRRuntime{}, err
 	}
 	resolved, err := resolveManagedRuntimeGeneration(active)
-	if err != nil || filepath.Base(resolved) != runtime.activationGeneration {
+	if err != nil || filepath.Base(resolved) != managedRGenerationDirectoryName(runtime.activationGeneration) {
 		return "", managedRRuntime{}, errors.New("managed R active generation is invalid")
 	}
 	return resolved, runtime, nil

@@ -248,7 +248,7 @@ describe('ArtifactPreview', () => {
     expect(preview).toHaveTextContent('hits3');
 
     fireEvent.click(within(preview).getByRole('tab', { name: '源码' }));
-    expect(preview).toHaveTextContent('"status": "completed"');
+    await waitFor(() => expect(preview).toHaveTextContent('"status": "completed"'));
     expect(preview).toHaveTextContent('"hits": 3');
     expect(fetchMock).toHaveBeenCalledWith('/api/artifacts/artifact-1', {
       credentials: 'same-origin',

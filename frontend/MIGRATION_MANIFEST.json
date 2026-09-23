@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "a02b64dc31ac154d4997e778ea6521576fcd17a75ee78714ebc83804768b6786",
+  "adaptationFingerprintSHA256": "e1f50bcf9cc75d7e8e35910f5b10421a1f9d38316d2dd64b50dab1bfb7cc69fe",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "6cc78980198b23363b039537e2d0a85d385f2df09d44a28fa3725fee37f9bfc0",
+  "additionFingerprintSHA256": "049a151cd08c3e69ce5e39788274e2b5ef8731f4b9e054f12f16e0b774ec8fa5",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -3580,8 +3580,8 @@
     {
       "path": "tests/unit/renderer/ArtifactPreview.dom.test.tsx",
       "sourceSHA256": "35fcf88c79cd262a41b65d79e70c4ec8a97ede955c9b4f8d3fefe3fc536d2bd9",
-      "targetSHA256": "a0ab2f9b27b1959f74fa1337dd94bdd02ee27ebd8d1daf9ace90f7ec4d1bcdd8",
-      "bytes": 13294,
+      "targetSHA256": "e92dfc8c7abf0f923a0ffdf3c2dc0e7ffcb039d018d68789a5a3ebc2412e934a",
+      "bytes": 13315,
       "reason": "Isolate persisted client configuration while testing native artifact preview and cloud export behavior."
     },
     {
@@ -4133,8 +4133,8 @@
     {
       "path": "tests/unit/settings/AssistantSettings.dom.test.tsx",
       "sourceSHA256": "ba20201489742ae118eb27a7ce1ca22afdd48eee28f33e8c15bb78c2b495bee9",
-      "targetSHA256": "daed7256a1c74659eeedab959c52ca46f3d607b366e579dfb1fabfad94a6ddc5",
-      "bytes": 8693,
+      "targetSHA256": "be5ada40a8f01e9047d959905dfd35bc6a9d58b91613a4ba9adbd19cdd1c65a0",
+      "bytes": 8618,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -4196,8 +4196,8 @@
     {
       "path": "tests/unit/settings/SynonBiomedMcpSettings.dom.test.tsx",
       "sourceSHA256": "e180f2ef876df521f08e312711d87b4b6c8409ec9ad229406d18e4810ca086fb",
-      "targetSHA256": "4255f25ef6c4a97a763bddebe8374478350a4d03c0e5f3ae8ea86fb26337394d",
-      "bytes": 30990,
+      "targetSHA256": "a8900cf132a99fc666bdf1f5614afc4a15965bb8d7c4e2b7b5ec55e664e6e204",
+      "bytes": 31177,
       "reason": "Verify localized and compact MCP connector presentation."
     },
     {
@@ -7614,8 +7614,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpConnectorCard.tsx",
-      "sha256": "58a34a7d9f6d4bfbdf94c7c172aa6b0da685f38ec38a9ba19b16a2b7483b9356",
-      "bytes": 10778,
+      "sha256": "35f30b924ef11e76f6888b55e4d6217ae18e300d8f9e7ca2399d679126bba478",
+      "bytes": 10555,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9792,8 +9792,8 @@
     },
     {
       "path": "tests/unit/settings/settingsSiderEntries.test.ts",
-      "sha256": "08bf22a8fbc7853a57b72ba2efff1d35094815c1a3faf6fbd0b8421bf4280ae8",
-      "bytes": 4690,
+      "sha256": "9dc08967eb39c65cfff9fce7e66835488485bba23a2415b992c1289997177088",
+      "bytes": 4696,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

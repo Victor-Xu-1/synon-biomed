@@ -52,17 +52,11 @@ export const McpConnectorCard: React.FC<{
   const usageDetails = formatMcpUsageDetails(server.usage, i18n.language, t);
   const usageSummary = `${usageDetails.lastUsed} · ${usageDetails.count}`;
   const domainLabel = t(`settings.synonBiomedMcpDomains.${resolveConnectorDomain(server, custom !== null)}`);
-  // The bottom row owns exactly one control — the connection capsule, which is
-  // also this connector's enable switch. The configuration action lives in the
-  // same overflow menu as the connector's other maintenance actions.
+  // Keep the enable switch visible while the overflow menu always exposes the
+  // connector's primary action, including permissions for unauthenticated MCPs.
   const metaSummary = `${domainLabel} · ${usageSummary}`;
   const primaryActionKind =
     server.authRequired || server.oauthSupported || server.apiKeyConfigurable ? 'configure' : 'permissions';
-  const hasSecondaryActions =
-    primaryActionKind !== 'permissions' ||
-    (server.oauthSupported && authorized) ||
-    keyDisconnectAvailable ||
-    Boolean(custom);
   const actionMenu = (
     <Menu
       onClickMenuItem={(key) => {
@@ -79,7 +73,9 @@ export const McpConnectorCard: React.FC<{
       }}
     >
       <Menu.Item key='primary' data-testid={`synon-biomed-mcp-${primaryActionKind}-${normalizeTestId(server.name)}`}>
-        {t('settings.synonBiomedMcpConfigure')}
+        {t(
+          primaryActionKind === 'configure' ? 'settings.synonBiomedMcpConfigure' : 'settings.synonBiomedMcpPermissions'
+        )}
       </Menu.Item>
       {primaryActionKind !== 'permissions' ? (
         <Menu.Item key='permissions' data-testid={`synon-biomed-mcp-permissions-${normalizeTestId(server.name)}`}>
@@ -152,19 +148,17 @@ export const McpConnectorCard: React.FC<{
           <span>{usageDetails.count}</span>
         </span>
         <span className='settings-library-card__control synon-mcp-card__action-cluster flex shrink-0 items-center'>
-          {hasSecondaryActions ? (
-            <Dropdown droplist={actionMenu} trigger='click' position='br' getPopupContainer={() => document.body}>
-              <Button
-                size='small'
-                type='text'
-                shape='circle'
-                className='synon-mcp-card__more'
-                data-testid={`synon-biomed-mcp-more-${normalizeTestId(server.name)}`}
-                aria-label={t('common.more')}
-                icon={<MoreOne size='15' />}
-              />
-            </Dropdown>
-          ) : null}
+          <Dropdown droplist={actionMenu} trigger='click' position='br' getPopupContainer={() => document.body}>
+            <Button
+              size='small'
+              type='text'
+              shape='circle'
+              className='synon-mcp-card__more'
+              data-testid={`synon-biomed-mcp-more-${normalizeTestId(server.name)}`}
+              aria-label={t('common.more')}
+              icon={<MoreOne size='15' />}
+            />
+          </Dropdown>
           <button
             type='button'
             role='switch'

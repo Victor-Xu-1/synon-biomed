@@ -352,9 +352,17 @@ func TestManagerCarriesPendingInterruptAcrossPythonExecutionAcknowledgement(t *t
 	setup, err := worker.Execute(setupContext, `
 import importlib.abc
 import importlib.util
+import signal
 import sys
 import time
 from pathlib import Path
+
+_original_interrupt = signal.getsignal(signal.SIGINT)
+def _record_preflight_interrupt(signum, frame):
+    signal.signal(signal.SIGINT, _original_interrupt)
+    Path("ack-preflight-interrupt-seen").write_text("seen")
+    _original_interrupt(signum, frame)
+signal.signal(signal.SIGINT, _record_preflight_interrupt)
 
 class _AcknowledgementRaceLoader(importlib.abc.Loader):
     def create_module(self, spec):
@@ -390,13 +398,7 @@ sys.meta_path.insert(0, _AcknowledgementRaceFinder())
 	if !interrupted.Interrupted || interrupted.Via != "sigint" {
 		t.Fatalf("interrupt result=%#v", interrupted)
 	}
-	consumeDeadline := time.Now().Add(time.Second)
-	for len(handle.execution.interrupt) != 0 && time.Now().Before(consumeDeadline) {
-		runtime.Gosched()
-	}
-	if len(handle.execution.interrupt) != 0 {
-		t.Fatal("pre-acknowledgement interrupt was not consumed")
-	}
+	waitForLifecycleFile(t, filepath.Join(workspaceDir, "ack-preflight-interrupt-seen"))
 	if err := os.WriteFile(filepath.Join(workspaceDir, "release-ack-preflight"), []byte("release"), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -411,7 +413,7 @@ sys.meta_path.insert(0, _AcknowledgementRaceFinder())
 	select {
 	case outcome := <-handle.Done():
 		if outcome.Err != nil || outcome.TimedOut || outcome.Dequeued || !outcome.Response.Interrupted {
-			t.Fatalf("pending interrupt outcome=%#v", outcome)
+			t.Fatalf("pending interrupt outcome=%#v err=%v", outcome, outcome.Err)
 		}
 	case <-time.After(time.Second):
 		t.Fatal("pending interrupt was not delivered after execution acknowledgement")

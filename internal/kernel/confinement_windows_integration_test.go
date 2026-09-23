@@ -31,6 +31,7 @@ type windowsConfinementTestResult struct {
 	HostSecretVisible bool `json:"host_secret_visible"`
 	RuntimeRead       bool `json:"runtime_read"`
 	RuntimeWrite      bool `json:"runtime_write"`
+	OperationLogWrite bool `json:"operation_log_write"`
 }
 
 func TestWindowsKernelAppContainerRealBoundary(t *testing.T) {
@@ -44,7 +45,20 @@ func TestWindowsKernelAppContainerRealBoundary(t *testing.T) {
 	outside := t.TempDir()
 	runtimeRoot := t.TempDir()
 	runtimeFile := filepath.Join(runtimeRoot, "library.dat")
+	operationLog := filepath.Join(runtimeRoot, "operation.jsonl")
 	if err := os.WriteFile(runtimeFile, []byte("verified-library"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(operationLog, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	operationLogFile, err := os.Open(operationLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer operationLogFile.Close()
+	operationLogIdentity, err := windowsFrozenPath(operationLog, operationLogFile)
+	if err != nil {
 		t.Fatal(err)
 	}
 	privateFile := filepath.Join(outside, "private.txt")
@@ -56,7 +70,7 @@ func TestWindowsKernelAppContainerRealBoundary(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer listener.Close()
-	command, err := newWindowsConfinedCommand(
+	command, err := newWindowsConfinedCommandWithFrozenAuthority(
 		workspace, os.Args[0],
 		[]string{"-test.run=TestWindowsKernelAppContainerRealBoundary"},
 		[]string{
@@ -65,8 +79,9 @@ func TestWindowsKernelAppContainerRealBoundary(t *testing.T) {
 			"SYNON_WINDOWS_CONFINEMENT_TEST_OUTSIDE=" + privateFile,
 			"SYNON_WINDOWS_CONFINEMENT_TEST_ADDRESS=" + listener.Addr().String(),
 			"SYNON_WINDOWS_CONFINEMENT_TEST_RUNTIME=" + runtimeRoot,
+			"SYNON_WINDOWS_CONFINEMENT_TEST_OPLOG=" + operationLog,
 		},
-		[]string{runtimeRoot},
+		[]string{runtimeRoot}, nil, []string{operationLog}, []windowsConfinementFrozenPath{operationLogIdentity},
 	)
 	if err != nil {
 		t.Fatalf("construct confined worker command: %v", err)
@@ -92,7 +107,7 @@ func TestWindowsKernelAppContainerRealBoundary(t *testing.T) {
 		t.Fatalf("decode confined worker result: %v, stdout=%q stderr=%q", err, stdout.String(), stderr.String())
 	}
 	if !result.AppContainer || !result.StdinDelivered || !result.WorkspaceWrite ||
-		!result.RuntimeRead || result.RuntimeWrite || result.OutsideRead ||
+		!result.RuntimeRead || !result.OperationLogWrite || result.RuntimeWrite || result.OutsideRead ||
 		result.DirectNetwork || result.HostSecretVisible {
 		t.Fatalf("Windows worker boundary failed: %+v stderr=%q", result, stderr.String())
 	}
@@ -107,7 +122,7 @@ func TestWindowsKernelAppContainerRealBoundary(t *testing.T) {
 		t.Fatal(err)
 	} else {
 		defer windows.FreeSid(sid)
-		for _, path := range []string{workspace, runtimeRoot, runtimeFile, os.Args[0], filepath.Dir(os.Args[0])} {
+		for _, path := range []string{workspace, runtimeRoot, runtimeFile, operationLog, os.Args[0], filepath.Dir(os.Args[0])} {
 			if windowsTestPathHasSIDGrant(t, path, sid) {
 				t.Fatalf("AppContainer grant remained on %q", path)
 			}
@@ -161,10 +176,16 @@ func runWindowsConfinementTestChild(t *testing.T) {
 	outside := os.Getenv("SYNON_WINDOWS_CONFINEMENT_TEST_OUTSIDE")
 	address := os.Getenv("SYNON_WINDOWS_CONFINEMENT_TEST_ADDRESS")
 	runtimeRoot := os.Getenv("SYNON_WINDOWS_CONFINEMENT_TEST_RUNTIME")
+	operationLog := os.Getenv("SYNON_WINDOWS_CONFINEMENT_TEST_OPLOG")
 	runtimeFile := filepath.Join(runtimeRoot, "library.dat")
 	runtimeRaw, runtimeReadErr := os.ReadFile(runtimeFile)
 	runtimeWriteErr := os.WriteFile(runtimeFile, []byte("changed"), 0o600)
 	runtimeCreateErr := os.WriteFile(filepath.Join(runtimeRoot, "unapproved.txt"), []byte("new"), 0o600)
+	logFile, logErr := os.OpenFile(operationLog, os.O_APPEND|os.O_WRONLY, 0)
+	if logErr == nil {
+		_, logErr = logFile.WriteString("{\"operation\":\"probe\"}\n")
+		_ = logFile.Close()
+	}
 	writeErr := os.WriteFile(filepath.Join(workspace, "guest-output.txt"), []byte("guest-output"), 0o600)
 	_, readErr := os.ReadFile(outside)
 	connection, dialErr := net.DialTimeout("tcp4", address, time.Second)
@@ -177,6 +198,7 @@ func runWindowsConfinementTestChild(t *testing.T) {
 		HostSecretVisible: os.Getenv("SYNON_TEST_HOST_SECRET_SENTINEL") != "",
 		RuntimeRead:       runtimeReadErr == nil && string(runtimeRaw) == "verified-library",
 		RuntimeWrite:      runtimeWriteErr == nil || runtimeCreateErr == nil,
+		OperationLogWrite: logErr == nil,
 	}
 	raw, err := json.Marshal(result)
 	if err != nil {

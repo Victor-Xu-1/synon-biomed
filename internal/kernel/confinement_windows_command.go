@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"golang.org/x/sys/windows"
 )
 
 const (
@@ -28,15 +29,47 @@ var windowsConfinementOSKeys = []string{
 }
 
 type windowsConfinedRequest struct {
-	ProfileName   string   `json:"profile_name"`
-	Workspace     string   `json:"workspace"`
-	Executable    string   `json:"executable"`
-	Arguments     []string `json:"arguments"`
-	Environment   []string `json:"environment"`
-	ReadOnlyRoots []string `json:"read_only_roots,omitempty"`
+	ProfileName   string                         `json:"profile_name"`
+	Workspace     string                         `json:"workspace"`
+	Executable    string                         `json:"executable"`
+	Arguments     []string                       `json:"arguments"`
+	Environment   []string                       `json:"environment"`
+	ReadOnlyRoots []string                       `json:"read_only_roots,omitempty"`
+	ReadOnlyFiles []string                       `json:"read_only_files,omitempty"`
+	WritableFiles []string                       `json:"writable_files,omitempty"`
+	Frozen        []windowsConfinementFrozenPath `json:"frozen,omitempty"`
+}
+
+type windowsConfinementFrozenPath struct {
+	Path      string `json:"path"`
+	Volume    uint32 `json:"volume"`
+	IndexHigh uint32 `json:"index_high"`
+	IndexLow  uint32 `json:"index_low"`
+}
+
+func windowsFrozenPath(path string, file *os.File) (windowsConfinementFrozenPath, error) {
+	if file == nil {
+		return windowsConfinementFrozenPath{}, errors.New("Windows kernel frozen file is missing")
+	}
+	var identity windows.ByHandleFileInformation
+	if err := windows.GetFileInformationByHandle(windows.Handle(file.Fd()), &identity); err != nil {
+		return windowsConfinementFrozenPath{}, err
+	}
+	return windowsConfinementFrozenPath{
+		Path: path, Volume: identity.VolumeSerialNumber,
+		IndexHigh: identity.FileIndexHigh, IndexLow: identity.FileIndexLow,
+	}, nil
 }
 
 func newWindowsConfinedCommand(workspace, executable string, arguments, environment, readOnlyRoots []string) (*exec.Cmd, error) {
+	return newWindowsConfinedCommandWithAuthority(workspace, executable, arguments, environment, readOnlyRoots, nil, nil)
+}
+
+func newWindowsConfinedCommandWithAuthority(workspace, executable string, arguments, environment, readOnlyRoots, readOnlyFiles, writableFiles []string) (*exec.Cmd, error) {
+	return newWindowsConfinedCommandWithFrozenAuthority(workspace, executable, arguments, environment, readOnlyRoots, readOnlyFiles, writableFiles, nil)
+}
+
+func newWindowsConfinedCommandWithFrozenAuthority(workspace, executable string, arguments, environment, readOnlyRoots, readOnlyFiles, writableFiles []string, frozen []windowsConfinementFrozenPath) (*exec.Cmd, error) {
 	for _, entry := range environment {
 		key, _, _ := strings.Cut(entry, "=")
 		if strings.EqualFold(key, windowsConfinedHelperEnv) || strings.EqualFold(key, windowsConfinedPayloadEnv) {
@@ -49,8 +82,11 @@ func newWindowsConfinedCommand(workspace, executable string, arguments, environm
 		Arguments:     append([]string(nil), arguments...),
 		Environment:   append([]string(nil), environment...),
 		ReadOnlyRoots: append([]string(nil), readOnlyRoots...),
+		ReadOnlyFiles: append([]string(nil), readOnlyFiles...),
+		WritableFiles: append([]string(nil), writableFiles...),
+		Frozen:        append([]windowsConfinementFrozenPath(nil), frozen...),
 	}
-	if err := validateWindowsConfinementReadOnlyRoots(request.Workspace, request.ReadOnlyRoots); err != nil {
+	if err := validateWindowsConfinementAuthority(&request); err != nil {
 		return nil, err
 	}
 	encoded, err := json.Marshal(request)
@@ -126,23 +162,78 @@ func decodeWindowsConfinedRequest(payload string) (*windowsConfinedRequest, erro
 	); err != nil {
 		return nil, err
 	}
-	if err := validateWindowsConfinementReadOnlyRoots(request.Workspace, request.ReadOnlyRoots); err != nil {
+	if err := validateWindowsConfinementAuthority(request); err != nil {
 		return nil, err
 	}
 	return request, nil
 }
 
-func validateWindowsConfinementReadOnlyRoots(workspace string, roots []string) error {
+func validateWindowsConfinementReadOnlyRootsAt(workspace string, roots []string, mustExist bool) error {
 	if len(roots) > 8 {
 		return errors.New("Windows kernel read-only roots exceed the bounded contract")
 	}
 	for _, root := range roots {
-		if err := validateWindowsKernelPath(root, true, false); err != nil {
+		if err := validateWindowsKernelPath(root, mustExist, false); err != nil {
 			return fmt.Errorf("Windows kernel read-only root: %w", err)
 		}
 		if windowsKernelPathsOverlap(root, workspace) {
 			return errors.New("Windows kernel read-only root overlaps the writable workspace")
 		}
+	}
+	return nil
+}
+
+func validateWindowsConfinementAuthority(request *windowsConfinedRequest) error {
+	return validateWindowsConfinementAuthorityAt(request, true)
+}
+
+func validateWindowsConfinementAuthorityAt(request *windowsConfinedRequest, mustExist bool) error {
+	if request == nil {
+		return errors.New("Windows kernel confinement authority is missing")
+	}
+	if err := validateWindowsConfinementReadOnlyRootsAt(request.Workspace, request.ReadOnlyRoots, mustExist); err != nil {
+		return err
+	}
+	if len(request.ReadOnlyFiles)+len(request.WritableFiles) > 16 {
+		return errors.New("Windows kernel file grants exceed the bounded contract")
+	}
+	seen := make(map[string]struct{}, len(request.ReadOnlyRoots)+len(request.ReadOnlyFiles)+len(request.WritableFiles))
+	for _, root := range request.ReadOnlyRoots {
+		key := strings.ToLower(root)
+		if _, duplicate := seen[key]; duplicate {
+			return errors.New("Windows kernel authority contains duplicate paths")
+		}
+		seen[key] = struct{}{}
+	}
+	for _, group := range [][]string{request.ReadOnlyFiles, request.WritableFiles} {
+		for _, path := range group {
+			if err := validateWindowsKernelPath(path, mustExist, true); err != nil {
+				return fmt.Errorf("Windows kernel file grant: %w", err)
+			}
+			if windowsKernelPathsOverlap(path, request.Workspace) || windowsKernelPathsOverlap(path, request.Executable) {
+				return errors.New("Windows kernel file grant overlaps the workspace or executable")
+			}
+			key := strings.ToLower(path)
+			if _, duplicate := seen[key]; duplicate {
+				return errors.New("Windows kernel authority contains duplicate paths")
+			}
+			seen[key] = struct{}{}
+		}
+	}
+	if len(request.Frozen) > 16 {
+		return errors.New("Windows kernel frozen grants exceed the bounded contract")
+	}
+	frozenSeen := make(map[string]struct{}, len(request.Frozen))
+	for _, frozen := range request.Frozen {
+		key := strings.ToLower(frozen.Path)
+		if _, valid := seen[key]; !valid || windowsKernelPathsOverlap(frozen.Path, request.Workspace) ||
+			windowsKernelPathsOverlap(frozen.Path, request.Executable) {
+			return errors.New("Windows kernel frozen path has no matching grant")
+		}
+		if _, duplicate := frozenSeen[key]; duplicate {
+			return errors.New("Windows kernel frozen path is duplicated")
+		}
+		frozenSeen[key] = struct{}{}
 	}
 	return nil
 }

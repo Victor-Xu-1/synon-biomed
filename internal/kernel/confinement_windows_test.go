@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"golang.org/x/sys/windows"
 )
 
 func TestWindowsKernelConfinementIsNotAdvertisedBeforeFullBoundary(t *testing.T) {
@@ -120,7 +122,7 @@ func TestWindowsConfinementGrantsDoNotWidenExecutableParent(t *testing.T) {
 	}
 }
 
-func TestWindowsFrozenMountsFailClosed(t *testing.T) {
+func TestWindowsFrozenMountsUseExactPathIdentity(t *testing.T) {
 	workspace := t.TempDir()
 	executable := windowsConfinementTestExecutable(t)
 	operationLog, err := os.CreateTemp(t.TempDir(), "operation-log-*.jsonl")
@@ -143,9 +145,127 @@ func TestWindowsFrozenMountsFailClosed(t *testing.T) {
 	} {
 		t.Run(fixture.name, func(t *testing.T) {
 			err := validateWindowsConfinementRequest(workspace, executable, nil, nil, []WorkerMount{fixture.mount}, nil, nil)
-			if !errors.Is(err, ErrConfinementUnavailable) {
-				t.Fatalf("unrepresented frozen mount must fail closed: %v", err)
+			if err != nil {
+				t.Fatalf("frozen mount path should validate: %v", err)
 			}
 		})
 	}
+	other, err := os.CreateTemp(t.TempDir(), "other-*.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer other.Close()
+	if err := validateWindowsConfinementRequest(workspace, executable, nil, nil,
+		[]WorkerMount{{Path: operationLog.Name(), Writable: true, regular: true, trusted: true, frozen: other}}, nil, nil); err == nil {
+		t.Fatal("swapped frozen operation log identity was accepted")
+	}
+}
+
+func TestWindowsWorkerAuthorityDoesNotGrantArbitraryArguments(t *testing.T) {
+	root := t.TempDir()
+	executable := filepath.Join(root, "python.exe")
+	assets := filepath.Join(t.TempDir(), "kernels")
+	secret := filepath.Join(t.TempDir(), "private.txt")
+	shared := t.TempDir()
+	oplog := filepath.Join(t.TempDir(), "operation.jsonl")
+	roots, files, writable := windowsWorkerAuthority(executable,
+		[]string{filepath.Join(assets, "kernel_worker.py"), secret},
+		[]string{"CONDA_PREFIX=" + root}, []WorkerMount{
+			{Path: shared, trusted: true},
+			{Path: oplog, Writable: true, regular: true, trusted: true},
+		})
+	if len(roots) != 3 || len(files) != 0 || len(writable) != 1 ||
+		writable[0] != oplog {
+		t.Fatalf("unexpected worker authority: roots=%q files=%q writable=%q", roots, files, writable)
+	}
+	for _, path := range append(append([]string(nil), roots...), append(files, writable...)...) {
+		if path == secret {
+			t.Fatal("untrusted argument was granted filesystem authority")
+		}
+	}
+	outside := t.TempDir()
+	roots, _, _ = windowsWorkerAuthority(executable, nil, []string{"CONDA_PREFIX=" + outside}, nil)
+	if len(roots) != 1 || roots[0] != filepath.Dir(executable) {
+		t.Fatalf("unrelated CONDA_PREFIX gained authority: %q", roots)
+	}
+}
+
+func TestWindowsPythonWorkerAlwaysStartsIsolated(t *testing.T) {
+	worker := `C:\Synon\kernels\kernel_worker.py`
+	python := `C:\Runtime\python.exe`
+	arguments := windowsIsolatedWorkerArguments(python, []string{worker})
+	if len(arguments) != 2 || arguments[0] != "-I" || arguments[1] != worker {
+		t.Fatalf("Python startup was not isolated: %q", arguments)
+	}
+	arguments = windowsIsolatedWorkerArguments(python, arguments)
+	if len(arguments) != 2 {
+		t.Fatalf("Python isolation flag was duplicated: %q", arguments)
+	}
+	arguments = windowsIsolatedWorkerArguments(`C:\Runtime\Rscript.exe`, []string{worker})
+	if len(arguments) != 1 || arguments[0] != worker {
+		t.Fatalf("non-Python arguments changed: %q", arguments)
+	}
+}
+
+func TestWindowsFrozenAuthorityDetectsChangedFileIdentity(t *testing.T) {
+	file, err := os.CreateTemp(t.TempDir(), "mount-*.dat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	identity, err := windowsFrozenPath(file.Name(), file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handle, err := openWindowsFrozenAuthorityPath(identity)
+	if err != nil {
+		t.Fatalf("unchanged frozen file was rejected: %v", err)
+	}
+	if err := windows.CloseHandle(handle); err != nil {
+		t.Fatal(err)
+	}
+	identity.IndexLow++
+	if _, err := openWindowsFrozenAuthorityPath(identity); err == nil {
+		t.Fatal("changed frozen file identity was accepted")
+	}
+}
+
+func TestWindowsROperationLogAndSharedLibraryUseNativeFiles(t *testing.T) {
+	prefix := t.TempDir()
+	path, frozen, err := secureROperationLog(prefix)
+	if err != nil {
+		t.Fatalf("create R operation log: %v", err)
+	}
+	defer frozen.Close()
+	if filepath.Dir(path) != prefix {
+		t.Fatalf("R operation log escaped its runtime: %q", path)
+	}
+	identity, err := windowsFrozenPath(path, frozen)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handle, err := openWindowsFrozenAuthorityPath(identity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = windows.CloseHandle(handle)
+	entry := []byte("{\"operation\":\"install\"}\n")
+	if err := os.WriteFile(path, entry, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	raw, found, err := readBoundedKernelMetadataFile(prefix, filepath.Base(path), len(entry))
+	if err != nil || !found || string(raw) != string(entry) {
+		t.Fatalf("read R operation metadata: found=%v content=%q err=%v", found, raw, err)
+	}
+	if _, _, err := readBoundedKernelMetadataFile(prefix, filepath.Base(path), len(entry)-1); err == nil {
+		t.Fatal("oversized R operation log was accepted")
+	}
+	if _, _, err := readBoundedKernelMetadataFile(prefix, `..\private.txt`, 1024); err == nil {
+		t.Fatal("traversal metadata name was accepted")
+	}
+	shared, err := freezeInternalKernelDirectory(prefix)
+	if err != nil {
+		t.Fatalf("freeze shared R library: %v", err)
+	}
+	_ = shared.Close()
 }

@@ -24,10 +24,31 @@ func newConfinedWorkerCommandWithAuxiliary(workspaceDir, executable string, argu
 	if err := validateWindowsConfinementRequest(workspaceDir, executable, arguments, environment, mounts, protected, auxiliary); err != nil {
 		return nil, err
 	}
+	roots, files, writable := windowsWorkerAuthority(executable, arguments, environment, mounts)
+	frozen := make([]windowsConfinementFrozenPath, 0, len(mounts))
+	for _, mount := range mounts {
+		if mount.frozen != nil {
+			identity, err := windowsFrozenPath(mount.Path, mount.frozen)
+			if err != nil {
+				return nil, fmt.Errorf("identify Windows frozen kernel mount: %w", err)
+			}
+			frozen = append(frozen, identity)
+		}
+	}
 	if !platformConfinementEvidence().Available {
 		return nil, fmt.Errorf("%w: Windows managed runtime and recovery boundaries are not verified", ErrConfinementUnavailable)
 	}
-	return newWindowsConfinedCommand(workspaceDir, executable, arguments, environment, nil)
+	arguments = windowsIsolatedWorkerArguments(executable, arguments)
+	return newWindowsConfinedCommandWithFrozenAuthority(workspaceDir, executable, arguments, environment, roots, files, writable, frozen)
+}
+
+func windowsIsolatedWorkerArguments(executable string, arguments []string) []string {
+	base := strings.ToLower(filepath.Base(executable))
+	if strings.HasPrefix(base, "python") && strings.HasSuffix(base, ".exe") &&
+		(len(arguments) == 0 || arguments[0] != "-I") {
+		return append([]string{"-I"}, arguments...)
+	}
+	return arguments
 }
 
 func validateWindowsConfinementRequest(workspaceDir, executable string, arguments, environment []string, mounts []WorkerMount, protected []string, auxiliary []*os.File) error {
@@ -71,10 +92,14 @@ func validateWindowsConfinementRequest(workspaceDir, executable string, argument
 			return fmt.Errorf("kernel mount: %w", err)
 		}
 		if mount.frozen != nil {
-			return fmt.Errorf("%w: Windows frozen mount handles have no AppContainer equivalent", ErrConfinementUnavailable)
+			current, err := os.Stat(mount.Path)
+			frozen, frozenErr := mount.frozen.Stat()
+			if err != nil || frozenErr != nil || !os.SameFile(current, frozen) {
+				return errors.New("kernel frozen mount no longer identifies its path")
+			}
 		}
-		if mount.trusted && mount.Writable {
-			return fmt.Errorf("%w: Windows trusted writable mounts have no AppContainer equivalent", ErrConfinementUnavailable)
+		if mount.Writable && (!mount.trusted || !mount.regular || mount.frozen == nil) {
+			return fmt.Errorf("%w: Windows external writable mounts require a frozen trusted regular file", ErrConfinementUnavailable)
 		}
 		if windowsKernelPathsOverlap(mount.Path, workspaceDir) {
 			// NTFS grants on a writable parent do not provide the read-only
@@ -90,10 +115,66 @@ func validateWindowsConfinementRequest(workspaceDir, executable string, argument
 			}
 		}
 	}
-	if len(mounts) != 0 || len(protected) != 0 {
-		return fmt.Errorf("%w: Windows worker mounts and protected paths are not yet represented by AppContainer grants", ErrConfinementUnavailable)
+	if len(protected) != 0 {
+		return fmt.Errorf("%w: Windows protected paths have no deny authority", ErrConfinementUnavailable)
 	}
 	return nil
+}
+
+// The manager supplies the executable, worker script and verified runtime
+// mounts. Never infer authority from arbitrary absolute arguments: those may
+// contain user-supplied paths that the worker must not gain access to.
+func windowsWorkerAuthority(executable string, arguments, environment []string, mounts []WorkerMount) (roots, files, writable []string) {
+	for _, entry := range environment {
+		key, value, ok := strings.Cut(entry, "=")
+		if ok && strings.EqualFold(key, "CONDA_PREFIX") && windowsKernelPathContains(value, executable) {
+			roots = appendUniqueWindowsAuthorityPath(roots, value)
+		}
+	}
+	base := strings.ToLower(filepath.Base(executable))
+	if base == "python.exe" || base == "pythonw.exe" || base == "rscript.exe" {
+		// A system Python without CONDA_PREFIX still needs its standard
+		// library. Managed prefixes take precedence over this fallback.
+		if len(roots) == 0 {
+			root := filepath.Dir(executable)
+			if strings.EqualFold(filepath.Base(root), "Scripts") || strings.EqualFold(filepath.Base(root), "bin") {
+				root = filepath.Dir(root)
+			}
+			roots = appendUniqueWindowsAuthorityPath(roots, root)
+		}
+		for _, argument := range arguments {
+			name := strings.ToLower(filepath.Base(argument))
+			if name == "kernel_worker.py" || name == "kernel_worker.r" {
+				roots = appendUniqueWindowsAuthorityPath(roots, filepath.Dir(argument))
+				break
+			}
+		}
+	}
+	for _, mount := range mounts {
+		if mount.Writable {
+			writable = appendUniqueWindowsAuthorityPath(writable, mount.Path)
+		} else if mount.regular {
+			files = appendUniqueWindowsAuthorityPath(files, mount.Path)
+		} else {
+			roots = appendUniqueWindowsAuthorityPath(roots, mount.Path)
+		}
+	}
+	return roots, files, writable
+}
+
+func appendUniqueWindowsAuthorityPath(paths []string, path string) []string {
+	for _, existing := range paths {
+		if strings.EqualFold(existing, path) {
+			return paths
+		}
+	}
+	return append(paths, path)
+}
+
+func windowsKernelPathContains(parent, child string) bool {
+	parent = strings.ToLower(filepath.Clean(parent))
+	child = strings.ToLower(filepath.Clean(child))
+	return strings.HasPrefix(child, parent+string(os.PathSeparator))
 }
 
 // validateWindowsKernelPath deliberately accepts only ordinary, already

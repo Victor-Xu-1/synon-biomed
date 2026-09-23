@@ -321,15 +321,15 @@ func (m *Manager) RuntimeReady(language, environment string) bool {
 			return false
 		}
 		if environment == managedRName(m.config) {
-			// Keep a narrow read-only migration path for an older `r` prefix when
-			// the verified bundled installer is not configured. The service-owned
-			// bundled path remains authoritative whenever provisioning is enabled;
-			// execution admission still calls EnsureManagedREnvironment and never
-			// treats this legacy fallback as the required core runtime.
+			// Honor an explicitly configured legacy R prefix or the requested old
+			// alias without treating an inferred core name and a bare executable
+			// as a verified generation. Bundled provisioning remains authoritative.
 			if !m.ManagedRProvisioningEnabled() &&
 				(requestedEnvironment == "r" || isPersistedRRuntimeAlias(requestedEnvironment)) {
-				return m.legacyRExecutableAvailable(environment) ||
-					(requestedEnvironment != environment && m.legacyRExecutableAvailable(requestedEnvironment))
+				if strings.TrimSpace(m.config.DefaultREnv) == environment {
+					return m.legacyRExecutableAvailable(environment)
+				}
+				return m.legacyRExecutableAvailable(requestedEnvironment)
 			}
 			return m.managedRRuntimeReady() == nil
 		}

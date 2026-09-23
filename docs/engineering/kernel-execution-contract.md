@@ -51,6 +51,20 @@ submission, and new Unix/netlink sockets. The host's isolated network namespace
 and explicit egress relay govern IP transport. The interpreter applies
 `PR_SET_DUMPABLE=0` after startup.
 
+Native macOS runtime assets may be installed, but that does not make a kernel
+executable. Until a native boundary is verified, the Darwin kernel manager
+reports `kernel_confinement_unavailable` and refuses to launch Python, R, Bash,
+or provider workers. Requests for kernel egress also fail rather than silently
+dropping their domain policy. Removing this refusal requires a real macOS
+probe and regression coverage for per-task read/write and protected paths,
+direct network denial with approved egress through a host broker, inherited
+restrictions for Python/R subprocesses, and termination of descendants that
+detach from the initial process group. Cross-compilation alone proves none of
+these runtime properties. The separately supervised detached executor and
+backend are Linux-only; native macOS kernel confinement alone would not
+establish parity for their durable background-execution semantics. The native
+in-process manager is a separate path.
+
 See the public [Linux seccomp interface](https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html)
 and [Python signal semantics](https://docs.python.org/3/library/signal.html).
 These describe platform APIs, not an imported execution implementation.

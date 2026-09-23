@@ -114,9 +114,42 @@ cp internal/logoassets/LICENSE "$pkg/docs/licenses/aioncore-logos/LICENSE"
 cp internal/logoassets/SOURCE.md "$pkg/docs/licenses/aioncore-logos/SOURCE.md"
 cp -R skills/. "$pkg/skills/"
 cp -R assets/. "$pkg/assets/"
-if [[ "$goos" != "linux" || "$goarch" != "amd64" ]]; then
-	rm -rf -- "$pkg/assets/optional/micromamba"
+# Keep only the native installer and Conda lock catalog for the target package.
+# The source checkout retains all platform assets, but a release must not ship
+# or accidentally select a foreign executable or package lock.
+runtime_platform=""
+case "$goos/$goarch" in
+	linux/amd64) runtime_platform="linux-x86_64" ;;
+	windows/amd64) runtime_platform="windows-x86_64" ;;
+	darwin/amd64) runtime_platform="darwin-x86_64" ;;
+	darwin/arm64) runtime_platform="darwin-arm64" ;;
+esac
+if [[ -z "$runtime_platform" ]]; then
+	echo "unsupported native scientific runtime target: $goos/$goarch" >&2
+	exit 1
 fi
+installer_root="$pkg/assets/optional/micromamba"
+conda_catalog_root="$pkg/assets/optional/conda-runtimes"
+installer_name="micromamba"
+if [[ "$goos" == "windows" ]]; then installer_name="micromamba.exe"; fi
+test -f "$installer_root/$runtime_platform/$installer_name" || {
+	echo "native micromamba asset is missing for $runtime_platform" >&2
+	exit 1
+}
+if [[ "$runtime_platform" == "linux-x86_64" ]]; then
+	test -f "$installer_root/manifest.json"
+	test -f "$conda_catalog_root/manifest.json"
+else
+	test -f "$installer_root/$runtime_platform/manifest.json"
+	test -f "$conda_catalog_root/$runtime_platform/manifest.json"
+	rm -f -- "$installer_root/manifest.json" "$conda_catalog_root/manifest.json"
+	rm -rf -- "$conda_catalog_root/python-baseline" "$conda_catalog_root/r" "$conda_catalog_root/synon-biomed-python"
+fi
+find "$installer_root" -mindepth 1 -maxdepth 1 -type d ! -name "$runtime_platform" -exec rm -rf -- {} +
+find "$conda_catalog_root" -mindepth 1 -maxdepth 1 -type d \
+	-name '*-x86_64' ! -name "$runtime_platform" -exec rm -rf -- {} +
+find "$conda_catalog_root" -mindepth 1 -maxdepth 1 -type d \
+	-name 'darwin-arm64' ! -name "$runtime_platform" -exec rm -rf -- {} +
 cp scripts/release-path-policy.sh "$pkg/scripts/release-path-policy.sh"
 cp scripts/release-identity-policy.ps1 "$pkg/scripts/release-identity-policy.ps1"
 cp scripts/install-systemd-user.sh "$pkg/scripts/install-systemd-user.sh"

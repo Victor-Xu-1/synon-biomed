@@ -112,11 +112,12 @@ func (s *Server) ManagedScientificRuntimeProvisioningEnabled() bool {
 // It exposes only stable status fields and no installer paths or diagnostics.
 func (s *Server) scientificCoreRuntimeHealth() map[string]any {
 	platform := kernelruntime.ManagedScientificRuntimePlatform()
+	platformSupported := kernelruntime.ManagedScientificRuntimePlatformSupported()
 	result := map[string]any{
 		"required":           true,
 		"ready":              false,
 		"platform":           platform,
-		"platform_supported": platform == "linux-x86_64",
+		"platform_supported": platformSupported,
 	}
 	if s == nil || s.kernelManager == nil {
 		result["status"] = "unavailable"
@@ -128,7 +129,7 @@ func (s *Server) scientificCoreRuntimeHealth() map[string]any {
 	result["python"] = managedCoreRuntimeHealthValue(python)
 	result["r"] = managedCoreRuntimeHealthValue(r)
 	if !s.ManagedScientificRuntimeProvisioningEnabled() {
-		if result["platform_supported"] == false {
+		if !platformSupported {
 			result["status"] = "unsupported"
 			result["code"] = "bundled_runtime_platform_unsupported"
 		} else {

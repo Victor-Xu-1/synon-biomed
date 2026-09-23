@@ -34,11 +34,11 @@ type managedRRuntime struct {
 }
 
 func managedRName(config Config) string {
-	switch value := strings.TrimSpace(config.DefaultREnv); value {
+	switch value := canonicalCondaRuntimeName(strings.TrimSpace(config.DefaultREnv)); value {
 	case "", "r":
 		return defaultManagedREnvironment
 	default:
-		return canonicalCondaRuntimeName(value)
+		return value
 	}
 }
 
@@ -168,7 +168,7 @@ func (m *Manager) managedRMarker(runtime managedRRuntime) managedRuntimeMarker {
 }
 
 func (m *Manager) verifyManagedRGeneration(runtime managedRRuntime, prefix string) error {
-	resolved, err := filepath.EvalSymlinks(prefix)
+	resolved, err := resolveManagedRuntimeGeneration(prefix)
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func (m *Manager) smokeManagedR(ctx context.Context, runtime managedRRuntime, pr
 	command := newWorkerProcessCommand(ctx, rscript, "--vanilla", "-e", code)
 	command.Env = kernelEnvironment(map[string]string{
 		"CONDA_PREFIX": prefix, "CONDA_DEFAULT_ENV": runtime.entry.Name,
-		"PATH": managedExecutableSearchPath(filepath.Dir(rscript)), "R_LIBS_USER": "",
+		"PATH": managedExecutableSearchPath(managedRuntimePath(prefix)), "R_LIBS_USER": "",
 	})
 	stdout := newTailBuffer(maxDiagnosticBytes)
 	stderr := newTailBuffer(maxDiagnosticBytes)
@@ -266,7 +266,11 @@ func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
 	active := filepath.Join(m.config.CondaEnvsPath, runtime.entry.Name)
 	m.setManagedRProvisioningPhase("checking-active-generation")
 	if err := m.verifyManagedRGeneration(runtime, active); err == nil {
-		rscript, err := managedRExecutableAtPrefix(active)
+		resolvedActive, err := resolveManagedRuntimeGeneration(active)
+		if err != nil {
+			return err
+		}
+		rscript, err := managedRExecutableAtPrefix(resolvedActive)
 		if err != nil {
 			return err
 		}
@@ -289,7 +293,7 @@ func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
 		}
 		defer os.RemoveAll(staging)
 		m.setManagedRProvisioningPhase("installing-bundled-generation")
-		if err := m.runManagedEnvironmentProcessWithEnv(ctx, m.config.Micromamba, m.managedEnvironmentInstallerEnv(), "--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath); err != nil {
+		if err := m.runManagedEnvironmentCommand(ctx, "--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath); err != nil {
 			return fmt.Errorf("install managed R generation: %w", err)
 		}
 		m.setManagedRProvisioningPhase("running-scientific-smoke-test")
@@ -314,7 +318,11 @@ func (m *Manager) ensureManagedREnvironment(ctx context.Context) error {
 	if err := m.verifyManagedRGeneration(runtime, active); err != nil {
 		return err
 	}
-	rscript, err := managedRExecutableAtPrefix(active)
+	resolvedActive, err := resolveManagedRuntimeGeneration(active)
+	if err != nil {
+		return err
+	}
+	rscript, err := managedRExecutableAtPrefix(resolvedActive)
 	if err != nil {
 		return err
 	}
@@ -357,7 +365,7 @@ func (m *Manager) managedRActivePrefix() (string, managedRRuntime, error) {
 	if err := m.verifyManagedRGeneration(runtime, active); err != nil {
 		return "", managedRRuntime{}, err
 	}
-	resolved, err := filepath.EvalSymlinks(active)
+	resolved, err := resolveManagedRuntimeGeneration(active)
 	if err != nil || filepath.Base(resolved) != runtime.activationGeneration {
 		return "", managedRRuntime{}, errors.New("managed R active generation is invalid")
 	}

@@ -31,7 +31,7 @@ func writeRuntimeContractFixture(t *testing.T, version int, legacy bool) Config 
 		t.Fatal(err)
 	}
 	entry.Generation = manifest.ManifestSHA256
-	entry.ManifestPath, entry.ExplicitPath = "runtime.json", "explicit.txt"
+	entry.ManifestPath, entry.ExplicitPath, entry.LicensesPath = "runtime.json", "explicit.txt", "licenses.json"
 	catalog := condaRuntimeCatalog{
 		SchemaVersion: version, Platform: currentCondaPlatform(),
 		Runtimes: []condaRuntimeCatalogEntry{entry},
@@ -59,6 +59,13 @@ func writeRuntimeContractFixture(t *testing.T, version int, legacy bool) Config 
 	if err := os.WriteFile(filepath.Join(root, "explicit.txt"), explicit, 0o600); err != nil {
 		t.Fatal(err)
 	}
+	licenses, err := os.ReadFile(filepath.Join(filepath.Dir(loaded.explicitPath), "licenses.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "licenses.json"), licenses, 0o600); err != nil {
+		t.Fatal(err)
+	}
 	config.CondaRuntimeCatalog = filepath.Join(root, "catalog.json")
 	config.ManagedPythonEnvironment = entry.Name
 	return config
@@ -84,6 +91,37 @@ func TestCondaRuntimeVersionTwoRejectsLegacyMetadataWithValidDigest(t *testing.T
 	config := writeRuntimeContractFixture(t, 2, true)
 	if _, err := loadManagedPythonRuntime(config); err == nil || !strings.Contains(err.Error(), "unsupported legacy metadata") {
 		t.Fatalf("legacy metadata accepted in v2: %v", err)
+	}
+}
+
+func TestBundledNativeRuntimeCatalogsVerifyPlatformLocks(t *testing.T) {
+	root := repositoryRootForCondaRuntimeTest(t)
+	for _, target := range []struct {
+		goos, goarch string
+	}{
+		{goos: "linux", goarch: "amd64"},
+		{goos: "windows", goarch: "amd64"},
+		{goos: "darwin", goarch: "amd64"},
+		{goos: "darwin", goarch: "arm64"},
+	} {
+		platform, ok := managedRuntimePlatformFor(target.goos, target.goarch)
+		if !ok {
+			t.Fatalf("unsupported test platform %s/%s", target.goos, target.goarch)
+		}
+		catalog := filepath.Join(root, "assets", "optional", "conda-runtimes", platform.ID, "manifest.json")
+		if platform.ID == "linux-x86_64" {
+			catalog = filepath.Join(root, "assets", "optional", "conda-runtimes", "manifest.json")
+		}
+		config := Config{CondaRuntimeCatalog: catalog}
+		for _, name := range []string{defaultManagedPythonEnvironment, defaultManagedREnvironment} {
+			runtime, err := loadManagedCondaRuntimeForPlatform(config, name, platform)
+			if err != nil {
+				t.Fatalf("%s/%s %s: %v", target.goos, target.goarch, name, err)
+			}
+			if runtime.entry.Platform != platform.ID || runtime.entry.Generation != runtime.manifestDigest {
+				t.Fatalf("%s/%s %s: inconsistent generation", target.goos, target.goarch, name)
+			}
+		}
 	}
 }
 

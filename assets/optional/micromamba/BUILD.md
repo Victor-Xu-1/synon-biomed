@@ -7,6 +7,16 @@ transaction, including when process creation itself succeeded. This is not
 an upstream release binary. The runtime still calls only this one installer;
 it never replays package scripts independently.
 
+Windows x64 and macOS x86_64/arm64 use the official
+`mamba-org/micromamba-releases@2.9.0-0` executable for each target. The
+respective platform directory contains its own `manifest.json`, checksum,
+size, and BSD-3-Clause license copy. These files are upstream release
+binaries, not the Linux controlled build; their provenance must not be
+described as `2.9.0+synon.1`. Every release package retains only its target
+platform directory. The product also checks a matching platform-bound Conda
+explicit lock, interpreter smoke, installed helper digests, and immutable
+generation marker before activating Python or R.
+
 `manifest.json` is the asset version/checksum authority. The executable's
 upstream version output remains `2.9.0`; the asset version is `2.9.0+synon.1`.
 The original BSD-3-Clause license is unchanged. The pinned build dependency

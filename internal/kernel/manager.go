@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -395,7 +396,13 @@ func (m *Manager) startWorkerWithRuntime(
 		return nil, err
 	}
 	defer closeKernelCommandExtraFiles(command)
-	command.Dir = "/"
+	// Use the validated drive-rooted workspace on Windows; "/" has no
+	// well-defined native working-directory meaning there.
+	if runtime.GOOS == "windows" {
+		command.Dir = resolvedWorkspace
+	} else {
+		command.Dir = "/"
+	}
 	stdin, err := command.StdinPipe()
 	if err != nil {
 		return nil, fmt.Errorf("open kernel stdin: %w", err)
@@ -1129,9 +1136,25 @@ func kernelEnvironment(extra map[string]string) []string {
 		"HOME": true, "PATH": true, "LANG": true, "LC_ALL": true, "LC_CTYPE": true,
 		"TMPDIR": true, "TMP": true, "TEMP": true, "SSL_CERT_FILE": true, "SSL_CERT_DIR": true,
 	}
+	if runtime.GOOS == "windows" {
+		// Native process creation and Conda package scripts require the OS
+		// directory and command-shell contract even when task runtimes receive
+		// an otherwise narrow environment. These keys identify directories and
+		// executables, never provider credentials.
+		for _, key := range []string{
+			"USERPROFILE", "HOMEDRIVE", "HOMEPATH", "SYSTEMROOT", "WINDIR",
+			"COMSPEC", "PATHEXT", "APPDATA", "LOCALAPPDATA", "PROGRAMDATA",
+			"PROCESSOR_ARCHITECTURE",
+		} {
+			allowed[key] = true
+		}
+	}
 	values := make(map[string]string, len(allowed)+len(extra)+1)
 	order := make([]string, 0, len(allowed)+len(extra)+1)
 	remember := func(key, value string) {
+		if runtime.GOOS == "windows" {
+			key = strings.ToUpper(key)
+		}
 		if _, found := values[key]; !found {
 			order = append(order, key)
 		}
@@ -1139,7 +1162,11 @@ func kernelEnvironment(extra map[string]string) []string {
 	}
 	for _, item := range os.Environ() {
 		key, value, ok := strings.Cut(item, "=")
-		if ok && allowed[key] {
+		lookupKey := key
+		if runtime.GOOS == "windows" {
+			lookupKey = strings.ToUpper(key)
+		}
+		if ok && allowed[lookupKey] {
 			remember(key, value)
 		}
 	}

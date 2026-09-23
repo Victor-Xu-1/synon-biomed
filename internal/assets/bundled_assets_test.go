@@ -497,6 +497,38 @@ func TestBundledMicromambaManifestIncludesLicenseAndPinnedVersion(t *testing.T) 
 	}
 }
 
+func TestNativeScientificInstallerAssetManifestsVerify(t *testing.T) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("locate repository root")
+	}
+	root := filepath.Join(filepath.Dir(file), "..", "..", "assets", "optional", "micromamba")
+	for _, platform := range []struct {
+		name, executable string
+	}{
+		{name: "windows-x86_64", executable: "micromamba.exe"},
+		{name: "darwin-x86_64", executable: "micromamba"},
+		{name: "darwin-arm64", executable: "micromamba"},
+	} {
+		t.Run(platform.name, func(t *testing.T) {
+			platformRoot := filepath.Join(root, platform.name)
+			manifest, err := Load(filepath.Join(platformRoot, "manifest.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if manifest.Source != "mamba-org/micromamba-releases@2.9.0-0" ||
+				manifest.Version != "2.9.0" || manifest.License != "BSD-3-Clause" ||
+				manifest.LicenseFile != "LICENSE" || manifest.Entrypoint != platform.executable {
+				t.Fatalf("native installer provenance=%#v", manifest)
+			}
+			report, err := Verify(platformRoot, manifest)
+			if err != nil || report.Checked != 2 {
+				t.Fatalf("native installer verification=%#v err=%v", report, err)
+			}
+		})
+	}
+}
+
 func TestBundledSynonLinkExtensionManifest(t *testing.T) {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {

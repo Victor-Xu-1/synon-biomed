@@ -28,8 +28,7 @@ const runGenerator = (prefix, outputDirectory, extra = [], name = 'synon-biomed-
     process.execPath,
     [
       script,
-      '--prefix',
-      prefix,
+      ...(extra.includes('--solve-json') ? [] : ['--prefix', prefix]),
       '--output-dir',
       outputDirectory,
       '--catalog',
@@ -128,6 +127,72 @@ test('generates deterministic manifest and explicit lock from verified metadata'
     const drifted = runGenerator(join(root, 'prefix'), outputDirectory, ['--check']);
     assert.notEqual(drifted.status, 0);
     assert.match(drifted.stderr, /not generated from the verified metadata/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('generates a platform-bound Windows catalog and rejects foreign package subdirs', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'synon-conda-lock-platform-'));
+  try {
+    const prefix = join(root, 'prefix');
+    const metadataRoot = join(prefix, 'conda-meta');
+    await mkdir(metadataRoot, { recursive: true });
+    await writeFile(
+      join(metadataRoot, 'python.json'),
+      JSON.stringify(
+        metadata('python', '3.11.15', 'h0', 'a'.repeat(64), {
+          subdir: 'win-64',
+          url: 'https://conda.anaconda.org/conda-forge/win-64/python-3.11.15-h0.conda',
+        }),
+      ),
+    );
+    const outputDirectory = join(root, 'locks');
+    const result = runGenerator(prefix, outputDirectory, ['--platform', 'windows-x86_64']);
+    assert.equal(result.status, 0, result.stderr);
+    const generation = result.stdout.match(/sha256=([a-f0-9]{64})/u)?.[1];
+    assert.ok(generation);
+    const explicit = await readFile(join(outputDirectory, generation, 'explicit.txt'), 'utf8');
+    assert.match(explicit, /^# platform: windows-x86_64/mu);
+    const catalog = JSON.parse(await readFile(join(root, 'manifest.json'), 'utf8'));
+    assert.equal(catalog.platform, 'windows-x86_64');
+    assert.equal(catalog.runtimes[0].platform, 'windows-x86_64');
+
+    const foreign = runGenerator(prefix, join(root, 'foreign'), ['--platform', 'darwin-arm64']);
+    assert.notEqual(foreign.status, 0);
+    assert.match(foreign.stderr, /subdir is not supported for darwin-arm64/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('generates a native-platform lock from a bounded solver receipt', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'synon-conda-solve-lock-'));
+  try {
+    const packageRecord = metadata('r-base', '4.5.3', 'h0', 'b'.repeat(64), {
+      subdir: 'osx-arm64',
+      url: 'https://conda.anaconda.org/conda-forge/osx-arm64/r-base-4.5.3-h0.conda',
+      license: '',
+    });
+    const solve = join(root, 'solve.json');
+    await writeFile(solve, JSON.stringify({ success: true, actions: { LINK: [packageRecord] } }));
+    const outputDirectory = join(root, 'locks');
+    const result = runGenerator(join(root, 'does-not-exist'), outputDirectory,
+      ['--solve-json', solve, '--platform', 'darwin-arm64'], 'synon-biomed-r');
+    assert.equal(result.status, 0, result.stderr);
+    const catalog = JSON.parse(await readFile(join(root, 'manifest.json'), 'utf8'));
+    assert.equal(catalog.platform, 'darwin-arm64');
+    assert.equal(catalog.runtimes[0].name, 'synon-biomed-r');
+    const generation = catalog.runtimes[0].generation;
+    const manifest = JSON.parse(await readFile(join(outputDirectory, generation, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.packages[0].subdir, 'osx-arm64');
+    assert.equal(manifest.packages[0].license, 'NOASSERTION');
+    const inventory = JSON.parse(await readFile(join(outputDirectory, generation, 'licenses.json'), 'utf8'));
+    assert.deepEqual(inventory.unresolvedLicensePackages, ['r-base']);
+    const rejected = runGenerator(join(root, 'does-not-exist'), join(root, 'foreign'),
+      ['--solve-json', solve, '--platform', 'windows-x86_64'], 'synon-biomed-r');
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /subdir is not supported for windows-x86_64/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

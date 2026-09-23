@@ -92,24 +92,29 @@ Wait for `READY_URL=http://127.0.0.1:8765/#/login`, then open that URL in your b
 首次运行可能进入 onboarding 引导；系统没有默认 Web 密码。
 There is no default Web password.
 
-On Linux/WSL amd64, the service provisions the required Python and R scientific
-runtimes once at startup. Their immutable generations live under the
-user-resolved managed state root (`SYNON_HOME`, or the platform user data
-directory) and are reused by later tasks; no checkout or machine-specific
-absolute path is embedded in the product. Native Windows releases currently
-provide the gateway/UI only and do not include the bundled Python/R runtime
-assets; use WSL or Linux for scientific execution. First-run settings list
-these required runtimes separately from optional local scientific runtimes.
+On Linux/WSL amd64, Windows x64, macOS Intel, and macOS Apple Silicon, the
+service provisions the required Python and R scientific runtimes once at
+startup. Their immutable generations live under the user-resolved managed
+state root (`SYNON_HOME`, or `.synon-go` under the user home) and are reused
+by later tasks; no checkout or machine-specific absolute path is embedded in
+the product. Each native package carries a platform-bound micromamba binary
+and Conda lock catalog; an asset or lock for another platform is rejected
+before installation. First-run settings list these required runtimes
+separately from optional local scientific runtimes.
 Optional groups start unselected and are prepared only after an explicit
-choice. See the operations runbook for the storage layout, reuse contract,
-status and recovery guidance.
+choice. Native Windows and macOS packages can prepare these Python/R assets,
+but scientific kernel execution still requires Linux/WSL confinement; an
+installed-runtime status alone does not establish task execution readiness.
+See the operations runbook for the storage layout, reuse contract, status and
+recovery guidance.
 
-在 Linux/WSL amd64 上，服务启动时会一次性准备必需的 Python 和 R 科研环境。不可变环境生成保存在
-系统根据当前用户解析出的统一状态目录（`SYNON_HOME`，未设置时使用平台用户数据目录）下，
-后续任务直接复用，不写入代码仓库，也不包含任何机器专属绝对路径。首次设置会把必需环境
-与可选科研环境分开显示；可选环境默认不勾选，只有用户明确选择后才会准备。存储布局、
-复用规则、状态和恢复方式见运维手册。当前原生 Windows 发布包只提供网关/UI，未包含
-Python/R 科研运行时资产，需要使用 WSL 或 Linux 才能执行科研任务。
+在 Linux/WSL amd64、Windows x64、macOS Intel 和 macOS Apple Silicon 上，服务启动时会一次性准备必需的
+Python 和 R 科研环境。不可变环境生成保存在系统根据当前用户解析出的统一状态目录
+（`SYNON_HOME`，未设置时使用用户主目录下的 `.synon-go`）下，后续任务直接复用，不写入代码仓库，也不包含
+任何机器专属绝对路径。每个原生平台包都带有绑定平台的 micromamba 二进制和 Conda 锁目录；
+跨平台资产或锁在安装前会被拒绝。首次设置会把必需环境与可选科研环境分开显示；可选环境默认不勾选，
+只有用户明确选择后才会准备。原生 Windows/macOS 包可准备 Python/R 资产，但科研 kernel
+执行仍需要 Linux/WSL 的进程隔离；环境安装完成不等于任务可执行。存储布局、复用规则、状态和恢复方式见运维手册。
 
 ## Learn more / 了解更多
 

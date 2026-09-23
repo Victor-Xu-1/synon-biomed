@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "platform": "darwin-arm64",
+  "runtimes": [
+    {
+      "name": "synon-biomed-python",
+      "platform": "darwin-arm64",
+      "requiredPackages": [
+        {
+          "name": "py3dmol",
+          "version": "2.5.4"
+        },
+        {
+          "name": "python",
+          "version": "3.11.*"
+        },
+        {
+          "name": "rdkit",
+          "version": "2024.03.5"
+        }
+      ],
+      "packageCount": 111,
+      "generation": "04731507b7c81141618a7bf81806696e46861d130e1a201224b2afb942012ac6",
+      "manifestPath": "synon-biomed-python/04731507b7c81141618a7bf81806696e46861d130e1a201224b2afb942012ac6/manifest.json",
+      "explicitPath": "synon-biomed-python/04731507b7c81141618a7bf81806696e46861d130e1a201224b2afb942012ac6/explicit.txt",
+      "licensesPath": "synon-biomed-python/04731507b7c81141618a7bf81806696e46861d130e1a201224b2afb942012ac6/licenses.json",
+      "licenseTextsIncluded": false,
+      "explicitSHA256": "2196d5c9a49580b1f78b5df4cd35bde23a57ef755c13edea9b3a16bdbea2c520",
+      "licenseInventorySHA256": "820f4436b73ee403388588afa488f8ddf63e99b12423c953770cc62e668c5fe1"
+    },
+    {
+      "name": "synon-biomed-r",
+      "platform": "darwin-arm64",
+      "requiredPackages": [
+        {
+          "name": "r-base",
+          "version": "4.5.3"
+        }
+      ],
+      "packageCount": 207,
+      "generation": "6e5fff75fd6e3756f893a647ffb80bdc90bbfb5bbb12af4f39a60c0731425476",
+      "manifestPath": "synon-biomed-r/6e5fff75fd6e3756f893a647ffb80bdc90bbfb5bbb12af4f39a60c0731425476/manifest.json",
+      "explicitPath": "synon-biomed-r/6e5fff75fd6e3756f893a647ffb80bdc90bbfb5bbb12af4f39a60c0731425476/explicit.txt",
+      "licensesPath": "synon-biomed-r/6e5fff75fd6e3756f893a647ffb80bdc90bbfb5bbb12af4f39a60c0731425476/licenses.json",
+      "licenseTextsIncluded": false,
+      "explicitSHA256": "117a07109e0f8b4c6c04c6a5de2beda5235fd864a30cf379b4bdc20fbfd041a4",
+      "licenseInventorySHA256": "0684667ea966ee98c8663b76521a60bb508a52f7361f84c6ef2fc15aa18418e8"
+    }
+  ],
+  "catalogSHA256": "a4a689b16ae7039069ffc4978fe4e76ba740dba9d7fd0c781c6ae0320eab14af"
+}

@@ -8,6 +8,8 @@ import (
 
 var ErrConfinementUnavailable = errors.New("kernel process confinement is unavailable")
 
+const darwinConfinementUnverifiedReason = "macOS kernel process confinement is not verified"
+
 // ConfinementEvidence describes the process boundary used for every managed
 // kernel worker. It is deliberately separate from language/runtime readiness.
 type ConfinementEvidence struct {
@@ -28,6 +30,8 @@ func DiagnoseConfinementEvidence(evidence ConfinementEvidence) ConfinementDiagno
 	}
 	switch evidence.Reason {
 	case "bubblewrap is unavailable":
+		return ConfinementDiagnostic{Code: "kernel_confinement_unavailable", Message: "kernel process confinement is unavailable"}
+	case darwinConfinementUnverifiedReason:
 		return ConfinementDiagnostic{Code: "kernel_confinement_unavailable", Message: "kernel process confinement is unavailable"}
 	case "Synon kernel confinement is unavailable on this platform":
 		return ConfinementDiagnostic{Code: "kernel_confinement_unsupported", Message: "kernel process confinement is unsupported on this platform"}

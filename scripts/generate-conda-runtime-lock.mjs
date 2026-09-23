@@ -15,11 +15,18 @@ const VALUE_OPTION_NAMES = new Set([
   'output-dir',
   'catalog',
   'name',
+  'platform',
+  'solve-json',
   'package-cache',
   'required-packages',
 ]);
 const FLAG_OPTION_NAMES = new Set(['check']);
-const ALLOWED_SUBDIRS = new Set(['linux-64', 'noarch']);
+const PLATFORM_CONTRACTS = new Map([
+  ['linux-x86_64', { subdirs: new Set(['linux-64', 'noarch']) }],
+  ['windows-x86_64', { subdirs: new Set(['win-64', 'noarch']) }],
+  ['darwin-x86_64', { subdirs: new Set(['osx-64', 'noarch']) }],
+  ['darwin-arm64', { subdirs: new Set(['osx-arm64', 'noarch']) }],
+]);
 const ALLOWED_PACKAGE_HOSTS = new Set(['conda.anaconda.org']);
 
 const fail = (message) => {
@@ -52,10 +59,13 @@ const parseArguments = (values) => {
     options[name] = value;
     index += 1;
   }
-  for (const required of ['prefix', 'output-dir', 'catalog', 'name']) {
+  for (const required of ['output-dir', 'catalog', 'name']) {
     if (!options[required]?.trim()) {
       throw new Error(`--${required} is required`);
     }
+  }
+  if (Boolean(options.prefix) === Boolean(options['solve-json'])) {
+    throw new Error('exactly one of --prefix or --solve-json is required');
   }
   return options;
 };
@@ -238,13 +248,13 @@ const verifyOutputs = async (outputDirectory, generation, files) => {
   return generationDirectory;
 };
 
-const readCatalog = async (catalogPath) => {
+const readCatalog = async (catalogPath, platform) => {
   try {
     const decoded = JSON.parse(await readFile(catalogPath, 'utf8'));
     const { catalogSHA256, ...body } = decoded ?? {};
     if (
       body?.schemaVersion !== 2 ||
-      body?.platform !== 'linux-x86_64' ||
+      body?.platform !== platform ||
       Object.keys(body).some((key) => !['schemaVersion', 'platform', 'runtimes'].includes(key)) ||
       !Array.isArray(body.runtimes) ||
       !/^[a-f0-9]{64}$/u.test(catalogSHA256 ?? '') ||
@@ -263,7 +273,7 @@ const readCatalog = async (catalogPath) => {
     return body;
   } catch (error) {
     if (error?.code === 'ENOENT') {
-      return { schemaVersion: 2, platform: 'linux-x86_64', runtimes: [] };
+      return { schemaVersion: 2, platform, runtimes: [] };
     }
     throw error;
   }
@@ -271,33 +281,60 @@ const readCatalog = async (catalogPath) => {
 
 const main = async () => {
   const options = parseArguments(process.argv.slice(2));
-  const prefix = resolve(options.prefix);
+  const platform = options.platform?.trim() || 'linux-x86_64';
+  const platformContract = PLATFORM_CONTRACTS.get(platform);
+  if (!platformContract) {
+    throw new Error(`unsupported runtime platform ${platform}`);
+  }
+  const prefix = options.prefix ? resolve(options.prefix) : '';
   const packageCache = options['package-cache'] ? await realpath(resolve(options['package-cache'])) : '';
   if (packageCache && !(await stat(packageCache)).isDirectory()) {
     throw new Error('--package-cache must be a directory');
   }
-  const metadataRoot = join(prefix, 'conda-meta');
-  const entries = (await readdir(metadataRoot, { withFileTypes: true }))
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
-    .map((entry) => entry.name)
-    .sort();
+  let records;
+  if (options['solve-json']) {
+    const solvePath = resolve(options['solve-json']);
+    const solveStat = await stat(solvePath);
+    if (!solveStat.isFile() || solveStat.size <= 0 || solveStat.size > 32 * 1024 * 1024) {
+      throw new Error('solver receipt is outside the supported size');
+    }
+    const solved = JSON.parse(await readFile(solvePath, 'utf8'));
+    if (solved?.success !== true || !Array.isArray(solved?.actions?.LINK)) {
+      throw new Error('solver receipt has no successful link plan');
+    }
+    records = solved.actions.LINK.map((decoded, index) => ({
+      entry: `solve-LINK-${index}`,
+      decoded,
+    }));
+  } else {
+    const metadataRoot = join(prefix, 'conda-meta');
+    const entries = (await readdir(metadataRoot, { withFileTypes: true }))
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+      .map((entry) => entry.name)
+      .sort();
+    records = [];
+    for (const entry of entries) {
+      const metadataPath = join(metadataRoot, entry);
+      const metadataStat = await stat(metadataPath);
+      if (!metadataStat.isFile() || metadataStat.size <= 0 || metadataStat.size > MAX_METADATA_BYTES) {
+        throw new Error(`${entry} exceeds the supported metadata size`);
+      }
+      records.push({ entry, decoded: JSON.parse(await readFile(metadataPath, 'utf8')) });
+    }
+  }
+  const entries = records;
   if (entries.length === 0 || entries.length > MAX_METADATA_FILES) {
     throw new Error(`Conda metadata count ${entries.length} is outside the supported range`);
   }
 
   const packages = [];
   let usedPackageCacheLicense = false;
+  const unresolvedLicensePackages = [];
   const identities = new Set();
-  for (const entry of entries) {
-    const metadataPath = join(metadataRoot, entry);
-    const metadataStat = await stat(metadataPath);
-    if (!metadataStat.isFile() || metadataStat.size <= 0 || metadataStat.size > MAX_METADATA_BYTES) {
-      throw new Error(`${entry} exceeds the supported metadata size`);
-    }
-    const decoded = JSON.parse(await readFile(metadataPath, 'utf8'));
+  for (const { entry, decoded } of entries) {
     const subdir = boundedText(decoded.subdir, `${entry}.subdir`, 64);
-    if (!ALLOWED_SUBDIRS.has(subdir)) {
-      throw new Error(`${entry}.subdir is not supported for linux-x86_64`);
+    if (!platformContract.subdirs.has(subdir)) {
+      throw new Error(`${entry}.subdir is not supported for ${platform}`);
     }
     const channel = trustedChannel(decoded.channel, `${entry}.channel`);
     const packageURL = trustedPackageURL(decoded.url, `${entry}.url`);
@@ -317,8 +354,16 @@ const main = async () => {
     const build = boundedText(decoded.build, `${entry}.build`, 256);
     let license = typeof decoded.license === 'string' ? decoded.license.trim() : '';
     if (!license) {
-      license = await cachedPackageLicense(decoded, entry, packageCache, `${name}-${version}-${build}`);
-      usedPackageCacheLicense = true;
+      if (options['solve-json']) {
+        // The solver may include a dependency whose upstream package metadata
+        // omits its license. Record that uncertainty explicitly; do not invent
+        // a license or silently drop a package from the locked transaction.
+        license = 'NOASSERTION';
+        unresolvedLicensePackages.push(name);
+      } else {
+        license = await cachedPackageLicense(decoded, entry, packageCache, `${name}-${version}-${build}`);
+        usedPackageCacheLicense = true;
+      }
     }
     const item = {
       name,
@@ -361,7 +406,7 @@ const main = async () => {
   const runtimeRequirements = required.length > 0 ? { requiredPackages: required } : {};
   const explicit = [
     '# Generated from verified Conda package metadata. DO NOT EDIT.',
-    '# platform: linux-x86_64',
+    `# platform: ${platform}`,
     '@EXPLICIT',
     ...packages.map((item) => `${item.url}#${item.sha256}`),
     '',
@@ -369,18 +414,21 @@ const main = async () => {
   const licenseInventory = canonicalJSON({
     schemaVersion: 2,
     name: boundedText(options.name, '--name', 128),
-    platform: 'linux-x86_64',
+    platform,
     source: usedPackageCacheLicense
       ? 'verified-conda-meta-and-package-cache-license-fields'
-      : 'verified-conda-meta-license-fields',
+      : options['solve-json']
+        ? 'verified-conda-solver-receipt-license-fields'
+        : 'verified-conda-meta-license-fields',
     licenseTextsIncluded: false,
+    ...(unresolvedLicensePackages.length > 0 ? { unresolvedLicensePackages: unresolvedLicensePackages.sort() } : {}),
     packageCount: packages.length,
     packages: packages.map(({ name, version, build, license }) => ({ name, version, build, license })),
   });
   const manifest = {
     schemaVersion: 2,
     name: boundedText(options.name, '--name', 128),
-    platform: 'linux-x86_64',
+    platform,
     ...runtimeRequirements,
     packageCount: packages.length,
     explicitSHA256: sha256(explicit),
@@ -401,7 +449,7 @@ const main = async () => {
   const generationDirectory = options.check
     ? await verifyOutputs(outputDirectory, manifestSHA256, files)
     : await writeOutputs(outputDirectory, manifestSHA256, files);
-  const catalog = await readCatalog(catalogPath);
+  const catalog = await readCatalog(catalogPath, platform);
   const catalogEntry = {
     name: manifest.name,
     platform: manifest.platform,

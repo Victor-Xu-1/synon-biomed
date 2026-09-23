@@ -212,7 +212,18 @@ func (m *Manager) sessionRuntimeWithMounts(spec SessionSpec) (string, []string, 
 				return "", nil, nil, nil, err
 			}
 		}
-		mounts, err := platformSessionRuntimeMounts(python, prefix, m.config.WorkerPath)
+		supervisorPrefix := prefix
+		var selectedRuntime []string
+		if spec.KernelKind == "bash" {
+			// The selected environment contributes PATH/native tools, while
+			// m.config.Python remains the protocol supervisor. Both are separate
+			// server-verified read-only authorities on Windows.
+			supervisorPrefix = ""
+			if prefix != "" {
+				selectedRuntime = []string{prefix}
+			}
+		}
+		mounts, err := platformSessionRuntimeMounts(python, supervisorPrefix, m.config.WorkerPath, selectedRuntime...)
 		if err != nil {
 			return "", nil, nil, nil, err
 		}

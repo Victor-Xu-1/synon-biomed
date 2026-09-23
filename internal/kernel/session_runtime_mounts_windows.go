@@ -12,7 +12,7 @@ import (
 // The manager has resolved the selected interpreter and its runtime prefix
 // before constructing these grants. No worker-provided argument or environment
 // value is consulted to extend the AppContainer filesystem authority.
-func platformSessionRuntimeMounts(executable, prefix, worker string) ([]WorkerMount, error) {
+func platformSessionRuntimeMounts(executable, prefix, worker string, selectedRuntimeRoots ...string) ([]WorkerMount, error) {
 	if err := validateWindowsKernelPath(executable, true, true); err != nil {
 		return nil, fmt.Errorf("Windows session executable: %w", err)
 	}
@@ -39,6 +39,15 @@ func platformSessionRuntimeMounts(executable, prefix, worker string) ([]WorkerMo
 	mounts := []WorkerMount{TrustedReadOnlyDirectoryMount(root)}
 	if !strings.EqualFold(root, assetRoot) {
 		mounts = append(mounts, TrustedReadOnlyDirectoryMount(assetRoot))
+	}
+	for _, selected := range selectedRuntimeRoots {
+		if err := validateWindowsKernelPath(selected, true, false); err != nil {
+			return nil, fmt.Errorf("Windows selected runtime root: %w", err)
+		}
+		if strings.EqualFold(selected, root) || strings.EqualFold(selected, assetRoot) {
+			continue
+		}
+		mounts = append(mounts, TrustedReadOnlyDirectoryMount(selected))
 	}
 	return mounts, nil
 }

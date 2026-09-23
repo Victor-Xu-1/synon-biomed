@@ -288,6 +288,54 @@ func TestWindowsSessionRuntimeMountsRequireVerifiedExecutableAndWorker(t *testin
 	if _, err := platformSessionRuntimeMounts(python, runtimeRoot, filepath.Join(t.TempDir(), "kernel_worker.py")); err == nil {
 		t.Fatal("missing worker asset was accepted")
 	}
+	selected := t.TempDir()
+	mounts, err = platformSessionRuntimeMounts(python, "", worker, selected)
+	if err != nil || len(mounts) != 3 || mounts[0].Path != runtimeRoot ||
+		mounts[1].Path != assets || mounts[2].Path != selected || !mounts[2].IsTrustedReadOnlyDirectory() {
+		t.Fatalf("selected runtime incorrectly replaced Python supervisor authority: mounts=%+v err=%v", mounts, err)
+	}
+}
+
+func TestWindowsBashSessionSeparatesSupervisorAndSelectedEnvironment(t *testing.T) {
+	supervisor := t.TempDir()
+	python := filepath.Join(supervisor, "python.exe")
+	assets := t.TempDir()
+	worker := filepath.Join(assets, "kernel_worker.py")
+	for _, path := range []string{python, worker} {
+		if err := os.WriteFile(path, []byte("fixture"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	envs := t.TempDir()
+	selected := filepath.Join(envs, "science-tools")
+	if err := os.Mkdir(selected, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	manager := NewManager(Config{Python: python, WorkerPath: worker, CondaEnvsPath: envs})
+	executable, _, environment, mounts, err := manager.sessionRuntimeWithMounts(SessionSpec{
+		Language: "python", KernelKind: "bash", Environment: "science-tools",
+		WorkspaceDir: t.TempDir(), KernelID: "bash-test",
+	})
+	if err != nil || executable != python || len(mounts) != 3 ||
+		mounts[0].Path != supervisor || mounts[1].Path != assets || mounts[2].Path != selected ||
+		environmentValue(environment, "CONDA_PREFIX") != selected {
+		t.Fatalf("Bash runtime authorities diverged: executable=%q mounts=%+v prefix=%q err=%v",
+			executable, mounts, environmentValue(environment, "CONDA_PREFIX"), err)
+	}
+}
+
+func TestWindowsManagerStartValidatesSupervisorAuthority(t *testing.T) {
+	manager := NewManager(Config{
+		Python:     filepath.Join(t.TempDir(), "missing-python.exe"),
+		WorkerPath: filepath.Join(t.TempDir(), "kernel_worker.py"),
+	})
+	// Isolate the post-asset-verification entrypoint without installing an
+	// interpreter or constructing a fake asset manifest.
+	manager.verified = true
+	worker, err := manager.Start("start-test", t.TempDir())
+	if worker != nil || err == nil || !strings.Contains(err.Error(), "Windows session executable") {
+		t.Fatalf("Manager.Start bypassed explicit runtime validation: worker=%v err=%v", worker, err)
+	}
 }
 
 func TestWindowsPythonWorkerAlwaysStartsIsolated(t *testing.T) {

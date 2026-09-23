@@ -302,7 +302,11 @@ func (m *Manager) Start(id, workspaceDir string) (*Worker, error) {
 	if strings.TrimSpace(m.config.Python) == "" {
 		return nil, errors.New("kernel Python executable is not configured")
 	}
-	return m.startWorker(id, workspaceDir, m.config.Python, pythonWorkerArguments(m.config.WorkerPath), kernelEnvironment(m.config.Environment), nil, nil, "", "")
+	mounts, err := platformSessionRuntimeMounts(m.config.Python, "", m.config.WorkerPath)
+	if err != nil {
+		return nil, err
+	}
+	return m.startWorker(id, workspaceDir, m.config.Python, pythonWorkerArguments(m.config.WorkerPath), kernelEnvironment(m.config.Environment), mounts, nil, "", "")
 }
 
 func pythonWorkerArguments(workerPath string) []string {

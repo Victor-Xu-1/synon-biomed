@@ -2,6 +2,6 @@
 
 package kernel
 
-func platformSessionRuntimeMounts(string, string, string) ([]WorkerMount, error) {
+func platformSessionRuntimeMounts(string, string, string, ...string) ([]WorkerMount, error) {
 	return nil, nil
 }

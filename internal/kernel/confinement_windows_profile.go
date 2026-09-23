@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"unsafe"
 
@@ -93,7 +94,7 @@ func (lease *windowsConfinementLease) close() error {
 				lease.err = errors.Join(lease.err, fmt.Errorf("revoke Windows kernel confinement path: %w", err))
 			}
 		}
-		if lease.profileCreated {
+		if lease.profileCreated && lease.err == nil {
 			if err := deleteWindowsAppContainerProfile(lease.name); err != nil {
 				lease.err = errors.Join(lease.err, err)
 			}
@@ -205,21 +206,36 @@ func revokeWindowsConfinementGrant(grant windowsConfinementGrant, sid *windows.S
 // runtime files and directories, including modules installed before launch.
 // Reject reparse points rather than crossing out of the granted tree.
 func walkWindowsConfinementGrant(grant windowsConfinementGrant, visit func(string, bool) error) error {
-	if err := validateWindowsKernelPath(grant.path, true, grant.regular); err != nil {
-		return err
-	}
-	if grant.regular {
-		return visit(grant.path, false)
-	}
-	return filepath.WalkDir(grant.path, func(path string, entry os.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if err := validateWindowsKernelPath(path, true, !entry.IsDir()); err != nil {
+	var walk func(string, bool) error
+	walk = func(path string, directory bool) error {
+		handle, release, err := openWindowsConfinementPath(path, windows.FILE_READ_ATTRIBUTES)
+		if err != nil {
 			return err
 		}
-		return visit(path, entry.IsDir())
-	})
+		defer release()
+		var identity windows.ByHandleFileInformation
+		if err := windows.GetFileInformationByHandle(handle, &identity); err != nil ||
+			(directory != (identity.FileAttributes&windows.FILE_ATTRIBUTE_DIRECTORY != 0)) {
+			return errors.New("Windows kernel confinement grant type changed")
+		}
+		if err := visit(path, directory); err != nil {
+			return err
+		}
+		if !directory {
+			return nil
+		}
+		entries, err := os.ReadDir(path)
+		if err != nil {
+			return err
+		}
+		for _, entry := range entries {
+			if err := walk(filepath.Join(path, entry.Name()), entry.IsDir()); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return walk(grant.path, !grant.regular)
 }
 
 func createWindowsAppContainerProfile(name string) (*windows.SID, error) {
@@ -281,16 +297,12 @@ func changeWindowsAppContainerPath(path string, sid *windows.SID, permissions wi
 	if sid == nil {
 		return errors.New("Windows kernel confinement SID is missing")
 	}
-	if _, err := os.Lstat(path); err != nil {
+	handle, closeHandles, err := openWindowsConfinementPath(path, windows.READ_CONTROL|windows.WRITE_DAC|windows.FILE_READ_ATTRIBUTES)
+	if err != nil {
 		return err
 	}
-	if err := validateWindowsKernelPath(path, true, false); err != nil {
-		// Executable files are regular rather than directories.
-		if err := validateWindowsKernelPath(path, true, true); err != nil {
-			return err
-		}
-	}
-	security, err := windows.GetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	defer closeHandles()
+	security, err := windows.GetSecurityInfo(handle, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
 	if err != nil {
 		return err
 	}
@@ -312,5 +324,61 @@ func changeWindowsAppContainerPath(path string, sid *windows.SID, permissions wi
 	if err != nil {
 		return err
 	}
-	return windows.SetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION, nil, nil, updated, nil)
+	return windows.SetSecurityInfo(handle, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION, nil, nil, updated, nil)
+}
+
+// Open every component without following reparse points and keep ancestor
+// handles open without FILE_SHARE_DELETE. The final handle, not its mutable
+// pathname, is the ACL authority used by Get/SetSecurityInfo.
+func openWindowsConfinementPath(path string, access uint32) (windows.Handle, func(), error) {
+	if err := validateWindowsKernelPath(path, false, false); err != nil {
+		return 0, nil, err
+	}
+	volume := filepath.VolumeName(path)
+	components := strings.Split(path[len(volume)+1:], `\`)
+	paths := make([]string, 0, len(components)+1)
+	current := volume + `\`
+	paths = append(paths, current)
+	for _, component := range components {
+		current = filepath.Join(current, component)
+		paths = append(paths, current)
+	}
+	handles := make([]windows.Handle, 0, len(paths))
+	closeAll := func() {
+		for index := len(handles) - 1; index >= 0; index-- {
+			_ = windows.CloseHandle(handles[index])
+		}
+	}
+	for index, name := range paths {
+		pointer, err := windows.UTF16PtrFromString(name)
+		if err != nil {
+			closeAll()
+			return 0, nil, err
+		}
+		rights := uint32(windows.FILE_READ_ATTRIBUTES)
+		if index == len(paths)-1 {
+			rights = access
+		}
+		handle, err := windows.CreateFile(pointer, rights, windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE,
+			nil, windows.OPEN_EXISTING, windows.FILE_FLAG_OPEN_REPARSE_POINT|windows.FILE_FLAG_BACKUP_SEMANTICS, 0)
+		if err != nil {
+			closeAll()
+			return 0, nil, err
+		}
+		handles = append(handles, handle)
+		var identity windows.ByHandleFileInformation
+		if err := windows.GetFileInformationByHandle(handle, &identity); err != nil ||
+			identity.FileAttributes&windows.FILE_ATTRIBUTE_REPARSE_POINT != 0 ||
+			(index < len(paths)-1 && identity.FileAttributes&windows.FILE_ATTRIBUTE_DIRECTORY == 0) {
+			closeAll()
+			return 0, nil, errWindowsConfinementPathReplaced
+		}
+	}
+	if err := validateWindowsKernelPath(path, true, false); err != nil {
+		if err := validateWindowsKernelPath(path, true, true); err != nil {
+			closeAll()
+			return 0, nil, err
+		}
+	}
+	return handles[len(handles)-1], closeAll, nil
 }

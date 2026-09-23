@@ -13,6 +13,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+var errWindowsConfinementPathReplaced = errors.New("Windows kernel confinement path changed")
+
 // The Windows command is a trusted launcher. The untrusted target is created
 // inside an AppContainer only after the launcher belongs to a kill-on-close
 // Job. Unsupported authority remains an error, never a direct worker launch.
@@ -24,7 +26,7 @@ func newConfinedWorkerCommandWithAuxiliary(workspaceDir, executable string, argu
 	if err := validateWindowsConfinementRequest(workspaceDir, executable, arguments, environment, mounts, protected, auxiliary); err != nil {
 		return nil, err
 	}
-	roots, files, writable := windowsWorkerAuthority(executable, arguments, environment, mounts)
+	roots, files, writable := windowsWorkerAuthority(mounts)
 	frozen := make([]windowsConfinementFrozenPath, 0, len(mounts))
 	for _, mount := range mounts {
 		if mount.frozen != nil {
@@ -91,6 +93,9 @@ func validateWindowsConfinementRequest(workspaceDir, executable string, argument
 		if err := validateWindowsKernelPath(mount.Path, true, mount.regular); err != nil {
 			return fmt.Errorf("kernel mount: %w", err)
 		}
+		if !mount.trusted {
+			return fmt.Errorf("%w: Windows external mounts require verified server authority", ErrConfinementUnavailable)
+		}
 		if mount.frozen != nil {
 			current, err := os.Stat(mount.Path)
 			frozen, frozenErr := mount.frozen.Stat()
@@ -109,6 +114,13 @@ func validateWindowsConfinementRequest(workspaceDir, executable string, argument
 		if windowsKernelPathsOverlap(mount.Path, executable) {
 			return errors.New("kernel mount overlaps the worker executable")
 		}
+		if mount.regular {
+			mountInfo, mountErr := os.Stat(mount.Path)
+			executableInfo, executableErr := os.Stat(executable)
+			if mountErr != nil || executableErr != nil || os.SameFile(mountInfo, executableInfo) {
+				return errors.New("kernel file mount is unavailable or aliases the executable")
+			}
+		}
 		for _, path := range protected {
 			if windowsKernelPathsOverlap(mount.Path, path) {
 				return errors.New("kernel mount overlaps a protected path")
@@ -121,35 +133,9 @@ func validateWindowsConfinementRequest(workspaceDir, executable string, argument
 	return nil
 }
 
-// The manager supplies the executable, worker script and verified runtime
-// mounts. Never infer authority from arbitrary absolute arguments: those may
-// contain user-supplied paths that the worker must not gain access to.
-func windowsWorkerAuthority(executable string, arguments, environment []string, mounts []WorkerMount) (roots, files, writable []string) {
-	for _, entry := range environment {
-		key, value, ok := strings.Cut(entry, "=")
-		if ok && strings.EqualFold(key, "CONDA_PREFIX") && windowsKernelPathContains(value, executable) {
-			roots = appendUniqueWindowsAuthorityPath(roots, value)
-		}
-	}
-	base := strings.ToLower(filepath.Base(executable))
-	if base == "python.exe" || base == "pythonw.exe" || base == "rscript.exe" {
-		// A system Python without CONDA_PREFIX still needs its standard
-		// library. Managed prefixes take precedence over this fallback.
-		if len(roots) == 0 {
-			root := filepath.Dir(executable)
-			if strings.EqualFold(filepath.Base(root), "Scripts") || strings.EqualFold(filepath.Base(root), "bin") {
-				root = filepath.Dir(root)
-			}
-			roots = appendUniqueWindowsAuthorityPath(roots, root)
-		}
-		for _, argument := range arguments {
-			name := strings.ToLower(filepath.Base(argument))
-			if name == "kernel_worker.py" || name == "kernel_worker.r" {
-				roots = appendUniqueWindowsAuthorityPath(roots, filepath.Dir(argument))
-				break
-			}
-		}
-	}
+// Only server-verified mounts carry authority. Worker arguments and its
+// environment can contain user-controlled paths and must never widen grants.
+func windowsWorkerAuthority(mounts []WorkerMount) (roots, files, writable []string) {
 	for _, mount := range mounts {
 		if mount.Writable {
 			writable = appendUniqueWindowsAuthorityPath(writable, mount.Path)
@@ -196,7 +182,7 @@ func validateWindowsKernelPath(path string, mustExist, regular bool) error {
 	for index, component := range components {
 		if component == "" || component == "." || component == ".." ||
 			strings.HasSuffix(component, ".") || strings.HasSuffix(component, " ") ||
-			strings.ContainsAny(component, "<>:\"|?*") {
+			strings.ContainsAny(component, "<>:\"|?*~") {
 			return errors.New("path contains an unsafe component")
 		}
 		current = filepath.Join(current, component)
@@ -212,7 +198,7 @@ func validateWindowsKernelPath(path string, mustExist, regular bool) error {
 			return errors.New("path component is unavailable")
 		}
 		if attributes&windows.FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-			return errors.New("path contains a reparse point")
+			return fmt.Errorf("%w: reparse point", errWindowsConfinementPathReplaced)
 		}
 		directory := attributes&windows.FILE_ATTRIBUTE_DIRECTORY != 0
 		if index < len(components)-1 && !directory {
@@ -220,6 +206,26 @@ func validateWindowsKernelPath(path string, mustExist, regular bool) error {
 		}
 		if index == len(components)-1 && directory == regular {
 			return errors.New("path has the wrong file type")
+		}
+	}
+	if mustExist {
+		name, err := windows.UTF16PtrFromString(path)
+		if err != nil {
+			return errors.New("path cannot be encoded")
+		}
+		buffer := make([]uint16, len(path)+32)
+		for {
+			n, err := windows.GetLongPathName(name, &buffer[0], uint32(len(buffer)))
+			if err != nil || n == 0 || n > 32767 {
+				return errors.New("path long-name identity is unavailable")
+			}
+			if int(n) < len(buffer) {
+				if !strings.EqualFold(filepath.Clean(windows.UTF16ToString(buffer[:n])), path) {
+					return fmt.Errorf("%w: alternate short name", errWindowsConfinementPathReplaced)
+				}
+				break
+			}
+			buffer = make([]uint16, n+1)
 		}
 	}
 	return nil

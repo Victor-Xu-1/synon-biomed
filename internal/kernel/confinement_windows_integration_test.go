@@ -438,3 +438,62 @@ func TestWindowsKernelAppContainerRecoversCrashedHost(t *testing.T) {
 		}
 	}
 }
+
+func TestWindowsKernelAppContainerQuarantinesReplacedWorkspace(t *testing.T) {
+	t.Setenv("SYNON_HOME", t.TempDir())
+	parent := t.TempDir()
+	workspace := filepath.Join(parent, "workspace")
+	if err := os.Mkdir(workspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	outside := t.TempDir()
+	sentinel := filepath.Join(outside, "must-not-change.txt")
+	if err := os.WriteFile(sentinel, []byte("outside"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	command, err := newWindowsConfinedCommand(workspace, os.Args[0], nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, err := windowsConfinedRequestFromCommand(command)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lease, err := prepareWindowsConfinedRequest(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = lease.journal.closeLock()
+		_ = recoverWindowsConfinementLeases()
+		_ = windows.FreeSid(lease.sid)
+	})
+	if err := lease.journal.closeLock(); err != nil {
+		t.Fatal(err)
+	}
+	moved := filepath.Join(parent, "moved-workspace")
+	if err := os.Rename(workspace, moved); err != nil {
+		t.Skipf("moving the abandoned workspace is unavailable: %v", err)
+	}
+	output, err := exec.Command("cmd.exe", "/c", "mklink", "/J", workspace, outside).CombinedOutput()
+	if err != nil {
+		t.Skipf("creating a user-owned directory junction is unavailable: %v output=%q", err, output)
+	}
+	defer os.Remove(workspace)
+	if err := recoverWindowsConfinementLeases(); err == nil || !strings.Contains(err.Error(), "quarantined") {
+		t.Fatalf("replaced workspace was not quarantined: %v", err)
+	}
+	if windowsTestPathHasSIDGrant(t, outside, lease.sid) || windowsTestPathHasSIDGrant(t, sentinel, lease.sid) {
+		t.Fatal("recovery followed the replacement junction into an unrelated target")
+	}
+	if raw, err := os.ReadFile(sentinel); err != nil || string(raw) != "outside" {
+		t.Fatalf("outside target changed: content=%q err=%v", raw, err)
+	}
+	quarantine := strings.TrimSuffix(lease.journal.receiptPath, ".json") + ".quarantine"
+	if _, err := os.Stat(quarantine); err != nil {
+		t.Fatalf("manual recovery receipt was not preserved: %v", err)
+	}
+	if err := recoverWindowsConfinementLeases(); err != nil {
+		t.Fatalf("quarantined receipt blocked future recovery: %v", err)
+	}
+}

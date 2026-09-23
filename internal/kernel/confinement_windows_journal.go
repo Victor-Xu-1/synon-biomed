@@ -168,6 +168,25 @@ func (journal *windowsConfinementJournal) finish() error {
 	return nil
 }
 
+// If an abandoned grant path has been replaced by a reparse point, the old
+// SID may remain on a moved inode. Retire the profile and preserve the receipt
+// for manual ACL reconciliation without following the new target or poisoning
+// every future worker startup.
+func (journal *windowsConfinementJournal) quarantine() error {
+	if journal == nil {
+		return nil
+	}
+	target := strings.TrimSuffix(journal.receiptPath, ".json") + ".quarantine"
+	if err := os.Rename(journal.receiptPath, target); err != nil {
+		_ = journal.closeLock()
+		return err
+	}
+	if err := journal.closeLock(); err != nil {
+		return err
+	}
+	return os.Remove(journal.lockPath)
+}
+
 func validateWindowsConfinementReceipt(receipt windowsConfinementReceipt) error {
 	if receipt.Version != windowsConfinementLeaseVersion ||
 		!strings.HasPrefix(receipt.ProfileName, "SynonWorker.") {
@@ -246,12 +265,15 @@ func recoverWindowsConfinementLeases() error {
 			failures = errors.Join(failures, err)
 			continue
 		}
+		quarantined := false
 		for _, grant := range windowsConfinementRequestGrants(&windowsConfinedRequest{
 			Workspace: receipt.Workspace, Executable: receipt.Executable,
 			ReadOnlyRoots: receipt.ReadOnlyRoots, ReadOnlyFiles: receipt.ReadOnlyFiles,
 			WritableFiles: receipt.WritableFiles,
 		}) {
-			if err := revokeWindowsConfinementGrant(grant, sid); err != nil {
+			if err := revokeWindowsConfinementGrant(grant, sid); errors.Is(err, errWindowsConfinementPathReplaced) {
+				quarantined = true
+			} else if err != nil {
 				entryFailure = errors.Join(entryFailure, err)
 			}
 		}
@@ -264,7 +286,13 @@ func recoverWindowsConfinementLeases() error {
 			failures = errors.Join(failures, entryFailure)
 			continue
 		}
-		if err := journal.finish(); err != nil {
+		if quarantined {
+			if err := journal.quarantine(); err != nil {
+				failures = errors.Join(failures, err)
+			} else {
+				failures = errors.Join(failures, errors.New("Windows kernel confinement path changed; inert ACL receipt quarantined for review"))
+			}
+		} else if err := journal.finish(); err != nil {
 			failures = errors.Join(failures, err)
 		}
 	}

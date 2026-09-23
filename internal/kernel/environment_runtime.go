@@ -212,7 +212,11 @@ func (m *Manager) sessionRuntimeWithMounts(spec SessionSpec) (string, []string, 
 				return "", nil, nil, nil, err
 			}
 		}
-		return python, pythonWorkerArguments(m.config.WorkerPath), m.runtimeEnvironmentAtPrefix(spec.Environment, "python", spec.WorkspaceDir, spec.KernelID, "", "", "", prefix), nil, nil
+		mounts, err := platformSessionRuntimeMounts(python, prefix, m.config.WorkerPath)
+		if err != nil {
+			return "", nil, nil, nil, err
+		}
+		return python, pythonWorkerArguments(m.config.WorkerPath), m.runtimeEnvironmentAtPrefix(spec.Environment, "python", spec.WorkspaceDir, spec.KernelID, "", "", "", prefix), mounts, nil
 	case "r":
 		worker := strings.TrimSpace(m.config.RWorkerPath)
 		if worker == "" {
@@ -232,13 +236,16 @@ func (m *Manager) sessionRuntimeWithMounts(spec SessionSpec) (string, []string, 
 		if err := m.validateSessionRuntimeGeneration(spec); err != nil {
 			return "", nil, nil, nil, err
 		}
+		mounts, err := platformSessionRuntimeMounts(rscript, prefix, worker)
+		if err != nil {
+			return "", nil, nil, nil, err
+		}
 		if len(m.config.RSharedPackages) > 0 {
 			repairContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			_ = m.repairRSharedLibrary(repairContext, rscript)
 			cancel()
 		}
 		opLogPath := ""
-		mounts := []WorkerMount{}
 		if !m.config.DisableROperationLog {
 			var opLogFile *os.File
 			opLogPath, opLogFile, err = m.ensureROperationLog(spec.Environment)

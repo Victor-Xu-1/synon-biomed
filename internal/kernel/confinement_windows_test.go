@@ -68,6 +68,7 @@ func TestWindowsConfinementRequestRejectsUnsafeAuthority(t *testing.T) {
 		{name: "invalid environment", workspace: workspace, executable: executable, environment: []string{"PATH=a\x00b"}},
 		{name: "workspace overlay", workspace: workspace, executable: executable, mounts: []WorkerMount{{Path: child}}},
 		{name: "protected mount", workspace: workspace, executable: executable, mounts: []WorkerMount{{Path: outside}}, protected: []string{outside}},
+		{name: "unverified read-only mount", workspace: workspace, executable: executable, mounts: []WorkerMount{{Path: outside}}},
 		{name: "trusted writable mount", workspace: workspace, executable: executable, mounts: []WorkerMount{{Path: outside, Writable: true, trusted: true}}},
 		{name: "auxiliary handle", workspace: workspace, executable: executable, auxiliary: []*os.File{os.Stdin}},
 	}
@@ -102,6 +103,90 @@ func TestWindowsConfinementRejectsReparsePoint(t *testing.T) {
 	}
 	if err := validateWindowsKernelPath(link, true, false); err == nil || !strings.Contains(err.Error(), "reparse") {
 		t.Fatalf("reparse workspace error=%v", err)
+	}
+}
+
+func TestWindowsConfinementRejectsShortNameAlias(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "Long Directory For Kernel Authority")
+	if err := os.Mkdir(path, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	pointer, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	buffer := make([]uint16, 32768)
+	n, err := windows.GetShortPathName(pointer, &buffer[0], uint32(len(buffer)))
+	if err != nil || n == 0 || int(n) >= len(buffer) {
+		t.Skipf("8.3 aliases are unavailable on this volume: %v", err)
+	}
+	alias := windows.UTF16ToString(buffer[:n])
+	if strings.EqualFold(alias, path) {
+		t.Skip("8.3 aliases are disabled for this directory")
+	}
+	if err := validateWindowsKernelPath(alias, true, false); err == nil {
+		t.Fatalf("short-name alias %q bypassed path validation", alias)
+	}
+}
+
+func TestWindowsConfinementRejectsHardlinkToExecutable(t *testing.T) {
+	root := t.TempDir()
+	executable := filepath.Join(root, "worker.exe")
+	alias := filepath.Join(root, "alias.exe")
+	if err := os.WriteFile(executable, []byte("fixture"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Link(executable, alias); err != nil {
+		t.Skipf("hardlinks are unavailable on this volume: %v", err)
+	}
+	workspace := t.TempDir()
+	err := validateWindowsConfinementRequest(workspace, executable, nil, nil,
+		[]WorkerMount{{Path: alias, regular: true, trusted: true}}, nil, nil)
+	if err == nil {
+		t.Fatal("hardlink alias to the worker executable was granted")
+	}
+}
+
+func TestWindowsConfinementACLHandleKeepsIdentityAfterRename(t *testing.T) {
+	parent := t.TempDir()
+	path := filepath.Join(parent, "authority")
+	moved := filepath.Join(parent, "moved")
+	if err := os.Mkdir(path, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	handle, release, err := openWindowsConfinementPath(path, windows.FILE_READ_ATTRIBUTES)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+	var original windows.ByHandleFileInformation
+	if err := windows.GetFileInformationByHandle(handle, &original); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(path, moved); err != nil {
+		t.Skipf("rename while a directory handle is open is unavailable: %v", err)
+	}
+	if err := os.Mkdir(path, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	replacement, closeReplacement, err := openWindowsConfinementPath(path, windows.FILE_READ_ATTRIBUTES)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeReplacement()
+	var replacementID windows.ByHandleFileInformation
+	if err := windows.GetFileInformationByHandle(replacement, &replacementID); err != nil {
+		t.Fatal(err)
+	}
+	if original.VolumeSerialNumber == replacementID.VolumeSerialNumber &&
+		original.FileIndexHigh == replacementID.FileIndexHigh && original.FileIndexLow == replacementID.FileIndexLow {
+		t.Fatal("new path silently replaced the ACL target handle")
+	}
+	var after windows.ByHandleFileInformation
+	if err := windows.GetFileInformationByHandle(handle, &after); err != nil ||
+		original.VolumeSerialNumber != after.VolumeSerialNumber || original.FileIndexHigh != after.FileIndexHigh ||
+		original.FileIndexLow != after.FileIndexLow {
+		t.Fatalf("ACL target handle lost its original file identity: %v", err)
 	}
 }
 
@@ -161,32 +246,47 @@ func TestWindowsFrozenMountsUseExactPathIdentity(t *testing.T) {
 	}
 }
 
-func TestWindowsWorkerAuthorityDoesNotGrantArbitraryArguments(t *testing.T) {
+func TestWindowsWorkerAuthorityUsesOnlyVerifiedMounts(t *testing.T) {
 	root := t.TempDir()
-	executable := filepath.Join(root, "python.exe")
 	assets := filepath.Join(t.TempDir(), "kernels")
-	secret := filepath.Join(t.TempDir(), "private.txt")
 	shared := t.TempDir()
 	oplog := filepath.Join(t.TempDir(), "operation.jsonl")
-	roots, files, writable := windowsWorkerAuthority(executable,
-		[]string{filepath.Join(assets, "kernel_worker.py"), secret},
-		[]string{"CONDA_PREFIX=" + root}, []WorkerMount{
-			{Path: shared, trusted: true},
-			{Path: oplog, Writable: true, regular: true, trusted: true},
-		})
+	roots, files, writable := windowsWorkerAuthority([]WorkerMount{
+		TrustedReadOnlyDirectoryMount(root),
+		TrustedReadOnlyDirectoryMount(assets),
+		{Path: shared, trusted: true},
+		{Path: oplog, Writable: true, regular: true, trusted: true},
+	})
 	if len(roots) != 3 || len(files) != 0 || len(writable) != 1 ||
 		writable[0] != oplog {
 		t.Fatalf("unexpected worker authority: roots=%q files=%q writable=%q", roots, files, writable)
 	}
-	for _, path := range append(append([]string(nil), roots...), append(files, writable...)...) {
-		if path == secret {
-			t.Fatal("untrusted argument was granted filesystem authority")
+	roots, _, _ = windowsWorkerAuthority(nil)
+	if len(roots) != 0 {
+		t.Fatalf("implicit authority was granted without verified mounts: %q", roots)
+	}
+}
+
+func TestWindowsSessionRuntimeMountsRequireVerifiedExecutableAndWorker(t *testing.T) {
+	runtimeRoot := t.TempDir()
+	python := filepath.Join(runtimeRoot, "python.exe")
+	assets := t.TempDir()
+	worker := filepath.Join(assets, "kernel_worker.py")
+	for _, path := range []string{python, worker} {
+		if err := os.WriteFile(path, []byte("fixture"), 0o600); err != nil {
+			t.Fatal(err)
 		}
 	}
-	outside := t.TempDir()
-	roots, _, _ = windowsWorkerAuthority(executable, nil, []string{"CONDA_PREFIX=" + outside}, nil)
-	if len(roots) != 1 || roots[0] != filepath.Dir(executable) {
-		t.Fatalf("unrelated CONDA_PREFIX gained authority: %q", roots)
+	mounts, err := platformSessionRuntimeMounts(python, runtimeRoot, worker)
+	if err != nil || len(mounts) != 2 || !mounts[0].IsTrustedReadOnlyDirectory() ||
+		!mounts[1].IsTrustedReadOnlyDirectory() || mounts[0].Path != runtimeRoot || mounts[1].Path != assets {
+		t.Fatalf("runtime authority was not explicit: mounts=%+v err=%v", mounts, err)
+	}
+	if _, err := platformSessionRuntimeMounts(python, t.TempDir(), worker); err == nil {
+		t.Fatal("executable outside selected runtime was accepted")
+	}
+	if _, err := platformSessionRuntimeMounts(python, runtimeRoot, filepath.Join(t.TempDir(), "kernel_worker.py")); err == nil {
+		t.Fatal("missing worker asset was accepted")
 	}
 }
 

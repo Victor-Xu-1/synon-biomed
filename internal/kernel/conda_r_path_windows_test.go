@@ -69,14 +69,7 @@ func TestWindowsManagedRGenerationCollisionPreservesOriginal(t *testing.T) {
 }
 
 func TestWindowsManagedRActiveGenerationReturnsFullIdentity(t *testing.T) {
-	assetRoot := strings.TrimSpace(os.Getenv("SYNON_TEST_NATIVE_ASSET_ROOT"))
-	if assetRoot == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			t.Fatal(err)
-		}
-		assetRoot = filepath.Join(cwd, "..", "..", "assets", "optional")
-	}
+	assetRoot := windowsManagedRTestAssetRoot(t)
 	config := Config{
 		AssetRoot:           assetRoot,
 		CondaRuntimeCatalog: filepath.Join(assetRoot, "conda-runtimes", "windows-x86_64", "manifest.json"),
@@ -111,6 +104,46 @@ func TestWindowsManagedRActiveGenerationReturnsFullIdentity(t *testing.T) {
 	if got != runtime.activationGeneration || len(got) != 64 {
 		t.Fatalf("active R generation=%q want full SHA-256 %q", got, runtime.activationGeneration)
 	}
+}
+
+// A compiled test executable may run from outside the checkout. In that case
+// the caller supplies the clean-clone asset root explicitly; ordinary go test
+// discovers it by walking upward from the package working directory.
+func windowsManagedRTestAssetRoot(t *testing.T) string {
+	t.Helper()
+	validate := func(root string) bool {
+		for _, path := range []string{
+			filepath.Join(root, "conda-runtimes", "windows-x86_64", "manifest.json"),
+			filepath.Join(root, "kernel-compute.manifest.json"),
+		} {
+			info, err := os.Stat(path)
+			if err != nil || !info.Mode().IsRegular() {
+				return false
+			}
+		}
+		return true
+	}
+	if configured := strings.TrimSpace(os.Getenv("SYNON_TEST_NATIVE_ASSET_ROOT")); configured != "" {
+		if !filepath.IsAbs(configured) || !validate(configured) {
+			t.Fatalf("SYNON_TEST_NATIVE_ASSET_ROOT is not an absolute checked-out asset directory: %q", configured)
+		}
+		return configured
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for directory := cwd; ; directory = filepath.Dir(directory) {
+		candidate := filepath.Join(directory, "assets", "optional")
+		if validate(candidate) {
+			return candidate
+		}
+		if parent := filepath.Dir(directory); parent == directory {
+			break
+		}
+	}
+	t.Fatal("cannot locate checked-out Windows runtime assets; set SYNON_TEST_NATIVE_ASSET_ROOT for a standalone test binary")
+	return ""
 }
 
 // This opt-in test requires a caller-owned, absent state root with roughly the

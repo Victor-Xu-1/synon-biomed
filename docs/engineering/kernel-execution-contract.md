@@ -65,6 +65,22 @@ backend are Linux-only; native macOS kernel confinement alone would not
 establish parity for their durable background-execution semantics. The native
 in-process manager is a separate path.
 
+On native Windows, the confinement probe also remains unavailable. An
+AppContainer launcher has been exercised with a local test executable: the
+target starts with a restricted token inside a kill-on-close Job, passes
+explicit stdin/stdout/stderr handles, writes only its temporary workspace,
+reads a separately granted temporary read-only tree, and cannot read an
+ungranted private file or connect directly to a local TCP listener. A
+server-owned lease receipt supports revoking temporary ACLs and deleting the
+profile after normal exit, cancellation, or a crashed host. These tests do
+not establish a complete managed Python/R runtime boundary. The launcher is
+not admitted by the kernel manager until verified runtime generations,
+dynamic mounts and protected paths, auxiliary provider channels, and an
+approved-egress broker have equivalent enforcement and native tests. No
+network request is silently allowed or dropped: without a broker, an
+approved-egress request fails closed. Managed environment installation and
+native kernel execution remain separate readiness facts.
+
 See the public [Linux seccomp interface](https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html)
 and [Python signal semantics](https://docs.python.org/3/library/signal.html).
 These describe platform APIs, not an imported execution implementation.

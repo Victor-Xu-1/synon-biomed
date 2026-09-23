@@ -17,6 +17,7 @@ func TestWorkerProcessContextCancellationDuringWindowsLaunch(t *testing.T) {
 	}
 	for attempt := 0; attempt < 16; attempt++ {
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 		command := newWorkerProcessCommand(ctx, os.Args[0], "-test.run=^TestWorkerProcessContextCancellationDuringWindowsLaunch$")
 		command.Env = append(os.Environ(), "SYNON_KERNEL_CANCEL_LAUNCH_HELPER=1")
 		cancelled := make(chan struct{})

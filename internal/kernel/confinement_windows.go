@@ -13,12 +13,9 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// Windows process supervision is not a filesystem or network sandbox. Until
-// the worker launcher can create an AppContainer process with security
-// capabilities before its first instruction, this entry point must not return
-// an executable command. Keep the request checks here so a future launcher
-// cannot silently accept path or handle authority that its policy cannot
-// represent.
+// The Windows command is a trusted launcher. The untrusted target is created
+// inside an AppContainer only after the launcher belongs to a kill-on-close
+// Job. Unsupported authority remains an error, never a direct worker launch.
 func newConfinedWorkerCommand(workspaceDir, executable string, arguments, environment []string, mounts []WorkerMount, protected []string) (*exec.Cmd, error) {
 	return newConfinedWorkerCommandWithAuxiliary(workspaceDir, executable, arguments, environment, mounts, protected, nil)
 }
@@ -27,7 +24,10 @@ func newConfinedWorkerCommandWithAuxiliary(workspaceDir, executable string, argu
 	if err := validateWindowsConfinementRequest(workspaceDir, executable, arguments, environment, mounts, protected, auxiliary); err != nil {
 		return nil, err
 	}
-	return nil, fmt.Errorf("%w: native Windows worker identity, filesystem, and network boundaries are not installed", ErrConfinementUnavailable)
+	if !platformConfinementEvidence().Available {
+		return nil, fmt.Errorf("%w: Windows managed runtime and recovery boundaries are not verified", ErrConfinementUnavailable)
+	}
+	return newWindowsConfinedCommand(workspaceDir, executable, arguments, environment, nil)
 }
 
 func validateWindowsConfinementRequest(workspaceDir, executable string, arguments, environment []string, mounts []WorkerMount, protected []string, auxiliary []*os.File) error {
@@ -86,6 +86,9 @@ func validateWindowsConfinementRequest(workspaceDir, executable string, argument
 				return errors.New("kernel mount overlaps a protected path")
 			}
 		}
+	}
+	if len(mounts) != 0 || len(protected) != 0 {
+		return fmt.Errorf("%w: Windows worker mounts and protected paths are not yet represented by AppContainer grants", ErrConfinementUnavailable)
 	}
 	return nil
 }
@@ -153,7 +156,13 @@ func platformConfinementEvidence() ConfinementEvidence {
 }
 
 func probePlatformConfinement() ConfinementEvidence {
-	// Do not infer confinement from a successful Job Object assignment. That
-	// proves process-tree ownership, not restricted identity or denied I/O.
+	if err := recoverWindowsConfinementLeases(); err != nil {
+		return ConfinementEvidence{
+			Available: false, Mode: "unavailable", Reason: "Windows kernel confinement recovery failed",
+		}
+	}
+	// Do not infer confinement from a successful Job Object assignment or a
+	// system helper probe. Managed runtime, mount and broker contracts remain
+	// unavailable until verified end to end.
 	return platformConfinementEvidence()
 }

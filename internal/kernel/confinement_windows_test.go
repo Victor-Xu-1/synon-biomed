@@ -10,15 +10,34 @@ import (
 	"testing"
 )
 
-func TestWindowsKernelConfinementRemainsClosedWithoutNativeBoundary(t *testing.T) {
+func TestWindowsKernelConfinementIsNotAdvertisedBeforeFullBoundary(t *testing.T) {
+	t.Setenv("SYNON_HOME", t.TempDir())
 	workspace := t.TempDir()
 	executable := windowsConfinementTestExecutable(t)
 	command, err := newConfinedWorkerCommand(workspace, executable, nil, nil, nil, nil)
 	if command != nil || !errors.Is(err, ErrConfinementUnavailable) {
-		t.Fatalf("unconfined worker command=%v error=%v", command, err)
+		t.Fatalf("unverified kernel worker must remain closed: command=%v error=%v", command, err)
 	}
 	if evidence := probePlatformConfinement(); evidence.Available || evidence.PolicySHA256 != "" {
 		t.Fatalf("Job Object supervision cannot prove Windows confinement: %+v", evidence)
+	}
+}
+
+func TestWindowsRequestedKernelEgressFailsWithoutBroker(t *testing.T) {
+	for _, fixture := range []struct {
+		name     string
+		allowed  []string
+		upstream string
+	}{
+		{name: "approved domain", allowed: []string{"example.com"}},
+		{name: "upstream proxy", upstream: "https://proxy.example.com"},
+	} {
+		t.Run(fixture.name, func(t *testing.T) {
+			proxy, err := startKernelEgressProxy(t.TempDir(), "windows-egress", fixture.allowed, nil, fixture.upstream)
+			if proxy != nil || !errors.Is(err, ErrConfinementUnavailable) {
+				t.Fatalf("requested egress must fail without a broker: proxy=%v err=%v", proxy, err)
+			}
+		})
 	}
 }
 
@@ -90,5 +109,13 @@ func TestWindowsConfinementOverlapUsesCaseInsensitiveBoundaries(t *testing.T) {
 	}
 	if windowsKernelPathsOverlap(`C:\Workspace-other`, `c:\workspace`) {
 		t.Fatal("sibling path was classified as an overlap")
+	}
+}
+
+func TestWindowsConfinementGrantsDoNotWidenExecutableParent(t *testing.T) {
+	executable := `C:\Program Files\Synon\synon.exe`
+	grants := windowsConfinementGrants(executable, `C:\SynonWork\task`, nil)
+	if len(grants) != 2 || grants[0].path != executable || grants[1].path != `C:\SynonWork\task` {
+		t.Fatalf("unexpected AppContainer grants: %+v", grants)
 	}
 }

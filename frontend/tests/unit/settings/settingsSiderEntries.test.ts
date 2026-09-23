@@ -26,14 +26,14 @@ const settingsDir = fileURLToPath(new URL('../../../packages/desktop/src/rendere
 const read = (relative: string): string => readFileSync(path.join(settingsDir, relative), 'utf8');
 const readLocale = (language: string): Record<string, unknown> =>
   JSON.parse(
-    readFileSync(path.join(settingsDir, `../services/i18n/locales/${language}/settings.json`), 'utf8')
+    readFileSync(path.join(settingsDir, `../../services/i18n/locales/${language}/settings.json`), 'utf8')
   ) as Record<string, unknown>;
 
 const siderSource = read('components/SettingsSider.tsx');
 const wrapperSource = read('components/SettingsPageWrapper.tsx');
 const routeLoadersSource = read('settingsRouteLoaders.ts');
 const libraryPageSource = read('LibrarySettingsPage.tsx');
-const i18nKeys = readFileSync(path.join(settingsDir, '../services/i18n/i18n-keys.d.ts'), 'utf8');
+const i18nKeys = readFileSync(path.join(settingsDir, '../../services/i18n/i18n-keys.d.ts'), 'utf8');
 
 const LIBRARY_ROUTES = ['experts', 'skills', 'tools', 'environments'] as const;
 const UNCHANGED_ROUTES = ['models', 'compute', 'governance', 'network', 'credentials', 'storage', 'general'] as const;

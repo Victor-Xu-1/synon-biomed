@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
@@ -62,6 +63,9 @@ func runWindowsConfinedHelper(request *windowsConfinedRequest) (uint32, error) {
 	if err := validateWindowsConfinementRequest(
 		request.Workspace, request.Executable, request.Arguments, request.Environment, nil, nil, nil,
 	); err != nil {
+		return 0, err
+	}
+	if err := verifyWindowsConfinementAuthorityBindings(request); err != nil {
 		return 0, err
 	}
 	sid, err := deriveWindowsAppContainerSID(request.ProfileName)
@@ -145,6 +149,12 @@ func runWindowsConfinedHelper(request *windowsConfinedRequest) (uint32, error) {
 	if inJob, err := windowsProcessInJob(process.Process); err != nil || !inJob {
 		return 0, fmt.Errorf("%w: AppContainer worker is outside the process Job", ErrConfinementUnavailable)
 	}
+	if err := verifyWindowsConfinementAuthorityBindings(request); err != nil {
+		return 0, fmt.Errorf("%w: worker authority changed before resume: %v", ErrConfinementUnavailable, err)
+	}
+	if err := verifyWindowsSuspendedWorkerImage(process.Process, request.Authority[0]); err != nil {
+		return 0, err
+	}
 	previousSuspendCount, err := windows.ResumeThread(process.Thread)
 	if err != nil {
 		return 0, fmt.Errorf("resume AppContainer kernel worker: %w", err)
@@ -165,6 +175,23 @@ func runWindowsConfinedHelper(request *windowsConfinedRequest) (uint32, error) {
 		return 0, err
 	}
 	return exitCode, nil
+}
+
+func verifyWindowsSuspendedWorkerImage(process windows.Handle, expected windowsConfinementFrozenPath) error {
+	buffer := make([]uint16, 32768)
+	size := uint32(len(buffer))
+	if err := windows.QueryFullProcessImageName(process, 0, &buffer[0], &size); err != nil {
+		return fmt.Errorf("%w: suspended worker image is unavailable: %v", ErrConfinementUnavailable, err)
+	}
+	path := strings.TrimPrefix(windows.UTF16ToString(buffer[:size]), `\\?\`)
+	if !strings.EqualFold(filepath.Clean(path), expected.Path) {
+		return fmt.Errorf("%w: suspended worker image path changed", ErrConfinementUnavailable)
+	}
+	actual, err := windowsConfinementPathIdentity(path)
+	if err != nil || !sameWindowsConfinementIdentity(expected, actual) {
+		return fmt.Errorf("%w: suspended worker image identity changed", ErrConfinementUnavailable)
+	}
+	return nil
 }
 
 func duplicateWindowsInheritedHandle(original windows.Handle) (windows.Handle, error) {

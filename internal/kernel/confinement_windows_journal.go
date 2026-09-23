@@ -18,7 +18,7 @@ import (
 const (
 	windowsConfinementLeaseDirectory = "kernel-appcontainer-leases"
 	windowsConfinementLeaseVersion   = 1
-	maxWindowsConfinementLeaseBytes  = 4096
+	maxWindowsConfinementLeaseBytes  = 20 << 10
 )
 
 type windowsConfinementReceipt struct {
@@ -30,6 +30,7 @@ type windowsConfinementReceipt struct {
 	ReadOnlyFiles []string                       `json:"read_only_files,omitempty"`
 	WritableFiles []string                       `json:"writable_files,omitempty"`
 	Frozen        []windowsConfinementFrozenPath `json:"frozen,omitempty"`
+	Authority     []windowsConfinementFrozenPath `json:"authority,omitempty"`
 }
 
 type windowsConfinementJournal struct {
@@ -77,6 +78,7 @@ func newWindowsConfinementJournal(request *windowsConfinedRequest) (_ *windowsCo
 		ReadOnlyFiles: append([]string(nil), request.ReadOnlyFiles...),
 		WritableFiles: append([]string(nil), request.WritableFiles...),
 		Frozen:        append([]windowsConfinementFrozenPath(nil), request.Frozen...),
+		Authority:     append([]windowsConfinementFrozenPath(nil), request.Authority...),
 	}
 	if err := validateWindowsConfinementReceipt(receipt); err != nil {
 		return nil, err
@@ -201,11 +203,18 @@ func validateWindowsConfinementReceipt(receipt windowsConfinementReceipt) error 
 	if err := validateWindowsKernelPath(receipt.Executable, false, true); err != nil {
 		return err
 	}
-	return validateWindowsConfinementAuthorityAt(&windowsConfinedRequest{
+	request := &windowsConfinedRequest{
 		Workspace: receipt.Workspace, Executable: receipt.Executable,
 		ReadOnlyRoots: receipt.ReadOnlyRoots, ReadOnlyFiles: receipt.ReadOnlyFiles,
-		WritableFiles: receipt.WritableFiles, Frozen: receipt.Frozen,
-	}, false)
+		WritableFiles: receipt.WritableFiles, Frozen: receipt.Frozen, Authority: receipt.Authority,
+	}
+	if err := validateWindowsConfinementAuthorityAt(request, false); err != nil {
+		return err
+	}
+	if len(request.Authority) != 0 {
+		return validateWindowsConfinementAuthorityBindings(request)
+	}
+	return nil
 }
 
 // Recovery only reclaims a receipt after its owner has lost the exclusive
@@ -269,7 +278,7 @@ func recoverWindowsConfinementLeases() error {
 		for _, grant := range windowsConfinementRequestGrants(&windowsConfinedRequest{
 			Workspace: receipt.Workspace, Executable: receipt.Executable,
 			ReadOnlyRoots: receipt.ReadOnlyRoots, ReadOnlyFiles: receipt.ReadOnlyFiles,
-			WritableFiles: receipt.WritableFiles,
+			WritableFiles: receipt.WritableFiles, Authority: receipt.Authority,
 		}) {
 			if err := revokeWindowsConfinementGrant(grant, sid); errors.Is(err, errWindowsConfinementPathReplaced) {
 				quarantined = true

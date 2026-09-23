@@ -38,6 +38,7 @@ type windowsConfinedRequest struct {
 	ReadOnlyFiles []string                       `json:"read_only_files,omitempty"`
 	WritableFiles []string                       `json:"writable_files,omitempty"`
 	Frozen        []windowsConfinementFrozenPath `json:"frozen,omitempty"`
+	Authority     []windowsConfinementFrozenPath `json:"authority"`
 }
 
 type windowsConfinementFrozenPath struct {
@@ -87,6 +88,16 @@ func newWindowsConfinedCommandWithFrozenAuthority(workspace, executable string, 
 		Frozen:        append([]windowsConfinementFrozenPath(nil), frozen...),
 	}
 	if err := validateWindowsConfinementAuthority(&request); err != nil {
+		return nil, err
+	}
+	for _, grant := range windowsConfinementRequestGrants(&request) {
+		identity, err := windowsConfinementPathIdentity(grant.path)
+		if err != nil {
+			return nil, fmt.Errorf("bind Windows kernel authority: %w", err)
+		}
+		request.Authority = append(request.Authority, identity)
+	}
+	if err := validateWindowsConfinementAuthorityBindings(&request); err != nil {
 		return nil, err
 	}
 	encoded, err := json.Marshal(request)
@@ -165,6 +176,9 @@ func decodeWindowsConfinedRequest(payload string) (*windowsConfinedRequest, erro
 	if err := validateWindowsConfinementAuthority(request); err != nil {
 		return nil, err
 	}
+	if err := validateWindowsConfinementAuthorityBindings(request); err != nil {
+		return nil, err
+	}
 	return request, nil
 }
 
@@ -234,6 +248,67 @@ func validateWindowsConfinementAuthorityAt(request *windowsConfinedRequest, must
 			return errors.New("Windows kernel frozen path is duplicated")
 		}
 		frozenSeen[key] = struct{}{}
+	}
+	return nil
+}
+
+func validateWindowsConfinementAuthorityBindings(request *windowsConfinedRequest) error {
+	grants := windowsConfinementRequestGrants(request)
+	if len(request.Authority) != len(grants) {
+		return errors.New("Windows kernel authority identities are incomplete")
+	}
+	for index, grant := range grants {
+		if !strings.EqualFold(request.Authority[index].Path, grant.path) {
+			return errors.New("Windows kernel authority identity path is invalid")
+		}
+	}
+	for _, frozen := range request.Frozen {
+		found := false
+		for _, authority := range request.Authority {
+			if strings.EqualFold(frozen.Path, authority.Path) {
+				if !sameWindowsConfinementIdentity(frozen, authority) {
+					return errors.New("Windows kernel frozen mount differs from bound authority")
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New("Windows kernel frozen mount has no bound authority")
+		}
+	}
+	return nil
+}
+
+func sameWindowsConfinementIdentity(left, right windowsConfinementFrozenPath) bool {
+	return left.Volume == right.Volume && left.IndexHigh == right.IndexHigh && left.IndexLow == right.IndexLow
+}
+
+func windowsConfinementPathIdentity(path string) (windowsConfinementFrozenPath, error) {
+	handle, release, err := openWindowsConfinementPath(path, windows.FILE_READ_ATTRIBUTES)
+	if err != nil {
+		return windowsConfinementFrozenPath{}, err
+	}
+	defer release()
+	var identity windows.ByHandleFileInformation
+	if err := windows.GetFileInformationByHandle(handle, &identity); err != nil {
+		return windowsConfinementFrozenPath{}, err
+	}
+	return windowsConfinementFrozenPath{
+		Path: path, Volume: identity.VolumeSerialNumber,
+		IndexHigh: identity.FileIndexHigh, IndexLow: identity.FileIndexLow,
+	}, nil
+}
+
+func verifyWindowsConfinementAuthorityBindings(request *windowsConfinedRequest) error {
+	if err := validateWindowsConfinementAuthorityBindings(request); err != nil {
+		return err
+	}
+	for _, expected := range request.Authority {
+		actual, err := windowsConfinementPathIdentity(expected.Path)
+		if err != nil || !sameWindowsConfinementIdentity(expected, actual) {
+			return fmt.Errorf("%w: bound authority was replaced", errWindowsConfinementPathReplaced)
+		}
 	}
 	return nil
 }

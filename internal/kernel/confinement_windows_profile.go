@@ -21,14 +21,14 @@ var windowsDeriveAppContainerSID = windowsAppContainerUserenv.NewProc("DeriveApp
 var windowsConfinementACLMu sync.Mutex
 
 type windowsConfinementLease struct {
-	name           string
-	sid            *windows.SID
-	profileCreated bool
-	granted        []windowsConfinementGrant
-	frozenHandles  []windows.Handle
-	journal        *windowsConfinementJournal
-	once           sync.Once
-	err            error
+	name             string
+	sid              *windows.SID
+	profileCreated   bool
+	granted          []windowsConfinementGrant
+	authorityHandles []windows.Handle
+	journal          *windowsConfinementJournal
+	once             sync.Once
+	err              error
 }
 
 func prepareWindowsConfinedRequest(request *windowsConfinedRequest) (_ *windowsConfinementLease, err error) {
@@ -41,6 +41,9 @@ func prepareWindowsConfinedRequest(request *windowsConfinedRequest) (_ *windowsC
 		return nil, err
 	}
 	if err := validateWindowsConfinementAuthority(request); err != nil {
+		return nil, err
+	}
+	if err := verifyWindowsConfinementAuthorityBindings(request); err != nil {
 		return nil, err
 	}
 	journalPath := filepath.Join(managedRuntimeStateHome(), windowsConfinementLeaseDirectory)
@@ -60,12 +63,12 @@ func prepareWindowsConfinedRequest(request *windowsConfinedRequest) (_ *windowsC
 			err = errors.Join(err, lease.close())
 		}
 	}()
-	for _, frozen := range request.Frozen {
-		handle, err := openWindowsFrozenAuthorityPath(frozen)
+	for _, expected := range request.Authority {
+		handle, err := openWindowsFrozenAuthorityPath(expected)
 		if err != nil {
-			return nil, fmt.Errorf("freeze Windows kernel mount: %w", err)
+			return nil, fmt.Errorf("pin Windows kernel authority: %w", err)
 		}
-		lease.frozenHandles = append(lease.frozenHandles, handle)
+		lease.authorityHandles = append(lease.authorityHandles, handle)
 	}
 	sid, err := createWindowsAppContainerProfile(request.ProfileName)
 	if err != nil {
@@ -80,6 +83,9 @@ func prepareWindowsConfinedRequest(request *windowsConfinedRequest) (_ *windowsC
 		if err := applyWindowsConfinementGrant(grant, sid); err != nil {
 			return nil, fmt.Errorf("grant Windows kernel confinement path: %w", err)
 		}
+	}
+	if err := verifyWindowsConfinementAuthorityBindings(request); err != nil {
+		return nil, err
 	}
 	return lease, nil
 }
@@ -104,9 +110,7 @@ func (lease *windowsConfinementLease) close() error {
 				lease.err = errors.Join(lease.err, err)
 			}
 		}
-		for _, handle := range lease.frozenHandles {
-			lease.err = errors.Join(lease.err, windows.CloseHandle(handle))
-		}
+		lease.err = errors.Join(lease.err, lease.releaseAuthorityHandles())
 		if lease.journal != nil {
 			if lease.err == nil {
 				lease.err = lease.journal.finish()
@@ -116,6 +120,18 @@ func (lease *windowsConfinementLease) close() error {
 		}
 	})
 	return lease.err
+}
+
+func (lease *windowsConfinementLease) releaseAuthorityHandles() error {
+	if lease == nil {
+		return nil
+	}
+	var failure error
+	for _, handle := range lease.authorityHandles {
+		failure = errors.Join(failure, windows.CloseHandle(handle))
+	}
+	lease.authorityHandles = nil
+	return failure
 }
 
 func openWindowsFrozenAuthorityPath(frozen windowsConfinementFrozenPath) (windows.Handle, error) {
@@ -149,13 +165,14 @@ type windowsConfinementGrant struct {
 	permissions windows.ACCESS_MASK
 	inheritance uint32
 	regular     bool
+	expected    *windowsConfinementFrozenPath
 }
 
 func windowsConfinementGrants(executable, workspace string, readOnlyRoots []string) []windowsConfinementGrant {
 	grants := []windowsConfinementGrant{
 		{path: executable, permissions: windows.FILE_GENERIC_READ | windows.FILE_GENERIC_EXECUTE, inheritance: windows.NO_INHERITANCE, regular: true},
-		{workspace, windows.FILE_GENERIC_READ | windows.FILE_GENERIC_WRITE | windows.FILE_GENERIC_EXECUTE | windows.DELETE,
-			windows.SUB_CONTAINERS_AND_OBJECTS_INHERIT, false},
+		{path: workspace, permissions: windows.FILE_GENERIC_READ | windows.FILE_GENERIC_WRITE | windows.FILE_GENERIC_EXECUTE | windows.DELETE,
+			inheritance: windows.SUB_CONTAINERS_AND_OBJECTS_INHERIT},
 	}
 	for _, root := range readOnlyRoots {
 		grants = append(grants, windowsConfinementGrant{
@@ -178,16 +195,22 @@ func windowsConfinementRequestGrants(request *windowsConfinedRequest) []windowsC
 			path: path, permissions: windows.FILE_GENERIC_READ | windows.FILE_GENERIC_WRITE, regular: true,
 		})
 	}
+	if len(request.Authority) == len(grants) {
+		for index := range grants {
+			identity := request.Authority[index]
+			grants[index].expected = &identity
+		}
+	}
 	return grants
 }
 
 func applyWindowsConfinementGrant(grant windowsConfinementGrant, sid *windows.SID) error {
-	return walkWindowsConfinementGrant(grant, func(path string, directory bool) error {
+	return walkWindowsConfinementGrant(grant, func(handle windows.Handle, _ string, directory bool) error {
 		inheritance := uint32(windows.NO_INHERITANCE)
 		if directory {
 			inheritance = grant.inheritance
 		}
-		return grantWindowsAppContainerPath(path, sid, grant.permissions, inheritance)
+		return changeWindowsAppContainerHandle(handle, sid, grant.permissions, windows.GRANT_ACCESS, inheritance)
 	})
 }
 
@@ -197,18 +220,18 @@ func revokeWindowsConfinementGrant(grant windowsConfinementGrant, sid *windows.S
 	} else if err != nil {
 		return err
 	}
-	return walkWindowsConfinementGrant(grant, func(path string, _ bool) error {
-		return revokeWindowsAppContainerPath(path, sid)
+	return walkWindowsConfinementGrant(grant, func(handle windows.Handle, _ string, _ bool) error {
+		return changeWindowsAppContainerHandle(handle, sid, 0, windows.REVOKE_ACCESS, windows.NO_INHERITANCE)
 	})
 }
 
 // An inheritable ACE covers only future children. Explicitly visit existing
 // runtime files and directories, including modules installed before launch.
 // Reject reparse points rather than crossing out of the granted tree.
-func walkWindowsConfinementGrant(grant windowsConfinementGrant, visit func(string, bool) error) error {
+func walkWindowsConfinementGrant(grant windowsConfinementGrant, visit func(windows.Handle, string, bool) error) error {
 	var walk func(string, bool) error
 	walk = func(path string, directory bool) error {
-		handle, release, err := openWindowsConfinementPath(path, windows.FILE_READ_ATTRIBUTES)
+		handle, release, err := openWindowsConfinementPath(path, windows.FILE_READ_ATTRIBUTES|windows.READ_CONTROL|windows.WRITE_DAC)
 		if err != nil {
 			return err
 		}
@@ -218,7 +241,12 @@ func walkWindowsConfinementGrant(grant windowsConfinementGrant, visit func(strin
 			(directory != (identity.FileAttributes&windows.FILE_ATTRIBUTE_DIRECTORY != 0)) {
 			return errors.New("Windows kernel confinement grant type changed")
 		}
-		if err := visit(path, directory); err != nil {
+		if path == grant.path && grant.expected != nil &&
+			(identity.VolumeSerialNumber != grant.expected.Volume || identity.FileIndexHigh != grant.expected.IndexHigh ||
+				identity.FileIndexLow != grant.expected.IndexLow) {
+			return errWindowsConfinementPathReplaced
+		}
+		if err := visit(handle, path, directory); err != nil {
 			return err
 		}
 		if !directory {
@@ -283,25 +311,12 @@ func deleteWindowsAppContainerProfile(name string) error {
 	return nil
 }
 
-func grantWindowsAppContainerPath(path string, sid *windows.SID, permissions windows.ACCESS_MASK, inheritance uint32) error {
-	return changeWindowsAppContainerPath(path, sid, permissions, windows.GRANT_ACCESS, inheritance)
-}
-
-func revokeWindowsAppContainerPath(path string, sid *windows.SID) error {
-	return changeWindowsAppContainerPath(path, sid, 0, windows.REVOKE_ACCESS, windows.NO_INHERITANCE)
-}
-
-func changeWindowsAppContainerPath(path string, sid *windows.SID, permissions windows.ACCESS_MASK, mode windows.ACCESS_MODE, inheritance uint32) error {
+func changeWindowsAppContainerHandle(handle windows.Handle, sid *windows.SID, permissions windows.ACCESS_MASK, mode windows.ACCESS_MODE, inheritance uint32) error {
 	windowsConfinementACLMu.Lock()
 	defer windowsConfinementACLMu.Unlock()
 	if sid == nil {
 		return errors.New("Windows kernel confinement SID is missing")
 	}
-	handle, closeHandles, err := openWindowsConfinementPath(path, windows.READ_CONTROL|windows.WRITE_DAC|windows.FILE_READ_ATTRIBUTES)
-	if err != nil {
-		return err
-	}
-	defer closeHandles()
 	security, err := windows.GetSecurityInfo(handle, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
 	if err != nil {
 		return err

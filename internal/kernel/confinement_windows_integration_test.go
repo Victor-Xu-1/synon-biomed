@@ -5,6 +5,7 @@ package kernel
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -339,6 +340,7 @@ func TestWindowsKernelAppContainerRecoversAbandonedLease(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
+		_ = lease.releaseAuthorityHandles()
 		_ = lease.journal.closeLock()
 		_ = recoverWindowsConfinementLeases()
 		_ = windows.FreeSid(lease.sid)
@@ -358,6 +360,9 @@ func TestWindowsKernelAppContainerRecoversAbandonedLease(t *testing.T) {
 	// Closing the exclusive lock simulates process death: Windows releases all
 	// process handles even when a host does not run deferred cleanup.
 	if err := lease.journal.closeLock(); err != nil {
+		t.Fatal(err)
+	}
+	if err := lease.releaseAuthorityHandles(); err != nil {
 		t.Fatal(err)
 	}
 	if err := recoverWindowsConfinementLeases(); err != nil {
@@ -390,6 +395,13 @@ func TestWindowsKernelAppContainerRecoversCrashedHost(t *testing.T) {
 			ProfileName: "SynonWorker." + os.Getenv("SYNON_WINDOWS_CONFINEMENT_CRASH_ID"),
 			Workspace:   os.Getenv("SYNON_WINDOWS_CONFINEMENT_CRASH_WORKSPACE"),
 			Executable:  os.Args[0],
+		}
+		for _, grant := range windowsConfinementRequestGrants(request) {
+			identity, err := windowsConfinementPathIdentity(grant.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			request.Authority = append(request.Authority, identity)
 		}
 		if _, err := prepareWindowsConfinedRequest(request); err != nil {
 			t.Fatal(err)
@@ -464,11 +476,15 @@ func TestWindowsKernelAppContainerQuarantinesReplacedWorkspace(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
+		_ = lease.releaseAuthorityHandles()
 		_ = lease.journal.closeLock()
 		_ = recoverWindowsConfinementLeases()
 		_ = windows.FreeSid(lease.sid)
 	})
 	if err := lease.journal.closeLock(); err != nil {
+		t.Fatal(err)
+	}
+	if err := lease.releaseAuthorityHandles(); err != nil {
 		t.Fatal(err)
 	}
 	moved := filepath.Join(parent, "moved-workspace")
@@ -495,5 +511,60 @@ func TestWindowsKernelAppContainerQuarantinesReplacedWorkspace(t *testing.T) {
 	}
 	if err := recoverWindowsConfinementLeases(); err != nil {
 		t.Fatalf("quarantined receipt blocked future recovery: %v", err)
+	}
+}
+
+func TestWindowsKernelRequestRejectsReplacedOrdinaryAuthority(t *testing.T) {
+	for _, targetKind := range []string{"workspace", "runtime", "executable"} {
+		t.Run(targetKind, func(t *testing.T) {
+			t.Setenv("SYNON_HOME", t.TempDir())
+			root := t.TempDir()
+			workspace := filepath.Join(root, "workspace")
+			runtimeRoot := filepath.Join(root, "runtime")
+			executable := filepath.Join(root, "worker.exe")
+			for _, directory := range []string{workspace, runtimeRoot} {
+				if err := os.Mkdir(directory, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := os.WriteFile(executable, []byte("first executable"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			command, err := newWindowsConfinedCommand(workspace, executable, nil, nil, []string{runtimeRoot})
+			if err != nil {
+				t.Fatal(err)
+			}
+			request, err := windowsConfinedRequestFromCommand(command)
+			if err != nil {
+				t.Fatal(err)
+			}
+			target := map[string]string{"workspace": workspace, "runtime": runtimeRoot, "executable": executable}[targetKind]
+			if err := os.Rename(target, target+"-original"); err != nil {
+				t.Fatal(err)
+			}
+			if targetKind == "executable" {
+				err = os.WriteFile(target, []byte("replacement executable"), 0o600)
+			} else {
+				err = os.Mkdir(target, 0o700)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := verifyWindowsConfinementAuthorityBindings(request); !errors.Is(err, errWindowsConfinementPathReplaced) {
+				t.Fatalf("ordinary path replacement was not detected: %v", err)
+			}
+			if lease, err := prepareWindowsConfinedRequest(request); err == nil {
+				_ = lease.close()
+				t.Fatal("replaced authority reached ACL preparation")
+			}
+			sid, err := deriveWindowsAppContainerSID(request.ProfileName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer windows.FreeSid(sid)
+			if windowsTestPathHasSIDGrant(t, target, sid) {
+				t.Fatal("replacement object received an AppContainer grant")
+			}
+		})
 	}
 }

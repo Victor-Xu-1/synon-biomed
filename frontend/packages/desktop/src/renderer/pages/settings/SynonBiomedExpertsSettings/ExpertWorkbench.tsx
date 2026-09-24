@@ -28,6 +28,10 @@ import { Close, Search } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsPageHeader from '../components/SettingsPageHeader';
+import SettingsLibraryTabHeader from '../components/SettingsLibraryTabHeader';
+import SettingsLibraryFilterSelect from '../components/SettingsLibraryFilterSelect';
+import SynonBiomedExpertProfileModal from './SynonBiomedExpertProfileModal';
+
 import {
   SettingsGeneratedArtwork,
   SettingsGeneratedEmptyArtwork,
@@ -39,8 +43,30 @@ import { SettingsToolbar } from '../components/SettingsPrimitives';
 import { compactSettingsDescription } from '../components/settingsPresentation';
 
 type ExpertWorkbenchProps = {
-  onCreate: () => void;
-  refreshToken: number;
+  /** When false, renders without the page-level header (used inside the merged library page). */
+  withHeader?: boolean;
+  /** When true (with withHeader=false), renders the merged-page one-line compact header. */
+  compactHeader?: boolean;
+};
+
+const createRequestedFromHash = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const query = window.location.hash.split('?', 2)[1] ?? '';
+  return new URLSearchParams(query).get('create') === '1';
+};
+
+const clearCreateRequestFromHash = (): void => {
+  if (typeof window === 'undefined' || !window.location.hash.includes('?')) return;
+  const [route, query = ''] = window.location.hash.split('?', 2);
+  const params = new URLSearchParams(query);
+  if (!params.has('create')) return;
+  params.delete('create');
+  const suffix = params.size > 0 ? `?${params.toString()}` : '';
+  window.history.replaceState(
+    window.history.state,
+    '',
+    `${window.location.pathname}${window.location.search}${route}${suffix}`
+  );
 };
 
 type ExpertDraft = {
@@ -50,6 +76,9 @@ type ExpertDraft = {
   skillNames: string[];
   connectorIds: string[];
 };
+
+/** The expert catalog's own category filter: every profile, custom or built-in. */
+type ExpertSourceFilter = 'all' | 'personal' | 'builtin';
 
 const { TabPane } = Tabs;
 
@@ -102,7 +131,7 @@ function resolveExpertArtwork(
   }
 }
 
-const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToken }) => {
+const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ withHeader = true, compactHeader = false }) => {
   const { t } = useTranslation();
   const [message, messageContext] = Message.useMessage({ maxCount: 4 });
   const [profiles, setProfiles] = useState<SynonBiomedExpertProfile[]>([]);
@@ -112,13 +141,14 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'personal' | 'builtin'>('all');
+  const [filter, setFilter] = useState<ExpertSourceFilter>('all');
   const [selected, setSelected] = useState<SynonBiomedExpertProfile | null>(null);
   const [draft, setDraft] = useState<ExpertDraft | null>(null);
   const [baseline, setBaseline] = useState<ExpertDraft | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pendingProfileName, setPendingProfileName] = useState<string | null>(null);
+  const [createVisible, setCreateVisible] = useState(createRequestedFromHash());
   const detailGeneration = useRef(0);
   const catalogGeneration = useRef(0);
   const translationRef = useRef(t);
@@ -184,7 +214,7 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
     return () => {
       catalogGeneration.current += 1;
     };
-  }, [reloadCatalog, refreshToken]);
+  }, [reloadCatalog]);
 
   const openProfile = useCallback(
     async (profile: SynonBiomedExpertProfile) => {
@@ -347,6 +377,19 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
       },
     });
   }, [closeDetail, message, reloadCatalog, selected]);
+
+  const closeCreate = useCallback(() => {
+    setCreateVisible(false);
+    clearCreateRequestFromHash();
+  }, []);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (createRequestedFromHash()) setCreateVisible(true);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const visibleProfiles = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -614,47 +657,81 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
   return (
     <div data-testid='expert-list-page' className='settings-experts-page flex min-h-0 flex-col gap-24px'>
       {messageContext}
-      <SettingsPageHeader
-        data-testid='experts-header'
-        title={t('settings.expertsSettings.title')}
-        description={t('settings.expertsSettings.description')}
-        actions={
-          <Button type='primary' onClick={onCreate}>
-            {t('settings.expertsSettings.addExpert')}
-          </Button>
-        }
-      />
-      <SettingsToolbar className='experts-toolbar'>
-        <Select
-          aria-label={t('settings.expertsSettings.filter')}
-          value={filter}
-          onChange={setFilter}
-          className='w-170px'
-        >
-          <Select.Option value='all'>
-            {t('settings.expertsSettings.filterAll', { count: profiles.length })}
-          </Select.Option>
-          <Select.Option value='personal'>
-            {t('settings.expertsSettings.filterPersonal', {
-              count: profiles.filter((profile) => profile.source === 'user').length,
-            })}
-          </Select.Option>
-          <Select.Option value='builtin'>
-            {t('settings.expertsSettings.filterBuiltin', {
-              count: profiles.filter((profile) => profile.source !== 'user').length,
-            })}
-          </Select.Option>
-        </Select>
-        <Input
-          aria-label={t('settings.expertsSettings.search')}
-          prefix={<Search size={15} />}
-          value={query}
-          onChange={setQuery}
-          placeholder={t('settings.expertsSettings.searchPlaceholder')}
-          className='ml-auto w-260px max-w-full'
-          allowClear
+      {withHeader ? (
+        <SettingsPageHeader
+          data-testid='experts-header'
+          title={t('settings.expertsSettings.title')}
+          description={t('settings.expertsSettings.description')}
+          actions={
+            <Button type='primary' onClick={() => setCreateVisible(true)}>
+              {t('settings.expertsSettings.addExpert')}
+            </Button>
+          }
         />
-      </SettingsToolbar>
+      ) : compactHeader ? (
+        <SettingsLibraryTabHeader
+          title={t('settings.expertsSettings.title')}
+          count={profiles.length}
+          filters={
+            <SettingsLibraryFilterSelect
+              aria-label={t('settings.expertsSettings.filter')}
+              data-testid='experts-category-filter'
+              value={filter}
+              onChange={(value) => setFilter(value as ExpertSourceFilter)}
+            >
+              <option value='all'>{t('settings.expertsSettings.filterAll', { count: profiles.length })}</option>
+              <option value='personal'>
+                {t('settings.expertsSettings.filterPersonal', {
+                  count: profiles.filter((profile) => profile.source === 'user').length,
+                })}
+              </option>
+              <option value='builtin'>
+                {t('settings.expertsSettings.filterBuiltin', {
+                  count: profiles.filter((profile) => profile.source !== 'user').length,
+                })}
+              </option>
+            </SettingsLibraryFilterSelect>
+          }
+          actions={
+            <Button type='primary' onClick={() => setCreateVisible(true)}>
+              {t('settings.expertsSettings.addExpert')}
+            </Button>
+          }
+        />
+      ) : null}
+      {!compactHeader ? (
+        <SettingsToolbar className='experts-toolbar'>
+          <Select
+            aria-label={t('settings.expertsSettings.filter')}
+            value={filter}
+            onChange={setFilter}
+            className='w-170px'
+          >
+            <Select.Option value='all'>
+              {t('settings.expertsSettings.filterAll', { count: profiles.length })}
+            </Select.Option>
+            <Select.Option value='personal'>
+              {t('settings.expertsSettings.filterPersonal', {
+                count: profiles.filter((profile) => profile.source === 'user').length,
+              })}
+            </Select.Option>
+            <Select.Option value='builtin'>
+              {t('settings.expertsSettings.filterBuiltin', {
+                count: profiles.filter((profile) => profile.source !== 'user').length,
+              })}
+            </Select.Option>
+          </Select>
+          <Input
+            aria-label={t('settings.expertsSettings.search')}
+            prefix={<Search size={15} />}
+            value={query}
+            onChange={setQuery}
+            placeholder={t('settings.expertsSettings.searchPlaceholder')}
+            className='ml-auto w-260px max-w-full'
+            allowClear
+          />
+        </SettingsToolbar>
+      ) : null}
       <div className='min-h-0 flex-1 pb-24px'>
         {loading ? (
           <div className='flex min-h-260px items-center justify-center'>
@@ -682,9 +759,6 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
                 onOpen={openProfile}
                 onToggle={toggleEnabled}
                 pendingProfileName={pendingProfileName}
-                availableSkillCount={availableSkillCount}
-                availableConnectorCount={availableConnectorCount}
-                connectors={connectors}
                 usageByName={expertUsage}
               />
             ) : null}
@@ -695,9 +769,6 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
                 onOpen={openProfile}
                 onToggle={toggleEnabled}
                 pendingProfileName={pendingProfileName}
-                availableSkillCount={availableSkillCount}
-                availableConnectorCount={availableConnectorCount}
-                connectors={connectors}
                 usageByName={expertUsage}
               />
             ) : null}
@@ -705,6 +776,12 @@ const ExpertWorkbench: React.FC<ExpertWorkbenchProps> = ({ onCreate, refreshToke
         ) : null}
       </div>
       {detailModal}
+      <SynonBiomedExpertProfileModal
+        visible={createVisible}
+        profile={null}
+        onClose={closeCreate}
+        onChanged={() => void reloadCatalog()}
+      />
     </div>
   );
 };
@@ -715,73 +792,58 @@ const ExpertGroup: React.FC<{
   onOpen: (profile: SynonBiomedExpertProfile) => void;
   onToggle: (profile: SynonBiomedExpertProfile, enabled: boolean) => void;
   pendingProfileName: string | null;
-  availableSkillCount: number;
-  availableConnectorCount: number;
-  connectors: SynonBiomedMcpServer[];
   usageByName: SynonBiomedExpertUsageByName | null;
-}> = ({
-  title,
-  profiles,
-  onOpen,
-  onToggle,
-  pendingProfileName,
-  availableSkillCount,
-  availableConnectorCount,
-  connectors,
-  usageByName,
-}) => {
+}> = ({ title, profiles, onOpen, onToggle, pendingProfileName, usageByName }) => {
   const { t } = useTranslation();
   return (
     <section className='expert-group pt-18px'>
       <h2 className='mb-6px mt-0 px-8px text-12px font-500 text-t-tertiary'>{title}</h2>
       <div className='expert-grid'>
         {profiles.map((profile) => (
-          <div key={profile.name} data-testid={`expert-card-${profile.name}`} className='expert-card group'>
+          <div
+            key={profile.name}
+            data-testid={`expert-card-${profile.name}`}
+            className='expert-card settings-library-card group'
+          >
             <SettingsGeneratedArtwork id={resolveExpertArtwork(profile)} className='expert-card__artwork' />
             <button
               type='button'
-              className='expert-card__main border-0 bg-transparent text-left focus-visible:outline-2 focus-visible:outline-offset-2'
+              className='expert-card__main settings-library-card__body border-0 bg-transparent text-left focus-visible:outline-2 focus-visible:outline-offset-2'
               onClick={() => onOpen(profile)}
             >
-              <span className='expert-card__heading'>
-                <span className='settings-list-icon expert-card__icon'>
+              <span className='expert-card__heading settings-library-card__heading'>
+                <span className='settings-list-icon expert-card__icon settings-library-card__icon'>
                   <SettingsGeneratedIcon
                     id={resolveExpertIcon(profile)}
                     className='settings-list-generated-icon expert-card__icon-image'
                   />
                 </span>
-                <span className='expert-card__title-row'>
-                  <span className='expert-card__title'>{profile.displayName}</span>
+                <span className='expert-card__title-row settings-library-card__title-slot'>
+                  <span className='expert-card__title settings-library-card__title'>{profile.displayName}</span>
                   {profile.name === 'OPERON' ? (
                     <span className='expert-card__default-badge'>{t('settings.expertsSettings.default')}</span>
                   ) : null}
                 </span>
               </span>
-              <span className='expert-card__description' title={profile.description}>
+              <span className='expert-card__description settings-library-card__description' title={profile.description}>
                 {compactSettingsDescription(profile.description, {
                   maxLength: 104,
                   stripPrefixes: [profile.displayName, profile.name],
                 })}
               </span>
-              <span className='expert-card__capabilities'>
-                {t('settings.expertsSettings.capabilityCoverage.summary', {
-                  skills: profile.skillNames.length,
-                  availableSkills: availableSkillCount,
-                  connectors: connectorIdsFor(profile, connectors).length,
-                  availableConnectors: availableConnectorCount,
-                })}
-              </span>
             </button>
-            <div className='expert-card__footer'>
+            <div className='expert-card__footer settings-library-card__footer'>
               <ExpertUsageSummary profileName={profile.name} usageByName={usageByName} />
-              <Switch
-                className='expert-card__switch shrink-0'
-                aria-label={t('settings.expertsSettings.enableNamed', { name: profile.displayName })}
-                checked={profile.enabled}
-                loading={pendingProfileName === profile.name}
-                disabled={profile.source !== 'user' || pendingProfileName !== null}
-                onChange={(enabled) => onToggle(profile, enabled)}
-              />
+              <span className='settings-library-card__control'>
+                <Switch
+                  className='expert-card__switch shrink-0'
+                  aria-label={t('settings.expertsSettings.enableNamed', { name: profile.displayName })}
+                  checked={profile.enabled}
+                  loading={pendingProfileName === profile.name}
+                  disabled={profile.source !== 'user' || pendingProfileName !== null}
+                  onChange={(enabled) => onToggle(profile, enabled)}
+                />
+              </span>
             </div>
           </div>
         ))}
@@ -799,7 +861,7 @@ const ExpertUsageSummary: React.FC<{
   const formattedLastUsedAt = usage?.lastUsedAt ? formatExpertLastUsedAt(usage.lastUsedAt, i18n.language) : '';
 
   return (
-    <div className='expert-card__usage hidden shrink-0 items-center gap-12px whitespace-nowrap text-11px text-t-tertiary sm:flex'>
+    <span className='expert-card__usage settings-library-card__meta hidden shrink-0 items-center sm:flex'>
       <span data-testid={'expert-usage-count-' + profileName}>
         {usageByName === null
           ? t('settings.expertsSettings.usage.unavailable')
@@ -812,7 +874,7 @@ const ExpertUsageSummary: React.FC<{
             ? t('settings.expertsSettings.usage.lastUsed', { time: formattedLastUsedAt })
             : t('settings.expertsSettings.usage.never')}
       </span>
-    </div>
+    </span>
   );
 };
 
@@ -844,3 +906,6 @@ const CapabilityRow: React.FC<{ label: string; onRemove: () => void }> = ({ labe
 };
 
 export default ExpertWorkbench;
+
+/** Header-less, wrapper-less variant used inside the merged library page. */
+export const ExpertWorkbenchContent: React.FC = () => <ExpertWorkbench withHeader={false} compactHeader />;

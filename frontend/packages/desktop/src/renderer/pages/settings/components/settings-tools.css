@@ -67,12 +67,26 @@ html body .settings-page-wrapper[data-settings-route='tools'] .settings-page-con
   gap: var(--ui-space-5);
 }
 
+.mcp-library-maintenance {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--ui-space-4);
+}
+
+.mcp-library-maintenance .mcp-library-health {
+  margin-inline-end: auto;
+}
+
 .mcp-library-search,
 .mcp-library-health {
   min-width: 0;
 }
 
 .mcp-library-toolbar .arco-btn,
+.mcp-library-maintenance .arco-btn,
 .mcp-library .settings-page-header__actions .arco-btn {
   display: inline-flex;
   align-items: center;
@@ -119,7 +133,7 @@ html body .settings-page-wrapper[data-settings-route='tools'] .settings-page-con
 
   .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-grid:not(:empty) {
     min-height: 100%;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     grid-template-rows: repeat(3, minmax(min-content, 1fr));
   }
 
@@ -134,21 +148,9 @@ html body .settings-page-wrapper[data-settings-route='tools'] .settings-page-con
   }
 }
 
-@container (min-width: 1250px) {
-  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card {
-    padding: 22px !important;
-  }
-
-  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card__title-row > span {
-    font-size: var(--ui-font-lead) !important;
-    line-height: 25px !important;
-  }
-
-  .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-card__description {
-    font-size: var(--ui-font-title) !important;
-    line-height: 25px !important;
-  }
-}
+/* A wide container used to inflate the connector title and body to a lead size.
+   The merged library page needs one type ramp across all four tabs, so the
+   card typography now comes only from settings-card-density.css. */
 
 .mcp-library-footer {
   min-height: 48px;

@@ -31,16 +31,7 @@
   padding-left: clamp(24px, 3.1vw, 46px);
   background: var(--settings-canvas);
   color: var(--settings-text);
-  font-family:
-    Inter,
-    'SF Pro Text',
-    'PingFang SC',
-    'Microsoft YaHei',
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--conversation-font-sans);
   font-size: var(--ui-font-subtitle);
   line-height: 1.5;
   scrollbar-gutter: stable;
@@ -109,7 +100,7 @@ html body .settings-sider__group-header {
   margin-top: 10px !important;
   padding-inline: 10px !important;
   color: var(--workspace-text-tertiary, var(--color-text-3));
-  font-size: var(--ui-font-meta) !important;
+  font-size: var(--settings-meta-size) !important;
   font-weight: var(--ui-weight-semibold) !important;
   line-height: 18px !important;
   letter-spacing: 0.01em;

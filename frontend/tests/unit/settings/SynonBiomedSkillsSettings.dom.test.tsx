@@ -151,7 +151,7 @@ describe('Synon Biomed Skills settings', () => {
     expect(screen.getByRole('button', { name: '添加技能' })).toBeInTheDocument();
   });
 
-  it('keeps pagination outside the scrolling catalog and resets that scroll on every page selection', async () => {
+  it('renders the full catalog inside the scrolling area without a pager', async () => {
     mocks.loadDrafts.mockResolvedValue([]);
     mocks.loadSkills.mockResolvedValue(
       Array.from({ length: 16 }, (_, index) => ({ ...skills[0], name: `skill-${index}` }))
@@ -159,15 +159,10 @@ describe('Synon Biomed Skills settings', () => {
     await renderSettings();
     await screen.findByTestId('synon-biomed-skill-row-skill-0');
     const scroll = screen.getByTestId('skill-library-scroll');
-    const pager = screen.getByRole('navigation', { name: '技能列表分页' });
-    expect(scroll).not.toContainElement(pager);
-    scroll.scrollTop = 400;
-    fireEvent.click(screen.getByRole('button', { name: '技能列表分页 2' }));
+    // The entire catalog renders as one scrolling list; there is no pager.
     expect(screen.getByTestId('synon-biomed-skill-row-skill-15')).toBeInTheDocument();
-    expect(scroll.scrollTop).toBe(0);
-    scroll.scrollTop = 120;
-    fireEvent.click(screen.getByRole('button', { name: '技能列表分页 2' }));
-    expect(scroll.scrollTop).toBe(0);
+    expect(screen.queryByRole('navigation', { name: '技能列表分页' })).not.toBeInTheDocument();
+    expect(scroll).toContainElement(screen.getByTestId('synon-biomed-skill-row-skill-15'));
   });
 
   it('does not open skill details when an embedded switch handles keyboard input', async () => {
@@ -363,18 +358,19 @@ describe('Synon Biomed Skills settings', () => {
     consoleError.mockRestore();
   });
 
-  it('returns to the first page when field or source filters narrow a paginated list', async () => {
+  it('narrows the full catalog to the filtered subset without pagination', async () => {
     mocks.loadSkills.mockResolvedValue([
       ...Array.from({ length: 16 }, (_, index) => ({ ...skills[0], name: `structure-${index}` })),
       { ...skills[1], name: 'clinical-only', category: 'clinical-regulatory' },
     ]);
     await renderSettings();
     await screen.findByTestId('synon-biomed-skill-row-structure-0');
-    fireEvent.click(screen.getByRole('button', { name: '下一页' }));
-    expect(await screen.findByTestId('synon-biomed-skill-row-structure-15')).toBeInTheDocument();
+    // The whole catalog renders as one scrolling list; there is no pager.
+    expect(screen.getByTestId('synon-biomed-skill-row-structure-15')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '下一页' })).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('combobox', { name: '科研领域' }), { target: { value: 'clinical-regulatory' } });
     expect(await screen.findByTestId('synon-biomed-skill-row-clinical-only')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '下一页' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('synon-biomed-skill-row-structure-0')).not.toBeInTheDocument();
     chooseSource('personal');
     expect(screen.queryByTestId('synon-biomed-skill-row-clinical-only')).not.toBeInTheDocument();
     expect(screen.getByText('没有匹配的 Skill')).toBeInTheDocument();

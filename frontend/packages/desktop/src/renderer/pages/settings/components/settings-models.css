@@ -180,7 +180,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: var(--ui-font-micro) !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 18px !important;
   }
 
@@ -211,7 +211,7 @@
 
   html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__detail-label {
     color: var(--settings-text-secondary) !important;
-    font-size: var(--ui-font-meta) !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 18px !important;
     white-space: nowrap;
   }

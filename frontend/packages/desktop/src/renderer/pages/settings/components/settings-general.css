@@ -41,7 +41,7 @@
     .settings-section__header,
   html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section .settings-section__header,
   html body .settings-page-wrapper[data-settings-route='general'] .general-about-section .settings-section__header {
-    padding: 28px 28px 0 !important;
+    padding: var(--settings-section-padding) var(--settings-section-padding) 0 !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-section__title,
@@ -62,7 +62,7 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section .settings-section__body {
-    padding-inline: 22px !important;
+    padding-inline: var(--settings-section-padding) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-section__header {
@@ -70,8 +70,8 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='general'] .general-preferences-grid .settings-list-row {
-    min-height: 46px !important;
-    height: 46px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     box-sizing: border-box;
     padding: 0 !important;
   }

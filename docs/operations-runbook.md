@@ -25,22 +25,25 @@ authorize a release.
 
 ## Public source checkout
 
-### Skills library
+### Scientific Toolkit and skills library
 
-Settings → Skills lists installed built-in, imported, and personal skills together.
-Search and the Research field selector refine the list; expand Filters to narrow
+Settings → Scientific Toolkit combines Experts, Skills, Connectors and Scientific
+environments in four tabs. Existing settings links still select the matching tab.
+The library uses a responsive card grid and page scrolling without pagination.
+
+The Skills tab lists installed built-in, imported, and personal skills together.
+The Research field selector refines the list; expand Filters to narrow
 by source or enabled state. Personal drafts appear under All sources or Personal
 when the enabled-state filter is All. Imported source update/removal controls
 remain available under the Imported source filter.
 
 Add skill is the single entry for the online market, GitHub import, file import,
 and personal skill creation. The online market opens separately and does not
-replace the library or reset its search and filters. Filtering never disables
+replace the library or reset its filters. Filtering never disables
 or deletes a skill.
 
-The catalog scrolls independently; its pagination remains at the bottom of the
-workspace on full, filtered and final pages. Cards wrap full skill names and
-summaries at native text size, and category icons use the declared catalog field
+The catalog scrolls with the page. Cards show names and a two-line summary;
+the detail view retains the complete description. Category icons use the declared catalog field
 rather than name matching. The detail view uses the same localized summary and
 category. Source identifies where a skill was loaded from; it is not an assertion
 of authorship. Original Markdown instructions remain unchanged, and non-Markdown
@@ -48,21 +51,19 @@ files are shown as source text.
 
 ### Connectors
 
-Settings → Connectors manages installed MCP services. Search uses the displayed
-localized descriptions; the filter selects connected, attention-needed or custom
-connectors. Cards preserve full names and descriptions, configuration, permissions
-and enable/disable controls. Pagination stays below the independently scrolling
-library. Wide desktop pages use four columns and three rows (12 connectors),
-with rows sharing the available height. Shorter windows scroll without clipping
-card text or controls; narrow windows keep the responsive layout. Usage and
+Settings → Scientific Toolkit → Connectors manages installed MCP services.
+The domain selector filters the catalog. Cards retain configuration, permissions
+and enable/disable controls; their menus expose maintenance actions. Wide desktop
+pages use four columns and narrower windows use fewer columns. The page scrolls
+through the complete catalog. Usage and
 configuration share one card footer. Connection status is a service health signal, not proof of a completed
 scientific operation.
 
 Add connector opens custom configuration, the optional local catalog or the online
-market. Browsing these catalogs preserves the installed library's search and page.
+market. Browsing these catalogs preserves the installed library's filters.
 Installation, credential authorization and permission changes still require their
 own explicit actions; opening the catalog does not install or authorize anything.
-Sync directory remains available next to the library filters.
+Directory health, Refresh and Sync directory remain available below the tab header.
 
 ### Storage workspace
 
@@ -99,13 +100,12 @@ migration or new storage engine is required by this interface.
 
 ### Local scientific software
 
-Settings → Scientific environments, immediately below Network, is the single
+Settings → Scientific Toolkit → Scientific environments is the single
 catalog for local scientific software preparation. It presents the required
 Python/R core runtimes and the registered optional predownload environments as
 categorized cards, including package specifications, observed readiness and
 installation progress.
-Search matches software specifications as well as environment names; category
-and status filters also include newly registered catalog entries.
+Category and status filters also include newly registered catalog entries.
 Storage retains usage accounting and links to this catalog.
 Saving a selection starts preparation in the background through the same managed
 environment controller used by tasks; opening the page or selection dialog does

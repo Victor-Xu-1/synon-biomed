@@ -5,7 +5,7 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "aab3311d57af9d5cd589772540bea060e0fcc83c4272b47798636f7eaf9d528a",
   "removalFingerprintSHA256": "70a676732efea3030080147fc7100096248f3fc0ce13b80256726d97fef98b5c",
-  "additionFingerprintSHA256": "ee9a15d97f1b6afe5440cfed1b92cdfdffd052bfddae66597c5ac44810e076cc",
+  "additionFingerprintSHA256": "91560d67f941cd4c8db188401c1f54d6ea106321d38877981d012c018a14b02b",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 400,
@@ -6684,14 +6684,14 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/ContextUsagePanel.module.css",
-      "sha256": "520b486bffa84f4190fdf7971c4dd029a4031e71ab96fca99b59a3dee26776b7",
-      "bytes": 4990,
+      "sha256": "221fc9297e53e46684d5a2043c77ba50b40efa2f27096ee8103abbe40285472b",
+      "bytes": 5021,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/ContextUsagePanel.tsx",
-      "sha256": "f3fc5b3e55a9b22c84f0b3afe5c1846c688ff421b62ffe838ef54a19d21d4254",
-      "bytes": 9399,
+      "sha256": "ed80e61ae0a258a2e2fbb0c6691de7d44abfdf5412d6e36b841750b20c397b18",
+      "bytes": 9703,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -10116,8 +10116,8 @@
     },
     {
       "path": "tests/web-e2e/contextUsagePanel.browser.mjs",
-      "sha256": "ab450808babc4c43fd21b1d884598086dd4afeed9156be9bc79dc542b2a1f152",
-      "bytes": 10031,
+      "sha256": "5913c771b982e399095a44e878c45a4ee32590bc5aa2f379acabb82f81ab9611",
+      "bytes": 10403,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

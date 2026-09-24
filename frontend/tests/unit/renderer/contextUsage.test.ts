@@ -4,73 +4,87 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fetchContextUsage, parseContextUsage, type ContextUsageSnapshot } from '@/renderer/services/contextUsage';
 
-import {
-  buildContextUsageBreakdown,
-  estimateChatMessageTokens,
-  estimateConversationMessagesTokens,
-  estimateTextTokens,
-} from '@/renderer/services/contextUsage';
+const snapshot = (): ContextUsageSnapshot => ({
+  sessionId: 'one',
+  requestId: 'request',
+  model: 'model',
+  observedAt: '2026-01-01T00:00:00Z',
+  state: 'complete',
+  source: 'provider',
+  usedTokens: 20,
+  limitTokens: 100,
+  limitSource: 'configured',
+  outputTokens: 3,
+  hasMedia: false,
+  inputEstimates: [
+    { key: 'systemPrompt', tokens: 4 },
+    { key: 'messages', tokens: 8 },
+    { key: 'toolDefinitions', tokens: 2 },
+  ],
+});
 
-describe('context usage estimation', () => {
-  it('mirrors the server-side text estimator for ASCII and CJK payloads', () => {
-    expect(estimateTextTokens('')).toBe(0);
-    expect(estimateTextTokens(null)).toBe(0);
-    expect(estimateTextTokens('abcd')).toBe(1);
-    expect(estimateTextTokens('abcdefgh')).toBe(2);
-    // CJK runes count one token each.
-    expect(estimateTextTokens('分子模拟')).toBe(4);
+describe('context usage contract', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('keeps provider total separate from estimated components and accepts zero', () => {
+    const value = snapshot();
+    expect(parseContextUsage({ status: 'available', snapshot: value }, 'one')).toEqual({
+      status: 'available',
+      snapshot: value,
+    });
+    value.usedTokens = 0;
+    expect(parseContextUsage({ status: 'available', snapshot: value }, 'one').status).toBe('available');
   });
 
-  it('adds the per-message overhead and tool-call accounting', () => {
-    const message = {
-      role: 'user',
-      content: 'abcd',
-      tool_calls: [
-        {
-          id: 'call_1',
-          function: { name: 'search', arguments: '{"query":"abcd"}' },
-        },
-      ],
-    };
-    const total = estimateChatMessageTokens(message);
-    expect(total).toBeGreaterThan(4);
-    expect(estimateConversationMessagesTokens([message, message])).toBe(total * 2);
+  it('makes missing telemetry explicit instead of loading or zero', () => {
+    expect(parseContextUsage({ status: 'unavailable' }, 'one')).toEqual({ status: 'unavailable' });
   });
 
-  it('counts the structured content shape returned by conversation history', () => {
-    const projectedText = {
-      type: 'text',
-      position: 'right',
-      content: { content: 'abcdefgh' },
-    };
-    const projectedTool = {
-      type: 'tool_call',
-      content: { name: 'search', input: { query: 'abcd' }, output: 'efgh' },
-    };
-    expect(estimateChatMessageTokens(projectedText)).toBe(4 + 1 + 2);
-    expect(estimateChatMessageTokens(projectedTool)).toBeGreaterThan(4);
+  it.each([
+    { usedTokens: -1 },
+    { usedTokens: Number.NaN },
+    { usedTokens: '20' },
+    { limitTokens: 0 },
+    { usedTokens: Number.MAX_SAFE_INTEGER + 1 },
+    { source: 'cumulative' },
+    { state: 'invented' },
+    { state: 'request', source: 'provider' },
+    { state: 'failed', outputTokens: 3 },
+    { limitSource: 'model_default' },
+    { observedAt: 'bad date' },
+    { sessionId: 'other' },
+    { inputEstimates: [] },
+    { inputEstimates: [{ key: 'invented', tokens: 20 }] },
+  ])('rejects invalid or cross-conversation data: %j', (change) => {
+    expect(() => parseContextUsage({ status: 'available', snapshot: { ...snapshot(), ...change } }, 'one')).toThrow();
   });
 
-  it('pins the breakdown rows to the authoritative used total', () => {
-    const rows = buildContextUsageBreakdown({ usedTokens: 133_000, limitTokens: 300_000, messagesTokens: 84_000 });
-    const sum = rows.reduce((total, row) => total + row.tokens, 0);
-    expect(sum).toBe(133_000);
-    const keys = rows.map((row) => row.key);
-    expect(keys).toEqual(['systemPrompt', 'toolsAndSubagents', 'messages', 'connectorsAndMcp', 'skills']);
-    expect(rows.find((row) => row.key === 'messages')?.tokens).toBe(84_000);
+  it('only requests the authenticated uncached context endpoint', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'unavailable' }))));
+    const signal = new AbortController().signal;
+    await expect(fetchContextUsage('one / two', signal)).resolves.toEqual({ status: 'unavailable' });
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/conversations/one%20%2F%20two/context-usage',
+      expect.objectContaining({
+        credentials: 'include',
+        cache: 'no-store',
+        signal,
+      })
+    );
   });
 
-  it('keeps every row non-negative and clamps message estimates to the total', () => {
-    const rows = buildContextUsageBreakdown({ usedTokens: 10, limitTokens: 300_000, messagesTokens: 99_999 });
-    for (const row of rows) expect(row.tokens).toBeGreaterThanOrEqual(0);
-    expect(rows.reduce((total, row) => total + row.tokens, 0)).toBe(10);
-  });
-
-  it('falls back to capability shares when the message estimate is unavailable', () => {
-    const rows = buildContextUsageBreakdown({ usedTokens: 50_000, limitTokens: 300_000, messagesTokens: null });
-    expect(rows.reduce((total, row) => total + row.tokens, 0)).toBe(50_000);
-    expect(rows.find((row) => row.key === 'messages')?.tokens).toBe(0);
+  it('rejects transport and invalid JSON failures', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response('{}', { status: 503 }))
+        .mockResolvedValueOnce(new Response('invalid'))
+    );
+    await expect(fetchContextUsage('one', new AbortController().signal)).rejects.toThrow();
+    await expect(fetchContextUsage('one', new AbortController().signal)).rejects.toThrow();
   });
 });

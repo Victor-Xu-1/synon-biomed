@@ -29,6 +29,7 @@ type sessionRunnerDynamicModelClient struct {
 	initialReady     bool
 	initialSelection string
 	initialRevision  int64
+	contextUsage     *sessionContextUsageRecorder
 
 	mu                  sync.RWMutex
 	lastSuccessfulModel string
@@ -273,7 +274,10 @@ func (client *sessionRunnerDynamicModelClient) Complete(
 		return agentruntime.ModelResponse{}, wrapResolvedSessionRunnerModelCallError(err, resolved)
 	}
 	for {
+		recorder := contextUsageRecorderForCall(ctx, client.contextUsage)
+		usage := recorder.begin(resolved.model, request)
 		response, callErr := resolved.client.Complete(ctx, request)
+		recorder.finish(usage, response, callErr)
 		if callErr == nil {
 			client.recordSuccess(resolved)
 			if strings.TrimSpace(response.Model) == "" {
@@ -320,7 +324,10 @@ func (client *sessionRunnerDynamicModelClient) CompleteStream(
 		return target.client.Complete(ctx, request)
 	}
 	for {
+		recorder := contextUsageRecorderForCall(ctx, client.contextUsage)
+		usage := recorder.begin(resolved.model, request)
 		response, callErr := complete(resolved)
+		recorder.finish(usage, response, callErr)
 		if callErr == nil {
 			client.recordSuccess(resolved)
 			if strings.TrimSpace(response.Model) == "" {

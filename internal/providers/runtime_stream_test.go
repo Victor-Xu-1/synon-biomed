@@ -128,6 +128,9 @@ func TestRuntimeModelClientOpenAIChatStreamsTextToolsAndUsage(t *testing.T) {
 		t.Fatalf("response = %#v", response)
 	}
 	first, second := <-audits, <-audits
+	if response.Usage.InputTokens != 12 || response.Usage.OutputTokens != 4 || response.Usage.TotalTokens != 16 || response.Usage.CacheReadTokens != 5 {
+		t.Fatalf("stream response dropped request usage: %+v", response.Usage)
+	}
 	if first.HTTPStatus != http.StatusServiceUnavailable || first.RequestID != "stream-retry-1" ||
 		!strings.Contains(first.Error, "temporary stream failure") {
 		t.Fatalf("first audit = %#v", first)

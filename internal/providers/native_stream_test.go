@@ -79,6 +79,9 @@ func TestRuntimeModelClientAnthropicStreamsTextToolsUsageAndCache(t *testing.T) 
 	if audit.RequestID != "msg_stream_1" || audit.PromptTokens != 10 || audit.CompletionTokens != 5 || audit.CacheReadTokens != 3 || audit.CacheWriteTokens != 2 || audit.TotalTokens != 20 || audit.Error != "" {
 		t.Fatalf("audit=%#v", audit)
 	}
+	if response.Usage.InputTokens != 10 || response.Usage.OutputTokens != 5 || response.Usage.TotalTokens != 20 || response.Usage.CacheReadTokens != 3 || response.Usage.CacheWriteTokens != 2 {
+		t.Fatalf("stream response dropped request usage: %+v", response.Usage)
+	}
 }
 
 func TestRuntimeModelClientGeminiStreamGenerateContentTextToolsUsageAndCache(t *testing.T) {
@@ -137,5 +140,8 @@ func TestRuntimeModelClientGeminiStreamGenerateContentTextToolsUsageAndCache(t *
 	}
 	if audit.RequestID != "gem-stream-1" || audit.PromptTokens != 12 || audit.CompletionTokens != 5 || audit.CacheReadTokens != 4 || audit.TotalTokens != 17 || audit.Error != "" {
 		t.Fatalf("audit=%#v", audit)
+	}
+	if response.Usage.InputTokens != 12 || response.Usage.OutputTokens != 5 || response.Usage.TotalTokens != 17 || response.Usage.CacheReadTokens != 4 {
+		t.Fatalf("stream response dropped request usage: %+v", response.Usage)
 	}
 }

@@ -101,7 +101,13 @@ func TestManagedPythonProvisioningIsSingleFlightAndWaiterCancellationDoesNotCanc
 	config := bundledManagedPythonConfig(t)
 	config.CondaEnvsPath = t.TempDir()
 	config.Micromamba = filepath.Join(t.TempDir(), "micromamba")
+	config.AssetRoot = filepath.Join(repositoryRootForCondaRuntimeTest(t), "assets", "optional")
+	config.PythonHelperPath = filepath.Join(config.AssetRoot, "kernels", "cheminfo_render_helpers.py")
 	manager := NewManager(config)
+	runtime, err := loadManagedPythonRuntime(manager.config)
+	if err != nil {
+		t.Fatal(err)
+	}
 	wake := manager.RuntimeWake()
 	started := make(chan struct{})
 	release := make(chan struct{})
@@ -111,7 +117,20 @@ func TestManagedPythonProvisioningIsSingleFlightAndWaiterCancellationDoesNotCanc
 			close(started)
 		}
 		<-release
-		return nil
+		generation := manager.managedPythonGenerationPath(runtime)
+		if err := os.MkdirAll(filepath.Join(generation, "bin"), 0o700); err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(generation, "bin", "python"), []byte("#!/bin/sh\nexit 0\n"), 0o700); err != nil {
+			return err
+		}
+		if err := manager.installManagedPythonHelpers(runtime, generation); err != nil {
+			return err
+		}
+		if err := writeManagedRuntimeMarker(filepath.Join(generation, managedRuntimeMarkerName), manager.managedPythonMarker(runtime)); err != nil {
+			return err
+		}
+		return activateManagedRuntimeGeneration(filepath.Join(config.CondaEnvsPath, runtime.entry.Name), generation)
 	}
 
 	cancelledCtx, cancel := context.WithCancel(context.Background())

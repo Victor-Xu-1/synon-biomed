@@ -81,15 +81,21 @@ func TestManagedPythonCorruptGenerationIsReinstalledAndHealthyGenerationIsReused
 	installer, countPath := writeCoreRuntimeInstallerFixture(t, "python", `printf '%s\n' 'warning from python' '{"ok":true,"rdkit":"2024.03.5"}'`)
 	config := coreRuntimeFixtureConfig(t, installer)
 	manager := NewManager(config)
-	if err := manager.ensureManagedPythonEnvironment(context.Background()); err != nil {
+	if err := manager.ProvisionManagedPythonEnvironment(context.Background()); err != nil {
 		t.Fatalf("first Python provisioning: %v", err)
+	}
+	if details := manager.ManagedPythonProvisioningDetails(); details.Status != "ready" {
+		t.Fatalf("first Python provisioning details=%#v", details)
 	}
 	if got := readCoreRuntimeInstallCount(t, countPath); got != 1 {
 		t.Fatalf("first Python installer count=%d, want 1", got)
 	}
 	manager = NewManager(config)
-	if err := manager.ensureManagedPythonEnvironment(context.Background()); err != nil {
+	if err := manager.ProvisionManagedPythonEnvironment(context.Background()); err != nil {
 		t.Fatalf("healthy Python reuse: %v", err)
+	}
+	if details := manager.ManagedPythonProvisioningDetails(); details.Status != "ready" {
+		t.Fatalf("reused Python provisioning details=%#v", details)
 	}
 	if got := readCoreRuntimeInstallCount(t, countPath); got != 1 {
 		t.Fatalf("healthy Python reuse installer count=%d, want 1", got)
@@ -101,8 +107,14 @@ func TestManagedPythonCorruptGenerationIsReinstalledAndHealthyGenerationIsReused
 	if err := os.WriteFile(filepath.Join(manager.managedPythonGenerationPath(runtime), managedRuntimeMarkerName), []byte("{}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := manager.ensureManagedPythonEnvironment(context.Background()); err != nil {
+	if details := manager.ManagedPythonProvisioningDetails(); details.Status == "ready" {
+		t.Fatalf("corrupt Python generation remained ready: %#v", details)
+	}
+	if err := manager.EnsureManagedPythonEnvironment(context.Background()); err != nil {
 		t.Fatalf("Python recovery after marker corruption: %v", err)
+	}
+	if details := manager.ManagedPythonProvisioningDetails(); details.Status != "ready" {
+		t.Fatalf("repaired Python provisioning details=%#v", details)
 	}
 	if got := readCoreRuntimeInstallCount(t, countPath); got != 2 {
 		t.Fatalf("corrupt Python recovery installer count=%d, want 2", got)
@@ -120,15 +132,21 @@ func TestManagedRCorruptGenerationIsReinstalledAndHealthyGenerationIsReused(t *t
 	config := coreRuntimeFixtureConfig(t, installer)
 	config.DefaultREnv = "r"
 	manager := NewManager(config)
-	if err := manager.ensureManagedREnvironment(context.Background()); err != nil {
+	if err := manager.ProvisionManagedREnvironment(context.Background()); err != nil {
 		t.Fatalf("first R provisioning: %v", err)
+	}
+	if details := manager.ManagedRProvisioningDetails(); details.Status != "ready" {
+		t.Fatalf("first R provisioning details=%#v", details)
 	}
 	if got := readCoreRuntimeInstallCount(t, countPath); got != 1 {
 		t.Fatalf("first R installer count=%d, want 1", got)
 	}
 	manager = NewManager(config)
-	if err := manager.ensureManagedREnvironment(context.Background()); err != nil {
+	if err := manager.ProvisionManagedREnvironment(context.Background()); err != nil {
 		t.Fatalf("healthy R reuse: %v", err)
+	}
+	if details := manager.ManagedRProvisioningDetails(); details.Status != "ready" {
+		t.Fatalf("reused R provisioning details=%#v", details)
 	}
 	if got := readCoreRuntimeInstallCount(t, countPath); got != 1 {
 		t.Fatalf("healthy R reuse installer count=%d, want 1", got)
@@ -140,8 +158,14 @@ func TestManagedRCorruptGenerationIsReinstalledAndHealthyGenerationIsReused(t *t
 	if err := os.WriteFile(filepath.Join(manager.managedRGenerationPath(runtime), managedRuntimeMarkerName), []byte("{}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := manager.ensureManagedREnvironment(context.Background()); err != nil {
+	if details := manager.ManagedRProvisioningDetails(); details.Status == "ready" {
+		t.Fatalf("corrupt R generation remained ready: %#v", details)
+	}
+	if err := manager.EnsureManagedREnvironment(context.Background()); err != nil {
 		t.Fatalf("R recovery after marker corruption: %v", err)
+	}
+	if details := manager.ManagedRProvisioningDetails(); details.Status != "ready" {
+		t.Fatalf("repaired R provisioning details=%#v", details)
 	}
 	if got := readCoreRuntimeInstallCount(t, countPath); got != 2 {
 		t.Fatalf("corrupt R recovery installer count=%d, want 2", got)

@@ -188,16 +188,17 @@ func (m *Manager) ManagedPythonProvisioningDetails() ManagedPythonProvisioningDe
 	if m == nil {
 		return ManagedPythonProvisioningDetails{Status: "unavailable"}
 	}
-	return managedRuntimeProvisioningDetails(&m.managedPythonState, m.ManagedPythonProvisioningEnabled())
+	return managedRuntimeProvisioningDetails(&m.managedPythonState, m.ManagedPythonProvisioningEnabled(), m.managedPythonRuntimeReady)
 }
 
 func managedRuntimeProvisioningDetails(
 	state *managedRuntimeProvisioningState,
 	enabled bool,
+	ready func() error,
 ) ManagedPythonProvisioningDetails {
 	state.mu.Lock()
-	defer state.mu.Unlock()
 	if state.provision == nil {
+		state.mu.Unlock()
 		if enabled {
 			return ManagedPythonProvisioningDetails{Status: "pending", Phase: "waiting-to-start"}
 		}
@@ -213,11 +214,20 @@ func managedRuntimeProvisioningDetails(
 		if state.provision.err != nil {
 			details.Status = "failed"
 			details.Error = boundedManagedPythonProvisioningError(state.provision.err)
+			state.mu.Unlock()
 			return details
 		}
 		details.Status = "ready"
 	default:
 		details.Status = "installing"
+	}
+	state.mu.Unlock()
+	if details.Status == "ready" && ready() != nil {
+		// The operation record is not evidence that its published generation
+		// still exists or can run. Keep the read model tied to that generation.
+		details.Status = "failed"
+		details.Phase = "verifying-generation"
+		details.Error = "verified runtime generation is unavailable"
 	}
 	return details
 }
@@ -331,25 +341,39 @@ func (m *Manager) managedRuntimeProvisioning(
 ) error {
 	if ready() == nil {
 		// A repaired/published generation can make a previously failed
-		// provisioning record stale. Clear only a completed record; an active
-		// installer must remain visible to concurrent status readers.
+		// provisioning record stale. Record the verified reuse in the same
+		// state read by health; keep an active installer visible to its waiters.
 		state.mu.Lock()
-		if state.provision != nil {
+		publish := state.provision == nil
+		if !publish {
 			select {
 			case <-state.provision.done:
-				state.provision = nil
+				publish = state.provision.err != nil
 			default:
 			}
 		}
+		if publish {
+			now := time.Now().UTC()
+			verified := &managedRuntimeProvision{
+				done: make(chan struct{}), phase: "verified-generation", startedAt: now, lastProgressAt: now,
+			}
+			close(verified.done)
+			state.provision = verified
+		}
 		state.mu.Unlock()
+		if publish {
+			m.notifyRuntimeChange()
+		}
 		return nil
 	}
 	state.mu.Lock()
 	provision := state.provision
-	if provision != nil && retry {
+	if provision != nil {
 		select {
 		case <-provision.done:
-			if provision.err != nil {
+			// A formerly successful generation is no longer ready. Repair it
+			// on the next Ensure, but keep failed installs explicit-retry only.
+			if provision.err == nil || retry {
 				provision = nil
 				state.provision = nil
 			}

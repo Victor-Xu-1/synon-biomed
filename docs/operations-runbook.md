@@ -131,6 +131,13 @@ reuses a matching generation instead of downloading it again. A task discovers
 software through its existing tools and executes under the same managed
 environment authority; task outputs remain in the task/project artifact
 workflow, not in the software installation directory.
+The R installer writes directly to its final generation path because R launchers
+can embed that path. A generation is published only after the R smoke test and
+shared-library preparation pass. An unusable or interrupted generation is moved
+aside under the same environment root and preserved for inspection; the product
+does not silently delete that quarantined content. Runtime health rechecks the
+published generation and reports a missing or unusable one instead of treating
+an old success record as current readiness.
 The authenticated `/api/preferences/scientific-runtimes` endpoint provides
 status with GET, saves registered `enabled_ids` with PUT, and retries one selected
 optional environment with POST `{ "id": "..." }`; the same POST can retry a

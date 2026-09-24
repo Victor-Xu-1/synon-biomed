@@ -37,6 +37,7 @@ const UsageRing: React.FC<{ usedTokens: number; limitTokens: number }> = ({ used
       width={RING_SIZE}
       height={RING_SIZE}
       viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      aria-hidden='true'
       style={{ transform: 'rotate(-90deg)', display: 'block' }}
     >
       <circle
@@ -65,11 +66,8 @@ const UsageRing: React.FC<{ usedTokens: number; limitTokens: number }> = ({ used
 
 type ContextUsagePanelProps = {
   conversationId: string;
-};
-
-type FrameUsagePayload = {
-  context_limit?: unknown;
-  runtime_input_tokens?: unknown;
+  tokenUsage: { total_tokens?: unknown } | null;
+  contextLimit: number;
 };
 
 type DurableMessagePayload = {
@@ -77,7 +75,6 @@ type DurableMessagePayload = {
 };
 
 const MESSAGE_SAMPLE_LIMIT = 200;
-const USAGE_POLL_INTERVAL_MS = 10_000;
 
 function positiveNumber(value: unknown): number | null {
   const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
@@ -86,67 +83,23 @@ function positiveNumber(value: unknown): number | null {
 
 /**
  * Composer context-usage management card. Used/limit figures come from the
- * conversation's authoritative frame projection (`context_limit` plus the
- * runner's `runtime_input_tokens`); the message share is estimated with the
- * server-side accounting heuristic over the durable history, and the
- * capability rows split the documented residual.
+ * ACP `acp_context_usage` event (`used`/`size`) already normalized by
+ * useAcpMessage; this is the current request context, not the cumulative
+ * task input counter exposed by the frame projection. The message share is
+ * estimated from the durable history and the capability rows split the
+ * documented residual.
  */
-const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId }) => {
+const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, tokenUsage, contextLimit }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
-  const [usage, setUsage] = useState<{ usedTokens: number; limitTokens: number } | null>(null);
-  const [usageLoadFailed, setUsageLoadFailed] = useState(false);
   const [messageItems, setMessageItems] = useState<Array<Record<string, unknown>> | null>(null);
   const [messageLoadFailed, setMessageLoadFailed] = useState(false);
 
-  useEffect(() => {
-    if (!conversationId) return;
-    let cancelled = false;
-    let loadedOnce = false;
-    let controller: AbortController | null = null;
-    const loadUsage = () => {
-      // Skip hidden tabs: the ring only needs to stay live while visible.
-      if (document.hidden) return;
-      controller?.abort();
-      const nextController = new AbortController();
-      controller = nextController;
-      // Same authoritative frame projection the session options menu reads.
-      fetch(`/api/frames/${encodeURIComponent(conversationId)}`, {
-        credentials: 'include',
-        signal: nextController.signal,
-        headers: { Accept: 'application/json' },
-      })
-        .then((response) => {
-          if (!response.ok) throw new Error(`frame usage request failed: ${response.status}`);
-          return response.json() as Promise<FrameUsagePayload>;
-        })
-        .then((payload) => {
-          if (!cancelled) {
-            const usedTokens = positiveNumber(payload?.runtime_input_tokens);
-            const limitTokens = positiveNumber(payload?.context_limit);
-            if (usedTokens !== null && limitTokens !== null) {
-              loadedOnce = true;
-              setUsage({ usedTokens, limitTokens });
-              setUsageLoadFailed(false);
-            } else {
-              setUsageLoadFailed(true);
-            }
-          }
-        })
-        .catch(() => {
-          // Polling failures stay silent once real figures have been shown;
-          // the last known usage remains displayed.
-          if (!cancelled && !loadedOnce) setUsageLoadFailed(true);
-        });
-    };
-    loadUsage();
-    const timer = window.setInterval(loadUsage, USAGE_POLL_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      controller?.abort();
-    };
-  }, [conversationId, visible]);
+  const usage = useMemo(() => {
+    const usedTokens = positiveNumber(tokenUsage?.total_tokens);
+    const limitTokens = positiveNumber(contextLimit);
+    return usedTokens !== null && limitTokens !== null ? { usedTokens, limitTokens } : null;
+  }, [contextLimit, tokenUsage]);
 
   useEffect(() => {
     if (!visible || !conversationId) return;
@@ -157,6 +110,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
     fetch(`/api/conversations/${encodeURIComponent(conversationId)}/messages?limit=${MESSAGE_SAMPLE_LIMIT}`, {
       credentials: 'include',
       signal: controller.signal,
+      cache: 'no-store',
       headers: { Accept: 'application/json' },
     })
       .then((response) => {
@@ -246,7 +200,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
                 ))}
               </div>
             </>
-          ) : usageLoadFailed || messageLoadFailed ? (
+          ) : messageLoadFailed ? (
             <div className={styles.loading}>
               <span className='text-13px text-t-secondary'>{t('conversation.contextUsage.unavailable')}</span>
             </div>
@@ -258,13 +212,16 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId })
         </div>
       }
     >
-      <span
+      <button
+        type='button'
         data-testid='synon-biomed-context-usage-trigger'
         aria-label={t('conversation.contextUsage.title')}
-        className='inline-flex items-center justify-center cursor-pointer'
+        aria-expanded={visible}
+        aria-haspopup='menu'
+        className='inline-flex items-center justify-center cursor-pointer border-0 bg-transparent p-0'
       >
         <UsageRing usedTokens={usage?.usedTokens ?? 0} limitTokens={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT} />
-      </span>
+      </button>
     </Dropdown>
   );
 };

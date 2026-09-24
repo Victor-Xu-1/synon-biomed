@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile as readFileRaw } from 'node:fs/promises';
+import { resolveDesignTokens } from '../_helpers/designTokens';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -31,7 +32,7 @@ function ruleBody(styles: string, selector: string): string {
  */
 describe('message channel card hit targets', () => {
   it('keeps the absolutely positioned card header out of hit testing', async () => {
-    const styles = await readFile(stylesPath, 'utf8');
+    const styles = resolveDesignTokens(await readFileRaw(stylesPath, 'utf8'));
     const header = ruleBody(styles, `${generalSkin} .message-channel-card__header`);
 
     expect(header).toContain('position: absolute;');
@@ -39,7 +40,7 @@ describe('message channel card hit targets', () => {
   });
 
   it('still overlays the footer with that header, so the guard stays required', async () => {
-    const styles = await readFile(stylesPath, 'utf8');
+    const styles = resolveDesignTokens(await readFileRaw(stylesPath, 'utf8'));
     const header = ruleBody(styles, `${generalSkin} .message-channel-card__header`);
     const body = ruleBody(styles, `${generalSkin} .message-channel-card__body`);
     const footer = ruleBody(styles, `${generalSkin} .message-channel-card__footer`);

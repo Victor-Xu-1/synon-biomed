@@ -104,7 +104,7 @@
 
 .synon-sidebar-content::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
 }
 
 .synon-sidebar-content:hover::-webkit-scrollbar-thumb {
@@ -112,7 +112,7 @@
 }
 
 .synon-sidebar-navigation {
-  padding-bottom: 12px;
+  padding-bottom: var(--ui-space-5);
 }
 
 .synon-sidebar-new-chat-wrap {
@@ -123,7 +123,7 @@
   height: 40px !important;
   padding: 0 7px !important;
   gap: 8px !important;
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
   color: var(--synon-sidebar-text) !important;
 }
 
@@ -140,7 +140,7 @@
   align-items: center;
   justify-content: center;
   border: 0 !important;
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
   background: var(--synon-sidebar-hover) !important;
   color: var(--synon-sidebar-text);
 }
@@ -163,8 +163,8 @@
   align-items: center;
   min-height: 24px;
   line-height: 24px;
-  font-size: 14px !important;
-  font-weight: 500 !important;
+  font-size: var(--ui-font-subtitle) !important;
+  font-weight: var(--ui-weight-medium) !important;
   letter-spacing: -0.012em;
 }
 
@@ -178,7 +178,7 @@
 .synon-sidebar-section-toggle {
   width: 22px !important;
   height: 22px !important;
-  border-radius: 6px !important;
+  border-radius: var(--ui-radius-sm) !important;
 }
 
 .synon-sidebar-section-title-button {
@@ -189,7 +189,7 @@
 .synon-sidebar-section-title-button .sider-section-title {
   color: var(--synon-sidebar-muted) !important;
   font-size: 12.5px !important;
-  font-weight: 500 !important;
+  font-weight: var(--ui-weight-medium) !important;
   letter-spacing: 0;
 }
 
@@ -197,7 +197,7 @@
   width: 24px !important;
   height: 24px !important;
   color: var(--synon-sidebar-muted) !important;
-  border-radius: 6px !important;
+  border-radius: var(--ui-radius-sm) !important;
 }
 
 .synon-sidebar-section-header [data-testid='project-create-action']:hover {
@@ -212,7 +212,7 @@
 .synon-sidebar-shell .synon-sidebar-project-button {
   min-height: 50px;
   padding: 6px 28px 6px 20px !important;
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
   color: var(--synon-sidebar-text) !important;
 }
 
@@ -225,9 +225,9 @@
 }
 
 .synon-sidebar-project-name {
-  font-size: 14px !important;
+  font-size: var(--ui-font-subtitle) !important;
   line-height: 18px;
-  font-weight: 500 !important;
+  font-weight: var(--ui-weight-medium) !important;
   letter-spacing: -0.012em;
 }
 
@@ -258,20 +258,20 @@
 .synon-sidebar-timeline {
   height: 24px !important;
   padding: 0 6px !important;
-  margin-top: 8px;
+  margin-top: var(--ui-space-4);
 }
 
 .synon-sidebar-timeline > span {
   color: var(--synon-sidebar-muted) !important;
   font-size: 11.75px !important;
-  font-weight: 500 !important;
+  font-weight: var(--ui-weight-medium) !important;
 }
 
 .synon-sidebar-shell .synon-sidebar-conversation-row {
   height: 32px !important;
   margin-top: 1px !important;
   padding-right: 10px !important;
-  border-radius: 7px !important;
+  border-radius: var(--ui-radius-md) !important;
   color: var(--synon-sidebar-text) !important;
 }
 
@@ -297,7 +297,7 @@
   color: var(--synon-sidebar-text) !important;
   font-size: 13.25px !important;
   line-height: 22px !important;
-  font-weight: 450 !important;
+  font-weight: var(--ui-weight-regular) !important;
   letter-spacing: -0.01em;
 }
 
@@ -309,7 +309,7 @@
 .synon-sidebar-shell .sider-footer > button {
   height: 48px !important;
   padding-inline: 8px !important;
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
 }
 
 .synon-sidebar-shell .sider-footer > button:hover {
@@ -462,7 +462,7 @@
   width: 100% !important;
   padding-left: 266px;
   box-sizing: border-box;
-  z-index: 10001 !important;
+  z-index: var(--ui-z-max) !important;
 }
 
 /* Default background for select and input components */
@@ -535,19 +535,19 @@
     height: 34px !important;
     gap: 8px !important;
     padding-inline: 10px !important;
-    border-radius: 8px !important;
+    border-radius: var(--ui-radius-md) !important;
   }
 
   .sider-action-icon-btn-mobile {
     width: 34px !important;
     height: 34px !important;
-    border-radius: 8px !important;
+    border-radius: var(--ui-radius-md) !important;
   }
 
   .sider-footer-btn-mobile {
     min-height: 34px !important;
     padding: 6px 10px !important;
-    border-radius: 8px !important;
+    border-radius: var(--ui-radius-md) !important;
   }
 
   /* Mobile: remove left padding for message wrapper */
@@ -557,12 +557,12 @@
 
   /* Sidebar conversation title + secondary timeline text */
   .chat-history__item-name {
-    font-size: 15px !important;
+    font-size: var(--ui-font-title) !important;
     line-height: 24px !important;
   }
 
   .chat-history__section {
-    font-size: 14px !important;
+    font-size: var(--ui-font-subtitle) !important;
     line-height: 20px !important;
   }
 }

@@ -173,6 +173,8 @@ const AcpSendBox: React.FC<{
       name,
       status: 'loaded',
     }));
+  const isSynonBiomedConversation =
+    backend.trim().toLowerCase() === 'synonbiomed' || workspacePath?.startsWith('synonbiomed://') === true;
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<string | undefined>(session_mode);
   const {
@@ -1203,7 +1205,13 @@ const AcpSendBox: React.FC<{
         }
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
-            {(isBusy || content.trim() === '') && <ContextUsagePanel conversationId={conversation_id} />}
+            {isSynonBiomedConversation && (isBusy || content.trim() === '') ? (
+              <ContextUsagePanel
+                conversationId={conversation_id}
+                tokenUsage={messageState.tokenUsage}
+                contextLimit={messageState.context_limit}
+              />
+            ) : null}
             {content.trim() !== '' && (
               <OptimizePromptAction draft={content} disabled={false} onReplace={setContent} />
             )}

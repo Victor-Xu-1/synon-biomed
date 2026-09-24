@@ -21,10 +21,10 @@
   --workspace-danger-text: #2b2a28;
   --workspace-focus: rgb(59 58 55 / 12%);
   --workspace-shadow-popover: 0 8px 28px rgb(35 33 29 / 10%);
-  --workspace-ui-font-size: 13px;
-  --workspace-ui-line-height: 20px;
-  --workspace-meta-font-size: 12px;
-  --workspace-meta-line-height: 18px;
+  --workspace-ui-font-size: var(--ui-font-body);
+  --workspace-ui-line-height: var(--ui-line-height-body);
+  --workspace-meta-font-size: var(--ui-font-meta);
+  --workspace-meta-line-height: var(--ui-line-height-meta);
   --composer-surface: var(--workspace-canvas);
   --composer-border: transparent;
   --composer-border-active: transparent;
@@ -131,13 +131,13 @@ body,
 .settings-sider__item,
 .conversation-item,
 .layout-sider [class*='rd-8px'] {
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 html body .layout-sider button[data-testid='sider-new-chat'] > span:first-child {
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
 }
 html body button.synon-biomed-brand {
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 .chat-history__item:hover,
 .settings-sider__item:hover,
@@ -152,11 +152,11 @@ html body button.synon-biomed-brand {
 .arco-btn {
   min-height: 32px;
   border-color: var(--workspace-border) !important;
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
   box-shadow: none !important;
   font-family: inherit !important;
   font-size: var(--workspace-ui-font-size) !important;
-  font-weight: 500;
+  font-weight: var(--ui-weight-medium);
   line-height: var(--workspace-ui-line-height) !important;
   transition:
     background-color 120ms ease,
@@ -234,40 +234,40 @@ html body .settings-page-wrapper {
 /* Match settings navigation to the 15 px conversation reading scale while
    preserving compact 36 px rows and a distinct current-page weight. */
 html body .settings-sider__item-label {
-  font-size: 15px !important;
+  font-size: var(--ui-font-title) !important;
   line-height: 24px !important;
-  font-weight: 500 !important;
+  font-weight: var(--ui-weight-medium) !important;
 }
 
 html body .settings-sider__item[aria-current='page'] .settings-sider__item-label {
-  font-weight: 600 !important;
+  font-weight: var(--ui-weight-semibold) !important;
 }
 
 html body .settings-sider__group-header {
-  font-size: 12px !important;
+  font-size: var(--ui-font-meta) !important;
   line-height: 18px !important;
-  font-weight: 600 !important;
+  font-weight: var(--ui-weight-semibold) !important;
 }
 
 /* Keep section headings consistent across the independently authored
    settings pages while leaving Markdown rendered in portaled dialogs alone. */
 html body .settings-page-content h2 {
   font-family: inherit;
-  font-size: 15px !important;
+  font-size: var(--ui-font-title) !important;
   line-height: 22px !important;
-  font-weight: 620;
+  font-weight: var(--ui-weight-semibold);
 }
 html body .settings-page-content h3 {
   font-family: inherit;
-  font-size: 14px !important;
+  font-size: var(--ui-font-subtitle) !important;
   line-height: 21px !important;
-  font-weight: 620;
+  font-weight: var(--ui-weight-semibold);
 }
 html body .settings-page-content h4 {
   font-family: inherit;
-  font-size: 13px !important;
+  font-size: var(--ui-font-body) !important;
   line-height: 20px !important;
-  font-weight: 620;
+  font-weight: var(--ui-weight-semibold);
 }
 .arco-input,
 .arco-input-inner-wrapper,
@@ -277,7 +277,7 @@ html body .settings-page-content h4 {
 .arco-input-number {
   background: var(--workspace-canvas) !important;
   border-color: var(--workspace-border) !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   box-shadow: none !important;
   font-family: inherit !important;
   font-size: var(--workspace-ui-font-size) !important;
@@ -335,7 +335,7 @@ html body .arco-select-single .arco-select-suffix {
 .arco-descriptions {
   background: var(--workspace-canvas) !important;
   border: 1px solid var(--workspace-border) !important;
-  border-radius: 12px !important;
+  border-radius: var(--ui-radius-xl) !important;
   box-shadow: none !important;
 }
 .arco-card-header,
@@ -351,7 +351,7 @@ html body .arco-select-single .arco-select-suffix {
   border-color: var(--workspace-border) !important;
 }
 .arco-tag {
-  border-radius: 6px !important;
+  border-radius: var(--ui-radius-sm) !important;
 }
 
 .arco-form-item-label,
@@ -453,7 +453,7 @@ html body .arco-select-single .arco-select-suffix {
   box-shadow: none !important;
 }
 .runtime-operations-banner {
-  border-radius: 12px !important;
+  border-radius: var(--ui-radius-xl) !important;
   box-shadow: none;
 }
 .runtime-operations-banner .arco-btn {
@@ -464,14 +464,14 @@ html body .arco-select-single .arco-select-suffix {
   min-width: 0;
   flex: 1;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 .runtime-operations-banner__actions {
   display: flex;
   flex: none;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 .artifact-page,
 .artifact-shell {
@@ -489,14 +489,14 @@ html body .arco-select-single .arco-select-suffix {
   background: var(--workspace-sidebar) !important;
 }
 .artifact-preview-pane {
-  padding: 24px;
+  padding: var(--ui-space-7);
   background: var(--workspace-sidebar) !important;
 }
 .artifact-preview-pane > * {
   overflow: hidden;
   background: var(--workspace-canvas);
   border: 1px solid var(--workspace-border);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
 }
 .artifact-inspector {
   background: var(--workspace-canvas) !important;
@@ -506,7 +506,7 @@ html body .arco-select-single .arco-select-suffix {
   padding: 0 12px;
 }
 .artifact-inspector .arco-tabs-content {
-  padding-top: 4px;
+  padding-top: var(--ui-space-2);
 }
 .sendbox-container {
   border-width: 1px !important;
@@ -546,7 +546,7 @@ html body .arco-select-single .arco-select-suffix {
 }
 pre,
 code {
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
 }
 @media (max-width: 767px) {
   .sendbox-panel {
@@ -568,7 +568,7 @@ code {
     margin: 0 !important;
   }
   .artifact-preview-pane {
-    padding: 12px;
+    padding: var(--ui-space-5);
   }
   .artifact-header {
     padding-inline: 12px !important;
@@ -600,7 +600,7 @@ html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menu
   min-height: 44px !important;
   padding: 0 12px !important;
   color: var(--workspace-text) !important;
-  border-radius: 9px !important;
+  border-radius: var(--ui-radius-lg) !important;
   font-family: var(--conversation-font-sans) !important;
   font-size: var(--conversation-ui-font-size) !important;
   line-height: var(--conversation-ui-line-height) !important;
@@ -635,8 +635,8 @@ html body [role='dialog']:has([data-testid^='mobile-action-sheet-']) [role='menu
   --workspace-overlay-selected: #e4d9cb;
   --workspace-overlay-border: transparent;
   --workspace-overlay-divider: #e9dfd3;
-  --workspace-overlay-radius: 12px;
-  --workspace-overlay-radius-sm: 8px;
+  --workspace-overlay-radius: var(--ui-radius-xl);
+  --workspace-overlay-radius-sm: var(--ui-radius-md);
   --workspace-overlay-shadow: 0 18px 48px rgb(53 43 34 / 10%), 0 2px 10px rgb(53 43 34 / 5%);
   --workspace-dialog-shadow: 0 28px 80px rgb(53 43 34 / 16%), 0 3px 14px rgb(53 43 34 / 7%);
 }
@@ -685,7 +685,7 @@ html body .arco-select-option {
   color: var(--workspace-text) !important;
   background: transparent !important;
   border-radius: var(--workspace-overlay-radius-sm) !important;
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 19px;
   transition:
     background-color 100ms ease,
@@ -705,7 +705,7 @@ html body .arco-menu-pop .arco-menu-selected,
 html body .arco-select-option-selected {
   color: var(--workspace-text) !important;
   background: var(--workspace-overlay-selected) !important;
-  font-weight: 550;
+  font-weight: var(--ui-weight-medium);
 }
 
 html body .arco-dropdown-menu-disabled,
@@ -728,8 +728,8 @@ html body .arco-select-group-title {
   padding: 8px 9px 5px !important;
   color: var(--workspace-text-tertiary) !important;
   background: var(--workspace-overlay-surface) !important;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--ui-font-meta);
+  font-weight: var(--ui-weight-semibold);
   letter-spacing: 0.02em;
 }
 
@@ -801,7 +801,7 @@ html body .arco-modal {
   color: var(--workspace-text) !important;
   background: var(--workspace-overlay-surface) !important;
   border: 1px solid var(--workspace-overlay-border) !important;
-  border-radius: 14px !important;
+  border-radius: var(--ui-radius-xl) !important;
   box-shadow: var(--workspace-dialog-shadow) !important;
 }
 
@@ -818,7 +818,7 @@ html body .synon-ai-modal .arco-modal-content {
   color: var(--workspace-text) !important;
   background: var(--workspace-overlay-surface) !important;
   border: 0 !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   box-shadow: none !important;
 }
 
@@ -832,8 +832,8 @@ html body .arco-modal-header {
 html body .arco-modal-title,
 html body .arco-modal-simple .arco-modal-title {
   color: var(--workspace-text) !important;
-  font-size: 16px !important;
-  font-weight: 620 !important;
+  font-size: var(--ui-font-section) !important;
+  font-weight: var(--ui-weight-semibold) !important;
   line-height: 23px !important;
   letter-spacing: -0.01em;
 }
@@ -872,7 +872,7 @@ html body .synon-biomed-skill-detail-modal .arco-modal-content {
 }
 
 html body .arco-modal-footer {
-  gap: 8px;
+  gap: var(--ui-space-4);
   padding: 13px 20px 17px !important;
   background: var(--workspace-overlay-surface) !important;
   border-top: 1px solid var(--workspace-overlay-divider) !important;
@@ -881,7 +881,7 @@ html body .arco-modal-footer {
 html body .arco-modal-footer .arco-btn {
   min-width: 82px;
   min-height: 36px;
-  border-radius: 9px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 
 html body .arco-modal-close-icon {
@@ -891,7 +891,7 @@ html body .arco-modal-close-icon {
   align-items: center;
   justify-content: center;
   color: var(--workspace-text-tertiary) !important;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
 }
 
 html body .arco-modal-close-icon:hover {
@@ -940,7 +940,7 @@ html body .accessible-content-dialog__surface {
   color: var(--workspace-text) !important;
   background: var(--workspace-overlay-surface) !important;
   border-color: var(--workspace-overlay-border) !important;
-  border-radius: 14px !important;
+  border-radius: var(--ui-radius-xl) !important;
   box-shadow: var(--workspace-dialog-shadow) !important;
 }
 
@@ -951,7 +951,7 @@ html body .accessible-content-dialog__header {
 }
 
 html body .accessible-content-dialog__close {
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
 }
 
 html body .accessible-content-dialog__close:hover {
@@ -985,8 +985,8 @@ html body .arco-drawer-header {
 
 html body .arco-drawer-title {
   color: var(--workspace-text) !important;
-  font-size: 15px;
-  font-weight: 620;
+  font-size: var(--ui-font-title);
+  font-weight: var(--ui-weight-semibold);
 }
 
 html body .arco-drawer-content {
@@ -1008,7 +1008,7 @@ html body .arco-notification {
   color: var(--workspace-text) !important;
   background: var(--workspace-overlay-surface) !important;
   border: 1px solid var(--workspace-overlay-border) !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   box-shadow: var(--workspace-overlay-shadow) !important;
 }
 
@@ -1016,13 +1016,13 @@ html body .arco-alert {
   color: var(--workspace-text) !important;
   background: var(--workspace-overlay-surface-muted) !important;
   border: 1px solid var(--workspace-overlay-border) !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   box-shadow: none !important;
 }
 
 html body .arco-alert-title {
   color: var(--workspace-text) !important;
-  font-weight: 600;
+  font-weight: var(--ui-weight-semibold);
 }
 
 html body .arco-alert-content,
@@ -1043,7 +1043,7 @@ html body .arco-alert-description {
   color: var(--workspace-text) !important;
   background: var(--workspace-overlay-surface) !important;
   border: 1px solid var(--workspace-overlay-border) !important;
-  border-radius: 14px !important;
+  border-radius: var(--ui-radius-xl) !important;
   box-shadow: var(--workspace-dialog-shadow) !important;
 }
 
@@ -1055,8 +1055,8 @@ html body .arco-alert-description {
 
 .accessible-action-dialog__header h2 {
   color: var(--workspace-text) !important;
-  font-size: 16px !important;
-  font-weight: 620 !important;
+  font-size: var(--ui-font-section) !important;
+  font-weight: var(--ui-weight-semibold) !important;
   line-height: 23px;
 }
 
@@ -1079,9 +1079,9 @@ html body .arco-alert-description {
   min-width: 82px;
   min-height: 36px;
   padding: 0 15px !important;
-  border-radius: 9px !important;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: var(--ui-radius-lg) !important;
+  font-size: var(--ui-font-body);
+  font-weight: var(--ui-weight-semibold);
 }
 
 .accessible-action-dialog__cancel {
@@ -1103,7 +1103,7 @@ html body .arco-alert-description {
 @media (max-width: 519px) {
   html body .arco-modal,
   .accessible-action-dialog__dialog {
-    border-radius: 12px !important;
+    border-radius: var(--ui-radius-xl) !important;
   }
 
   .accessible-action-dialog__footer {
@@ -1124,12 +1124,12 @@ html body .arco-alert-description {
   --conversation-font-sans:
     ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
     'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  --conversation-font-size: 15px;
+  --conversation-font-size: var(--ui-font-title);
   --conversation-line-height: 1.6;
-  --conversation-ui-font-size: 13px;
-  --conversation-ui-line-height: 20px;
-  --conversation-meta-font-size: 12px;
-  --conversation-meta-line-height: 18px;
+  --conversation-ui-font-size: var(--ui-font-body);
+  --conversation-ui-line-height: var(--ui-line-height-body);
+  --conversation-meta-font-size: var(--ui-font-meta);
+  --conversation-meta-line-height: var(--ui-line-height-meta);
   --conversation-user-surface: #efeeeb;
   --conversation-user-border: transparent;
   --conversation-stream-surface: #faf9f7;
@@ -1181,7 +1181,7 @@ html body .message-item.justify-end .message-text-bubble--user {
   color: var(--workspace-text) !important;
   background: var(--conversation-user-surface) !important;
   border: 1px solid var(--conversation-user-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--ui-radius-2xl) !important;
   box-shadow: none !important;
 }
 
@@ -1200,7 +1200,7 @@ html body .synon-biomed-task-status {
   color: var(--workspace-text-secondary) !important;
   background: var(--conversation-stream-surface) !important;
   border: 1px solid transparent !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   font-family: var(--conversation-font-sans) !important;
   font-size: var(--conversation-meta-font-size) !important;
   line-height: var(--conversation-meta-line-height) !important;
@@ -1215,7 +1215,7 @@ html body .runtime-operations-banner {
   color: var(--workspace-text-secondary) !important;
   background: var(--conversation-stream-surface) !important;
   border-color: transparent !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   font-family: var(--conversation-font-sans) !important;
   font-size: var(--conversation-ui-font-size) !important;
   line-height: var(--conversation-ui-line-height) !important;
@@ -1255,7 +1255,7 @@ html body .accessible-action-dialog__body,
 html body .arco-modal-content,
 html body .arco-drawer-content {
   font-family: var(--conversation-font-sans) !important;
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 22px;
 }
 
@@ -1280,7 +1280,7 @@ html body [role='listbox'] [role='option']:focus-visible {
 
 @media (max-width: 767px) {
   html body .message-item.justify-end .whitespace-pre-wrap {
-    font-size: 15px !important;
+    font-size: var(--ui-font-title) !important;
     line-height: 23px !important;
   }
 }
@@ -1499,7 +1499,7 @@ html
     .artifact-library__card,
     .message-scientific-files__card
   ) {
-  box-shadow: 0 1px 3px rgb(0 0 0 / 5%) !important;
+  box-shadow: var(--ui-shadow-sm) !important;
 }
 
 html body :is(.arco-modal-header, .arco-modal-footer, .arco-drawer-header, .arco-drawer-footer) {
@@ -1689,7 +1689,7 @@ html
     [data-testid='synon-biomed-ask-user-card'],
     .synon-approval-card
   ) {
-  border-radius: 14px !important;
+  border-radius: var(--ui-radius-xl) !important;
 }
 
 html body :is(.arco-card, .arco-collapse, .arco-list, .arco-table-container, .arco-alert) {
@@ -1712,7 +1712,7 @@ html body .message-scientific-files__metadata {
 }
 
 html body :is(.arco-modal, .accessible-content-dialog__surface, .accessible-action-dialog__dialog) {
-  border-radius: 16px !important;
+  border-radius: var(--ui-radius-2xl) !important;
 }
 
 html body .arco-drawer {
@@ -1733,7 +1733,7 @@ html
     .arco-radio-mask,
     .arco-checkbox-mask
   ) {
-  border-radius: 9px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 
 /* Arco exposes visually different small/default switch geometries. Keep one
@@ -1748,7 +1748,7 @@ html body .arco-switch {
   flex: 0 0 40px !important;
   padding: 0 !important;
   border: 0 !important;
-  border-radius: 999px !important;
+  border-radius: var(--ui-radius-pill) !important;
   box-shadow: none !important;
 }
 
@@ -1759,7 +1759,7 @@ html body .arco-switch .arco-switch-dot {
   height: 16px !important;
   margin: 0 !important;
   border: 0 !important;
-  border-radius: 50% !important;
+  border-radius: var(--ui-radius-circle) !important;
   line-height: 16px !important;
   box-shadow: 0 1px 2px rgb(0 0 0 / 18%) !important;
 }
@@ -1774,18 +1774,18 @@ html body .arco-switch:focus-visible {
 }
 
 html body .message-item.justify-end .bg-aou-2 {
-  border-radius: 16px !important;
+  border-radius: var(--ui-radius-2xl) !important;
 }
 
 html body .synon-ai-markdown :where(img) {
-  border-radius: 12px !important;
+  border-radius: var(--ui-radius-xl) !important;
 }
 
 html body .synon-ai-markdown :where(blockquote) {
   padding: 10px 12px !important;
   background: var(--conversation-stream-surface) !important;
   border-left: 1px solid var(--workspace-border-strong) !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 
 html body .synon-ai-markdown :where(pre),
@@ -1793,7 +1793,7 @@ html body .synon-ai-markdown [data-streamdown='code-block'] {
   overflow: auto;
   background: var(--conversation-code-surface) !important;
   border-color: transparent !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 
 html body .synon-ai-markdown :where(table) {
@@ -1802,11 +1802,11 @@ html body .synon-ai-markdown :where(table) {
   border: 1px solid transparent !important;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 
 html body .synon-ai-markdown :where(code):not(:where(pre code)) {
-  border-radius: 6px !important;
+  border-radius: var(--ui-radius-sm) !important;
 }
 
 html body .synon-ai-markdown :where(hr) {
@@ -1816,7 +1816,7 @@ html body .synon-ai-markdown :where(hr) {
 
 html body .synon-ai-markdown :is(pre, table, blockquote),
 html body .arco-table-container {
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 
 /* Uno's legacy text-t-tertiary utility points at --bg-6, which is also used
@@ -1831,18 +1831,18 @@ html
   body
   :is(.arco-modal, .arco-drawer, .accessible-content-dialog__surface, .accessible-action-dialog__dialog)
   .text-10px {
-  font-size: 11px !important;
+  font-size: var(--ui-font-micro) !important;
   line-height: 16px !important;
 }
 
 html body .artifact-library__card .text-10px {
-  font-size: 11px !important;
+  font-size: var(--ui-font-micro) !important;
   line-height: 16px !important;
 }
 
 html body .artifact-library__card .text-11px,
 html body .synon-sidebar-project-meta {
-  font-size: 12px !important;
+  font-size: var(--ui-font-meta) !important;
   line-height: 18px !important;
 }
 
@@ -1853,13 +1853,13 @@ html body .synon-sidebar-project-meta {
 }
 
 html body .message-item {
-  font-size: 15px !important;
+  font-size: var(--ui-font-title) !important;
   line-height: 1.65 !important;
 }
 
 html body .sendbox-panel textarea,
 html body .sendbox-panel [contenteditable='true'] {
-  font-size: 14px !important;
+  font-size: var(--ui-font-subtitle) !important;
   line-height: 22px !important;
 }
 
@@ -1903,7 +1903,7 @@ html
     .arco-popconfirm-content,
     .arco-menu
   ) {
-  border-radius: 12px !important;
+  border-radius: var(--ui-radius-xl) !important;
   border-color: transparent !important;
   box-shadow: var(--workspace-shadow-popover) !important;
 }
@@ -1918,7 +1918,7 @@ html
     .arco-menu-item,
     .arco-menu-group-title
   ) {
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
 }
 
 html body :is(.arco-tooltip-content, .arco-popover-content, .arco-popconfirm-content) {
@@ -1933,14 +1933,14 @@ html body .sider-footer {
   margin-bottom: 10px !important;
   margin-left: 10px !important;
   background: var(--workspace-subtle) !important;
-  border-radius: 12px !important;
+  border-radius: var(--ui-radius-xl) !important;
 }
 
 html body .workspace-panel-header {
   margin: 8px 8px 4px !important;
   background: var(--workspace-subtle) !important;
   border: 1px solid transparent !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 
 /* Utility border classes inside the account menu can otherwise expand to a
@@ -1971,8 +1971,8 @@ html body .arco-drawer-footer {
 html body .message-scientific-files__more {
   background: var(--workspace-subtle) !important;
   border-color: transparent !important;
-  border-radius: 12px !important;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 5%) !important;
+  border-radius: var(--ui-radius-xl) !important;
+  box-shadow: var(--ui-shadow-sm) !important;
 }
 
 /* Ask User is one calm decision surface. Options and secondary actions stay

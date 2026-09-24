@@ -88,12 +88,12 @@
     .settings-page-wrapper[data-settings-route='account']
     .account-settings
     :is(p, span, small, time, dt, dd, button) {
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 17px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='account'] .account-settings :is(h2, h3, strong) {
-    font-size: 15px !important;
+    font-size: var(--ui-font-title) !important;
     line-height: 20px !important;
   }
 
@@ -102,17 +102,17 @@
     .settings-page-wrapper[data-settings-route='account']
     .account-settings
     :is(.account-profile-hero__copy h2, .account-metric__value) {
-    font-size: 20px !important;
+    font-size: var(--ui-font-display) !important;
     line-height: 25px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page .text-11px {
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 18px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .settings-plans-page .text-12px {
-    font-size: 14px !important;
+    font-size: var(--ui-font-subtitle) !important;
     line-height: 19px !important;
   }
 

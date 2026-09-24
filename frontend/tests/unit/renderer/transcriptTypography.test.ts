@@ -1,5 +1,12 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync as readFileRaw } from 'node:fs';
+import { resolveDesignTokens } from '../_helpers/designTokens';
 import { describe, expect, it } from 'vitest';
+
+/** Stylesheets are read with primitives inlined; contracts keep pinning numbers. */
+const readFileSync = (target: string | URL, encoding?: BufferEncoding): string =>
+  `${target}`.endsWith('.css')
+    ? resolveDesignTokens(readFileRaw(target, 'utf8'))
+    : (readFileRaw(target, encoding) as unknown as string);
 
 const css = readFileSync(
   'packages/desktop/src/renderer/pages/conversation/Messages/components/MessageToolGroupSummary.css',

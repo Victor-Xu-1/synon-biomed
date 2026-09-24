@@ -204,6 +204,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const localeKey = resolveLocaleKey(i18n.language);
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [mcpOpen, setMcpOpen] = useState(false);
   const [skillQuery, setSkillQuery] = useState('');
@@ -218,15 +219,15 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
     let cancelled = false;
     loadSynonBiomedSkills()
       .then((skills: SynonBiomedSkill[]) => {
-        if (!cancelled && Array.isArray(skills)) setSkillCatalog(catalogMap(skills, resolveLocaleKey(i18n.language)));
+        if (!cancelled && Array.isArray(skills)) setSkillCatalog(catalogMap(skills, localeKey));
       })
       .catch((): undefined => undefined);
     loadSynonBiomedMcpServers()
       .then((servers: SynonBiomedMcpServer[]) => {
         if (!cancelled && Array.isArray(servers))
           setMcpCatalog(
-            catalogMap(servers, resolveLocaleKey(i18n.language), (name) => {
-              if (!resolveLocaleKey(i18n.language).startsWith('zh')) return undefined;
+            catalogMap(servers, localeKey, (name) => {
+              if (!localeKey.startsWith('zh')) return undefined;
               const key = ['conversation', 'mcp', 'descriptions', name].join('.');
               return i18n.exists(key) ? i18n.t(key) : undefined;
             })
@@ -236,7 +237,7 @@ const ComposerCapabilityPicker: React.FC<ComposerCapabilityPickerProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [i18n]);
+  }, [i18n, localeKey]);
 
   const filteredSkills = useMemo(
     () =>

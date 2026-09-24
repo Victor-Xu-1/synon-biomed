@@ -48,7 +48,7 @@
 .message-scientific-files__card {
   background: var(--workspace-canvas, var(--bg-base)) !important;
   border-color: var(--workspace-border, var(--color-border-2)) !important;
-  border-radius: 20px !important;
+  border-radius: var(--ui-radius-2xl) !important;
   box-shadow: none;
 }
 
@@ -68,9 +68,9 @@
   height: 40px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
   color: var(--workspace-text-tertiary, var(--color-text-3));
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
 }
 
 .transcript-boundary-indicator__spinner {
@@ -80,7 +80,7 @@
   animation: conversation-scroll-spin 800ms linear infinite;
   border: 2px solid currentcolor;
   border-top-color: transparent;
-  border-radius: 50%;
+  border-radius: var(--ui-radius-circle);
 }
 
 .transcript-activity-inline {
@@ -94,13 +94,13 @@
 }
 
 .message-item > .transcript-activity-inline {
-  margin-right: 8px;
+  margin-right: var(--ui-space-4);
 }
 
 .conversation-scroll-control {
   position: absolute;
   left: 50%;
-  z-index: 20;
+  z-index: var(--ui-z-sticky);
   display: flex;
   height: 32px;
   align-items: center;
@@ -112,7 +112,7 @@
     0 2px 4px rgb(11 11 11 / 7%),
     0 6px 16px rgb(11 11 11 / 8%);
   font-family: 'Anthropic Sans', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   opacity: 0;
   pointer-events: none;
   transform: translateX(-50%) translateY(-8px);
@@ -130,7 +130,7 @@
   width: 32px;
   justify-content: center;
   padding: 0;
-  border-radius: 9999px;
+  border-radius: var(--ui-radius-pill);
   cursor: pointer;
   transform: translateX(-50%) translateY(8px);
 }
@@ -141,12 +141,12 @@
 
 .conversation-scroll-control--last-user {
   top: 12px;
-  border-radius: 9999px;
+  border-radius: var(--ui-radius-pill);
   white-space: nowrap;
 }
 
 .conversation-scroll-control--last-user {
-  gap: 6px;
+  gap: var(--ui-space-3);
   padding: 0 12px 0 10px;
   cursor: pointer;
   line-height: 20px;
@@ -200,7 +200,7 @@
     max-width: var(--conversation-composer-inline-size);
     margin-inline: auto;
     border: 0 !important;
-    border-radius: 16px !important;
+    border-radius: var(--ui-radius-2xl) !important;
     padding: 8px 12px !important;
     box-shadow:
       0 0 0 1px rgb(10 10 10 / 6%),
@@ -225,13 +225,13 @@
 @container (max-width: 599px) {
   .conversation-composer .sendbox-panel {
     padding: 12px !important;
-    border-radius: 18px !important;
+    border-radius: var(--ui-radius-2xl) !important;
   }
 
   .conversation-composer .sendbox-actions {
     min-width: 0;
     max-width: 100%;
-    gap: 4px;
+    gap: var(--ui-space-2);
   }
 
   .conversation-composer .sendbox-tools {
@@ -244,14 +244,14 @@
 @media (max-width: 767px) {
   /* Message body — keep body type compact so messages don't dominate the screen */
   .message-item .markdown-shadow {
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 1.4 !important;
   }
 
   .message-item .markdown-shadow p,
   .message-item .markdown-shadow li,
   .message-item .markdown-shadow blockquote {
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 1.4 !important;
   }
 
@@ -273,21 +273,21 @@
 .assistant-transcript-text {
   --text-primary: var(--workspace-text);
   --chat-line-height: 25px;
-  --chat-paragraph-margin: 12px;
-  --chat-list-item-margin: 4px;
-  --chat-heading-1-font-size: 22px;
+  --chat-paragraph-margin: var(--ui-space-5);
+  --chat-list-item-margin: var(--ui-space-2);
+  --chat-heading-1-font-size: var(--ui-font-hero);
   --chat-heading-1-line-height: 30px;
-  --chat-heading-2-font-size: 18px;
+  --chat-heading-2-font-size: var(--ui-font-lead);
   --chat-heading-2-line-height: 27px;
-  --chat-heading-3-font-size: 16px;
+  --chat-heading-3-font-size: var(--ui-font-section);
   --chat-heading-3-line-height: 25px;
-  --chat-heading-4-font-size: 15px;
+  --chat-heading-4-font-size: var(--ui-font-title);
   --chat-heading-4-line-height: 24px;
-  --chat-code-font-size: 13px;
+  --chat-code-font-size: var(--ui-font-body);
   --chat-code-line-height: 21px;
-  --chat-quote-font-size: 15px;
+  --chat-quote-font-size: var(--ui-font-title);
   --chat-quote-line-height: 25px;
-  --chat-table-font-size: 13px;
+  --chat-table-font-size: var(--ui-font-body);
   --chat-table-line-height: 22px;
   color: var(--workspace-text);
   font-family: var(--conversation-font-sans, system-ui);
@@ -310,9 +310,9 @@
 @media (max-width: 767px) {
   .assistant-transcript-text {
     --chat-line-height: 24px;
-    --chat-heading-1-font-size: 20px;
+    --chat-heading-1-font-size: var(--ui-font-display);
     --chat-heading-1-line-height: 28px;
-    --chat-heading-2-font-size: 17px;
+    --chat-heading-2-font-size: var(--ui-font-lead);
     --chat-heading-2-line-height: 26px;
   }
 }

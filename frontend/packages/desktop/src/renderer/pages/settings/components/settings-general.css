@@ -52,7 +52,7 @@
     .settings-section__title,
   html body .settings-page-wrapper[data-settings-route='general'] .general-contact-section .settings-section__title,
   html body .settings-page-wrapper[data-settings-route='general'] .general-about-section .settings-section__title {
-    font-size: 16px !important;
+    font-size: var(--ui-font-section) !important;
     line-height: 30px !important;
   }
 

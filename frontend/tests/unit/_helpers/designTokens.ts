@@ -7,19 +7,26 @@ import { fileURLToPath } from 'node:url';
  * through the canonical primitives, so contracts read stylesheets with the
  * primitives inlined back to numbers - the pinned value stays the assertion.
  */
-const tokenSource = readFileSync(
-  path.join(fileURLToPath(new URL('../../../packages/desktop/src/renderer/', import.meta.url)), 'styles/tokens.css'),
-  'utf8'
-);
+const rendererDir = fileURLToPath(new URL('../../../packages/desktop/src/renderer/', import.meta.url));
 
 const primitiveValues = new Map<string, string>();
-for (const match of tokenSource.matchAll(/--(ui-[a-z0-9-]+):\s*([^;]+);/g)) {
-  primitiveValues.set(match[1]!, match[2]!.trim());
+for (const source of ['styles/tokens.css', 'pages/settings/components/settings-core.css']) {
+  for (const match of readFileSync(path.join(rendererDir, source), 'utf8').matchAll(
+    /--(ui-[a-z0-9-]+|settings-[a-z0-9-]+):\s*([^;]+);/g
+  )) {
+    primitiveValues.set(match[1]!, match[2]!.trim());
+  }
 }
 
-/** Stylesheets only: binary fixtures (locked reference images) must stay raw. */
-export const resolveDesignTokensIn = (target: string | URL, text: string): string =>
-  `${target}`.endsWith('.css') ? resolveDesignTokens(text) : text;
+const resolveOnce = (css: string): string =>
+  css.replace(
+    /var\(--(ui-[a-z0-9-]+|settings-[a-z0-9-]+)\)/g,
+    (whole, name: string) => primitiveValues.get(name) ?? whole
+  );
 
-export const resolveDesignTokens = (css: string): string =>
-  css.replace(/var\(--(ui-[a-z0-9-]+)\)/g, (whole, name: string) => primitiveValues.get(name) ?? whole);
+export const resolveDesignTokens = (css: string): string => {
+  // Settings tokens are themselves expressed through the ui primitives.
+  let resolved = resolveOnce(css);
+  for (let pass = 0; pass < 3 && /var\(--(?:ui|settings)-/.test(resolved); pass += 1) resolved = resolveOnce(resolved);
+  return resolved;
+};

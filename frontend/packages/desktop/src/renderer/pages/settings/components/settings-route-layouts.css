@@ -46,7 +46,7 @@
 .settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > section,
 .settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > details {
   margin-top: 0 !important;
-  padding: 24px !important;
+  padding: var(--settings-section-padding) !important;
   border: 1px solid var(--settings-border) !important;
   border-radius: var(--settings-card-radius) !important;
   background: var(--settings-surface) !important;
@@ -200,7 +200,7 @@
 
 .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section .settings-section__header {
   min-height: 48px;
-  padding: 20px 24px 0;
+  padding: var(--settings-section-padding) var(--settings-section-padding) 0;
 }
 
 .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section .settings-section__icon,

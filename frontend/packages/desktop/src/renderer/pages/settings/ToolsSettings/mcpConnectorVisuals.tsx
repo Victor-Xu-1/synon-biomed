@@ -141,10 +141,15 @@ export type McpConnectorVisual = {
 
 export const KNOWN_MCP_CONNECTOR_VISUALS: Readonly<Record<string, McpConnectorVisual>> = KNOWN_VISUALS;
 
-export function resolveMcpConnectorVisual(name: string, displayName = ''): McpConnectorVisual {
-  const candidates = [name, displayName]
-    .map(normalizeConnectorName)
-    .filter((value, index, values) => value && values.indexOf(value) === index);
+/**
+ * The reviewed catalog entry for a connector, or null when this connector is
+ * not one of the classified services. Callers that reason about what a
+ * connector *is* (for example the merged library's domain grouping) use this
+ * instead of `resolveMcpConnectorVisual`, which always returns a mark and may
+ * have picked a hash-based fallback.
+ */
+export function findKnownMcpConnectorVisual(name: string, displayName = ''): McpConnectorVisual | null {
+  const candidates = connectorNameCandidates(name, displayName);
   for (const candidate of candidates) {
     const canonical = candidate === 'om-omtx' ? 'omtx-om' : candidate;
     const known = KNOWN_VISUALS[canonical as keyof typeof KNOWN_VISUALS];
@@ -154,7 +159,20 @@ export function resolveMcpConnectorVisual(name: string, displayName = ''): McpCo
   for (const [key, visual] of Object.entries(KNOWN_VISUALS)) {
     if (searchable.includes(key)) return visual;
   }
+  return null;
+}
+
+export function resolveMcpConnectorVisual(name: string, displayName = ''): McpConnectorVisual {
+  const known = findKnownMcpConnectorVisual(name, displayName);
+  if (known) return known;
+  const searchable = connectorNameCandidates(name, displayName).join('-');
   return FALLBACK_VISUALS[stableHash(searchable || 'mcp') % FALLBACK_VISUALS.length]!;
+}
+
+function connectorNameCandidates(name: string, displayName: string): string[] {
+  return [name, displayName]
+    .map(normalizeConnectorName)
+    .filter((value, index, values) => value && values.indexOf(value) === index);
 }
 
 export function McpConnectorVisualMark({ visual }: { visual: McpConnectorVisual }) {

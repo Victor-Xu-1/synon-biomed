@@ -8,6 +8,7 @@ const modules = [
   { route: 'experts', ready: '[data-testid="expert-list-page"]' },
   { route: 'skills', ready: '[data-testid="synon-biomed-skills-section"]' },
   { route: 'tools', ready: '[data-testid="synon-biomed-mcp-settings"]' },
+  { route: 'environments', ready: '[data-testid="scientific-environments"]' },
   { route: 'models', ready: '[data-testid="models-header"]' },
   { route: 'compute', ready: '[data-testid="synon-biomed-compute-section"]' },
   // The memory surface can load after the shared page heading.
@@ -17,6 +18,8 @@ const modules = [
   { route: 'storage', ready: '[data-testid="synon-storage-settings"]' },
   { route: 'general', ready: '[data-testid="synon-general-settings"]' },
 ] as const;
+
+const libraryRoutes = new Set(['experts', 'skills', 'tools', 'environments']);
 
 test.describe('unified settings visual system', () => {
   test.use({ viewport: { width: 1536, height: 1024 } });
@@ -44,6 +47,9 @@ test.describe('unified settings visual system', () => {
           .locator('.account-profile-hero')
           .evaluate((hero) => getComputedStyle(hero, '::after').zIndex);
         expect(accentLayer).toBe('-1');
+      } else if (libraryRoutes.has(module.route)) {
+        await expect(wrapper.locator('.settings-library-tab-header__title')).toBeVisible();
+        await expect(wrapper.getByTestId(`settings-tab-${module.route}`)).toHaveAttribute('aria-selected', 'true');
       } else {
         await expect(wrapper.locator('.settings-page-header__title')).toBeVisible();
       }
@@ -60,11 +66,20 @@ test.describe('unified settings visual system', () => {
 
       await assertInsideViewport(wrapper, 1536);
       await assertNoHorizontalPageOverflow(page);
-      if (module.route !== 'account') await assertHeaderReadable(wrapper);
-      await assertSharedGeometry(wrapper, module.route === 'account' || module.route === 'network' ? '12px' : '16px');
-      await assertGeneratedAssets(wrapper, module.route !== 'storage');
+      if (module.route !== 'account') {
+        await assertHeaderReadable(
+          wrapper,
+          libraryRoutes.has(module.route) ? '.settings-library-tab-header__title' : '.settings-page-header__title'
+        );
+      }
+      await assertSharedGeometry(
+        wrapper,
+        module.route === 'account' ? '12px' : '16px',
+        module.route !== 'account' && module.route !== 'network'
+      );
+      await assertGeneratedAssets(wrapper, module.route !== 'storage' && module.route !== 'environments');
       if (module.route === 'skills' || module.route === 'tools') {
-        await assertCompactFiveColumnGrid(wrapper, module.route);
+        await assertMergedLibraryGrid(wrapper, module.route);
       }
 
       const screenshot = testInfo.outputPath(`settings-${module.route}.png`);
@@ -139,26 +154,25 @@ async function waitForModuleContent(page: Page, route: (typeof modules)[number][
   }
 }
 
-async function assertSharedGeometry(wrapper: Locator, expectedCardRadius: string) {
+async function assertSharedGeometry(wrapper: Locator, expectedCardRadius: string, elevated: boolean) {
   const geometry = await wrapper.evaluate((root, cardRadius) => {
     const content = root.querySelector<HTMLElement>('.settings-page-content');
-    const header = [...root.querySelectorAll<HTMLElement>('h2, h3, [role="tab"], .settings-page-header__title')].find(
-      (element) => {
-        const rect = element.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-      }
-    );
+    const header = [
+      ...root.querySelectorAll<HTMLElement>('h1, h2, h3, [role="tab"], .settings-page-header__title'),
+    ].find((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
     if (!content || !header) return null;
     const contentRect = content.getBoundingClientRect();
     const headerStyle = getComputedStyle(header);
     const cardSelectors =
-      '.settings-section, .settings-list, .settings-summary-strip, .settings-toolbar, .settings-entity-card, .synon-mcp-card, .account-profile-hero, .expert-group, .expert-row, .settings-model-profile, .compute-section, .network-section, .credentials-connection-card, .storage-usage-card, .memory-manager__status, .memory-manager__workspace';
+      '.settings-section, .settings-list, .settings-summary-strip, .settings-toolbar, .settings-library-card, .settings-entity-card, .synon-mcp-card, .account-profile-hero, .expert-card, .expert-group, .expert-row, .settings-model-profile, .compute-section, .network-section--preset-groups, .credentials-connection-card, .storage-usage-card, .memory-manager__status, .memory-manager__workspace';
     const findVisualCard = () => {
-      const explicit = root.querySelector<HTMLElement>(cardSelectors);
-      if (explicit) {
-        const explicitStyle = getComputedStyle(explicit);
-        if (explicitStyle.borderRadius === cardRadius) return explicit;
-      }
+      const explicit = [...root.querySelectorAll<HTMLElement>(cardSelectors)].find(
+        (candidate) => getComputedStyle(candidate).borderRadius === cardRadius
+      );
+      if (explicit) return explicit;
       return [...root.querySelectorAll<HTMLElement>('*')].find((element) => {
         const rect = element.getBoundingClientRect();
         const style = getComputedStyle(element);
@@ -183,15 +197,15 @@ async function assertSharedGeometry(wrapper: Locator, expectedCardRadius: string
   expect(geometry?.contentLeft ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(330);
   expect(geometry?.titleSize ?? 0).toBeGreaterThanOrEqual(14);
   expect(geometry?.cardRadius).toBe(expectedCardRadius);
-  if (expectedCardRadius === '12px') {
-    expect(geometry?.cardShadow).toBe('none');
-  } else {
+  if (elevated) {
     expect(geometry?.cardShadow).not.toBe('none');
+  } else {
+    expect(geometry?.cardShadow).toBe('none');
   }
 }
 
-async function assertHeaderReadable(wrapper: Locator) {
-  const title = wrapper.locator('.settings-page-header__title');
+async function assertHeaderReadable(wrapper: Locator, selector: string) {
+  const title = wrapper.locator(selector);
   await expect(title).toBeVisible();
   const box = await title.boundingBox();
   expect(box?.width ?? 0).toBeGreaterThan(20);
@@ -260,7 +274,7 @@ async function assertGeneratedAssets(wrapper: Locator, requireArtwork: boolean) 
   expect(assets.connectorImagesWithoutGeneratedMarker).toBe(0);
 }
 
-async function assertCompactFiveColumnGrid(wrapper: Locator, route: 'skills' | 'tools') {
+async function assertMergedLibraryGrid(wrapper: Locator, route: 'skills' | 'tools') {
   const selector = route === 'skills' ? '[data-testid="synon-biomed-skill-grid"]' : '.synon-mcp-grid';
   const grid = wrapper.locator(selector).first();
   await expect(grid).toBeVisible();
@@ -274,8 +288,8 @@ async function assertCompactFiveColumnGrid(wrapper: Locator, route: 'skills' | '
     };
   });
 
-  expect(layout.computedColumns).toBe(5);
-  expect(layout.firstRowCards).toBe(5);
+  expect(layout.computedColumns).toBe(4);
+  expect(layout.firstRowCards).toBe(4);
 }
 
 async function assertInsideViewport(locator: Locator, viewportWidth: number) {

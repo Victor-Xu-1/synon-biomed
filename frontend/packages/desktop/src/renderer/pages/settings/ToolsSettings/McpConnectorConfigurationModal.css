@@ -25,7 +25,7 @@
 .mcp-configuration__link small {
   display: block;
   color: var(--color-text-3);
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
 }
 
 .mcp-configuration__section {

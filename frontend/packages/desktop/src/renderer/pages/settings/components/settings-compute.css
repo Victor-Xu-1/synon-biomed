@@ -5,7 +5,7 @@
      238px minimum.  The approved sheet is a measured 206px card. */
   html body .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid > .settings-section {
     height: 206px !important;
-    min-height: 206px !important;
+    min-height: var(--settings-entity-card-height) !important;
     max-height: 206px !important;
     position: relative !important;
   }
@@ -22,7 +22,7 @@
     flex-direction: row !important;
     align-items: flex-start !important;
     gap: 18px !important;
-    padding: 24px !important;
+    padding: var(--settings-section-padding) !important;
   }
 
   html
@@ -133,7 +133,7 @@
     p {
     max-width: 180px;
     overflow: hidden;
-    font-size: var(--ui-font-meta) !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 18px !important;
     text-overflow: ellipsis;
     white-space: nowrap;

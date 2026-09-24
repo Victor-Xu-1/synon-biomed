@@ -27,6 +27,7 @@ vi.mock('@arco-design/web-react', () => ({
     </div>
   ),
   Spin: () => <span aria-hidden='true' />,
+  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock('@icon-park/react', () => ({
@@ -51,8 +52,10 @@ const usage = (usedTokens = 20, sessionId = 'conversation-1') => ({
     hasMedia: false,
     inputEstimates: [
       { key: 'systemPrompt', tokens: 4 },
+      { key: 'tools', tokens: 2 },
       { key: 'messages', tokens: 8 },
-      { key: 'toolDefinitions', tokens: 2 },
+      { key: 'mcp', tokens: 1 },
+      { key: 'skills', tokens: 1 },
     ],
   },
 });
@@ -75,16 +78,23 @@ describe('ContextUsagePanel', () => {
     const trigger = screen.getByTestId('synon-biomed-context-usage-trigger');
     expect(trigger.tagName).toBe('BUTTON');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
     fireEvent.click(trigger);
     expect(await screen.findByTestId('context-usage-percent')).toHaveTextContent('20.0%');
-    expect(screen.getByTestId('context-usage-source')).toHaveTextContent('provider-reported usage');
-    expect(screen.getByTestId('context-usage-panel')).toHaveTextContent('does not show remaining context');
-    expect(screen.getByTestId('context-usage-legend')).toHaveTextContent('Tool definitions (including MCP)');
+    const summary = screen.getByRole('group');
+    expect(document.getElementById(summary.getAttribute('aria-describedby') ?? '')).toHaveTextContent(
+      'provider-reported usage'
+    );
+    expect(screen.getByTestId('context-usage-legend')).toHaveTextContent('Tools & subagents');
+    expect(screen.getByTestId('context-usage-legend')).toHaveTextContent('Connectors & MCP');
+    expect(screen.getByTestId('context-usage-legend')).toHaveTextContent('Skills');
+    expect(screen.getByTestId('context-usage-legend').querySelectorAll('div')).toHaveLength(5);
     expect(vi.mocked(fetch).mock.calls.every(([input]) => String(input).endsWith('/context-usage'))).toBe(true);
     await act(async () => {
       fireEvent.click(screen.getByTestId('context-usage-close'));
     });
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
   });
 
   it('identifies the default runner budget as unverified', async () => {
@@ -93,11 +103,10 @@ describe('ContextUsagePanel', () => {
     vi.mocked(fetch).mockImplementation(() => Promise.resolve(new Response(JSON.stringify(defaultBudget))));
     await renderWithI18n(<ContextUsagePanel conversationId='conversation-1' />, 'en-US');
     fireEvent.click(screen.getByTestId('synon-biomed-context-usage-trigger'));
-    expect(await screen.findByTestId('context-usage-source')).toHaveTextContent('not a verified model limit');
-    expect(screen.queryByTestId('context-usage-percent')).not.toBeInTheDocument();
-    expect(screen.getByTestId('synon-biomed-context-usage-trigger').querySelectorAll('circle')[1]).toHaveAttribute(
-      'stroke-dasharray',
-      '2 3'
+    expect(await screen.findByTestId('context-usage-percent')).toHaveTextContent('20.0%');
+    const summary = screen.getByRole('group');
+    expect(document.getElementById(summary.getAttribute('aria-describedby') ?? '')).toHaveTextContent(
+      'not a verified model limit'
     );
   });
 
@@ -107,9 +116,10 @@ describe('ContextUsagePanel', () => {
     vi.mocked(fetch).mockImplementation(() => Promise.resolve(new Response(JSON.stringify(unnamedModel))));
     await renderWithI18n(<ContextUsagePanel conversationId='conversation-1' />, 'en-US');
     fireEvent.click(screen.getByTestId('synon-biomed-context-usage-trigger'));
-    const observed = await screen.findByTestId('context-usage-observed');
-    expect(observed.querySelector('time')).toHaveAttribute('datetime', unnamedModel.snapshot.observedAt);
-    expect(observed.textContent?.trimStart().startsWith('·')).toBe(false);
+    const summary = await screen.findByRole('group');
+    const description = document.getElementById(summary.getAttribute('aria-describedby') ?? '');
+    expect(description).toHaveTextContent(/1\/1\/2026/);
+    expect(description?.textContent?.includes(' ·  · ')).toBe(false);
   });
 
   it('renders a valid zero rather than an endless spinner', async () => {
@@ -124,7 +134,8 @@ describe('ContextUsagePanel', () => {
     fireEvent.click(screen.getByTestId('synon-biomed-context-usage-trigger'));
     expect(await screen.findByTestId('context-usage-percent')).toHaveTextContent('0.0%');
     expect(screen.queryByTestId('context-usage-loading')).not.toBeInTheDocument();
-    expect(screen.getByTestId('context-usage-legend')).toHaveTextContent('最近响应');
+    expect(screen.getByTestId('context-usage-legend')).toHaveTextContent('0.0%');
+    expect(screen.getByTestId('context-usage-legend')).not.toHaveTextContent('响应 token');
   });
 
   it('does not report zero response tokens before a response exists', async () => {
@@ -135,8 +146,11 @@ describe('ContextUsagePanel', () => {
     vi.mocked(fetch).mockImplementation(() => Promise.resolve(new Response(JSON.stringify(pending))));
     await renderWithI18n(<ContextUsagePanel conversationId='conversation-1' />, 'en-US');
     fireEvent.click(screen.getByTestId('synon-biomed-context-usage-trigger'));
-    expect(await screen.findByText(/response usage is not yet available/)).toBeInTheDocument();
-    expect(screen.getByTestId('context-usage-legend')).not.toHaveTextContent('Latest response');
+    const summary = await screen.findByRole('group');
+    expect(document.getElementById(summary.getAttribute('aria-describedby') ?? '')).toHaveTextContent(
+      'response usage is not yet available'
+    );
+    expect(screen.getByTestId('context-usage-legend')).not.toHaveTextContent('Response tokens');
   });
 
   it('marks a failed request and keeps unknown response usage hidden', async () => {
@@ -147,8 +161,11 @@ describe('ContextUsagePanel', () => {
     vi.mocked(fetch).mockImplementation(() => Promise.resolve(new Response(JSON.stringify(failed))));
     await renderWithI18n(<ContextUsagePanel conversationId='conversation-1' />, 'en-US');
     fireEvent.click(screen.getByTestId('synon-biomed-context-usage-trigger'));
-    expect(await screen.findByText(/last request failed/)).toBeInTheDocument();
-    expect(screen.getByTestId('context-usage-legend')).not.toHaveTextContent('Latest response');
+    const summary = await screen.findByRole('group');
+    expect(document.getElementById(summary.getAttribute('aria-describedby') ?? '')).toHaveTextContent(
+      'last request failed'
+    );
+    expect(screen.getByTestId('context-usage-legend')).not.toHaveTextContent('Response tokens');
   });
 
   it('shows missing records explicitly and allows retry', async () => {

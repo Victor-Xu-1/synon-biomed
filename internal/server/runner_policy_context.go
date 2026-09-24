@@ -139,6 +139,10 @@ func (s *Server) registeredToolNames() []string {
 }
 
 func appendRuntimeAgentPolicyContextMessage(messages []chatCompletionMessage, context string) []chatCompletionMessage {
+	return appendRuntimeAgentPolicyContextMessageWithSource(messages, context, "")
+}
+
+func appendRuntimeAgentPolicyContextMessageWithSource(messages []chatCompletionMessage, context string, source agentruntime.ContextUsageSource) []chatCompletionMessage {
 	context = strings.TrimSpace(context)
 	if context == "" {
 		return messages
@@ -148,12 +152,12 @@ func appendRuntimeAgentPolicyContextMessage(messages []chatCompletionMessage, co
 	for _, message := range messages {
 		out = append(out, message)
 		if !inserted && message.Role == "system" {
-			out = append(out, chatCompletionMessage{Role: "system", Content: context})
+			out = append(out, chatCompletionMessage{Role: "system", Content: context, ContextUsageSource: source})
 			inserted = true
 		}
 	}
 	if !inserted {
-		out = append([]chatCompletionMessage{{Role: "system", Content: context}}, out...)
+		out = append([]chatCompletionMessage{{Role: "system", Content: context, ContextUsageSource: source}}, out...)
 	}
 	return out
 }
@@ -163,6 +167,10 @@ func appendRuntimeAgentPolicyContextMessage(messages []chatCompletionMessage, co
 // dominate stale draft content on resume; general policy continues to use
 // appendRuntimeAgentPolicyContextMessage so there is one ordered prompt path.
 func appendRuntimeTerminalPolicyContextMessage(messages []chatCompletionMessage, context string) []chatCompletionMessage {
+	return appendRuntimeTerminalPolicyContextMessageWithSource(messages, context, "")
+}
+
+func appendRuntimeTerminalPolicyContextMessageWithSource(messages []chatCompletionMessage, context string, source agentruntime.ContextUsageSource) []chatCompletionMessage {
 	context = strings.TrimSpace(context)
 	if context == "" {
 		return messages
@@ -171,7 +179,7 @@ func appendRuntimeTerminalPolicyContextMessage(messages []chatCompletionMessage,
 	for insertAt < len(messages) && messages[insertAt].Role == "system" {
 		insertAt++
 	}
-	insert := chatCompletionMessage{Role: "system", Content: context}
+	insert := chatCompletionMessage{Role: "system", Content: context, ContextUsageSource: source}
 	out := make([]chatCompletionMessage, 0, len(messages)+1)
 	out = append(out, messages[:insertAt]...)
 	out = append(out, insert)
@@ -585,7 +593,8 @@ func appendRuntimeSkillContextMessage(messages []chatCompletionMessage, context 
 	}
 	out := append([]chatCompletionMessage(nil), messages...)
 	insert := chatCompletionMessage{
-		Role: "system",
+		Role:               "system",
+		ContextUsageSource: agentruntime.ContextUsageSkills,
 		Content: "Runtime skill context:\n" +
 			"The following loaded Skill is active task-scoped execution guidance. When it provides a tested script, template, reference, environment contract, or canonical transfer route, inspect and reuse that asset before authoring an equivalent workflow from scratch. Adapt only the incompatible boundary and preserve the Skill's validation and provenance rules; do not silently replace it with a competing implementation.\n\n" +
 			strings.TrimSpace(context),
@@ -659,7 +668,7 @@ func appendRuntimeSkillCandidateContextMessage(messages []chatCompletionMessage,
 	if strings.TrimSpace(context) == "" {
 		return messages
 	}
-	return appendRuntimeAgentPolicyContextMessage(messages, strings.TrimSpace(context))
+	return appendRuntimeAgentPolicyContextMessageWithSource(messages, strings.TrimSpace(context), agentruntime.ContextUsageSkills)
 }
 
 func runtimeMCPContext(schemas []agentruntime.ToolSchema, selectedSkills []skills.Skill) string {
@@ -737,8 +746,9 @@ func appendRuntimeMCPContextMessage(messages []chatCompletionMessage, context st
 	}
 	out := append([]chatCompletionMessage(nil), messages...)
 	insert := chatCompletionMessage{
-		Role:    "system",
-		Content: "Synon MCP tool context:\n" + strings.TrimSpace(context),
+		Role:               "system",
+		Content:            "Synon MCP tool context:\n" + strings.TrimSpace(context),
+		ContextUsageSource: agentruntime.ContextUsageMCP,
 	}
 	if len(out) == 0 {
 		return []chatCompletionMessage{insert}

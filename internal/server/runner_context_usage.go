@@ -39,6 +39,10 @@ type runnerContextUsageRow struct {
 	Tokens int    `json:"tokens"`
 }
 
+var errLegacyRunnerContextUsage = errors.New("legacy three-category context usage")
+
+var contextUsageCategoryKeys = [...]string{"systemPrompt", "tools", "messages", "mcp", "skills"}
+
 type sessionContextUsageRecorder struct {
 	store       *runtimekv.Store
 	sessionID   string
@@ -94,7 +98,10 @@ func contextUsageNamespace(sessionID string) string {
 }
 
 func estimateRunnerRequestUsage(request agentruntime.ModelRequest) ([]runnerContextUsageRow, bool, error) {
-	system, messages, tools := 0, 0, 0
+	rows := make([]runnerContextUsageRow, len(contextUsageCategoryKeys))
+	for index, key := range contextUsageCategoryKeys {
+		rows[index].Key = key
+	}
 	hasMedia := false
 	for _, message := range request.Messages {
 		tokens := 4 + estimateTextTokens(message.Role) + estimateTextTokens(message.Content)
@@ -108,11 +115,22 @@ func estimateRunnerRequestUsage(request agentruntime.ModelRequest) ([]runnerCont
 		for _, call := range message.ToolCalls {
 			tokens += estimateTextTokens(call.ID) + estimateTextTokens(call.Name) + estimateTextTokens(string(call.Arguments))
 		}
-		if message.Role == "system" || message.Role == "developer" {
-			system += tokens
-		} else {
-			messages += tokens
+		category := 2 // Conversation history and generated/tool messages.
+		switch message.ContextUsageSource {
+		case agentruntime.ContextUsageSystemPrompt:
+			category = 0
+		case agentruntime.ContextUsageMCP:
+			category = 3
+		case agentruntime.ContextUsageSkills:
+			category = 4
+		case agentruntime.ContextUsageMessages:
+			// Explicitly attributed replay may retain system priority.
+		default:
+			if message.Role == "system" || message.Role == "developer" {
+				category = 0
+			}
 		}
+		rows[category].Tokens += tokens
 	}
 	for _, tool := range request.Tools {
 		// Runtime-only capabilities, exposure and output contracts are not sent
@@ -125,9 +143,16 @@ func estimateRunnerRequestUsage(request agentruntime.ModelRequest) ([]runnerCont
 		if err != nil {
 			return nil, false, fmt.Errorf("estimate context tool schema: %w", err)
 		}
-		tools += estimateTextTokens(string(raw))
+		category := 1 // Provider-visible tool/subagent definition.
+		for _, capability := range tool.Capabilities {
+			if capability == "mcp" {
+				category = 3
+				break
+			}
+		}
+		rows[category].Tokens += estimateTextTokens(string(raw))
 	}
-	return []runnerContextUsageRow{{"systemPrompt", system}, {"messages", messages}, {"toolDefinitions", tools}}, hasMedia, nil
+	return rows, hasMedia, nil
 }
 
 func (recorder *sessionContextUsageRecorder) begin(model string, request agentruntime.ModelRequest) *runnerContextUsage {
@@ -210,8 +235,11 @@ func (recorder *sessionContextUsageRecorder) persist(snapshot runnerContextUsage
 		}
 		if entry, found := entries["latest"]; found {
 			previous, err := decodeRunnerContextUsage(entry)
-			if err != nil {
+			if err != nil && !(errors.Is(err, errLegacyRunnerContextUsage) && !completing) {
 				return false, err
+			}
+			if previous.SessionID != recorder.sessionID {
+				return false, errors.New("context usage record belongs to another session")
 			}
 			// The SQLite namespace lock orders begins within an attempt. Wall
 			// clocks can move backwards and must not fence a newer request.
@@ -230,24 +258,55 @@ func (recorder *sessionContextUsageRecorder) persist(snapshot runnerContextUsage
 func decodeRunnerContextUsage(entry runtimekv.Entry) (runnerContextUsage, error) {
 	var snapshot runnerContextUsage
 	raw, err := json.Marshal(entry.Value)
+	var fields map[string]json.RawMessage
 	if err == nil {
 		err = json.Unmarshal(raw, &snapshot)
+	}
+	if err == nil {
+		err = json.Unmarshal(raw, &fields)
 	}
 	if err != nil {
 		return snapshot, fmt.Errorf("decode context usage: %w", err)
 	}
-	if snapshot.SessionID == "" || snapshot.RequestID == "" || snapshot.UsedTokens < 0 || snapshot.LimitTokens <= 0 ||
-		snapshot.OutputTokens < 0 || snapshot.ObservedAt.IsZero() ||
+	for _, field := range []string{"sessionId", "requestId", "attempt", "model", "observedAt", "state", "source", "usedTokens", "limitTokens", "limitSource", "outputTokens", "hasMedia", "inputEstimates"} {
+		value, found := fields[field]
+		if !found || len(value) == 0 || string(value) == "null" {
+			return snapshot, errors.New("invalid context usage record")
+		}
+	}
+	var rowFields []map[string]json.RawMessage
+	if err := json.Unmarshal(fields["inputEstimates"], &rowFields); err != nil || len(rowFields) != len(snapshot.InputEstimates) {
+		return snapshot, errors.New("invalid context usage breakdown")
+	}
+	for _, row := range rowFields {
+		for _, field := range []string{"key", "tokens"} {
+			value, found := row[field]
+			if !found || len(value) == 0 || string(value) == "null" {
+				return snapshot, errors.New("invalid context usage breakdown")
+			}
+		}
+	}
+	if snapshot.SessionID == "" || snapshot.RequestID == "" || snapshot.Attempt < 0 || snapshot.UsedTokens < 0 || snapshot.LimitTokens <= 0 ||
+		snapshot.OutputTokens < 0 || snapshot.OutputTokens > snapshot.UsedTokens || snapshot.ObservedAt.IsZero() ||
 		(snapshot.State != "request" && snapshot.State != "complete" && snapshot.State != "failed") ||
 		(snapshot.Source != "estimated" && snapshot.Source != "provider") ||
 		(snapshot.LimitSource != "configured" && snapshot.LimitSource != "runner_default") ||
-		len(snapshot.InputEstimates) != 3 {
+		(snapshot.State != "complete" && (snapshot.Source == "provider" || snapshot.OutputTokens != 0)) ||
+		len(snapshot.InputEstimates) != len(contextUsageCategoryKeys) && len(snapshot.InputEstimates) != 3 {
 		return snapshot, errors.New("invalid context usage record")
 	}
-	for index, key := range []string{"systemPrompt", "messages", "toolDefinitions"} {
+	keys := contextUsageCategoryKeys[:]
+	legacy := len(snapshot.InputEstimates) == 3
+	if legacy {
+		keys = []string{"systemPrompt", "messages", "toolDefinitions"}
+	}
+	for index, key := range keys {
 		if snapshot.InputEstimates[index].Key != key || snapshot.InputEstimates[index].Tokens < 0 {
 			return snapshot, errors.New("invalid context usage breakdown")
 		}
+	}
+	if legacy {
+		return snapshot, errLegacyRunnerContextUsage
 	}
 	return snapshot, nil
 }

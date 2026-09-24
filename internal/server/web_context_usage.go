@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -30,6 +31,10 @@ func (s *Server) handleWebContextUsage(w http.ResponseWriter, r *http.Request, f
 		return
 	}
 	snapshot, err := decodeRunnerContextUsage(entry)
+	if errors.Is(err, errLegacyRunnerContextUsage) && snapshot.SessionID == frame.ID {
+		writeWorkspaceJSON(w, http.StatusOK, map[string]any{"status": "unavailable"})
+		return
+	}
 	if err != nil || snapshot.SessionID != frame.ID {
 		log.Printf("context_usage_record_invalid frame=%s", frame.ID)
 		writeWorkspaceJSON(w, http.StatusServiceUnavailable, map[string]any{"message": "context usage record unavailable"})

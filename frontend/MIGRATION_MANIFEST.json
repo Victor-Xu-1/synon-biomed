@@ -3,9 +3,9 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "e1f50bcf9cc75d7e8e35910f5b10421a1f9d38316d2dd64b50dab1bfb7cc69fe",
+  "adaptationFingerprintSHA256": "cb0754a83cac0238b5b081f03a8d64a7736148803f57a65a969a1b84e5d5307c",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "049a151cd08c3e69ce5e39788274e2b5ef8731f4b9e054f12f16e0b774ec8fa5",
+  "additionFingerprintSHA256": "d87b07a9103f9daf8912e31fd062688fbbfa0d1f7bef254b5ce5432b259dd794",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -1116,8 +1116,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/Messages/components/MessageThinking.module.css",
       "sourceSHA256": "aa86ba9e46f2ff6c4a1dd5a3ce5b949635327c62c6a1cedf8c9d34322d723a48",
-      "targetSHA256": "b21b49ce8f78b948f98c4a65829a20fbaa0b05ece9ebd40b7d4da821623ad437",
-      "bytes": 3526,
+      "targetSHA256": "607364d7ac736b3affc32b81f40e6d1fa4839b30ac4bffa155ab5141d51c5c4d",
+      "bytes": 3524,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -2250,8 +2250,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/SettingsPageHeader.tsx",
       "sourceSHA256": "5aa07c20cd85f5c47c301dc6357f8bdcf331e4b0812bb0080b402c4af28e8ce3",
-      "targetSHA256": "3ac7af9f84fbae972ae0e4035e2db90e2b0a99576a3b554f5d3de2033cc0ecce",
-      "bytes": 4003,
+      "targetSHA256": "250c6fa6a3c4d5091a78cac967f36a279bdbafb5084abb53d5298c5ee60262e4",
+      "bytes": 3982,
       "reason": "Give settings actions a stable responsive layout hook."
     },
     {
@@ -7704,8 +7704,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/account/AccountProfileHero.css",
-      "sha256": "4a2551cab50d03490eeb9e926a2467e5dfa3e438b993c32600a9688754d32783",
-      "bytes": 6752,
+      "sha256": "e67448e462f4766e481b448defc97042feafb7a531d4ebd9f1ae0fce8ed95c4d",
+      "bytes": 6780,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -10044,8 +10044,8 @@
     },
     {
       "path": "tests/unit/themeVisualTokens.test.ts",
-      "sha256": "bc4ca52fb0c815920c85c2620299713a849f97e82bdb1defa9a7f25eeb8b80b7",
-      "bytes": 5063,
+      "sha256": "d8d86d765995cc53324fb09eb5671dd2a7070b60d08e93321dd7590094cc1cd0",
+      "bytes": 5205,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -10332,8 +10332,8 @@
     },
     {
       "path": "tests/web-e2e/synonbiomedSettingsVisualSystem.e2e.ts",
-      "sha256": "7414d526319d88819db266a66d85c94598d5cb1e45abb7851ae0df92068df654",
-      "bytes": 10927,
+      "sha256": "ac204feb2c48ae657e5b2538999ce70a7951e702391f97de84f9b3870c838212",
+      "bytes": 13735,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

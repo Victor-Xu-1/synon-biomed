@@ -108,6 +108,10 @@ describe('design primitive scale', () => {
 });
 
 describe.each(moduleCss)('%s uses the shared scale', (_name, css) => {
+  it('does not append arithmetic to a token outside calc()', () => {
+    expect(css).not.toMatch(/:\s*var\(--ui-[^)]+\)\s*[+-]\s*\d/);
+  });
+
   it('declares radius through the radius scale', () => {
     for (const match of css.matchAll(/border-radius:\s*([0-9]+px);/g)) {
       throw new Error(`raw radius ${match[1]} - use a --ui-radius-* token`);

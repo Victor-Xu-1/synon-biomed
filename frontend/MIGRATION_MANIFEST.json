@@ -5,7 +5,7 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "79552250080c83c42b61e163b2f098d8dde6a9e9a52a1999874d47dbba582137",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "4d3b3f6d5633bdfeb7bc0cdf8551c91945cbabda3cfbfed910054e48d99699c2",
+  "additionFingerprintSHA256": "989b44843c14bbd0070a5cf68720dc606ef41fc1c89e9eaf8ecd355a90d00a98",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
@@ -10266,8 +10266,8 @@
     },
     {
       "path": "tests/web-e2e/synonbiomedPromptOptimizer.e2e.ts",
-      "sha256": "44f3ea64c6ac7af146462c601052af949375b20619d61b1d8df379909a763afd",
-      "bytes": 4238,
+      "sha256": "723a412020a641fdabb41f4d26529567700ca2f87a5dcb1f800d0ad674409065",
+      "bytes": 4432,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

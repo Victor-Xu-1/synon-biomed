@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { expect, test } from '@playwright/test';
@@ -9,11 +10,16 @@ import {
 } from './synonBiomedScientificFixture';
 
 test('optimizes and reverts only the current conversation draft', async ({ page }) => {
+  const providerKey = randomUUID();
   let calls = 0;
   let releaseSecond: (() => void) | null = null;
   const upstream = createServer(async (request, response) => {
     if (request.method !== 'POST' || request.url !== '/v1/chat/completions') {
       response.writeHead(404).end();
+      return;
+    }
+    if (request.headers.authorization !== `Bearer ${providerKey}`) {
+      response.writeHead(401).end();
       return;
     }
     calls += 1;
@@ -46,7 +52,7 @@ test('optimizes and reverts only the current conversation draft', async ({ page 
         provider: 'openai',
         baseUrl: `http://127.0.0.1:${address.port}/v1`,
         model: 'local-optimizer-test',
-        apiKey: 'disposable-test-key',
+        apiKey: providerKey,
       },
     });
     expect(providerResponse.status(), await providerResponse.text()).toBe(200);

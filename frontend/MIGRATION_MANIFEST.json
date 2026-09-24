@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "12a625473456baad729dd39d26f1ad85463da6af37836247f5ba1613e9b8bff0",
+  "adaptationFingerprintSHA256": "79552250080c83c42b61e163b2f098d8dde6a9e9a52a1999874d47dbba582137",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "be86adc5ccfddf8d090a1f7f55c61f3475164b3c103d672ab58d7378fb0b9317",
+  "additionFingerprintSHA256": "4d3b3f6d5633bdfeb7bc0cdf8551c91945cbabda3cfbfed910054e48d99699c2",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
     "adaptedSourceFiles": 664,
     "removedSourceFiles": 289,
-    "addedFiles": 659
+    "addedFiles": 660
   },
   "adaptations": [
     {
@@ -675,8 +675,8 @@
     {
       "path": "packages/desktop/src/renderer/hooks/chat/useSendBoxDraft.ts",
       "sourceSHA256": "19f80f89bd78f940b19751ae4c8db9e228aeb7c6f340528e72f922886a676409",
-      "targetSHA256": "5f208d3a6ea4f0c3cf6e94cca028e84d3e54a830afab7cdd15919814382b1b30",
-      "bytes": 4134,
+      "targetSHA256": "d501dba5e6b75390e05f5190c478ce5e24c8bcffd67210b4e856bfd2e8acda9d",
+      "bytes": 5961,
       "reason": "Bootstrap authenticated Web runtime state and adapt assistant and MCP hooks without retaining Electron server authority."
     },
     {
@@ -1774,8 +1774,8 @@
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/AcpSendBox.tsx",
       "sourceSHA256": "8f99e14a4de14e19821d60b145b3cbfdbbe6686becd6150d19283dc7cedf8f80",
-      "targetSHA256": "dda7963c9dea1d2f01146b434f941990927dff0b03687cbcf5c515e214ae5c2e",
-      "bytes": 53520,
+      "targetSHA256": "7b9de04f2ea177240523e5c5f1dee1e030afd59a1d0f895268603ceea99b55f7",
+      "bytes": 53747,
       "reason": "Connect conversation history, messages, workspace, delegation, commands, and realtime recovery to the Go runtime."
     },
     {
@@ -2383,8 +2383,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts",
       "sourceSHA256": "d46e67e7ae9b1a4c53252446bb8e2c6d12141deaac2d253b8c1922afa35ab5d9",
-      "targetSHA256": "8fb93702fac45f03a7eef588acbada439b83ba1eb601b43566838e6d9d92c757",
-      "bytes": 245128,
+      "targetSHA256": "8225a5abea67703a977b1dc69cc0af490f00ea31a0abd2b975bb4d720a48baf0",
+      "bytes": 245189,
       "reason": "Regenerate typed locale keys for the unified structure controls and first-run scientific-runtime catalog."
     },
     {
@@ -2418,8 +2418,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/en-US/conversation.json",
       "sourceSHA256": "c6802cdea4137a9a8199f5b9e57c11a99e7b8fde42539065da42dd4db9052b8e",
-      "targetSHA256": "72dbe63157f79e3bd05e5c38b274d85a524df5c90a7a9b9e5ef9d20475635aa8",
-      "bytes": 74948,
+      "targetSHA256": "3fdb62bb28d98bdf1a762c41ae275c23cffc09850aed9b4543af1cbecfc90a81",
+      "bytes": 75004,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2509,8 +2509,8 @@
     {
       "path": "packages/desktop/src/renderer/services/i18n/locales/zh-CN/conversation.json",
       "sourceSHA256": "cb395d18cb1692e13c849172bf6d957304ef382973fb5ab95fd14723cbc045bd",
-      "targetSHA256": "9f7af520bf2820ea9ad04367ceff883f1ca4943349ab0ce5196a68055bab8a42",
-      "bytes": 70942,
+      "targetSHA256": "e1e1b0250cd846c672e7c1beea91e9cd58b8c579e2d17d6bdcc0e3a8a7817871",
+      "bytes": 70999,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -2691,8 +2691,8 @@
     {
       "path": "packages/desktop/src/renderer/services/synonBiomedLlm.ts",
       "sourceSHA256": "e26809b59b7f20d2714380a8f0ef038a2964f498aad56cbd7c02e7e0a8ddaa2f",
-      "targetSHA256": "c193973da7e6b980890675f5df3e7217a1ce671c5faf15445c31cbe364a9925a",
-      "bytes": 10935,
+      "targetSHA256": "93b7835f6be1ebe08634e25e85ac49874e9adffa80ab397071104e711e9dd6dc",
+      "bytes": 11155,
       "reason": "Implement typed Go API clients, complete localization resources, runtime projections, and browser-safe presentation models."
     },
     {
@@ -3993,8 +3993,8 @@
     {
       "path": "tests/unit/renderer/synonBiomedLlm.dom.test.ts",
       "sourceSHA256": "5942fe0912f19c0f48101cdd7d2758616add98b8671a9792a2f26a6e34975cd6",
-      "targetSHA256": "352dd7dd6edadd4821acf7e0f67f1c0d06b0f597b71a0f594227bbeb894a3e3f",
-      "bytes": 5928,
+      "targetSHA256": "e6e2c95783a78f6638c03bd48919c6edcb4442ba99bf4135675acfe317989c79",
+      "bytes": 6150,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -4056,8 +4056,8 @@
     {
       "path": "tests/unit/renderer/useSendBoxDraft.dom.test.ts",
       "sourceSHA256": "bbb668b45522ef383df5f559027370cdccbe094c6def9cfb3e84d758576a93e0",
-      "targetSHA256": "6ca99f6cfc57490ca6b0bfb89b2fb69843219fee395072c3ab48830df1639c7f",
-      "bytes": 3898,
+      "targetSHA256": "cd818b42e7c587c882928d37ac0a5e85ede377c7b8ce5a0a680900eecffb9819",
+      "bytes": 5924,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {
@@ -6696,8 +6696,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/OptimizePromptAction.tsx",
-      "sha256": "beede8aa434bbcf35d725e259eb89cb2cfe1cb609e0ac70dcb639bee4644f6ec",
-      "bytes": 4566,
+      "sha256": "2945e22f4ebdc433bab98c6c34b4d6bac388d2432f25930a1e6730f0ca712c1a",
+      "bytes": 6638,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7512,8 +7512,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/conversation/platforms/acp/useAcpSendBoxDraftController.ts",
-      "sha256": "b4d96723b1fcb704af716e66aee0ef964f70b19bdac9818b6a316af6ee8e6d4e",
-      "bytes": 2894,
+      "sha256": "e0840f64604a88cf2d5fdff3774ecbbfc46795ade34a10d7358da7d685c80ec3",
+      "bytes": 2952,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9792,8 +9792,8 @@
     },
     {
       "path": "tests/unit/synonbiomed/OptimizePromptAction.dom.test.tsx",
-      "sha256": "407c95825703ea410daeeb126ae93326a1e97b7fc1a8e7ba9bbffb5bd3fe4e74",
-      "bytes": 4950,
+      "sha256": "b64c4ce1e77ec3d7ea21ae24abdac1d83b241fb5848f2d1af00e026e7482d6f7",
+      "bytes": 10181,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -10262,6 +10262,12 @@
       "path": "tests/web-e2e/synonbiomedPermissionAuthority.e2e.ts",
       "sha256": "70caa753aae7041a4d6e8114e3e9b6d6f5acaf4ab295760ede3e3d7c23a3ae7f",
       "bytes": 3519,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
+    },
+    {
+      "path": "tests/web-e2e/synonbiomedPromptOptimizer.e2e.ts",
+      "sha256": "44f3ea64c6ac7af146462c601052af949375b20619d61b1d8df379909a763afd",
+      "bytes": 4238,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

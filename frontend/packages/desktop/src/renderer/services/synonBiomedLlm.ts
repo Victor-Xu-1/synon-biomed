@@ -265,8 +265,14 @@ export type SynonBiomedPromptOptimizeResult = {
   model: string;
 };
 
+export type SynonBiomedPromptOptimizeInput = {
+  text: string;
+  conversationId: string;
+  signal?: AbortSignal;
+};
+
 export async function optimizeSynonBiomedPrompt(
-  text: string,
+  input: SynonBiomedPromptOptimizeInput,
   fetchImpl: FetchLike = fetch
 ): Promise<SynonBiomedPromptOptimizeResult> {
   const payload = await requestJson<{ result?: unknown }>(
@@ -274,7 +280,8 @@ export async function optimizeSynonBiomedPrompt(
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text: input.text, conversationId: input.conversationId }),
+      signal: input.signal,
     },
     fetchImpl
   );

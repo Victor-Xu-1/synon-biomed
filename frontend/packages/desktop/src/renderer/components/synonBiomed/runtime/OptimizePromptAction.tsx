@@ -6,7 +6,7 @@
 
 import { Message, Spin } from '@arco-design/web-react';
 import { Undo } from '@icon-park/react';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { optimizeSynonBiomedPrompt } from '@/renderer/services/synonBiomedLlm';
 
@@ -29,57 +29,119 @@ const SparkleIcon: React.FC = () => (
 
 export type OptimizePromptActionProps = {
   draft: string;
+  conversationId: string;
+  ownerId: string;
   disabled?: boolean;
-  /** Replaces the composer draft; also used by the revert action to restore the previous text. */
-  onReplace: (text: string) => void;
+  /** Atomically replaces the expected draft; false means the user or another tab changed it. */
+  replaceIfCurrent: (expected: string, replacement: string) => boolean;
 };
 
+type RevertDraft = { identity: string; original: string; optimized: string };
+
 /**
- * WorkBuddy-style composer action: one click rewrites the draft into a
- * clearer scientific task instruction through the active model provider.
- * After a rewrite a persistent revert button appears to the left of the
- * sparkle and restores the original wording until the next optimization.
+ * Composer action for rewriting a draft through the current conversation's
+ * model. A revert is available only while the optimized text is still the
+ * current draft; a later edit always wins over an older model response.
  */
-const OptimizePromptAction: React.FC<OptimizePromptActionProps> = ({ draft, disabled, onReplace }) => {
+const OptimizePromptAction: React.FC<OptimizePromptActionProps> = ({
+  draft,
+  conversationId,
+  ownerId,
+  disabled,
+  replaceIfCurrent,
+}) => {
   const { t } = useTranslation();
   const [optimizing, setOptimizing] = useState(false);
-  const [canRevert, setCanRevert] = useState(false);
-  // The revert affordance outlives re-renders, so the pre-optimization text
-  // must be read through a ref instead of a captured state value.
-  const previousDraftRef = useRef<string | null>(null);
+  const [revert, setRevert] = useState<RevertDraft | null>(null);
+  const revertRef = useRef<RevertDraft | null>(null);
+  const inFlightRef = useRef(false);
+  const requestSequenceRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(false);
+  const identity = `${ownerId}\u0000${conversationId}`;
+  const identityRef = useRef(identity);
+  identityRef.current = identity;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      requestSequenceRef.current += 1;
+      abortRef.current?.abort();
+      inFlightRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    revertRef.current = null;
+    setRevert(null);
+    setOptimizing(false);
+    return () => {
+      requestSequenceRef.current += 1;
+      abortRef.current?.abort();
+      abortRef.current = null;
+      inFlightRef.current = false;
+    };
+  }, [identity]);
 
   const handleRevert = useCallback(() => {
-    const previous = previousDraftRef.current;
-    if (previous === null) return;
-    previousDraftRef.current = null;
-    setCanRevert(false);
-    onReplace(previous);
-  }, [onReplace]);
+    const previous = revertRef.current;
+    if (!previous || previous.identity !== identityRef.current) return;
+    revertRef.current = null;
+    setRevert(null);
+    if (!replaceIfCurrent(previous.optimized, previous.original)) {
+      Message.info(t('conversation.synonRuntime.sendBox.optimizePrompt.stale'));
+    }
+  }, [replaceIfCurrent, t]);
 
   const handleOptimize = useCallback(async () => {
-    if (optimizing || disabled || draft.trim() === '') return;
+    if (inFlightRef.current || disabled || draft.trim() === '' || conversationId.trim() === '') return;
+    inFlightRef.current = true;
     setOptimizing(true);
+    const sequence = ++requestSequenceRef.current;
+    const requestedIdentity = identity;
+    const original = draft;
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const result = await optimizeSynonBiomedPrompt(draft);
+      const result = await optimizeSynonBiomedPrompt({
+        text: original,
+        conversationId,
+        signal: controller.signal,
+      });
+      if (!mountedRef.current || sequence !== requestSequenceRef.current || identityRef.current !== requestedIdentity) {
+        return;
+      }
       if (result.text.trim() === '') throw new Error('model provider returned an empty response');
-      previousDraftRef.current = draft;
-      setCanRevert(true);
-      onReplace(result.text);
+      if (!replaceIfCurrent(original, result.text)) {
+        revertRef.current = null;
+        setRevert(null);
+        Message.info(t('conversation.synonRuntime.sendBox.optimizePrompt.stale'));
+        return;
+      }
+      const nextRevert = { identity: requestedIdentity, original, optimized: result.text };
+      revertRef.current = nextRevert;
+      setRevert(nextRevert);
       Message.success({
         id: 'synon-biomed-prompt-optimized',
         content: t('conversation.synonRuntime.sendBox.optimizePrompt.applied'),
         duration: 6000,
       });
     } catch {
+      if (!mountedRef.current || sequence !== requestSequenceRef.current || controller.signal.aborted) return;
       Message.error(t('conversation.synonRuntime.sendBox.optimizePrompt.failed'));
     } finally {
-      setOptimizing(false);
+      if (mountedRef.current && sequence === requestSequenceRef.current) {
+        abortRef.current = null;
+        inFlightRef.current = false;
+        setOptimizing(false);
+      }
     }
-  }, [disabled, draft, onReplace, optimizing, t]);
+  }, [conversationId, disabled, draft, identity, replaceIfCurrent, t]);
 
   return (
     <>
-      {canRevert && (
+      {revert?.identity === identity && (
         <button
           type='button'
           data-testid='synon-biomed-optimize-prompt-revert'

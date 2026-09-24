@@ -1333,6 +1333,7 @@ export type I18nKey =
   | 'conversation.synonRuntime.sendBox.optimizePrompt.failed'
   | 'conversation.synonRuntime.sendBox.optimizePrompt.label'
   | 'conversation.synonRuntime.sendBox.optimizePrompt.revert'
+  | 'conversation.synonRuntime.sendBox.optimizePrompt.stale'
   | 'conversation.synonRuntime.sendBox.planFirst'
   | 'conversation.synonRuntime.sendBox.planFirstDescription'
   | 'conversation.synonRuntime.sendBox.retryRuntimeStatus'

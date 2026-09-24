@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	workspace "synon-go/internal/persistence/workspace"
-
 	agentruntime "synon-go/internal/agentruntime"
 	"synon-go/internal/providers"
 )
@@ -31,13 +29,14 @@ func (s *Server) handleLLMPromptOptimize(w http.ResponseWriter, r *http.Request)
 		writeWorkspaceJSON(w, http.StatusMethodNotAllowed, map[string]any{"ok": false, "error": "method not allowed"})
 		return
 	}
-	store, ok := s.workspaceForRequest(w)
+	_, ok := s.workspaceForRequest(w)
 	if !ok {
 		return
 	}
 	var input struct {
-		Text      string `json:"text"`
-		ProfileID string `json:"profileId"`
+		Text           string `json:"text"`
+		ConversationID string `json:"conversationId"`
+		ProfileID      string `json:"profileId"`
 	}
 	if err := decodeWorkspaceJSON(r, &input); err != nil {
 		writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": err.Error()})
@@ -52,30 +51,48 @@ func (s *Server) handleLLMPromptOptimize(w http.ResponseWriter, r *http.Request)
 		writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": "draft text is too long"})
 		return
 	}
+	conversationID := strings.TrimSpace(input.ConversationID)
+	if conversationID == "" {
+		writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": "conversation id is required"})
+		return
+	}
+	frame, _, owned := s.webConversationAccess(w, r, conversationID)
+	if !owned {
+		return
+	}
 	userID := strings.TrimSpace(resolveUserID(r, nil))
-	provider, found, err := s.resolvePromptOptimizeProvider(store, userID, strings.TrimSpace(input.ProfileID))
-	if err != nil {
-		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
-		return
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	selection := ""
+	if profileID := strings.TrimSpace(input.ProfileID); profileID != "" {
+		selection = webConversationProviderSelectionPrefix + profileID
+	} else {
+		var err error
+		selection, err = s.webConversationFrameModelSelection(frame)
+		if err != nil {
+			writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": "unable to load conversation model"})
+			return
+		}
 	}
-	if !found {
-		writeWorkspaceJSON(w, http.StatusNotFound, map[string]any{"ok": false, "error": "no enabled model provider configured"})
-		return
-	}
-	profile, err := providers.BuildModelProfile(provider, s.secretStore, userID, providers.ResolutionInput{
+	profile, err := s.resolveUserModelSelectionProfileWithContext(ctx, userID, selection, providers.ResolutionInput{
 		RequestTimeout: 30 * time.Second, MaxAttempts: 1, MaxResponseBytes: 1 << 20,
 	})
 	if err != nil {
-		writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": err.Error()})
+		if ctx.Err() != nil {
+			return
+		}
+		status := http.StatusBadRequest
+		if selection == "" {
+			status = http.StatusNotFound
+		}
+		writeWorkspaceJSON(w, status, map[string]any{"ok": false, "error": "selected model provider is unavailable"})
 		return
 	}
 	client, err := providers.NewRuntimeModelClient(profile, s.httpClient, nil)
 	if err != nil {
-		writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": err.Error()})
+		writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": "selected model provider is unavailable"})
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
 	result, err := client.Complete(ctx, agentruntime.ModelRequest{
 		Messages: []agentruntime.Message{
 			{Role: "system", Content: promptOptimizeSystemPrompt},
@@ -83,7 +100,7 @@ func (s *Server) handleLLMPromptOptimize(w http.ResponseWriter, r *http.Request)
 		},
 	})
 	if err != nil {
-		writeWorkspaceJSON(w, http.StatusBadGateway, map[string]any{"ok": false, "error": err.Error()})
+		writeWorkspaceJSON(w, http.StatusBadGateway, map[string]any{"ok": false, "error": "model provider request failed"})
 		return
 	}
 	text := strings.TrimSpace(result.Message.Content)
@@ -92,42 +109,6 @@ func (s *Server) handleLLMPromptOptimize(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeWorkspaceJSON(w, http.StatusOK, map[string]any{"ok": true, "result": map[string]any{
-		"text": text, "model": firstNonEmpty(result.Model, provider.Model),
+		"text": text, "model": firstNonEmpty(result.Model, profile.Model),
 	}})
-}
-
-// resolvePromptOptimizeProvider picks the provider a rewrite should run on:
-// an explicit profile when given, otherwise the active conversation provider,
-// falling back to the first enabled provider with a model.
-func (s *Server) resolvePromptOptimizeProvider(store *workspace.Store, userID, profileID string) (workspace.ModelProvider, bool, error) {
-	if profileID != "" {
-		return store.GetModelProvider(userID, profileID)
-	}
-	providersList, err := store.ListModelProviders(userID)
-	if err != nil {
-		return workspace.ModelProvider{}, false, err
-	}
-	activeID := ""
-	if s.settingsStore != nil {
-		if setting, found, settingErr := s.settingsStore.Get(webConversationActiveProviderSetting); settingErr == nil && found {
-			activeID = strings.TrimSpace(webString(setting.Value))
-		}
-	}
-	var fallback *workspace.ModelProvider
-	for index := range providersList {
-		provider := providersList[index]
-		if !provider.Enabled || strings.TrimSpace(provider.Model) == "" {
-			continue
-		}
-		if activeID != "" && provider.ID == activeID {
-			return provider, true, nil
-		}
-		if fallback == nil {
-			fallback = &providersList[index]
-		}
-	}
-	if fallback != nil {
-		return *fallback, true, nil
-	}
-	return workspace.ModelProvider{}, false, nil
 }

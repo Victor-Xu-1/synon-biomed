@@ -148,16 +148,23 @@ describe('Synon Biomed LLM service', () => {
   });
 
   it('optimizes a draft prompt through the dedicated endpoint', async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(JSON.stringify({ ok: true, result: { text: '优化后的提示词', model: 'optimize-model' } }))
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true, result: { text: '优化后的提示词', model: 'optimize-model' } }))
+      );
+    const controller = new AbortController();
+    const result = await optimizeSynonBiomedPrompt(
+      { text: '帮我写一封请假条', conversationId: 'conversation-a', signal: controller.signal },
+      fetchMock
     );
-    const result = await optimizeSynonBiomedPrompt('帮我写一封请假条', fetchMock);
     expect(result).toEqual({ text: '优化后的提示词', model: 'optimize-model' });
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/llm/optimize-prompt',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ text: '帮我写一封请假条' }),
+        body: JSON.stringify({ text: '帮我写一封请假条', conversationId: 'conversation-a' }),
+        signal: controller.signal,
       })
     );
   });

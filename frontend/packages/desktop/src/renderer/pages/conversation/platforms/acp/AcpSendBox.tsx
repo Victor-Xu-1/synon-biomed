@@ -137,6 +137,7 @@ const AcpSendBox: React.FC<{
     setUploadFile,
     content,
     setContent,
+    replaceContentIfUnchanged,
     contextItems,
     setContextItems,
     stagedPlanMode,
@@ -1212,8 +1213,14 @@ const AcpSendBox: React.FC<{
                 contextLimit={messageState.context_limit}
               />
             ) : null}
-            {content.trim() !== '' && (
-              <OptimizePromptAction draft={content} disabled={false} onReplace={setContent} />
+            {isSynonBiomedConversation && content.trim() !== '' && (
+              <OptimizePromptAction
+                draft={content}
+                conversationId={conversation_id}
+                ownerId={ownerId}
+                disabled={false}
+                replaceIfCurrent={replaceContentIfUnchanged}
+              />
             )}
             <SynonBiomedModelSelector
               conversation_id={conversation_id}

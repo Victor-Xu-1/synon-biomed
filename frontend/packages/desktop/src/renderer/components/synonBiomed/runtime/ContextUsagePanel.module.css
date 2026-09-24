@@ -10,6 +10,7 @@
 
 .root {
   box-sizing: border-box;
+  width: min(360px, calc(100vw - 24px));
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -122,13 +123,6 @@
   min-width: 0;
 }
 
-.legendDot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 7px;
-  border-radius: var(--ui-radius-circle);
-}
-
 .legendPercent {
   color: var(--color-text-3);
   font-variant-numeric: tabular-nums;
@@ -142,4 +136,31 @@
   padding: 0 10px;
   font-size: var(--ui-font-micro);
   line-height: 16px;
+}
+
+.note {
+  margin: 3px 10px;
+  font-size: var(--ui-font-micro);
+  line-height: 16px;
+  color: var(--color-text-3);
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  font-size: var(--ui-font-meta);
+  line-height: 18px;
+}
+
+.retry {
+  align-self: flex-start;
+  cursor: pointer;
+  color: rgb(var(--primary-6));
+  border: 1px solid var(--color-border-2);
+  background: var(--color-fill-1);
+  border-radius: var(--ui-radius-sm);
+  padding: 3px 10px;
 }

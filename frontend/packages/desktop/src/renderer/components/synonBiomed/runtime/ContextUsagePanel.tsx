@@ -6,26 +6,36 @@
 
 import { Dropdown, Spin } from '@arco-design/web-react';
 import { Close } from '@icon-park/react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DEFAULT_CONTEXT_LIMIT } from '@/renderer/utils/model/modelContextLimits';
-import {
-  buildContextUsageBreakdown,
-  CONTEXT_USAGE_COLORS,
-  CONTEXT_USAGE_LABEL_KEYS,
-  estimateConversationMessagesTokens,
-} from '@/renderer/services/contextUsage';
-import { formatTokenCount } from './ContextUsageIndicator';
+import { useContextUsage } from '@/renderer/hooks/synonBiomed/useContextUsage';
 import styles from './ContextUsagePanel.module.css';
 
 const RING_SIZE = 16;
 const RING_STROKE_WIDTH = 2.5;
 
+function formatTokenCount(count: number, hideZeroDecimals = false): string {
+  if (count >= 1_000_000) {
+    const value = count / 1_000_000;
+    const formatted = value.toFixed(1);
+    return hideZeroDecimals && formatted.endsWith('.0') ? `${Math.floor(value)}M` : `${formatted}M`;
+  }
+  if (count >= 1_000) {
+    const value = count / 1_000;
+    const formatted = value.toFixed(1);
+    return hideZeroDecimals && formatted.endsWith('.0') ? `${Math.floor(value)}K` : `${formatted}K`;
+  }
+  return count.toString();
+}
+
 /**
- * Bare usage ring without the indicator's own hover popover — the management
- * card owns all popover behavior for the trigger.
+ * Bare usage ring; the management card owns its popover behavior.
  */
-const UsageRing: React.FC<{ usedTokens: number; limitTokens: number }> = ({ usedTokens, limitTokens }) => {
+const UsageRing: React.FC<{ usedTokens: number; limitTokens: number; showRatio: boolean }> = ({
+  usedTokens,
+  limitTokens,
+  showRatio,
+}) => {
   const percent = limitTokens > 0 ? (usedTokens / limitTokens) * 100 : 0;
   const radius = (RING_SIZE - RING_STROKE_WIDTH) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -53,101 +63,39 @@ const UsageRing: React.FC<{ usedTokens: number; limitTokens: number }> = ({ used
         cy={RING_SIZE / 2}
         r={radius}
         fill='none'
-        stroke={strokeColor}
+        stroke={showRatio ? strokeColor : 'var(--color-text-3)'}
         strokeWidth={RING_STROKE_WIDTH}
         strokeLinecap='round'
-        strokeDasharray={circumference}
-        strokeDashoffset={strokeDashoffset}
+        strokeDasharray={showRatio ? circumference : '2 3'}
+        strokeDashoffset={showRatio ? strokeDashoffset : 0}
         style={{ transition: 'stroke-dashoffset 0.3s ease, stroke 0.3s ease' }}
       />
     </svg>
   );
 };
 
-type ContextUsagePanelProps = {
-  conversationId: string;
-  tokenUsage: { total_tokens?: unknown } | null;
-  contextLimit: number;
-};
+type ContextUsagePanelProps = { conversationId: string; active?: boolean };
 
-type DurableMessagePayload = {
-  items?: Array<Record<string, unknown>>;
-};
-
-const MESSAGE_SAMPLE_LIMIT = 200;
-
-function positiveNumber(value: unknown): number | null {
-  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-/**
- * Composer context-usage management card. Used/limit figures come from the
- * ACP `acp_context_usage` event (`used`/`size`) already normalized by
- * useAcpMessage; this is the current request context, not the cumulative
- * task input counter exposed by the frame projection. The message share is
- * estimated from the durable history and the capability rows split the
- * documented residual.
- */
-const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, tokenUsage, contextLimit }) => {
+/** The server's latest main-agent request is the only usage authority. */
+const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, active = false }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
-  const [messageItems, setMessageItems] = useState<Array<Record<string, unknown>> | null>(null);
-  const [messageLoadFailed, setMessageLoadFailed] = useState(false);
-
-  const usage = useMemo(() => {
-    const usedTokens = positiveNumber(tokenUsage?.total_tokens);
-    const limitTokens = positiveNumber(contextLimit);
-    return usedTokens !== null && limitTokens !== null ? { usedTokens, limitTokens } : null;
-  }, [contextLimit, tokenUsage]);
-
-  useEffect(() => {
-    if (!visible || !conversationId) return;
-    let cancelled = false;
-    setMessageItems(null);
-    setMessageLoadFailed(false);
-    const controller = new AbortController();
-    fetch(`/api/conversations/${encodeURIComponent(conversationId)}/messages?limit=${MESSAGE_SAMPLE_LIMIT}`, {
-      credentials: 'include',
-      signal: controller.signal,
-      cache: 'no-store',
-      headers: { Accept: 'application/json' },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error(`messages request failed: ${response.status}`);
-        return response.json() as Promise<DurableMessagePayload>;
-      })
-      .then((payload) => {
-        if (!cancelled) setMessageItems(Array.isArray(payload?.items) ? payload.items : []);
-      })
-      .catch(() => {
-        if (!cancelled) setMessageLoadFailed(true);
-      });
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [visible, conversationId]);
-
-  const rows = useMemo(() => {
-    if (!usage) return null;
-    const messageEstimate = messageItems === null ? null : estimateConversationMessagesTokens(messageItems);
-    return buildContextUsageBreakdown({
-      usedTokens: usage.usedTokens,
-      limitTokens: usage.limitTokens,
-      messagesTokens: messageEstimate,
-    });
-  }, [messageItems, usage]);
-
+  const { state, retry } = useContextUsage(conversationId, visible, active);
+  const usage = state.status === 'available' ? state.snapshot : null;
+  const showRatio = usage?.limitSource === 'configured';
   const usagePercent = usage ? (usage.usedTokens / usage.limitTokens) * 100 : 0;
-  const ready = Boolean(usage && rows);
+  const labels = {
+    systemPrompt: t('conversation.contextUsage.systemPrompt'),
+    messages: t('conversation.contextUsage.messages'),
+    toolDefinitions: t('conversation.contextUsage.toolDefinitions'),
+  };
 
   return (
     <Dropdown
       trigger='click'
       position='tl'
       popupVisible={visible}
-      onVisibleChange={(next) => setVisible(next)}
+      onVisibleChange={setVisible}
       droplist={
         <div className={`app-overlay-menu composer-control-menu ${styles.root}`} data-testid='context-usage-panel'>
           <div className={styles.header}>
@@ -162,51 +110,90 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, t
               <Close theme='outline' size={14} strokeWidth={3.6} />
             </button>
           </div>
-          {ready && rows && usage ? (
+          {usage ? (
             <>
               <div className={styles.statRow}>
-                <span className={styles.bigPercent} data-testid='context-usage-percent'>
-                  {usagePercent.toFixed(1)}%
-                </span>
+                {showRatio && (
+                  <span className={styles.bigPercent} data-testid='context-usage-percent'>
+                    {usagePercent.toFixed(1)}%
+                  </span>
+                )}
                 <span className={styles.usedText}>
                   {t('conversation.contextUsage.usedLabel')}{' '}
                   <strong>
+                    {usage.source === 'estimated' ? '≈ ' : ''}
                     {formatTokenCount(usage.usedTokens)} / {formatTokenCount(usage.limitTokens, true)}
                   </strong>
                 </span>
               </div>
-              <div className={styles.bar} aria-hidden='true'>
-                {rows.map((row) => {
-                  const width = (row.tokens / usage.limitTokens) * 100;
-                  if (width <= 0) return null;
-                  return (
-                    <span
-                      key={row.key}
-                      className={styles.barSegment}
-                      style={{ width: `${Math.min(width, 100)}%`, background: CONTEXT_USAGE_COLORS[row.key] }}
-                    />
-                  );
-                })}
-              </div>
+              {showRatio && (
+                <div className={styles.bar} aria-hidden='true'>
+                  <span
+                    className={styles.barSegment}
+                    style={{ width: `${Math.min(usagePercent, 100)}%`, background: 'rgb(var(--primary-6))' }}
+                  />
+                </div>
+              )}
+              <p className={styles.note} data-testid='context-usage-source'>
+                {usage.source === 'provider'
+                  ? t('conversation.contextUsage.providerTotal')
+                  : t('conversation.contextUsage.estimatedTotal')}
+                {' · '}
+                {usage.limitSource === 'configured'
+                  ? t('conversation.contextUsage.configuredLimit')
+                  : t('conversation.contextUsage.defaultLimit')}
+              </p>
+              <p className={styles.note}>{t('conversation.contextUsage.estimatedBreakdown')}</p>
               <div className={styles.legend} data-testid='context-usage-legend'>
-                {rows.map((row) => (
+                {usage.inputEstimates.map((row) => (
                   <div key={row.key} className={styles.legendRow}>
-                    <span>
-                      <i className={styles.legendDot} style={{ background: CONTEXT_USAGE_COLORS[row.key] }} />
-                      {t(CONTEXT_USAGE_LABEL_KEYS[row.key])}
-                    </span>
-                    <span className={styles.legendPercent}>{((row.tokens / usage.limitTokens) * 100).toFixed(1)}%</span>
+                    <span>{labels[row.key]}</span>
+                    <span className={styles.legendPercent}>≈ {formatTokenCount(row.tokens)}</span>
                   </div>
                 ))}
+                {usage.state === 'complete' && (
+                  <div className={styles.legendRow}>
+                    <span>{t('conversation.contextUsage.output')}</span>
+                    <span className={styles.legendPercent}>
+                      {usage.source === 'estimated' ? '≈ ' : ''}
+                      {formatTokenCount(usage.outputTokens)}
+                    </span>
+                  </div>
+                )}
               </div>
+              <p className={styles.note}>{t('conversation.contextUsage.breakdownNote')}</p>
+              <p className={styles.note}>{t('conversation.contextUsage.budgetNote')}</p>
+              {usage.hasMedia && <p className={styles.note}>{t('conversation.contextUsage.mediaNote')}</p>}
+              {usage.state === 'request' && (
+                <p className={styles.note}>{t('conversation.contextUsage.requestPending')}</p>
+              )}
+              {usage.state === 'failed' && (
+                <p className={styles.note}>{t('conversation.contextUsage.failedRequest')}</p>
+              )}
+              <p className={styles.note} data-testid='context-usage-observed'>
+                {usage.model && <>{usage.model} · </>}
+                <time dateTime={usage.observedAt}>{new Date(usage.observedAt).toLocaleString()}</time>
+              </p>
             </>
-          ) : messageLoadFailed ? (
-            <div className={styles.loading}>
-              <span className='text-13px text-t-secondary'>{t('conversation.contextUsage.unavailable')}</span>
+          ) : state.status === 'loading' ? (
+            <div
+              className={styles.loading}
+              role='status'
+              aria-label={t('conversation.contextUsage.loading')}
+              data-testid='context-usage-loading'
+            >
+              <Spin size={16} />
             </div>
           ) : (
-            <div className={styles.loading}>
-              <Spin size={16} />
+            <div className={styles.empty} role='status'>
+              <span>
+                {state.status === 'error'
+                  ? t('conversation.contextUsage.loadFailed')
+                  : t('conversation.contextUsage.unavailable')}
+              </span>
+              <button type='button' onClick={retry} className={styles.retry}>
+                {t('conversation.contextUsage.retry')}
+              </button>
             </div>
           )}
         </div>
@@ -220,7 +207,7 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, t
         aria-haspopup='menu'
         className='inline-flex items-center justify-center cursor-pointer border-0 bg-transparent p-0'
       >
-        <UsageRing usedTokens={usage?.usedTokens ?? 0} limitTokens={usage?.limitTokens ?? DEFAULT_CONTEXT_LIMIT} />
+        <UsageRing usedTokens={usage?.usedTokens ?? 0} limitTokens={usage?.limitTokens ?? 1} showRatio={showRatio} />
       </button>
     </Dropdown>
   );

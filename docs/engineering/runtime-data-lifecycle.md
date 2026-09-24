@@ -44,3 +44,27 @@ configuration and credentials as directed, remove the approved runtime-history
 inventory, start from the integrated revision, and verify fresh SQLite creation,
 foreign-key integrity, API health, browser navigation, task execution, restart,
 and a post-restart lifecycle sweep. Source files are never part of that reset.
+
+## Context usage projection
+
+The composer reads `GET /api/conversations/{id}/context-usage` through the
+conversation's existing ownership check. It returns either an explicit
+`unavailable` status or one numeric record for the latest main-agent model
+request. The record is kept in task-scoped `runtime-state.sqlite`; task/project
+deletion removes it with other operational state. It contains no prompt,
+message, tool argument, response body, credential, or endpoint URL. Earlier
+conversations have no retroactive record until a new model request runs.
+
+`source=provider` means the completed request's usage came from its provider
+response; `source=estimated` means a local text/tool-schema estimate was used
+because no usage counters were returned or the request did not complete.
+Provider usage is per request, never the cumulative task billing counter.
+Input rows estimate the actual agent request's system context, non-system
+messages, and advertised tool definitions; Skill/MCP text is counted wherever
+it appeared in that request. Image/audio/document token costs are not inferred
+from bytes. The rows are indicative and need not add up to the provider total.
+The limit is the runner's configured context budget or its documented default,
+not an independently verified model capacity. A presentation-only translation
+may be billed in provider audits, but cannot replace the agent request shown
+in the composer. Missing telemetry and read failures have separate UI states;
+the client bounds each fetch and offers retry.

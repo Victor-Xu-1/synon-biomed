@@ -4,182 +4,75 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * Client-side context accounting for the composer usage panel.
- *
- * The conversation already exposes the authoritative context size
- * (`last_token_usage.total_tokens`) plus its window capacity
- * (`last_context_limit`); both feed the existing ring indicator today. This
- * service reuses the same estimation approach the server-side runner applies
- * for compaction pressure, so the category split tracks the same accounting
- * instead of inventing numbers:
- *
- * - 对话消息 (messages): estimated from the durable message payload with the
- *   backend-identical CJK-aware estimator — the dominant share of every
- *   request.
- * - 系统提示词 / 工具及子智能体 / 连接器及MCP / 技能: fixed shares of the
- *   residual after the message estimate. The residual is real (authoritative
- *   used − messages) and always sums with the message row to the total, but
- *   the split among the three capability rows is indicative until the runner
- *   exposes per-part accounting.
- */
-
-export type ContextUsageCategoryKey = 'systemPrompt' | 'toolsAndSubagents' | 'messages' | 'connectorsAndMcp' | 'skills';
-
-export type ContextUsageRow = {
-  key: ContextUsageCategoryKey;
-  tokens: number;
+export const CONTEXT_USAGE_CATEGORIES = ['systemPrompt', 'messages', 'toolDefinitions'] as const;
+export type ContextUsageCategory = (typeof CONTEXT_USAGE_CATEGORIES)[number];
+export type ContextUsageSnapshot = {
+  sessionId: string;
+  requestId: string;
+  model: string;
+  observedAt: string;
+  state: 'request' | 'complete' | 'failed';
+  source: 'provider' | 'estimated';
+  usedTokens: number;
+  limitTokens: number;
+  limitSource: 'configured' | 'runner_default';
+  outputTokens: number;
+  hasMedia: boolean;
+  inputEstimates: Array<{ key: ContextUsageCategory; tokens: number }>;
 };
+export type ContextUsageResult = { status: 'unavailable' } | { status: 'available'; snapshot: ContextUsageSnapshot };
 
-/** Same per-message accounting overhead the server estimator applies. */
-const MESSAGE_OVERHEAD_TOKENS = 4;
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
 
-/** Fixed capability shares of the non-message residual (documented split). */
-const CAPABILITY_SHARES: Record<'toolsAndSubagents' | 'connectorsAndMcp' | 'skills', number> = {
-  toolsAndSubagents: 0.62,
-  connectorsAndMcp: 0.3,
-  skills: 0.08,
-};
+function isTokenCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
 
-export const CONTEXT_USAGE_COLORS: Record<ContextUsageCategoryKey, string> = {
-  systemPrompt: '#4a7dff',
-  toolsAndSubagents: '#00b42a',
-  messages: '#ff9a2e',
-  connectorsAndMcp: '#722ed1',
-  skills: '#f5319d',
-};
-
-/** Literal i18n keys kept static so the generated key union stays satisfied. */
-export const CONTEXT_USAGE_LABEL_KEYS: Record<ContextUsageCategoryKey, string> = {
-  systemPrompt: 'conversation.contextUsage.systemPrompt',
-  toolsAndSubagents: 'conversation.contextUsage.toolsAndSubagents',
-  messages: 'conversation.contextUsage.messages',
-  connectorsAndMcp: 'conversation.contextUsage.connectorsAndMcp',
-  skills: 'conversation.contextUsage.skills',
-};
-
-/**
- * Mirror of the server-side text estimator (internal/server
- * runner_context_scope.estimateTextTokens): ASCII text counts at roughly four
- * runes per token, CJK and other non-ASCII runes count one token each.
- */
-export function estimateTextTokens(text: string | null | undefined): number {
-  if (typeof text !== 'string' || text.length === 0) return 0;
-  let asciiRunes = 0;
-  let nonAsciiRunes = 0;
-  for (const current of text) {
-    const codePoint = current.codePointAt(0) ?? 0;
-    if (codePoint <= 0x7f) {
-      asciiRunes += 1;
-    } else {
-      nonAsciiRunes += 1;
+/** Validate the server contract; absent telemetry is not zero or "loading". */
+export function parseContextUsage(payload: unknown, conversationId: string): ContextUsageResult {
+  if (!isObject(payload)) throw new Error('Invalid context usage response');
+  if (payload.status === 'unavailable') return { status: 'unavailable' };
+  const value = payload.snapshot;
+  if (
+    payload.status !== 'available' ||
+    !isObject(value) ||
+    value.sessionId !== conversationId ||
+    typeof value.requestId !== 'string' ||
+    !value.requestId ||
+    typeof value.model !== 'string' ||
+    typeof value.observedAt !== 'string' ||
+    !Number.isFinite(Date.parse(value.observedAt)) ||
+    !['request', 'complete', 'failed'].includes(String(value.state)) ||
+    !['provider', 'estimated'].includes(String(value.source)) ||
+    !['configured', 'runner_default'].includes(String(value.limitSource)) ||
+    !isTokenCount(value.usedTokens) ||
+    !isTokenCount(value.limitTokens) ||
+    value.limitTokens === 0 ||
+    !isTokenCount(value.outputTokens) ||
+    (value.state !== 'complete' && (value.source !== 'estimated' || value.outputTokens !== 0)) ||
+    typeof value.hasMedia !== 'boolean' ||
+    !Array.isArray(value.inputEstimates) ||
+    value.inputEstimates.length !== CONTEXT_USAGE_CATEGORIES.length
+  ) {
+    throw new Error('Invalid context usage record');
+  }
+  for (const [index, row] of value.inputEstimates.entries()) {
+    if (!isObject(row) || row.key !== CONTEXT_USAGE_CATEGORIES[index] || !isTokenCount(row.tokens)) {
+      throw new Error('Invalid context usage breakdown');
     }
   }
-  return Math.max(1, nonAsciiRunes + Math.trunc((asciiRunes + 3) / 4));
+  return { status: 'available', snapshot: value as ContextUsageSnapshot };
 }
 
-function estimateToolCallTokens(call: unknown): number {
-  if (!call || typeof call !== 'object') return 0;
-  const record = call as Record<string, unknown>;
-  const fn = record.function as Record<string, unknown> | undefined;
-  return (
-    estimateTextTokens(String(record.id ?? '')) +
-    estimateTextTokens(typeof fn?.name === 'string' ? fn.name : '') +
-    estimateTextTokens(typeof fn?.arguments === 'string' ? fn.arguments : '')
-  );
-}
-
-/**
- * Count textual values in the projected message content returned by the
- * conversation history API. That API wraps text messages as
- * { content: { content: string } } and represents tool rows as structured
- * objects, while the runner estimator receives a flat string. Walking the
- * values keeps the client estimate useful for both shapes without counting
- * transport-only field names as message text.
- */
-function estimateStructuredContentTokens(value: unknown, seen = new Set<object>()): number {
-  if (typeof value === 'string') return estimateTextTokens(value);
-  if (!value || typeof value !== 'object') return 0;
-  if (seen.has(value)) return 0;
-  seen.add(value);
-  let total = 0;
-  if (Array.isArray(value)) {
-    for (const item of value) total += estimateStructuredContentTokens(item, seen);
-  } else {
-    for (const child of Object.values(value)) total += estimateStructuredContentTokens(child, seen);
-  }
-  seen.delete(value);
-  return total;
-}
-
-export function estimateChatMessageTokens(item: unknown): number {
-  if (!item || typeof item !== 'object') return 0;
-  const record = item as Record<string, unknown>;
-  let total = MESSAGE_OVERHEAD_TOKENS;
-  const role = typeof record.role === 'string' ? record.role : record.position === 'right' ? 'user' : '';
-  total += estimateTextTokens(role);
-  const content = record.content;
-  if (typeof content === 'string') {
-    total += estimateTextTokens(content);
-  } else {
-    total += estimateStructuredContentTokens(content);
-  }
-  if (Array.isArray(record.tool_calls)) {
-    for (const call of record.tool_calls) total += estimateToolCallTokens(call);
-  }
-  return total;
-}
-
-export function estimateConversationMessagesTokens(items: unknown): number {
-  if (!Array.isArray(items)) return 0;
-  let total = 0;
-  for (const item of items) total += estimateChatMessageTokens(item);
-  return total;
-}
-
-export type ContextUsageBreakdownInput = {
-  /** Authoritative used tokens from the conversation's last usage record. */
-  usedTokens: number;
-  limitTokens: number;
-  /** Backend-parity estimate of the durable message payload, or null when unavailable. */
-  messagesTokens: number | null;
-};
-
-export type ContextUsageBreakdown = {
-  usedTokens: number;
-  limitTokens: number;
-  rows: ContextUsageRow[];
-};
-
-/**
- * Build the five-row breakdown. Every row sums exactly to the authoritative
- * used figure; only the capability split is indicative.
- */
-export function buildContextUsageBreakdown(input: ContextUsageBreakdownInput): ContextUsageRow[] {
-  const usedTokens = Math.max(0, Math.round(input.usedTokens));
-  const messagesTokens =
-    input.messagesTokens === null ? null : Math.max(0, Math.min(Math.round(input.messagesTokens), usedTokens));
-  const residual = usedTokens - (messagesTokens ?? 0);
-  const systemTokens = messagesTokens === null ? 0 : Math.round(residual * 0.18);
-  const capabilityResidual = messagesTokens === null ? usedTokens : residual - systemTokens;
-  const rows: ContextUsageRow[] = [
-    { key: 'systemPrompt', tokens: systemTokens },
-    {
-      key: 'toolsAndSubagents',
-      tokens: Math.round(capabilityResidual * CAPABILITY_SHARES.toolsAndSubagents),
-    },
-    { key: 'messages', tokens: messagesTokens ?? 0 },
-    {
-      key: 'connectorsAndMcp',
-      tokens: Math.round(capabilityResidual * CAPABILITY_SHARES.connectorsAndMcp),
-    },
-    { key: 'skills', tokens: Math.round(capabilityResidual * CAPABILITY_SHARES.skills) },
-  ];
-  // Keep the sum pinned to the authoritative total after rounding.
-  const drift = usedTokens - rows.reduce((total, row) => total + row.tokens, 0);
-  const anchor = rows.find((row) => row.key === 'toolsAndSubagents');
-  if (drift !== 0 && anchor && anchor.tokens + drift >= 0) {
-    anchor.tokens += drift;
-  }
-  return rows;
+export async function fetchContextUsage(conversationId: string, signal: AbortSignal): Promise<ContextUsageResult> {
+  const response = await fetch(`/api/conversations/${encodeURIComponent(conversationId)}/context-usage`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { Accept: 'application/json' },
+    signal,
+  });
+  if (!response.ok) throw new Error(`Context usage request failed: ${response.status}`);
+  return parseContextUsage(await response.json(), conversationId);
 }

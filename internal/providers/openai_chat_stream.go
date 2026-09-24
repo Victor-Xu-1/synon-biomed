@@ -261,7 +261,7 @@ func (c *streamingRuntimeModelClient) completeOpenAIChatStreamAttempt(ctx contex
 		return agentruntime.ModelResponse{}, retryable, emitted, err
 	}
 	c.emitAudit(record)
-	return decoded, false, emitted, nil
+	return c.responseWithUsage(decoded, record), false, emitted, nil
 }
 
 func openAIChatStreamTimeouts(configured time.Duration) (firstByte, idle time.Duration) {

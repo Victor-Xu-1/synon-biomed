@@ -20,12 +20,14 @@ type responseLanguageSequenceModel struct {
 	chunks    [][]string
 	responses []agentruntime.ModelResponse
 	requests  []agentruntime.ModelRequest
+	contexts  []context.Context
 }
 
 func (model *responseLanguageSequenceModel) Complete(
-	_ context.Context,
+	ctx context.Context,
 	request agentruntime.ModelRequest,
 ) (agentruntime.ModelResponse, error) {
+	model.contexts = append(model.contexts, ctx)
 	model.requests = append(model.requests, request)
 	index := len(model.requests) - 1
 	if index >= len(model.responses) {
@@ -35,10 +37,11 @@ func (model *responseLanguageSequenceModel) Complete(
 }
 
 func (model *responseLanguageSequenceModel) CompleteStream(
-	_ context.Context,
+	ctx context.Context,
 	request agentruntime.ModelRequest,
 	emit func(agentruntime.ModelStreamEvent) error,
 ) (agentruntime.ModelResponse, error) {
+	model.contexts = append(model.contexts, ctx)
 	model.requests = append(model.requests, request)
 	index := len(model.requests) - 1
 	if index >= len(model.responses) {
@@ -166,6 +169,10 @@ func TestResponseLanguageGateTranslatesEnglishOpeningBeforeDurableEmission(t *te
 		!strings.Contains(model.requests[1].Messages[1].Content, english) ||
 		model.requests[1].Temperature == nil || *model.requests[1].Temperature != 0 {
 		t.Fatalf("translation request=%#v", model.requests[1])
+	}
+	if model.contexts[0].Value(auxiliaryContextUsageKey{}) != nil ||
+		model.contexts[1].Value(auxiliaryContextUsageKey{}) != true {
+		t.Fatal("translation must not replace main-agent context usage")
 	}
 }
 

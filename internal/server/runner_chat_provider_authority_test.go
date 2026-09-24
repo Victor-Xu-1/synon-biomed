@@ -228,6 +228,12 @@ func TestSessionRunnerChatOnceAuditsStaticProviderAuthorityForTaskMetrics(t *tes
 	if err := srv.sessionStore.Save(session); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := workspaceStore.CreateFrame(workspace.CreateFrameInput{
+		ID: session.ID, ProjectID: session.Project.ID, AgentName: "GENERAL",
+		Status: "processing", ConversationType: "agent", Name: session.Title,
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := srv.eventJournal.Append(session.ID, eventjournal.Message{
 		"type": "message", "role": "user", "text": "use the deployment-configured model",
 	}, eventjournal.Metadata{ClientMessageID: "static-user-1"}); err != nil {
@@ -272,6 +278,11 @@ func TestSessionRunnerChatOnceAuditsStaticProviderAuthorityForTaskMetrics(t *tes
 	if usage.ModelCallCount != 1 || !usage.UsageAvailable || usage.InputTokens != 11 ||
 		usage.OutputTokens != 3 || usage.TotalTokens != 14 {
 		t.Fatalf("task-center usage = %#v", usage)
+	}
+	contextUsage := readContextUsageTest(t, srv.runtimeStore, session.ID)
+	if contextUsage.Source != "provider" || contextUsage.UsedTokens != 14 || contextUsage.OutputTokens != 3 ||
+		contextUsage.LimitTokens != defaultRunnerContextWindow || contextUsage.LimitSource != "runner_default" {
+		t.Fatalf("runner-to-context-usage projection = %+v", contextUsage)
 	}
 }
 

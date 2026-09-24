@@ -601,15 +601,26 @@
     "queueTooLarge": "Queue data is too large to persist safely. Remove some queued commands first."
   },
   "contextUsage": {
-    "contextUsed": "context used",
     "title": "Context usage",
-    "usedLabel": "Used",
+    "usedLabel": "Request usage",
     "systemPrompt": "System prompt",
-    "toolsAndSubagents": "Tools & subagents",
     "messages": "Conversation messages",
-    "connectorsAndMcp": "Connectors & MCP",
-    "skills": "Skills",
-    "unavailable": "No context usage data yet"
+    "unavailable": "No saved context record yet. The next model request will update it.",
+    "toolDefinitions": "Tool definitions (including MCP)",
+    "providerTotal": "Latest request · provider-reported usage",
+    "estimatedTotal": "Latest request · estimated usage",
+    "configuredLimit": "configured context budget",
+    "defaultLimit": "default context budget, not a verified model limit",
+    "estimatedBreakdown": "Input composition · estimates",
+    "output": "Latest response",
+    "breakdownNote": "Skill and MCP content is counted where it occurs in the request. Input estimates need not sum to provider-reported usage.",
+    "budgetNote": "Where shown, the percentage compares request usage with the runner budget; it does not show remaining context.",
+    "mediaNote": "Input estimates exclude image, audio and document token costs.",
+    "requestPending": "Request in progress; response usage is not yet available.",
+    "failedRequest": "The last request failed; response usage is unavailable.",
+    "loading": "Loading context usage",
+    "loadFailed": "Could not load context usage. Retry to refresh.",
+    "retry": "Retry"
   },
   "skill_generator": {
     "title": "Generate Skill/Rule",

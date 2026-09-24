@@ -542,7 +542,6 @@ const makeMessageState = (): UseAcpMessageReturn => ({
   setAiProcessing: setAiProcessingMock,
   resetState: resetStateMock,
   tokenUsage: null,
-  context_limit: 0,
   hasThinkingMessage: false,
   slashCommands: [],
   fetchSlashCommands: vi.fn(),
@@ -666,7 +665,6 @@ describe('AcpSendBox', () => {
     const messageState = makeMessageState();
     messageState.aiProcessing = false;
     messageState.tokenUsage = { total_tokens: 24_576 };
-    messageState.context_limit = 131_072;
     messageListMock.current = [
       {
         id: 'user-task-1',

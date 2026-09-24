@@ -1207,11 +1207,7 @@ const AcpSendBox: React.FC<{
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
             {isSynonBiomedConversation && (isBusy || content.trim() === '') ? (
-              <ContextUsagePanel
-                conversationId={conversation_id}
-                tokenUsage={messageState.tokenUsage}
-                contextLimit={messageState.context_limit}
-              />
+              <ContextUsagePanel conversationId={conversation_id} active={isBusy} />
             ) : null}
             {isSynonBiomedConversation && content.trim() !== '' && (
               <OptimizePromptAction

@@ -185,7 +185,7 @@ func (c *streamingRuntimeModelClient) completeOpenAIResponsesStreamAttempt(ctx c
 		return agentruntime.ModelResponse{}, retryable, emitted, err
 	}
 	c.emitAudit(record)
-	return decoded, false, emitted, nil
+	return c.responseWithUsage(decoded, record), false, emitted, nil
 }
 
 func readOpenAIResponsesStream(reader io.Reader, limit int64, emit func(agentruntime.ModelStreamEvent) error, decode func([]byte, http.Header) (agentruntime.ModelResponse, string, providerTokenUsage, error)) (agentruntime.ModelResponse, string, providerTokenUsage, bool, error) {

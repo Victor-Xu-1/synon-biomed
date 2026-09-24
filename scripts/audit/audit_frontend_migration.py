@@ -289,6 +289,7 @@ ALLOWED_ADDITION_RULES = (
 )
 
 ALLOWED_REMOVALS = {
+    "packages/desktop/src/renderer/components/synonBiomed/runtime/ContextUsageIndicator.tsx": "Retire the unused ACP-derived usage ring after the authenticated request-usage card became the single composer authority.",
     "packages/desktop/src/renderer/styles/codex-theme.css": "Rename the shared visual shell to workspace-theme.css while preserving its original import provenance.",
     "packages/desktop/src/renderer/pages/conversation/Messages/acp/MessageAcpToolCall.tsx": "Consolidate tool rendering into the receipt-bound ToolOperationDetail and tool timeline.",
     "packages/desktop/src/renderer/pages/conversation/Messages/components/MessagePlan.tsx": "Consolidate plan rendering into the shared SynonBiomedPlanTree.",
@@ -501,9 +502,9 @@ ALLOWED_ADAPTATION_RULES = (
     ),
 )
 
-APPROVED_ADAPTATION_FINGERPRINT = "9517f6c2541a574df4ced17b19c71b1475fb5092fd1b04bc2072de6ef3ef92ac"
-APPROVED_REMOVAL_FINGERPRINT = "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4"
-APPROVED_ADDITION_FINGERPRINT = "938a7aecb3145954c7adf208ed5b76cebc4e1964b04984e2777e32d519498118"
+APPROVED_ADAPTATION_FINGERPRINT = "78ccdea7bd1d40d0d36a2f0cbf3f3aa71f748f1066325694edb812300f3d9422"
+APPROVED_REMOVAL_FINGERPRINT = "70a676732efea3030080147fc7100096248f3fc0ce13b80256726d97fef98b5c"
+APPROVED_ADDITION_FINGERPRINT = "2dbffc23f8d29547be73a199f8f1ddc0d9a7b483e12a5b837cbfa2169ca11101"
 
 MANUAL_LICENSES = {
     "@nightingale-elements/nightingale-msa": {

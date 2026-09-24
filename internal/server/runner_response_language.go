@@ -254,7 +254,7 @@ func (client *sessionRunnerResponseLanguageModelClient) translateCandidate(
 		MaxTokens:   request.MaxTokens,
 		Temperature: &zero,
 	}
-	translated, err := client.delegate.Complete(ctx, translationRequest)
+	translated, err := client.delegate.Complete(withAuxiliaryContextUsage(ctx), translationRequest)
 	han, _, _ := sessionRunnerLanguageProfile(translated.Message.Content)
 	if err != nil || len(translated.Message.ToolCalls) > 0 ||
 		han == 0 || sessionRunnerClearlyEnglishProgress(translated.Message.Content) ||

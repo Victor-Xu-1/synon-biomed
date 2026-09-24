@@ -278,10 +278,10 @@
   width: fit-content;
   align-items: center;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--settings-accent-soft, var(--color-fill-2));
   color: var(--settings-accent-strong, var(--color-text-1));
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 17px;
 }
 

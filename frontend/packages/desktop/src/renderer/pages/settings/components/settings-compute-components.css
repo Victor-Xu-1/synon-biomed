@@ -11,7 +11,7 @@
 .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid > .settings-section {
   box-sizing: border-box;
   height: 206px;
-  min-height: 206px;
+  min-height: var(--settings-entity-card-height);
 }
 
 .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid .settings-section__icon {
@@ -23,7 +23,7 @@
 
 .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid .settings-section__header {
   gap: 18px;
-  padding: 24px 24px 0;
+  padding: var(--settings-section-padding) var(--settings-section-padding) 0;
 }
 
 .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid .settings-section__title {

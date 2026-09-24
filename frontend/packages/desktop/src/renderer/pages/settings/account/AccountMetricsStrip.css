@@ -12,7 +12,7 @@
 
 .account-metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   overflow: hidden;
   border: 1px solid var(--account-border);
   min-height: 96px;
@@ -101,7 +101,7 @@
 .account-metric__value span {
   margin-left: 3px;
   color: var(--account-text-secondary);
-  font-size: var(--ui-font-micro);
+  font-size: var(--settings-meta-size);
   font-weight: var(--ui-weight-medium);
 }
 

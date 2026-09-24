@@ -15,9 +15,9 @@
       [data-settings-route='tools'],
       [data-settings-route='environments']
     ) {
-    --settings-control-height: 32px;
-    --settings-section-gap: var(--ui-space-3);
-    --settings-card-gap: 10px;
+    --settings-control-height: var(--ui-control-lg);
+    --settings-section-gap: var(--ui-space-7);
+    --settings-card-gap: var(--ui-space-6);
   }
 
   html
@@ -52,8 +52,8 @@
       [data-settings-route='environments']
     )
     .settings-page-header__title {
-    font-size: var(--ui-font-hero) !important;
-    line-height: 28px !important;
+    font-size: var(--settings-page-title-size) !important;
+    line-height: var(--settings-page-title-line) !important;
     letter-spacing: -0.025em;
   }
 
@@ -66,7 +66,7 @@
     )
     :is(.settings-skill-library-total, .mcp-library-total) {
     margin-inline-start: 5px;
-    font-size: var(--ui-font-meta);
+    font-size: var(--settings-meta-size);
     line-height: 16px;
   }
 
@@ -79,8 +79,8 @@
     )
     .settings-page-header__description {
     margin-top: 1px;
-    font-size: var(--ui-font-micro) !important;
-    line-height: 15px !important;
+    font-size: var(--settings-page-description-size) !important;
+    line-height: var(--settings-page-description-line) !important;
   }
 
   html
@@ -103,11 +103,11 @@
     )
     .settings-page-header__actions
     :is(.arco-btn, .settings-action-button) {
-    min-height: 32px !important;
-    height: 32px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     padding-inline: 10px !important;
     border-radius: var(--ui-radius-md) !important;
-    font-size: var(--ui-font-meta) !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 16px !important;
   }
 
@@ -135,8 +135,8 @@
     .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
     :is(.settings-skill-library-search, .mcp-library-search)
     .arco-input-wrapper {
-    min-height: 32px !important;
-    height: 32px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     padding-inline: 9px;
     border-radius: var(--ui-radius-md);
   }
@@ -146,7 +146,7 @@
     .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
     :is(.settings-skill-library-search, .mcp-library-search)
     .arco-input {
-    font-size: var(--ui-font-meta);
+    font-size: var(--settings-meta-size);
     line-height: 16px;
   }
 
@@ -157,17 +157,17 @@
     :is(.arco-btn, select),
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-toolbar :is(select, button),
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-search {
-    min-height: 32px !important;
-    height: 32px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     padding-inline: 9px !important;
     border-radius: var(--ui-radius-md);
-    font-size: var(--ui-font-meta) !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 16px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-search input {
     height: 30px;
-    font-size: var(--ui-font-meta);
+    font-size: var(--settings-meta-size);
   }
 
   html
@@ -185,8 +185,8 @@
 
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health,
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health .text-12px {
-    font-size: 10px !important;
-    line-height: 14px !important;
+    font-size: var(--settings-meta-size) !important;
+    line-height: var(--settings-meta-line) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-health .gap-8px {
@@ -195,13 +195,13 @@
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-notice {
     padding: 5px 8px;
-    font-size: 10px;
-    line-height: 14px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-results {
-    font-size: 10px;
-    line-height: 14px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-filter-panel,
@@ -215,8 +215,8 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-filter-panel label,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-filter-panel label {
     gap: var(--ui-space-2);
-    font-size: var(--ui-font-micro);
-    line-height: 15px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html
@@ -224,10 +224,10 @@
     .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='environments'])
     :is(.settings-skill-filter-panel, .environment-filter-panel)
     :is(select, button, .arco-btn) {
-    min-height: 32px !important;
-    height: 32px !important;
+    min-height: var(--settings-control-height) !important;
+    height: var(--settings-control-height) !important;
     padding-inline: 9px !important;
-    font-size: var(--ui-font-micro) !important;
+    font-size: var(--settings-meta-size) !important;
   }
 
   html
@@ -245,8 +245,8 @@
     width: 28px;
     height: 28px;
     border-radius: var(--ui-radius-md);
-    font-size: var(--ui-font-micro);
-    line-height: 14px;
+    font-size: var(--settings-meta-size);
+    line-height: var(--settings-meta-line);
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] {
@@ -290,7 +290,7 @@
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
     min-height: 0;
     overflow-y: auto;
-    padding: 2px 3px 4px;
+    padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-2);
     scrollbar-gutter: stable;
   }
 
@@ -323,241 +323,228 @@
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    grid-auto-rows: minmax(0, 1fr);
-    gap: 10px !important;
-    align-content: stretch;
+    grid-auto-rows: auto;
+    align-items: stretch;
+    align-content: start;
+    gap: var(--settings-card-gap) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid {
     width: 100%;
-    height: 100%;
-    min-height: 0;
     flex: 1;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-scroll .synon-mcp-grid:not(:empty) {
-    height: 100%;
     min-height: 0 !important;
     flex: 1;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
 
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-entity-card,
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card {
-    min-height: 0 !important;
-    height: 100%;
+  /*
+   * One card anatomy for all four merged library tabs.
+   *
+   * Experts, skills, connectors and environments render the same three parts —
+   * heading (icon + title), a two-line description, and a footer holding one
+   * metadata line plus exactly one control at a fixed 24px pill height. Every
+   * metric is a token, so the tabs cannot drift apart again, and the height
+   * comes from `min-height` on the shared card token while the grids keep
+   * `grid-auto-rows: auto`.
+   *
+   * The floor is `--settings-library-card-height` (192px), one step roomier
+   * than the 168px `--settings-entity-card-height` the standalone settings
+   * pages keep: heading 36 + 8 copy gap + 40 two-line copy + 33 footer + 40
+   * padding = 157px, so the copy and the status row always fit whole and the
+   * spare room lands as breathing space above the footer hairline.
+   */
+  html body .settings-page-wrapper .settings-library-card {
+    display: flex;
+    box-sizing: border-box;
+    min-height: var(--settings-library-card-height) !important;
+    height: auto;
+    flex-direction: column;
+    gap: 0;
+    padding: var(--settings-card-padding) !important;
     overflow: hidden;
   }
 
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card {
-    gap: var(--ui-space-2);
-    padding: 8px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__content {
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__body {
+    display: flex;
+    width: 100%;
+    min-width: 0;
     min-height: 0;
-    gap: var(--ui-space-2);
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+  }
+
+  /* The heading owns the title ramp, so the icon slot, the title slot and the
+     title itself all resolve to the same 15px/600/22px on every tab. */
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__heading {
+    display: flex;
+    min-width: 0;
+    min-height: 36px;
+    align-items: center;
+    gap: var(--ui-space-5);
+    color: var(--settings-text);
+    font-size: var(--ui-font-title);
+    font-weight: var(--ui-weight-semibold);
+    line-height: var(--ui-line-height-title);
+  }
+
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__icon {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
+    border-radius: var(--ui-radius-lg);
   }
 
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__heading {
-    gap: 5px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__icon {
-    width: 22px;
-    height: 22px;
-    flex-basis: 22px;
-    border-radius: var(--ui-radius-sm);
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__title {
-    display: -webkit-box;
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__title {
+    min-width: 0;
     overflow: hidden;
-    font-size: var(--ui-font-micro) !important;
-    line-height: 14px !important;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__description {
-    display: -webkit-box;
-    overflow: hidden;
-    font-size: 10px !important;
-    line-height: 13px !important;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__metadata {
-    gap: 3px;
-    font-size: 9px;
-    line-height: 11px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__footer {
-    min-height: 24px;
-    padding-top: 3px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__footer .text-11px {
-    font-size: 9px;
-    line-height: 11px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-    gap: var(--ui-space-2);
-    padding: 8px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__top {
-    gap: 5px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__icon {
-    width: 24px;
-    height: 24px;
-    flex-basis: 24px;
-    border-radius: var(--ui-radius-md);
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row > span {
-    display: -webkit-box;
-    overflow: hidden;
-    font-size: var(--ui-font-micro) !important;
-    line-height: 14px !important;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__description {
-    display: -webkit-box;
-    overflow: hidden;
-    font-size: 10px !important;
-    line-height: 13px !important;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__metadata {
-    gap: 3px;
-    font-size: 9px;
-    line-height: 11px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__footer {
-    gap: 3px;
-    padding-top: 3px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__usage {
-    min-height: 22px;
-    font-size: 9px;
-    line-height: 11px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__actions {
-    min-height: 22px;
-    gap: 3px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__configure.arco-btn,
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
-    min-height: 22px !important;
-    height: 22px !important;
-    padding-inline: 5px !important;
-    font-size: 9px !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__status-control {
-    min-width: 64px !important;
-    gap: 3px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card {
-    gap: 3px;
-    padding: 6px !important;
-    border-radius: var(--ui-radius-lg) !important;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-body {
-    min-height: 0;
-    gap: 3px;
-    overflow: hidden;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-heading {
-    gap: 5px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-icon {
-    width: 20px;
-    height: 20px;
-    flex-basis: 20px;
-    border-radius: var(--ui-radius-sm);
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card h2 {
-    display: -webkit-box;
-    overflow: hidden;
-    font-size: var(--ui-font-micro) !important;
-    line-height: 14px !important;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-category {
-    font-size: 9px;
-    line-height: 10px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-description {
-    display: -webkit-box;
-    min-height: 0;
-    overflow: hidden;
-    font-size: 10px !important;
-    line-height: 13px !important;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-packages {
-    font-size: 9px;
-    line-height: 11px;
-  }
-
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-packages summary {
-    overflow: hidden;
-    padding: 1px 0;
+    color: var(--settings-text) !important;
+    font-size: var(--ui-font-title) !important;
+    font-weight: var(--ui-weight-semibold) !important;
+    line-height: var(--ui-line-height-title) !important;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-footer {
-    min-height: 22px;
-    flex-shrink: 0;
-    gap: 3px;
-    padding-top: 3px;
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__title-slot {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: var(--ui-space-3);
   }
 
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-status {
-    font-size: 8px;
-    line-height: 10px;
+  /* Two clamped lines at a fixed height keep every card's body the same size.
+     Both bounds are pinned, so the copy zone can neither grow into a third
+     line nor be squeezed by the row's other cards; the margin is forced so a
+     route rule cannot collapse the gap under the heading and unbalance the
+     four tabs. */
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__description {
+    display: -webkit-box;
+    min-height: calc(var(--ui-line-height-body) * 2);
+    max-height: calc(var(--ui-line-height-body) * 2);
+    margin: var(--ui-space-4) 0 0 !important;
+    overflow: hidden;
+    color: var(--settings-text-secondary) !important;
+    font-size: var(--ui-font-body) !important;
+    font-weight: var(--ui-weight-regular) !important;
+    line-height: var(--ui-line-height-body) !important;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-status {
-    font-size: 9px;
+  /* The footer owns the metadata ramp: its line is 12px and the one control it
+     holds is exactly 24px tall, so the bottom row cannot grow on any tab. */
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__footer {
+    display: flex;
+    min-height: 33px;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ui-space-4);
+    margin-top: auto;
+    padding-top: var(--ui-space-4);
+    border-top: 1px solid var(--settings-border);
+    font-size: var(--ui-font-meta) !important;
+    font-weight: var(--ui-weight-regular) !important;
+    line-height: var(--ui-line-height-meta) !important;
   }
 
-  html body .settings-page-wrapper[data-settings-route='environments'] .environment-action {
-    min-height: 20px !important;
-    padding-inline: 5px !important;
-    font-size: 9px !important;
+  /* One metadata line: 12px/400, never wrapping, truncated from the tail.
+     `flex-direction: row` is explicit so a route that stacked its own metadata
+     column cannot push the four tabs onto different row counts. */
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__meta {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--ui-space-3);
+    overflow: hidden;
+    color: var(--settings-text-tertiary) !important;
+    font-size: var(--ui-font-meta) !important;
+    font-weight: var(--ui-weight-regular) !important;
+    line-height: var(--ui-line-height-meta) !important;
+    white-space: nowrap;
   }
 
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__meta > * {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__meta > * + *::before {
+    margin-inline-end: var(--ui-space-3);
+    content: '·';
+  }
+
+  /* The one control each card's footer keeps: same height, radius and type
+     size whether it is a switch, a text button or a status capsule. */
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__control {
+    display: inline-flex;
+    height: 24px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ui-space-3);
+    border-radius: var(--ui-radius-pill);
+    font-size: var(--ui-font-meta) !important;
+    line-height: var(--ui-line-height-meta) !important;
+  }
+
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__control > :is(button, .arco-btn) {
+    height: 24px !important;
+    min-height: 24px !important;
+    padding: 0 var(--ui-space-5) !important;
+    border-radius: var(--ui-radius-pill) !important;
+    font-size: var(--ui-font-meta) !important;
+    line-height: var(--ui-line-height-meta) !important;
+    white-space: nowrap;
+  }
+
+  html body .settings-page-wrapper .settings-library-card .settings-library-card__control .arco-switch {
+    flex: 0 0 auto;
+  }
+
+  /* An icon-only menu trigger inside a card footer stays the same 24px square
+     as the pill control beside it, so the footer row never grows to two lines. */
+  html
+    body
+    .settings-page-wrapper
+    .settings-library-card
+    .settings-library-card__control
+    > .arco-btn.synon-mcp-card__more {
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    padding: 0 !important;
+    border-radius: var(--ui-radius-pill) !important;
+  }
+
+  /* The one skill-specific metric left here is the icon glyph's own artwork. */
+
+  html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__icon-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+  }
+
+  /* Environment cards keep their progress bar and error line inside the body. */
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card > progress,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-error-code {
     flex-shrink: 0;
@@ -581,7 +568,9 @@
     .settings-entity-grid,
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-grid,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto;
+    align-items: stretch;
   }
 }
 
@@ -589,4 +578,213 @@
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-grid {
     overflow: visible;
   }
+}
+
+/*
+ * Merged library page (LibrarySettingsPage, marked `.settings-library-route`).
+ *
+ * The route-scoped rules above give each standalone library a bounded sheet
+ * with nested scroll boundaries. Inside the merged page all four tabs render
+ * into one wrapper, so those boundaries conflict and some tabs can no longer
+ * scroll. The overrides below neutralize the fixed height chain and the nested
+ * scroll clipping: the wrapper becomes the single scroll container and every
+ * tab lays out in normal document flow. Card chrome (--settings-card-*) and
+ * the 4-column grids above are untouched (grid-auto-rows stays auto).
+ */
+@media (min-width: 768px) {
+  html body .settings-page-wrapper.settings-library-route {
+    display: block;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden auto !important;
+  }
+
+  html body .settings-page-wrapper.settings-library-route .settings-page-content,
+  html body .settings-page-wrapper.settings-library-route .settings-page-body {
+    display: block;
+    flex: none;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper.settings-library-route
+    :is(.settings-experts-page, .settings-skills-page, .mcp-library, .environment-library) {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  html
+    body
+    .settings-page-wrapper.settings-library-route
+    :is(.settings-skill-library-scroll, .mcp-library-scroll, .environment-grid) {
+    height: auto;
+    min-height: 0;
+    overflow: visible !important;
+  }
+
+  html
+    body
+    .settings-page-wrapper.settings-library-route
+    :is(
+      .mcp-library-scroll > .arco-spin,
+      .mcp-library-scroll > .arco-spin > .arco-spin-children,
+      .settings-skill-library-scroll > .min-h-0
+    ) {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  /* One content rail for all four tabs. The retired standalone sheets pinned a
+     per-route rail (experts: min(1193px, 100%)) and the short-Chrome sheet
+     scaled the experts page by 0.72 on its own, so the merged page used to
+     report a different card width for the experts tab. Both are cancelled
+     here: every tab fills the same rail and none of them is transformed. */
+  html
+    body
+    .settings-page-wrapper.settings-library-route
+    :is(.settings-experts-page, .settings-skills-page, .mcp-library, .environment-library) {
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  /* The three route tabs inset their card wall through their scroll container;
+     the expert wall is the scroll-free leaf, so it takes the same inset rather
+     than starting a few pixels wider than its three siblings. */
+  html body .settings-page-wrapper.settings-library-route .expert-grid {
+    padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-2);
+  }
+}
+
+/*
+ * Merged library page tab header: one compact line per module — title,
+ * optional count badge, this module's category filter controls, and the
+ * primary action on the right. Long descriptions and result summaries are
+ * intentionally omitted; standalone pages keep SettingsPageHeader untouched.
+ */
+.settings-library-tab-header__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.settings-library-tab-header__title {
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-text-1);
+  font-size: var(--ui-font-title);
+  line-height: var(--ui-line-height-title);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-library-tab-header__count {
+  flex-shrink: 0;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--color-fill-2);
+  color: var(--color-text-3);
+  font-size: var(--ui-font-meta);
+  line-height: var(--ui-line-height-meta);
+  text-align: center;
+}
+
+.settings-library-tab-header__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  /* The filter cluster owns the right alignment, so the primary action always
+     sits exactly 8px to the right of the last filter control. */
+  margin-inline-start: 0;
+}
+
+/* The single filter cluster each tab keeps: the domain/category dropdown, then
+   the primary action. */
+.settings-library-tab-header__filters {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+/* The single category dropdown every merged tab header shares. One element,
+   one height, radius, type size and padding keeps the four tabs identical even
+   though each module filters on its own field. */
+.settings-library-filter-select {
+  box-sizing: border-box;
+  width: 160px;
+  height: var(--ui-control-md);
+  min-width: 0;
+  padding: 0 var(--ui-control-padding-x);
+  border: 1px solid var(--settings-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  font: inherit;
+  font-size: var(--ui-font-body);
+  text-overflow: ellipsis;
+}
+
+.settings-library-filter-select:focus-visible {
+  outline: 2px solid var(--settings-accent);
+  outline-offset: 2px;
+}
+
+/*
+ * Merged page vertical rhythm: the tab row hugs the content top and every
+ * tab header sits exactly one 12px gap above the card wall (tab underline →
+ * 8px content padding → 40px header row → 12px gap ≤ 72px total).
+ */
+html body .settings-page-wrapper.settings-library-route .settings-page-header__tabs-row {
+  margin-top: 0;
+}
+
+html
+  body
+  .settings-page-wrapper.settings-library-route
+  :is(.settings-experts-page, .settings-skills-page, .mcp-library) {
+  gap: 12px;
+}
+
+html body .settings-page-wrapper.settings-library-route .environment-library {
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Let the footer meta wrap onto as many lines as it needs. */
+.settings-library-route .settings-library-card__meta {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Footer: meta sits bottom-left and wraps up to three lines; the status control stays bottom-right. */
+.settings-library-route .settings-library-card__footer {
+  align-items: flex-start;
+}
+.settings-library-route .settings-library-card__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: normal !important;
+  overflow: visible !important;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.settings-library-route .settings-library-card__control {
+  flex-shrink: 0;
+}
+/* The enable switch reads as a light green when on, not the neutral ink. */
+.settings-library-route .arco-switch-checked {
+  background-color: color-mix(in srgb, var(--settings-status-ready) 55%, #ffffff) !important;
 }

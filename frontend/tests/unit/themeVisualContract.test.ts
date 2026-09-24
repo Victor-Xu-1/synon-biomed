@@ -1,7 +1,14 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync as readFileRaw } from 'node:fs';
+import { resolveDesignTokens } from './_helpers/designTokens';
 import { describe, expect, it } from 'vitest';
 
 const rendererRoot = new URL('../../packages/desktop/src/renderer/', import.meta.url);
+
+/** Stylesheets are read with design tokens inlined; contracts keep pinning numbers. */
+const readFileSync = (target: string | URL, encoding?: BufferEncoding): string =>
+  `${target}`.endsWith('.css')
+    ? resolveDesignTokens(readFileRaw(target, 'utf8'))
+    : (readFileRaw(target, encoding) as unknown as string);
 const warmCss = readFileSync(new URL('pages/settings/AppearanceSettings/presets/warm.css', rendererRoot), 'utf8');
 const coolCss = readFileSync(new URL('pages/settings/AppearanceSettings/presets/cool.css', rendererRoot), 'utf8');
 const whiteCss = readFileSync(new URL('pages/settings/AppearanceSettings/presets/white.css', rendererRoot), 'utf8');
@@ -214,7 +221,7 @@ describe('shared visual shell contract', () => {
   it('uses one compact typography hierarchy across settings, chat, and overlays', () => {
     expect(shellCss).not.toContain('.settings-page-header__title');
     expect(settingsCoreCss).toMatch(
-      /\.settings-page-header__title\s*\{[^}]*font-size:\s*(?:28px|var\(--ui-font-headline\))[^}]*line-height:\s*36px/i
+      /\.settings-page-header__title\s*\{[^}]*font-size:\s*26px[^}]*line-height:\s*34px/i
     );
     expect(shellCss).toMatch(
       /\.message-item\s*\{[^}]*font-size:\s*(?:15px|var\(--ui-font-title\))[^}]*line-height:\s*1\.65/i
@@ -238,7 +245,7 @@ describe('shared visual shell contract', () => {
     );
     expect(shellCss).toMatch(/\.message-scientific-files__metadata\s*\{[^}]*background:\s*var\(--workspace-canvas\)/i);
     expect(messageChannelsCss).toMatch(
-      /\.message-channel-card__status\s*\{[^}]*color:\s*var\(--workspace-text-tertiary,[^}]*font-size:\s*(?:11px|var\(--ui-font-micro\))[^}]*line-height:\s*16px/i
+      /\.message-channel-card__status\s*\{[^}]*color:\s*var\(--workspace-text-tertiary,[^}]*font-size:\s*12px[^}]*line-height:\s*18px/i
     );
     expect(shellCss).toMatch(/\.arco-tag \.arco-tag-content\s*\{[^}]*color:\s*var\(--workspace-text-secondary\)/i);
     expect(shellCss).toMatch(
@@ -392,9 +399,7 @@ describe('shared visual shell contract', () => {
       /:is\([\s\S]*?\.arco-card,[\s\S]*?\.arco-modal,[\s\S]*?\.arco-drawer,[\s\S]*?\)\s*\{[^}]*border-width:\s*1px[^}]*border-color:\s*transparent/i
     );
     expect(shellCss).not.toContain('.settings-list');
-    expect(settingsCoreCss).toMatch(
-      /\.settings-list\s*\{[^}]*border-radius:\s*var\(--settings-card-radius\)\s*!important/i
-    );
+    expect(settingsCoreCss).toMatch(/\.settings-list\s*\{[^}]*border-radius:\s*16px\s*!important/i);
     expect(settingsCardSurfacesCss).toMatch(
       /\.settings-summary-strip,[\s\S]*?\.settings-section,[\s\S]*?\)\s*\{[^}]*border-radius:\s*(?:16px|var\(--ui-radius-2xl\))\s*!important/i
     );

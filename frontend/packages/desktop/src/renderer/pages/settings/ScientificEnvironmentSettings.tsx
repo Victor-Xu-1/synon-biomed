@@ -1,6 +1,6 @@
-import { Down, Search } from '@icon-park/react';
+import { Button, Modal } from '@arco-design/web-react';
+import { Down, Refresh, Search } from '@icon-park/react';
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { Modal } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import {
   loadScientificRuntimeSettings,
@@ -13,11 +13,14 @@ import {
 import { scientificRuntimePresentation } from '@/renderer/utils/scientificRuntimePresentation';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
 import SettingsPageHeader from './components/SettingsPageHeader';
+import SettingsLibraryTabHeader from './components/SettingsLibraryTabHeader';
+import SettingsLibraryFilterSelect from './components/SettingsLibraryFilterSelect';
 import { RefreshButton } from './components/SettingsPrimitives';
 import { useStorageResource } from './storage/useStorageResource';
 import { StorageRuntimeSelectionDialog } from './storage/StorageRuntimeSelectionDialog';
 import { StorageError, StorageLoading } from './storage/StorageFeedback';
 import { EnvironmentCard } from './environments/EnvironmentCard';
+
 import {
   activeEnvironmentStates,
   environmentCategories,
@@ -29,7 +32,23 @@ import {
 import './environments/environments.css';
 
 const load = (signal: AbortSignal) => loadScientificRuntimeSettings({ signal });
-export default function ScientificEnvironmentSettings() {
+interface ScientificEnvironmentSettingsProps {
+  /** When false, renders without SettingsPageWrapper for route/tab embedding. */
+  withWrapper?: boolean;
+  /** When false, omits the page-level header (used inside the merged library page). */
+  withHeader?: boolean;
+  /** When true (with withHeader=false), renders the merged-page one-line compact header. */
+  compactHeader?: boolean;
+  /** When true, renders the refresh/manage actions row inside the content instead of the header. */
+  showActions?: boolean;
+}
+
+export default function ScientificEnvironmentSettings({
+  withWrapper = true,
+  withHeader = true,
+  compactHeader = false,
+  showActions = false,
+}: ScientificEnvironmentSettingsProps) {
   const { t } = useTranslation();
   const resource = useStorageResource(load);
   const [query, setQuery] = useState('');
@@ -74,8 +93,17 @@ export default function ScientificEnvironmentSettings() {
       haystack.includes(query.trim().toLocaleLowerCase())
     );
   });
+  const environmentPageItems = filtered;
   const filterPanelId = useId();
   const activeFilterCount = filter === 'all' ? 0 : 1;
+  // The merged-page header keeps exactly one control: the research-domain
+  // filter, with the inventory count of each domain it can select.
+  const environmentCategoryOptions = environmentCategories
+    .filter((id) => id === 'all' || items.some((item) => environmentCategory(item.id) === id))
+    .map((id) => ({
+      id,
+      count: id === 'all' ? items.length : items.filter((item) => environmentCategory(item.id) === id).length,
+    }));
   const prepare = async () => {
     if (!target || pending.current) return;
     pending.current = true;
@@ -141,107 +169,148 @@ export default function ScientificEnvironmentSettings() {
       if (alive.current) setBusy(false);
     }
   };
-  return (
-    <SettingsPageWrapper>
-      <div className='environment-library' data-testid='scientific-environments'>
+  const environmentActions = (
+    <>
+      <RefreshButton loading={resource.loading} onClick={() => resource.refresh(false)} />
+      <button
+        type='button'
+        className='settings-action-button'
+        disabled={!resource.data || resource.failed || busy}
+        onClick={() => setSelection(true)}
+      >
+        {t('settings.environments.manageSelection')}
+      </button>
+    </>
+  );
+  // The merged library page keeps exactly one primary action per tab header.
+  const compactRefreshAction = (
+    <Button
+      type='primary'
+      loading={resource.loading}
+      disabled={resource.failed}
+      icon={<Refresh size='14' />}
+      onClick={() => resource.refresh(false)}
+    >
+      {t('common.refresh')}
+    </Button>
+  );
+
+  const content = (
+    <>
+      {withHeader ? (
         <SettingsPageHeader
-          title={
-            <>
-              {t('settings.environments.title')} <span className='settings-skill-library-total'>{items.length}</span>
-            </>
-          }
+          title={t('settings.environments.title')}
           description={t('settings.environments.description')}
-          actions={
-            <>
-              <RefreshButton loading={resource.loading} onClick={() => resource.refresh(false)} />
-              <button
-                type='button'
-                className='settings-action-button'
-                disabled={!resource.data || resource.failed || busy}
-                onClick={() => setSelection(true)}
-              >
-                {t('settings.environments.manageSelection')}
-              </button>
-            </>
-          }
+          actions={environmentActions}
         />
-        <div className='environment-toolbar' role='search' aria-label={t('settings.environments.title')}>
-          <div className='environment-search'>
-            <Search size={15} aria-hidden='true' />
-            <input
-              type='search'
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label={t('settings.environments.search')}
-              placeholder={t('settings.environments.search')}
-            />
-          </div>
-          <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value as EnvironmentCategory)}
-            aria-label={t('settings.environments.category')}
-          >
-            {environmentCategories
-              .filter((id) => id === 'all' || items.some((item) => environmentCategory(item.id) === id))
-              .map((id) => (
-                <option key={id} value={id}>
-                  {t('settings.environments.categories.' + id)}
+      ) : compactHeader ? (
+        <SettingsLibraryTabHeader
+          title={t('settings.environments.title')}
+          count={items.length}
+          filters={
+            <SettingsLibraryFilterSelect
+              aria-label={t('settings.environments.category')}
+              data-testid='environment-category-filter'
+              value={category}
+              onChange={(value) => setCategory(value as EnvironmentCategory)}
+            >
+              {environmentCategoryOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {t('settings.environments.categories.' + option.id)} ({option.count})
                 </option>
               ))}
-          </select>
-          <button
-            type='button'
-            className='environment-filter-toggle'
-            aria-expanded={filtersExpanded}
-            aria-controls={filterPanelId}
-            onClick={() => setFiltersExpanded((value) => !value)}
-          >
-            {t('settings.skillsSettings.filters')}
-            {activeFilterCount > 0 ? <span className='environment-filter-count'>{activeFilterCount}</span> : null}
-            <Down size={14} aria-hidden='true' />
-          </button>
-        </div>
-        {filtersExpanded && (
-          <div
-            id={filterPanelId}
-            className='environment-filter-panel'
-            role='group'
-            aria-label={t('settings.skillsSettings.filters')}
-          >
-            <label>
-              <span>{t('settings.environments.status')}</span>
+            </SettingsLibraryFilterSelect>
+          }
+          actions={compactRefreshAction}
+        />
+      ) : null}
+      <div className='environment-library' data-testid='scientific-environments'>
+        {showActions ? (
+          <div className='environment-content-actions mb-12px flex items-center gap-8px'>{environmentActions}</div>
+        ) : null}
+        {!compactHeader ? (
+          <>
+            <div className='environment-toolbar' role='search' aria-label={t('settings.environments.title')}>
+              <div className='environment-search'>
+                <Search size={15} aria-hidden='true' />
+                <input
+                  type='search'
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  aria-label={t('settings.environments.search')}
+                  placeholder={t('settings.environments.search')}
+                />
+              </div>
               <select
-                value={filter}
-                onChange={(event) => setFilter(event.target.value as EnvironmentFilter)}
-                aria-label={t('settings.environments.status')}
+                value={category}
+                onChange={(event) => setCategory(event.target.value as EnvironmentCategory)}
+                aria-label={t('settings.environments.category')}
               >
-                {(['all', 'ready', 'available', 'active', 'failed'] as const).map((id) => (
-                  <option key={id} value={id}>
-                    {t('settings.environments.filters.' + id)}
-                  </option>
-                ))}
+                {environmentCategories
+                  .filter((id) => id === 'all' || items.some((item) => environmentCategory(item.id) === id))
+                  .map((id) => (
+                    <option key={id} value={id}>
+                      {t('settings.environments.categories.' + id)}
+                    </option>
+                  ))}
               </select>
-            </label>
-            <button
-              type='button'
-              className='environment-filter-reset'
-              disabled={activeFilterCount === 0}
-              onClick={() => setFilter('all')}
-            >
-              {t('settings.skillsSettings.resetFilters')}
-            </button>
-          </div>
-        )}
-        <p className='environment-notice'>{t('settings.environments.notice')}</p>
+              <button
+                type='button'
+                className='environment-filter-toggle'
+                aria-expanded={filtersExpanded}
+                aria-controls={filterPanelId}
+                onClick={() => setFiltersExpanded((value) => !value)}
+              >
+                {t('settings.skillsSettings.filters')}
+                {activeFilterCount > 0 ? <span className='environment-filter-count'>{activeFilterCount}</span> : null}
+                <Down size={14} aria-hidden='true' />
+              </button>
+            </div>
+            {filtersExpanded && (
+              <div
+                id={filterPanelId}
+                className='environment-filter-panel'
+                role='group'
+                aria-label={t('settings.skillsSettings.filters')}
+              >
+                <label>
+                  <span>{t('settings.environments.status')}</span>
+                  <select
+                    value={filter}
+                    onChange={(event) => setFilter(event.target.value as EnvironmentFilter)}
+                    aria-label={t('settings.environments.status')}
+                  >
+                    {(['all', 'ready', 'available', 'active', 'failed'] as const).map((id) => (
+                      <option key={id} value={id}>
+                        {t('settings.environments.filters.' + id)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type='button'
+                  className='environment-filter-reset'
+                  disabled={activeFilterCount === 0}
+                  onClick={() => setFilter('all')}
+                >
+                  {t('settings.skillsSettings.resetFilters')}
+                </button>
+              </div>
+            )}
+            <p className='environment-notice'>{t('settings.environments.notice')}</p>
+          </>
+        ) : null}
         {resource.loading && !resource.data && <StorageLoading />}
         {resource.failed && <StorageError retained={!!resource.data} onRetry={() => void resource.refresh(false)} />}
         {resource.data && (
           <>
-            <div className='environment-results' role='status'>
-              {t('settings.environments.results', { count: filtered.length, total: items.length })}
-            </div>
+            {!compactHeader ? (
+              <div className='environment-results' role='status'>
+                {t('settings.environments.results', { count: filtered.length, total: items.length })}
+              </div>
+            ) : null}
             <div className='environment-grid' role='list'>
-              {filtered.map((item) => (
+              {environmentPageItems.map((item) => (
                 <EnvironmentCard
                   key={item.id}
                   item={item}
@@ -313,6 +382,14 @@ export default function ScientificEnvironmentSettings() {
           </Modal>
         )}
       </div>
-    </SettingsPageWrapper>
+    </>
   );
+
+  if (!withWrapper) return content;
+  return <SettingsPageWrapper>{content}</SettingsPageWrapper>;
 }
+
+/** Header-less, wrapper-less content used by the merged library page tabs. */
+export const ScientificEnvironmentSettingsContent: React.FC<{ showActions?: boolean }> = ({ showActions = false }) => (
+  <ScientificEnvironmentSettings withWrapper={false} withHeader={false} compactHeader showActions={showActions} />
+);

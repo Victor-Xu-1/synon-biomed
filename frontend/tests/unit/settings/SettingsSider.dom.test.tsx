@@ -34,7 +34,7 @@ vi.mock('@/renderer/pages/settings/settingsRouteLoaders', () => ({
 import SettingsSider from '@/renderer/pages/settings/components/SettingsSider';
 
 describe('SettingsSider navigation', () => {
-  it('uses native hash links and commits repeated settings route changes', async () => {
+  it('collapses the four library routes into one scientific toolkit entry', async () => {
     window.location.hash = '/settings/skills';
     await renderWithI18n(
       <HashRouter>
@@ -43,23 +43,54 @@ describe('SettingsSider navigation', () => {
       'en-US'
     );
 
-    const skills = screen.getByRole('link', { name: 'Skills' });
-    const tools = screen.getByRole('link', { name: 'Connectors' });
+    // Experts, skills, connectors and environments are one entry now.
+    const toolkit = screen.getByRole('link', { name: 'Scientific Toolkit' });
+    expect(screen.queryByRole('link', { name: 'Experts' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Skills' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Connectors' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Scientific environments' })).toBeNull();
+    // The eight remaining entries are the toolkit row plus the untouched ones.
+    expect(screen.getAllByRole('link').map((link) => link.textContent?.trim())).toEqual([
+      'Scientific Toolkit',
+      'Models',
+      'Compute',
+      'Memory',
+      'Network',
+      'Credentials',
+      'Storage',
+      'General',
+    ]);
+
+    // A deep link to any of the four legacy routes keeps that one entry lit.
+    expect(toolkit).toHaveAttribute('href', '#/settings/experts');
+    expect(toolkit).toHaveAttribute('aria-current', 'page');
+    expect(routeLoaderMocks.preloadDuringIdle).toHaveBeenCalledWith('skills');
+  });
+
+  it('uses native hash links and commits repeated settings route changes', async () => {
+    window.location.hash = '/settings/experts';
+    await renderWithI18n(
+      <HashRouter>
+        <SettingsSider />
+      </HashRouter>,
+      'en-US'
+    );
+
+    const toolkit = screen.getByRole('link', { name: 'Scientific Toolkit' });
     const models = screen.getByRole('link', { name: 'Models' });
 
-    expect(skills).toHaveAttribute('aria-current', 'page');
-    expect(routeLoaderMocks.preloadDuringIdle).toHaveBeenCalledWith('skills');
-    expect(tools).toHaveAttribute('href', '#/settings/tools');
+    expect(toolkit).toHaveAttribute('aria-current', 'page');
 
-    fireEvent.pointerEnter(tools);
-    expect(routeLoaderMocks.preload).toHaveBeenCalledWith('tools');
-    fireEvent.click(tools);
-    await waitFor(() => expect(window.location.hash).toBe('#/settings/tools'));
-    await waitFor(() => expect(tools).toHaveAttribute('aria-current', 'page'));
-    await waitFor(() => expect(routeLoaderMocks.preloadDuringIdle).toHaveBeenCalledWith('tools'));
+    fireEvent.pointerEnter(toolkit);
+    expect(routeLoaderMocks.preload).toHaveBeenCalledWith('experts');
 
     fireEvent.click(models);
     await waitFor(() => expect(window.location.hash).toBe('#/settings/models'));
     await waitFor(() => expect(models).toHaveAttribute('aria-current', 'page'));
+    await waitFor(() => expect(routeLoaderMocks.preloadDuringIdle).toHaveBeenCalledWith('models'));
+
+    fireEvent.click(toolkit);
+    await waitFor(() => expect(window.location.hash).toBe('#/settings/experts'));
+    await waitFor(() => expect(toolkit).toHaveAttribute('aria-current', 'page'));
   });
 });

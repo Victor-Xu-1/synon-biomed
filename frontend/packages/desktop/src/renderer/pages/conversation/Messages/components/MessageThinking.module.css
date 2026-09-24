@@ -68,7 +68,7 @@
   background: rgb(101 84 233 / 20%);
   filter: blur(4px);
   content: '';
-  z-index: var(--ui-z-below)-1;
+  z-index: var(--ui-z-below);
 }
 
 .label {

@@ -15,7 +15,7 @@
   content: '';
   position: absolute;
   inset: 0 auto 0 0;
-  z-index: var(--ui-z-below)-1;
+  z-index: var(--ui-z-below);
   width: 3px;
   background: var(--account-accent);
 }
@@ -50,7 +50,7 @@
   border-radius: var(--ui-radius-circle);
   background: var(--account-accent);
   box-shadow: 0 0 0 4px var(--account-panel);
-  color: white;
+  color: var(--account-panel);
   font-size: var(--ui-font-headline);
   font-weight: var(--ui-weight-semibold);
   line-height: 1;
@@ -92,7 +92,7 @@
   border: 3px solid var(--account-panel);
   border-radius: var(--ui-radius-circle);
   background: var(--account-accent-strong);
-  color: white;
+  color: var(--account-panel);
 }
 
 .account-profile-hero__copy {

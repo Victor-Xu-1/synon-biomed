@@ -9,6 +9,7 @@ import SynonBiomedSendOptionsMenu, {
 } from '@/renderer/components/synonBiomed/runtime/SynonBiomedSendOptionsMenu';
 import SynonBiomedSessionOptionsMenu from '@/renderer/components/synonBiomed/runtime/SynonBiomedSessionOptionsMenu';
 import ContextUsagePanel from '@/renderer/components/synonBiomed/runtime/ContextUsagePanel';
+import OptimizePromptAction from '@/renderer/components/synonBiomed/runtime/OptimizePromptAction';
 import SynonBiomedRuntimeOperations from '@/renderer/components/synonBiomed/runtime/SynonBiomedRuntimeOperations';
 import CommandQueuePanel from '@/renderer/components/chat/CommandQueuePanel';
 import BtwOverlay from '@/renderer/components/chat/BtwOverlay';
@@ -136,6 +137,7 @@ const AcpSendBox: React.FC<{
     setUploadFile,
     content,
     setContent,
+    replaceContentIfUnchanged,
     contextItems,
     setContextItems,
     stagedPlanMode,
@@ -1204,13 +1206,22 @@ const AcpSendBox: React.FC<{
         }
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
-            {isSynonBiomedConversation ? (
+            {isSynonBiomedConversation && (isBusy || content.trim() === '') ? (
               <ContextUsagePanel
                 conversationId={conversation_id}
                 tokenUsage={messageState.tokenUsage}
                 contextLimit={messageState.context_limit}
               />
             ) : null}
+            {isSynonBiomedConversation && content.trim() !== '' && (
+              <OptimizePromptAction
+                draft={content}
+                conversationId={conversation_id}
+                ownerId={ownerId}
+                disabled={false}
+                replaceIfCurrent={replaceContentIfUnchanged}
+              />
+            )}
             <SynonBiomedModelSelector
               conversation_id={conversation_id}
               backend={backend}

@@ -20,7 +20,7 @@ const EMPTY_UPLOAD_FILES: string[] = [];
 const EMPTY_CONTEXT_ITEMS: ComposerContextItem[] = [];
 
 export const useAcpSendBoxDraftController = (conversationId: string, ownerId?: string) => {
-  const { data, mutate } = useAcpSendBoxDraft(conversationId, ownerId);
+  const { data, mutate, replaceContentIfUnchanged } = useAcpSendBoxDraft(conversationId, ownerId);
   const atPath = data?.atPath ?? EMPTY_AT_PATH;
   const uploadFile = data?.uploadFile ?? EMPTY_UPLOAD_FILES;
   const content = data?.content ?? '';
@@ -73,6 +73,7 @@ export const useAcpSendBoxDraftController = (conversationId: string, ownerId?: s
     setUploadFile,
     content,
     setContent,
+    replaceContentIfUnchanged,
     contextItems,
     setContextItems,
     stagedPlanMode,

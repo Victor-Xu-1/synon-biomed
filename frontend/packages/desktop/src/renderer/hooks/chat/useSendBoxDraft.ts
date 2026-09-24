@@ -73,6 +73,18 @@ const getDraft = (type: DraftConversationType, ownerId: string, conversationId: 
   }
 };
 
+function sameDraftSnapshot(left: Draft, right: Draft): boolean {
+  return (
+    left._type === right._type &&
+    left.content === right.content &&
+    JSON.stringify(left.atPath) === JSON.stringify(right.atPath) &&
+    JSON.stringify(left.uploadFile) === JSON.stringify(right.uploadFile) &&
+    JSON.stringify(left.contextItems) === JSON.stringify(right.contextItems) &&
+    left.planMode === right.planMode &&
+    JSON.stringify(left.stagedSessionOptions) === JSON.stringify(right.stagedSessionOptions)
+  );
+}
+
 /**
  * 获得一种类型下的会话草稿操作的 React Hook
  */
@@ -114,11 +126,40 @@ export const getSendBoxDraftHook = <K extends DraftConversationType>(
       [conversation_id, initialValue, ownerId, swrRet, type]
     );
 
+    const replaceContentIfUnchanged = useCallback(
+      (expected: string, replacement: string): boolean => {
+        // An optimizer response must not race a send, a later edit, or a
+        // storage event from another tab. Re-read persistence synchronously
+        // before writing, and fail closed if the in-memory and durable drafts
+        // have diverged in any field (including attachments).
+        const current = getDraft(type, ownerId, conversation_id);
+        const persisted = loadSendBoxDraft(ownerId, conversation_id);
+        if (
+          !current ||
+          !persisted ||
+          current.content !== expected ||
+          persisted.content !== expected ||
+          !sameDraftSnapshot(current, persisted)
+        ) {
+          return false;
+        }
+        const updated = { ...persisted, content: replacement };
+        if (!saveSendBoxDraft(ownerId, conversation_id, updated)) return false;
+        store.acp.set(draftIdentity(ownerId, conversation_id), updated);
+        void swrRet.mutate(updated as Extract<Draft, { _type: K }>, { revalidate: false }).catch((error) => {
+          console.error('Failed to update draft after replacement:', error);
+        });
+        return true;
+      },
+      [conversation_id, ownerId, swrRet, type]
+    );
+
     return {
       get data() {
         return swrRet.data ?? undefined;
       },
       mutate: mutateDraft,
+      replaceContentIfUnchanged,
     };
   }
 

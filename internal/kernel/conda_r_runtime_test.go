@@ -3,9 +3,18 @@ package kernel
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestRSharedPackageExpressionPlacesLibraryBeforePackages(t *testing.T) {
+	got := rSharedPackageExpressionArgs("cat(1)", "/shared/r", []string{"tidyverse", "jsonlite"})
+	want := []string{"--vanilla", "-e", "cat(1)", "/shared/r", "tidyverse", "jsonlite"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Rscript expression arguments=%q want=%q", got, want)
+	}
+}
 
 func bundledManagedRConfig(t *testing.T) Config {
 	t.Helper()
@@ -108,6 +117,8 @@ func TestManagedRGenerationValidationUsesBundledMarkerAuthority(t *testing.T) {
 
 func TestManagedRReadyGenerationIsReusedWithoutReinstall(t *testing.T) {
 	config := bundledManagedRConfig(t)
+	config.AssetRoot = filepath.Join(repositoryRootForCondaRuntimeTest(t), "assets", "optional")
+	config.WorkerPath = filepath.Join(config.AssetRoot, "kernels", "kernel_worker.py")
 	config.CondaEnvsPath = t.TempDir()
 	config.Micromamba = filepath.Join(t.TempDir(), "micromamba-that-must-not-run")
 	config.RWorkerPath = filepath.Join(t.TempDir(), "kernel_worker.R")
@@ -124,7 +135,7 @@ func TestManagedRReadyGenerationIsReusedWithoutReinstall(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(rscript), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(rscript, []byte("#!/bin/sh\nexit 0\n"), 0o700); err != nil {
+	if err := os.WriteFile(rscript, []byte("#!/bin/sh\necho SYNON_R_VERSION=4.5.3\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	if err := writeManagedRuntimeMarker(filepath.Join(generation, managedRuntimeMarkerName), manager.managedRMarker(runtime)); err != nil {

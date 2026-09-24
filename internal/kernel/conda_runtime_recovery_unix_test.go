@@ -149,7 +149,11 @@ func TestManagedRCorruptGenerationIsReinstalledAndHealthyGenerationIsReused(t *t
 	if err := manager.managedRRuntimeReady(); err != nil {
 		t.Fatalf("recovered R generation is not ready: %v", err)
 	}
-	if matches, err := filepath.Glob(filepath.Join(filepath.Dir(manager.managedRGenerationPath(runtime)), ".staging-invalid-*")); err != nil || len(matches) != 0 {
-		t.Fatalf("invalid R quarantine remains: matches=%v err=%v", matches, err)
+	// A corrupt generation may contain local state not created by this attempt.
+	// Recovery must quarantine it, not silently delete its contents.
+	if matches, err := filepath.Glob(filepath.Join(filepath.Dir(manager.managedRGenerationPath(runtime)), ".staging-invalid-*")); err != nil || len(matches) != 1 {
+		t.Fatalf("invalid R generation was not preserved: matches=%v err=%v", matches, err)
+	} else if marker, err := os.ReadFile(filepath.Join(matches[0], managedRuntimeMarkerName)); err != nil || string(marker) != "{}\n" {
+		t.Fatalf("quarantined R generation marker=%q err=%v", marker, err)
 	}
 }

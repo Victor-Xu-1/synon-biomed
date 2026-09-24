@@ -107,6 +107,7 @@ type Manager struct {
 
 	managedPythonState                managedRuntimeProvisioningState
 	managedRState                     managedRuntimeProvisioningState
+	managedRReadiness                 managedRReadinessCache
 	scientificRuntimeMu               sync.Mutex
 	managedEnvironmentMu              sync.Mutex
 	managedEnvironmentSupervisor      context.Context

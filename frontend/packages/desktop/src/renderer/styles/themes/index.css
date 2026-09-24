@@ -1,5 +1,8 @@
 /* Theme System Entry Point */
 
+/* Design primitives (theme-independent scale: space, radius, type, stacking) */
+@import '../tokens.css';
+
 /* Base styles (theme-independent) */
 @import './base.css';
 

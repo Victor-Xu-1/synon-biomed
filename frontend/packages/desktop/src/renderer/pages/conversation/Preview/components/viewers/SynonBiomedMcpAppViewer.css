@@ -15,17 +15,17 @@
   min-height: 34px;
   flex: 0 0 auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
   padding: 6px 12px;
   border-bottom: 1px solid var(--color-border-2);
   color: var(--color-text-3);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
 }
 
 .synon-mcp-app-viewer__status {
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--color-text-4);
 }
 
@@ -47,14 +47,14 @@
   display: flex;
   margin-left: auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .synon-mcp-app-viewer__save {
   min-height: 26px;
   padding: 0 10px;
   border: 1px solid var(--color-border-2);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
   color: var(--color-text-2);
   background: var(--color-bg-1);
   cursor: pointer;
@@ -105,10 +105,10 @@
 .synon-mcp-app-viewer__error {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: var(--ui-z-raise);
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: var(--ui-space-7);
   color: var(--color-danger-6);
   text-align: center;
   background: var(--color-bg-1);

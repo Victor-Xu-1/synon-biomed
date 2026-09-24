@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding-bottom: 12px;
+  padding-bottom: var(--ui-space-5);
   border-bottom: 1px solid var(--workspace-overlay-divider, #ebeae6);
 }
 
@@ -19,7 +19,7 @@ html body .synon-biomed-execution-log__page-button {
   color: var(--workspace-text-secondary, #525252) !important;
   background: transparent !important;
   border: 1px solid var(--workspace-overlay-divider, #ebeae6) !important;
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
   box-shadow: none !important;
 }
 
@@ -36,7 +36,7 @@ html body .synon-biomed-execution-log__page-button:not(:disabled):hover {
 
 .synon-biomed-execution-log__range {
   color: var(--workspace-text-tertiary, #737373);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   font-variant-numeric: tabular-nums;
   line-height: 18px;
   text-align: center;
@@ -64,9 +64,9 @@ html body .synon-biomed-execution-log__page-button:not(:disabled):hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
   color: var(--workspace-text-secondary, #525252);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 18px;
 }
 
@@ -81,12 +81,12 @@ html body .synon-biomed-execution-log__page-button:not(:disabled):hover {
   color: var(--workspace-text-secondary, #525252);
   background: transparent;
   border: 1px solid var(--workspace-overlay-divider, #ebeae6);
-  border-radius: 4px;
+  border-radius: var(--ui-radius-xs);
 }
 
 .synon-biomed-execution-log__record-status {
   color: var(--color-success-6, #2f7d47);
-  font-weight: 600;
+  font-weight: var(--ui-weight-semibold);
 }
 
 .synon-biomed-execution-log__record-status--error {
@@ -105,21 +105,21 @@ html body .synon-biomed-execution-log__page-button:not(:disabled):hover {
   overflow: auto;
   color: var(--workspace-text, #171717);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 18px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   background: var(--workspace-overlay-surface-muted, #f7f7f5);
   border: 1px solid var(--workspace-overlay-divider, #ebeae6);
   border-left: 2px solid var(--workspace-border-strong, #d2d2d2);
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
 }
 
 .synon-biomed-execution-log__output {
   margin: 8px 0 0;
   color: var(--workspace-text-secondary, #525252);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 18px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -130,26 +130,26 @@ html body .synon-biomed-execution-log__page-button:not(:disabled):hover {
 }
 
 .synon-biomed-execution-log__files {
-  margin-top: 8px;
+  margin-top: var(--ui-space-4);
   color: var(--workspace-text-tertiary, #737373);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 18px;
 }
 
 .synon-biomed-execution-log__event {
   padding: 14px 0;
   color: var(--workspace-text-secondary, #525252);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   line-height: 20px;
 }
 
 .synon-biomed-execution-log__event-label {
   color: var(--workspace-text, #171717);
-  font-weight: 600;
+  font-weight: var(--ui-weight-semibold);
 }
 
 .synon-biomed-execution-log__event-detail {
-  margin-left: 8px;
+  margin-left: var(--ui-space-4);
   color: var(--workspace-text-secondary, #525252);
 }
 

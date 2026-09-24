@@ -7,7 +7,7 @@
   box-sizing: border-box;
   padding: 10px 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--ask-user-history-surface);
   color: var(--color-text-1);
   box-shadow: none;
@@ -29,7 +29,7 @@ body[arco-theme='dark'] .synon-biomed-ask-user-history {
   display: flex;
   min-width: 0;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .synon-biomed-ask-user-history__content {
@@ -38,18 +38,18 @@ body[arco-theme='dark'] .synon-biomed-ask-user-history {
 }
 
 .synon-biomed-ask-user-history__eyebrow {
-  margin-bottom: 2px;
+  margin-bottom: var(--ui-space-1);
   color: var(--color-text-3);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--ui-font-micro);
+  font-weight: var(--ui-weight-medium);
   line-height: 17px;
 }
 
 .synon-biomed-ask-user-history__question {
   margin: 0;
   color: var(--color-text-1);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--ui-font-subtitle);
+  font-weight: var(--ui-weight-semibold);
   line-height: 21px;
 }
 
@@ -58,9 +58,9 @@ body[arco-theme='dark'] .synon-biomed-ask-user-history {
   min-width: 0;
   align-items: center;
   gap: 7px;
-  margin-top: 4px;
+  margin-top: var(--ui-space-2);
   color: var(--color-text-2);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   line-height: 18px;
 }
 
@@ -69,7 +69,7 @@ body[arco-theme='dark'] .synon-biomed-ask-user-history {
   height: 5px;
   flex: 0 0 5px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--ask-user-history-status);
 }
 
@@ -79,7 +79,7 @@ body[arco-theme='dark'] .synon-biomed-ask-user-history {
   flex: 0 0 28px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
   background: transparent;
   color: var(--color-text-3);
   box-shadow: none;

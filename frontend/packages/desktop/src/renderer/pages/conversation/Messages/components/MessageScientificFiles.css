@@ -6,7 +6,7 @@
 }
 
 .message-scientific-files--inline .message-scientific-files__list {
-  gap: 8px;
+  gap: var(--ui-space-4);
   overflow-x: visible;
   padding: 8px 0 4px;
 }
@@ -17,7 +17,7 @@ html body .message-scientific-files--inline .message-scientific-files__card {
   height: var(--message-scientific-file-card-height) !important;
   flex: 0 0 var(--message-scientific-file-card-width);
   border: 0 !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   background: var(--workspace-canvas) !important;
   box-shadow:
     0 0 0 1px var(--workspace-border),
@@ -52,7 +52,7 @@ html body .message-scientific-files--inline .message-scientific-files__metadata 
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: var(--workspace-subtle, var(--fill));
   line-height: 16px;
 }

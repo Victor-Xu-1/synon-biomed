@@ -4,7 +4,7 @@
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__layer-stack {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  gap: var(--ui-space-5);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-layer-card,
@@ -13,7 +13,7 @@
   width: 100%;
   overflow: hidden;
   border: 1px solid var(--settings-border);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--settings-surface);
 }
 
@@ -55,12 +55,12 @@
   width: 44px;
   height: 44px;
   grid-row: 1 / 3;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-layer-tab__label {
-  font-size: 17px;
-  font-weight: 650;
+  font-size: var(--ui-font-lead);
+  font-weight: var(--ui-weight-semibold);
   line-height: 24px;
 }
 
@@ -69,7 +69,7 @@
   max-width: 520px;
   overflow: hidden;
   color: var(--settings-text-secondary);
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 21px;
   white-space: normal;
   -webkit-box-orient: vertical;
@@ -86,7 +86,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: var(--ui-space-5);
   padding: 0;
   border: 0;
   background: transparent;
@@ -106,14 +106,14 @@
 .settings-page-wrapper[data-settings-route='governance']
   .memory-manager__status-control
   + .memory-manager__status-control {
-  padding-left: 12px;
+  padding-left: var(--ui-space-5);
   border-left: 1px solid var(--settings-border);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__status-label {
   color: var(--settings-text);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--ui-font-subtitle);
+  font-weight: var(--ui-weight-medium);
   line-height: 20px;
 }
 
@@ -125,7 +125,7 @@
   border-left: 1px solid var(--settings-border) !important;
   border-radius: 0 !important;
   background: transparent !important;
-  font-size: 13px;
+  font-size: var(--ui-font-body);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-layer-card__notice {
@@ -136,7 +136,7 @@
   justify-content: flex-end;
   gap: 10px;
   color: var(--settings-text-tertiary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 19px;
 }
 
@@ -155,7 +155,7 @@
   height: 240px;
   min-height: 240px;
   max-height: 240px;
-  margin-top: 12px;
+  margin-top: var(--ui-space-5);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__workspace--project {
@@ -173,27 +173,27 @@
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__editor-title {
   margin-top: 0;
-  font-size: 17px;
+  font-size: var(--ui-font-lead);
   line-height: 24px;
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__editor-description {
   max-width: 520px;
-  margin-top: 4px;
+  margin-top: var(--ui-space-2);
   color: var(--settings-text-secondary);
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 20px;
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__editor-actions {
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__category-actions,
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__auto-recall-control {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__project-selector .arco-select {
@@ -203,21 +203,21 @@
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__project-error {
   max-width: 260px;
   color: var(--settings-text-secondary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__category-count,
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__auto-recall-control {
   color: var(--settings-text-secondary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager .arco-btn-size-small,
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager .arco-select-view {
   min-height: 34px;
-  font-size: 13px;
+  font-size: var(--ui-font-body);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__content {
@@ -228,13 +228,13 @@
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__state,
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__empty {
   min-height: 92px;
-  padding: 12px;
+  padding: var(--ui-space-5);
 }
 
 .settings-page-wrapper[data-settings-route='governance'] .memory-manager__empty {
   gap: 0;
   color: var(--settings-text-secondary);
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 20px;
 }
 
@@ -262,7 +262,7 @@
   .settings-page-wrapper[data-settings-route='governance'] .memory-layer-card {
     min-height: 0;
     grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+    gap: var(--ui-space-5);
     padding: 14px;
   }
 

@@ -1,6 +1,13 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync as readFileRaw } from 'node:fs';
+import { resolveDesignTokens } from '../../_helpers/designTokens';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+
+/** Stylesheets are read with primitives inlined; contracts keep pinning numbers. */
+const readFileSync = (target: string | URL, encoding?: BufferEncoding): string =>
+  `${target}`.endsWith('.css')
+    ? resolveDesignTokens(readFileRaw(target, 'utf8'))
+    : (readFileRaw(target, encoding) as unknown as string);
 
 const source = (relative: string): string =>
   readFileSync(fileURLToPath(new URL(`../../../../packages/desktop/src/${relative}`, import.meta.url)), 'utf8');
@@ -15,7 +22,7 @@ describe('Synon tool group visual contract', () => {
     expect(css).toContain('box-sizing: border-box;');
     expect(css).toContain('.tool-group-summary--single');
     expect(css).toMatch(
-      /\.tool-group-summary--single\s*\{[^}]*border-radius:\s*14px;[^}]*background:\s*var\(--tool-stream-bg\);[^}]*padding:\s*4px 6px;/s
+      /\.tool-group-summary--single\s*\{[^}]*border-radius:\s*12px;[^}]*background:\s*var\(--tool-stream-bg\);[^}]*padding:\s*4px 6px;/s
     );
     expect(css).toContain('.tool-research-sources__query');
     expect(css).toContain('.tool-research-source__snippet');
@@ -44,7 +51,7 @@ describe('Synon tool group visual contract', () => {
     expect(css).toContain('min-height: 31px;');
     expect(css).toContain('padding: 5px 10px 5px 6px;');
     expect(css).toMatch(
-      /\.tool-group-summary\s*\{[^}]*border-radius:\s*14px;[^}]*background:\s*var\(--tool-stream-bg\);[^}]*padding:\s*4px 6px;/s
+      /\.tool-group-summary\s*\{[^}]*border-radius:\s*12px;[^}]*background:\s*var\(--tool-stream-bg\);[^}]*padding:\s*4px 6px;/s
     );
     expect(css).toMatch(
       /\.tool-group-summary__header\s*\{[^}]*padding:\s*5px 10px 5px 6px;[^}]*border-radius:\s*8px;[^}]*background:\s*transparent;/s

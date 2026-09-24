@@ -28,7 +28,7 @@
     .memory-manager__workspace
   ) {
   border-color: var(--settings-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--ui-radius-2xl) !important;
   background: var(--settings-surface) !important;
   box-shadow:
     0 1px 2px rgba(15, 23, 42, 0.035),
@@ -43,7 +43,7 @@
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
 .settings-page-wrapper[data-settings-route='experts'] .expert-card {
   border-color: color-mix(in srgb, var(--settings-border) 82%, var(--settings-surface)) !important;
-  border-radius: 16px !important;
+  border-radius: var(--ui-radius-2xl) !important;
   background: var(--settings-surface) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.96),
@@ -63,7 +63,7 @@
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card::before,
 .settings-page-wrapper[data-settings-route='experts'] .expert-card::before {
   position: absolute;
-  z-index: 0;
+  z-index: var(--ui-z-base);
   inset: 0;
   border-radius: inherit;
   background: none;

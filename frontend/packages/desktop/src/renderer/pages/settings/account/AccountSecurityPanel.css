@@ -2,7 +2,7 @@
   margin-top: 18px;
   overflow: hidden;
   border: 1px solid var(--account-border);
-  border-radius: 18px;
+  border-radius: var(--ui-radius-2xl);
   background: var(--account-panel);
   box-shadow: 0 10px 32px rgba(20, 30, 48, 0.055);
 }
@@ -25,7 +25,7 @@
 .account-security__title {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--ui-space-5);
 }
 
 .account-security__icon {
@@ -35,7 +35,7 @@
   width: 34px;
   height: 34px;
   flex: 0 0 auto;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   color: #315f56;
   background: #e8f2ef;
 }
@@ -48,20 +48,20 @@
 
 .account-security h2 {
   color: var(--account-text);
-  font-size: 16px;
+  font-size: var(--ui-font-section);
   line-height: 1.35;
 }
 
 .account-security h3 {
   color: var(--account-text);
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 1.4;
 }
 
 .account-security p {
-  margin-top: 4px;
+  margin-top: var(--ui-space-2);
   color: var(--account-muted);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   line-height: 1.5;
 }
 
@@ -72,7 +72,7 @@
   gap: 9px;
   min-height: 150px;
   color: var(--account-muted);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
 }
 
 .account-security__state--error {
@@ -83,7 +83,7 @@
 .account-security__pulse {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--ui-radius-circle);
   background: #4e8278;
   animation: account-security-pulse 1.2s ease-in-out infinite;
 }
@@ -105,7 +105,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .account-security__method {
@@ -115,17 +115,17 @@
   min-height: 32px;
   padding: 5px 10px 5px 6px;
   border: 1px solid var(--account-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: var(--account-panel);
   color: var(--account-text);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--ui-font-meta);
+  font-weight: var(--ui-weight-semibold);
 }
 
 .account-security__method > span:last-child {
   color: #528075;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--ui-font-micro);
+  font-weight: var(--ui-weight-medium);
 }
 
 .account-security__method-mark {
@@ -134,11 +134,11 @@
   justify-content: center;
   width: 21px;
   height: 21px;
-  border-radius: 7px;
+  border-radius: var(--ui-radius-md);
   background: var(--settings-surface-subtle, #edf0f2);
   color: #4d5661;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--ui-font-micro);
+  font-weight: var(--ui-weight-bold);
 }
 
 .account-security__method-mark--google {
@@ -153,22 +153,22 @@
 
 .account-security__local-mode {
   display: grid;
-  gap: 4px;
+  gap: var(--ui-space-2);
   margin: 16px 22px 0;
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, #4e8278 24%, var(--account-border));
-  border-radius: 11px;
+  border-radius: var(--ui-radius-lg);
   background: color-mix(in srgb, #4e8278 8%, var(--account-panel));
 }
 
 .account-security__local-mode strong {
   color: #365f57;
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
 }
 
 .account-security__local-mode span {
   color: var(--account-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 1.5;
 }
 
@@ -179,7 +179,7 @@
 .account-security__sessions {
   margin: 0 22px;
   border: 1px solid var(--account-border);
-  border-radius: 13px;
+  border-radius: var(--ui-radius-xl);
   overflow: hidden;
 }
 
@@ -187,7 +187,7 @@
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: var(--ui-space-5);
   min-height: 66px;
   padding: 10px 12px;
   background: var(--account-panel);
@@ -202,7 +202,7 @@
   width: 28px;
   height: 21px;
   border: 1.5px solid #78838c;
-  border-radius: 5px;
+  border-radius: var(--ui-radius-sm);
 }
 
 .account-security__device::after {
@@ -222,51 +222,51 @@
 .account-security__session-copy > div {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .account-security__session-copy strong {
   overflow: hidden;
   color: var(--account-text);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .account-security__session-copy > span {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--ui-space-2);
   color: var(--account-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
 }
 
 .account-security__current {
   padding: 2px 6px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, #4e8278 12%, var(--account-panel));
   color: #3f7569;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--ui-font-micro);
+  font-weight: var(--ui-weight-semibold);
 }
 
 .account-security__legacy-note {
   display: grid;
-  gap: 4px;
+  gap: var(--ui-space-2);
   margin: 12px 22px 0;
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, #7b8290 20%, var(--account-border));
-  border-radius: 11px;
+  border-radius: var(--ui-radius-lg);
   background: color-mix(in srgb, #7b8290 6%, var(--account-panel));
 }
 
 .account-security__legacy-note strong {
   color: var(--account-text);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
 }
 
 .account-security__legacy-note span {
   color: var(--account-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 1.5;
 }
 
@@ -284,12 +284,12 @@
 
 .account-security__footer strong {
   color: #5d4545;
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
 }
 
 .account-security__footer span {
   color: var(--account-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
 }
 
 @media (max-width: 700px) {

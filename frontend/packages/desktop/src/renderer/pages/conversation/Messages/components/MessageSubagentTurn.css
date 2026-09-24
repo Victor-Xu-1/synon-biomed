@@ -2,11 +2,11 @@
   align-items: center;
   background: color-mix(in srgb, var(--bg-2) 68%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-light) 55%, transparent);
-  border-radius: 7px;
+  border-radius: var(--ui-radius-md);
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
-  gap: 8px;
+  gap: var(--ui-space-4);
   max-width: min(100%, 680px);
   min-height: 38px;
   padding: 7px 10px;
@@ -30,7 +30,7 @@
 }
 
 .subagent-turn__status {
-  border-radius: 50%;
+  border-radius: var(--ui-radius-circle);
   flex: 0 0 auto;
   height: 7px;
   width: 7px;
@@ -67,14 +67,14 @@
 
 .subagent-turn__title {
   flex: 0 0 auto;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--ui-font-body);
+  font-weight: var(--ui-weight-semibold);
   white-space: nowrap;
 }
 
 .subagent-turn__activity {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -87,7 +87,7 @@
 .subagent-turn__meta {
   color: var(--text-tertiary);
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   white-space: nowrap;
 }
 
@@ -112,12 +112,12 @@
   .subagent-turn__status,
   .subagent-turn__icon,
   .subagent-turn__arrow {
-    margin-top: 4px;
+    margin-top: var(--ui-space-2);
   }
 
   .subagent-turn__content {
     flex-direction: column;
-    gap: 2px;
+    gap: var(--ui-space-1);
   }
 
   .subagent-turn__title,

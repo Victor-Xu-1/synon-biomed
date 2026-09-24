@@ -5,7 +5,7 @@
   padding: 0 !important;
   border: 0 !important;
   background: transparent !important;
-  gap: 16px;
+  gap: var(--ui-space-6);
 }
 
 .settings-page-wrapper[data-settings-route='experts'] .experts-toolbar .arco-input-group-wrapper {
@@ -37,8 +37,8 @@
   margin: 0 0 10px;
   padding: 0;
   color: var(--settings-text);
-  font-size: 15px !important;
-  font-weight: 650 !important;
+  font-size: var(--ui-font-title) !important;
+  font-weight: var(--ui-weight-semibold) !important;
   line-height: 21px !important;
 }
 
@@ -66,18 +66,18 @@
   overflow: hidden;
   padding: 16px !important;
   border: 1px solid var(--settings-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--ui-radius-2xl) !important;
   color: var(--settings-text);
 }
 
 .settings-page-wrapper[data-settings-route='experts'] .expert-card > :not(.expert-card__artwork) {
   position: relative;
-  z-index: 1;
+  z-index: var(--ui-z-raise);
 }
 
 .settings-page-wrapper[data-settings-route='experts'] .expert-card__artwork {
   position: absolute;
-  z-index: 0;
+  z-index: var(--ui-z-base);
   top: 56px;
   right: 4px;
   width: 116px;
@@ -119,7 +119,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 12px !important;
+  border-radius: var(--ui-radius-xl) !important;
   background: transparent !important;
 }
 
@@ -144,7 +144,7 @@
   overflow: hidden;
   color: var(--settings-text) !important;
   font-size: var(--settings-entity-card-title-size) !important;
-  font-weight: 650 !important;
+  font-weight: var(--ui-weight-semibold) !important;
   line-height: var(--settings-entity-card-title-line) !important;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -154,7 +154,7 @@
   flex: 0 0 auto;
   padding: 2px 6px;
   border: 1px solid color-mix(in srgb, var(--settings-card-interaction-accent) 16%, var(--settings-border));
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, var(--settings-card-interaction-accent) 7%, var(--settings-surface));
   color: var(--settings-text-tertiary);
   font-size: 10px;
@@ -164,10 +164,10 @@
 .settings-page-wrapper[data-settings-route='experts'] .expert-card__description {
   display: -webkit-box;
   min-height: 54px;
-  margin-top: 8px;
+  margin-top: var(--ui-space-4);
   overflow: hidden;
   color: var(--settings-text-secondary) !important;
-  font-size: 13px !important;
+  font-size: var(--ui-font-body) !important;
   line-height: 18px !important;
   text-align: justify;
   text-align-last: left;
@@ -182,7 +182,7 @@
   margin-top: 5px;
   overflow: hidden;
   color: var(--settings-text-tertiary) !important;
-  font-size: 11px !important;
+  font-size: var(--ui-font-micro) !important;
   line-height: 16px !important;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -193,9 +193,9 @@
   min-height: 38px;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--ui-space-5);
   margin-top: auto;
-  padding-top: 8px;
+  padding-top: var(--ui-space-4);
   border-top: 1px solid var(--settings-border);
 }
 
@@ -209,7 +209,7 @@
   gap: 1px !important;
   overflow: hidden;
   color: var(--settings-text-tertiary) !important;
-  font-size: 11px !important;
+  font-size: var(--ui-font-micro) !important;
   line-height: 15px !important;
   white-space: nowrap;
 }

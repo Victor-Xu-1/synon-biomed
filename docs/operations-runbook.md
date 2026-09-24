@@ -156,6 +156,14 @@ An older 64-character R directory is not reused as the new active layout and
 may require a fresh install; inspect and preserve the old directory and any
 user data before deciding on cleanup. For path failures, inspect the actual
 Conda prefix and `${SYNON_HOME}/p` cache path before changing configuration.
+
+The R installer writes directly to its final generation path because R launchers
+can embed that path. A generation is published only after the R smoke test and
+shared-library preparation pass. An unusable or interrupted generation is moved
+aside under the same environment root and preserved for inspection; the product
+does not silently delete that quarantined content. Runtime health rechecks the
+published generation and reports a missing or unusable one instead of treating
+an old success record as current readiness.
 The authenticated `/api/preferences/scientific-runtimes` endpoint provides
 status with GET, saves registered `enabled_ids` with PUT, and retries one selected
 optional environment with POST `{ "id": "..." }`; the same POST can retry a

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync as readFileRaw } from 'node:fs';
+import { resolveDesignTokens } from '../_helpers/designTokens';
 import { describe, expect, it } from 'vitest';
 import {
   SETTINGS_DESKTOP_VIEWPORT,
@@ -16,6 +17,12 @@ import {
   SETTINGS_GENERATED_ICON_SRC,
   SETTINGS_GENERATED_NAV_SRC,
 } from '@/renderer/pages/settings/components/SettingsGeneratedAsset';
+
+/** Stylesheets are read with primitives inlined; contracts keep pinning numbers. */
+const readFileSync = (target: string | URL, encoding?: BufferEncoding): string =>
+  `${target}`.endsWith('.css')
+    ? resolveDesignTokens(readFileRaw(target, 'utf8'))
+    : (readFileRaw(target, encoding) as unknown as string);
 
 const layoutCss = readFileSync(
   new URL('../../../packages/desktop/src/renderer/pages/settings/components/settings-layout.css', import.meta.url),
@@ -229,7 +236,7 @@ describe('settings image-based visual contract', () => {
     expect(governanceCss).toMatch(/\.settings-governance-page\s*\{[\s\S]*?width:\s*min\(100%,\s*1080px\)/);
     expect(governanceCss).toMatch(/\.settings-governance-page\s*\{[\s\S]*?margin-inline:\s*auto/);
     expect(governanceCss).toMatch(/\.memory-layer-card[\s\S]*?min-height:\s*140px/);
-    expect(governanceCss).toMatch(/\.memory-layer-tab__label[\s\S]*?font-size:\s*17px/);
+    expect(governanceCss).toMatch(/\.memory-layer-tab__label[\s\S]*?font-size:\s*18px/);
     expect(governanceCss).toMatch(/\.memory-layer-tab__description[\s\S]*?font-size:\s*14px/);
     expect(governanceCss).toMatch(/\.memory-manager__status-control[\s\S]*?border:\s*0/);
     expect(governanceCss).toMatch(/\.memory-manager__workspace[\s\S]*?height:\s*240px/);

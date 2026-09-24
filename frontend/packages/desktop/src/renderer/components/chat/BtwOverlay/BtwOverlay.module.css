@@ -1,7 +1,7 @@
 .portalRoot {
   inset: 0;
   position: fixed;
-  z-index: 9999;
+  z-index: var(--ui-z-top);
 }
 
 .backdrop {

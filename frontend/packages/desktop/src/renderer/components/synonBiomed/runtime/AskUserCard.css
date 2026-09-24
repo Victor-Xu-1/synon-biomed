@@ -1,22 +1,22 @@
 /* Decision-card styles live with the component; the app owns theme tokens. */
 .synon-ask-user-card {
-  padding: 16px;
+  padding: var(--ui-space-6);
   color: var(--workspace-text);
   background: var(--conversation-stream-surface);
   border-color: transparent;
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   box-shadow: none;
   font-family: var(--conversation-font-sans);
   border: 0;
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 22px;
   font-style: normal;
 }
 
 .synon-ask-user-card h3 {
-  font-size: 15px;
+  font-size: var(--ui-font-title);
   line-height: 24px;
-  font-weight: 600;
+  font-weight: var(--ui-weight-semibold);
 }
 
 .synon-ask-user-card__options,
@@ -26,7 +26,7 @@
 
 .synon-ask-user-card__option {
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
 }
 
 .synon-ask-user-card__composer {
@@ -71,7 +71,7 @@
 
 .synon-ask-user-card [role='alert'] {
   color: var(--color-danger-6);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
 }
 
 @media (max-width: 767px) {

@@ -1,13 +1,13 @@
 .subagent-events {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ui-space-4);
   max-width: min(100%, 680px);
 }
 
 .subagent-events__group {
   border: 1px solid color-mix(in srgb, var(--border-light) 55%, transparent);
-  border-radius: 7px;
+  border-radius: var(--ui-radius-md);
   overflow: hidden;
 }
 
@@ -19,7 +19,7 @@
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
-  gap: 8px;
+  gap: var(--ui-space-4);
   min-height: 34px;
   padding: 6px 9px;
   text-align: left;
@@ -28,8 +28,8 @@
 
 .subagent-events__group-header {
   background: color-mix(in srgb, var(--bg-2) 68%, transparent);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--ui-font-body);
+  font-weight: var(--ui-weight-semibold);
 }
 
 .subagent-events__group-header:hover,
@@ -54,7 +54,7 @@
   border-top: 1px solid color-mix(in srgb, var(--border-light) 45%, transparent);
   display: flex;
   flex-direction: column;
-  padding: 2px;
+  padding: var(--ui-space-1);
 }
 
 .subagent-note__icon {
@@ -69,20 +69,20 @@
 .subagent-note__content {
   display: flex;
   flex: 1 1 auto;
-  gap: 6px;
+  gap: var(--ui-space-3);
   min-width: 0;
 }
 
 .subagent-note__title {
   flex: 0 0 auto;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--ui-font-body);
+  font-weight: var(--ui-weight-semibold);
 }
 
 .subagent-note__text,
 .subagent-note__bullets {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   min-width: 0;
 }
 
@@ -95,7 +95,7 @@
 .subagent-note__bullets {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ui-space-1);
 }
 
 .subagent-note__bullets > span::before {
@@ -107,13 +107,13 @@
 .subagent-note__duration {
   color: var(--text-tertiary);
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
 }
 
 .subagent-question {
   background: color-mix(in srgb, #f59e0b 7%, var(--bg-base));
   border: 1px solid color-mix(in srgb, #f59e0b 30%, var(--border-light));
-  border-radius: 7px;
+  border-radius: var(--ui-radius-md);
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
@@ -132,15 +132,15 @@
   align-items: center;
   color: #b45309;
   display: flex;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--ui-font-body);
+  font-weight: var(--ui-weight-semibold);
   gap: 7px;
   width: 100%;
 }
 
 .subagent-question__text {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
   padding-left: 21px;
 }
@@ -156,7 +156,7 @@
 
   .subagent-note__content {
     flex-direction: column;
-    gap: 2px;
+    gap: var(--ui-space-1);
   }
 
   .subagent-note__text {

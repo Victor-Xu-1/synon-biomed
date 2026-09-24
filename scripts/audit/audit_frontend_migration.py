@@ -120,6 +120,7 @@ ALLOWED_ADAPTATIONS = {
 }
 
 ALLOWED_ADDITIONS = {
+    "packages/desktop/src/renderer/styles/tokens.css": "Own the single canonical visual-primitive scale (space, radius, elevation, type, weight, stacking) that every renderer module references instead of restating literals.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryCard.tsx": "Render installed and draft skills with complete readable copy, declared-category icons and isolated keyboard actions.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillFilePreview.tsx": "Render original Markdown and source files through distinct safe read-only previews.",
     "packages/desktop/src/renderer/pages/settings/skills/skillSourceLabel.ts": "Share truthful localized source labels between library cards and detail views without claiming authorship.",
@@ -500,9 +501,9 @@ ALLOWED_ADAPTATION_RULES = (
     ),
 )
 
-APPROVED_ADAPTATION_FINGERPRINT = "92d63783b8acc3c8b2a040228a21a56bac63ed8154dfcc90808bece97e7783bf"
+APPROVED_ADAPTATION_FINGERPRINT = "5c51790dde1b6682eb0c60f543ab29c1c52eabdccc61c878a6ed8de5addc0e07"
 APPROVED_REMOVAL_FINGERPRINT = "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4"
-APPROVED_ADDITION_FINGERPRINT = "983fee75fc5ce6c5c68ebea7261398764518d4421c2ff3012937691a7c7932d0"
+APPROVED_ADDITION_FINGERPRINT = "12efdbfb28f819edfea18b913db676d7aee58692bf4e227e80604c5350569f6c"
 
 MANUAL_LICENSES = {
     "@nightingale-elements/nightingale-msa": {

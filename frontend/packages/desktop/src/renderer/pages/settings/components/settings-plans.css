@@ -12,7 +12,7 @@
     width: 56px !important;
     height: 56px !important;
     flex-basis: 56px !important;
-    border-radius: 12px !important;
+    border-radius: var(--ui-radius-xl) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-plan-identity {
@@ -20,12 +20,12 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-plan-identity .text-15px {
-    font-size: 18px !important;
+    font-size: var(--ui-font-lead) !important;
     line-height: 25px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-plan-identity .text-11px {
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 20px !important;
   }
 
@@ -36,12 +36,12 @@
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-stat-grid > div > div:first-child,
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-stat-grid > div > div:last-child {
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 19px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-stat-grid > div > div:nth-child(2) {
-    font-size: 24px !important;
+    font-size: var(--ui-font-hero) !important;
     line-height: 30px !important;
   }
 
@@ -50,7 +50,7 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-progress > div:first-child {
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 19px !important;
   }
 
@@ -64,17 +64,17 @@
     width: 48px;
     height: 48px;
     flex: 0 0 48px;
-    border-radius: 12px;
+    border-radius: var(--ui-radius-xl);
     object-fit: contain;
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-rate-card h3 {
-    font-size: 15px !important;
+    font-size: var(--ui-font-title) !important;
     line-height: 21px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-rate-card .text-11px {
-    font-size: 12px !important;
+    font-size: var(--ui-font-meta) !important;
     line-height: 18px !important;
   }
 
@@ -96,7 +96,7 @@
     min-height: 0 !important;
     box-sizing: border-box;
     padding: 20px 20px 12px !important;
-    z-index: 4 !important;
+    z-index: var(--ui-z-inline) !important;
   }
 
   html
@@ -122,13 +122,13 @@
     min-width: 56px !important;
     flex: 0 0 56px !important;
     margin: 0 !important;
-    border-radius: 12px !important;
+    border-radius: var(--ui-radius-xl) !important;
     clip: auto !important;
     clip-path: none !important;
     overflow: visible !important;
     opacity: 1 !important;
     visibility: visible !important;
-    z-index: 5 !important;
+    z-index: var(--ui-z-raised) !important;
   }
 
   html
@@ -137,7 +137,7 @@
     .plans-usage-section--billing
     .settings-section__title {
     margin-top: 0 !important;
-    font-size: 18px !important;
+    font-size: var(--ui-font-lead) !important;
     line-height: 25px !important;
   }
 
@@ -150,7 +150,7 @@
     width: auto !important;
     height: auto !important;
     margin-top: 6px !important;
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 20px !important;
     max-width: 520px !important;
     clip: auto !important;
@@ -210,7 +210,7 @@
     h3 {
     margin: 0 !important;
     color: var(--settings-text-secondary) !important;
-    font-size: 14px !important;
+    font-size: var(--ui-font-subtitle) !important;
     line-height: 20px !important;
   }
 
@@ -250,7 +250,7 @@
     > div {
     margin: 0 !important;
     color: var(--settings-text) !important;
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 20px !important;
   }
 
@@ -265,6 +265,6 @@
     + div {
     margin-left: 8px !important;
     color: var(--settings-text-tertiary) !important;
-    font-size: 12px !important;
+    font-size: var(--ui-font-meta) !important;
   }
 }

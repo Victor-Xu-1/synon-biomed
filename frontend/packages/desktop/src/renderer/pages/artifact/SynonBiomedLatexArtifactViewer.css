@@ -1,7 +1,7 @@
 .synon-latex-paper {
   color: var(--color-text-1);
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 15px;
+  font-size: var(--ui-font-title);
   line-height: 1.72;
 }
 
@@ -24,16 +24,16 @@
 }
 
 .synon-latex-paper h3 {
-  font-size: 22px;
+  font-size: var(--ui-font-hero);
 }
 
 .synon-latex-paper h4 {
-  font-size: 18px;
+  font-size: var(--ui-font-lead);
 }
 
 .synon-latex-paper h5,
 .synon-latex-paper h6 {
-  font-size: 15px;
+  font-size: var(--ui-font-title);
 }
 
 .synon-latex-paper p {
@@ -61,7 +61,7 @@
 .synon-latex-paper pre {
   background: var(--color-fill-2);
   overflow: auto;
-  padding: 12px;
+  padding: var(--ui-space-5);
 }
 
 .synon-latex-paper table {
@@ -101,12 +101,12 @@
 
 @media (max-width: 640px) {
   .synon-latex-paper {
-    font-size: 14px;
+    font-size: var(--ui-font-subtitle);
     line-height: 1.65;
   }
 
   .synon-latex-paper h3 {
-    font-size: 19px;
+    font-size: var(--ui-font-lead);
   }
 }
 

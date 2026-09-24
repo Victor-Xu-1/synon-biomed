@@ -17,7 +17,7 @@
 
 .scrollArea::-webkit-scrollbar-thumb {
   background: var(--color-border-2);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
 }
 
 /* Pinned sidebar row — reserve a dedicated 28px slot on the right for the

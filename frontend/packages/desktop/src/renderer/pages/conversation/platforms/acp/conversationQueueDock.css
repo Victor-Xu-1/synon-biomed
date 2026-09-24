@@ -4,7 +4,7 @@
   box-sizing: border-box;
   width: var(--conversation-composer-inline-size, 100%);
   max-width: var(--conversation-composer-inline-size, 100%);
-  z-index: 1;
+  z-index: var(--ui-z-raise);
   margin: 0 auto calc(var(--conversation-queue-dock-overlap) * -1);
   margin-inline: auto;
   padding-bottom: var(--conversation-queue-dock-overlap);
@@ -21,7 +21,7 @@
 
 .conversation-composer > .conversation-command-queue .conversation-command-queue__row {
   min-height: 28px;
-  gap: 6px;
+  gap: var(--ui-space-3);
   padding: 0;
 }
 
@@ -33,7 +33,7 @@
 .conversation-composer > .conversation-command-queue .conversation-command-queue__icon-action {
   min-height: 28px !important;
   border: 0 !important;
-  border-radius: 7px !important;
+  border-radius: var(--ui-radius-md) !important;
 }
 
 .conversation-composer > .conversation-command-queue .conversation-command-queue__primary-action {

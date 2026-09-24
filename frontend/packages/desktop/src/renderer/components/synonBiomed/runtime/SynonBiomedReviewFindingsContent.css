@@ -12,14 +12,14 @@
 .synon-biomed-review-findings__description {
   margin: 0;
   color: var(--workspace-text-secondary, #525252);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 1.6;
 }
 
 .synon-biomed-review-findings__scope {
-  margin-top: 8px;
+  margin-top: var(--ui-space-4);
   color: var(--workspace-text-tertiary, #737373);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
 }
 
 .synon-biomed-review-findings__list {
@@ -35,7 +35,7 @@
   padding: 15px 0;
   background: transparent;
   border-bottom: 1px solid var(--workspace-overlay-divider, #ebeae6);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
 }
 
 .synon-biomed-review-findings__icon {
@@ -48,7 +48,7 @@
   color: var(--workspace-text-secondary, #525252);
   background: transparent;
   border: 1px solid var(--workspace-overlay-divider, #ebeae6);
-  border-radius: 50%;
+  border-radius: var(--ui-radius-circle);
 }
 
 .synon-biomed-review-findings__icon--passed {
@@ -59,15 +59,15 @@
 .synon-biomed-review-findings__footer {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: var(--ui-space-6);
+  padding-top: var(--ui-space-6);
   border-top: 1px solid var(--workspace-overlay-divider, #ebeae6);
 }
 
 .synon-biomed-review-findings__footer .arco-btn {
   min-height: 34px;
-  border-radius: 8px;
-  font-weight: 500;
+  border-radius: var(--ui-radius-md);
+  font-weight: var(--ui-weight-medium);
 }
 
 @media (max-width: 560px) {

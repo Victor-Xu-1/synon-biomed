@@ -26,7 +26,7 @@
 
   html body .settings-page-wrapper[data-settings-route='models'] .settings-list-row h3 {
     color: var(--settings-text) !important;
-    font-size: 18px !important;
+    font-size: var(--ui-font-lead) !important;
     line-height: 24px !important;
   }
 
@@ -42,7 +42,7 @@
     height: 56px;
     flex: 0 0 56px;
     border: 1px solid var(--settings-border);
-    border-radius: 12px;
+    border-radius: var(--ui-radius-xl);
     object-fit: contain;
   }
 
@@ -50,20 +50,20 @@
     display: flex;
     min-width: 0;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--ui-space-1);
   }
 
   html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-item__label {
     color: var(--settings-text-secondary) !important;
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 19px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-item strong {
     max-width: 100% !important;
     color: var(--settings-text) !important;
-    font-size: 18px !important;
-    font-weight: 600 !important;
+    font-size: var(--ui-font-lead) !important;
+    font-weight: var(--ui-weight-semibold) !important;
     line-height: 24px !important;
   }
 
@@ -95,8 +95,8 @@
   html body .settings-page-wrapper[data-settings-route='models'] .settings-summary-action__label {
     min-width: 0;
     color: var(--settings-text) !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
+    font-size: var(--ui-font-title) !important;
+    font-weight: var(--ui-weight-semibold) !important;
     line-height: 22px !important;
   }
 
@@ -150,8 +150,8 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--settings-text) !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
+    font-size: var(--ui-font-title) !important;
+    font-weight: var(--ui-weight-semibold) !important;
     line-height: 21px !important;
   }
 
@@ -161,7 +161,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--settings-text-secondary) !important;
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 19px !important;
     margin-top: 1px !important;
   }
@@ -180,7 +180,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 11px !important;
+    font-size: var(--ui-font-micro) !important;
     line-height: 18px !important;
   }
 
@@ -195,7 +195,7 @@
     height: 76px !important;
     margin: 0 !important;
     padding-left: 0 !important;
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 19px !important;
   }
 
@@ -211,7 +211,7 @@
 
   html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__detail-label {
     color: var(--settings-text-secondary) !important;
-    font-size: 12px !important;
+    font-size: var(--ui-font-meta) !important;
     line-height: 18px !important;
     white-space: nowrap;
   }
@@ -223,7 +223,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--settings-text) !important;
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 19px !important;
   }
 
@@ -233,7 +233,7 @@
     min-width: 0;
     gap: 7px;
     color: var(--settings-text-secondary) !important;
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 19px !important;
     white-space: nowrap;
   }
@@ -246,7 +246,7 @@
     width: 8px;
     height: 8px;
     flex: 0 0 8px;
-    border-radius: 50%;
+    border-radius: var(--ui-radius-circle);
     background: currentColor;
   }
 
@@ -267,8 +267,8 @@
     height: 32px !important;
     min-height: 32px !important;
     min-width: 32px;
-    border-radius: 8px !important;
-    font-size: 13px !important;
+    border-radius: var(--ui-radius-md) !important;
+    font-size: var(--ui-font-body) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='models'] .settings-model-profile__actions .arco-btn-secondary {

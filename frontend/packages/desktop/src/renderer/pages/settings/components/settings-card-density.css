@@ -16,7 +16,7 @@
       [data-settings-route='environments']
     ) {
     --settings-control-height: 32px;
-    --settings-section-gap: 6px;
+    --settings-section-gap: var(--ui-space-3);
     --settings-card-gap: 10px;
   }
 
@@ -52,7 +52,7 @@
       [data-settings-route='environments']
     )
     .settings-page-header__title {
-    font-size: 22px !important;
+    font-size: var(--ui-font-hero) !important;
     line-height: 28px !important;
     letter-spacing: -0.025em;
   }
@@ -66,7 +66,7 @@
     )
     :is(.settings-skill-library-total, .mcp-library-total) {
     margin-inline-start: 5px;
-    font-size: 12px;
+    font-size: var(--ui-font-meta);
     line-height: 16px;
   }
 
@@ -79,7 +79,7 @@
     )
     .settings-page-header__description {
     margin-top: 1px;
-    font-size: 11px !important;
+    font-size: var(--ui-font-micro) !important;
     line-height: 15px !important;
   }
 
@@ -91,7 +91,7 @@
       [data-settings-route='environments']
     )
     .settings-page-header__actions {
-    gap: 6px;
+    gap: var(--ui-space-3);
   }
 
   html
@@ -106,8 +106,8 @@
     min-height: 32px !important;
     height: 32px !important;
     padding-inline: 10px !important;
-    border-radius: 7px !important;
-    font-size: 12px !important;
+    border-radius: var(--ui-radius-md) !important;
+    font-size: var(--ui-font-meta) !important;
     line-height: 16px !important;
   }
 
@@ -127,7 +127,7 @@
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-library-toolbar,
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library-toolbar,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-toolbar {
-    gap: 8px;
+    gap: var(--ui-space-4);
   }
 
   html
@@ -138,7 +138,7 @@
     min-height: 32px !important;
     height: 32px !important;
     padding-inline: 9px;
-    border-radius: 7px;
+    border-radius: var(--ui-radius-md);
   }
 
   html
@@ -146,7 +146,7 @@
     .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
     :is(.settings-skill-library-search, .mcp-library-search)
     .arco-input {
-    font-size: 12px;
+    font-size: var(--ui-font-meta);
     line-height: 16px;
   }
 
@@ -160,14 +160,14 @@
     min-height: 32px !important;
     height: 32px !important;
     padding-inline: 9px !important;
-    border-radius: 7px;
-    font-size: 12px !important;
+    border-radius: var(--ui-radius-md);
+    font-size: var(--ui-font-meta) !important;
     line-height: 16px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-search input {
     height: 30px;
-    font-size: 12px;
+    font-size: var(--ui-font-meta);
   }
 
   html
@@ -206,16 +206,16 @@
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-filter-panel,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-filter-panel {
-    gap: 8px;
-    margin-top: 6px;
+    gap: var(--ui-space-4);
+    margin-top: var(--ui-space-3);
     padding: 10px;
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-filter-panel label,
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-filter-panel label {
-    gap: 4px;
-    font-size: 11px;
+    gap: var(--ui-space-2);
+    font-size: var(--ui-font-micro);
     line-height: 15px;
   }
 
@@ -227,7 +227,7 @@
     min-height: 32px !important;
     height: 32px !important;
     padding-inline: 9px !important;
-    font-size: 11px !important;
+    font-size: var(--ui-font-micro) !important;
   }
 
   html
@@ -235,7 +235,7 @@
     .settings-page-wrapper:is([data-settings-route='skills'], [data-settings-route='tools'])
     .settings-pagination {
     min-height: 28px;
-    gap: 4px;
+    gap: var(--ui-space-2);
   }
 
   html
@@ -244,8 +244,8 @@
     :is(.settings-pagination__page, .settings-pagination__arrow) {
     width: 28px;
     height: 28px;
-    border-radius: 7px;
-    font-size: 11px;
+    border-radius: var(--ui-radius-md);
+    font-size: var(--ui-font-micro);
     line-height: 14px;
   }
 
@@ -262,7 +262,7 @@
     flex: 1;
     height: auto !important;
     min-height: 0 !important;
-    padding-bottom: 12px;
+    padding-bottom: var(--ui-space-5);
     overflow: hidden !important;
   }
 
@@ -276,13 +276,13 @@
     width: 100%;
     height: 100%;
     min-height: 0;
-    gap: 6px;
+    gap: var(--ui-space-3);
     overflow: hidden;
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page,
   html body .settings-page-wrapper[data-settings-route='tools'] .mcp-library {
-    gap: 6px;
+    gap: var(--ui-space-3);
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-library-scroll,
@@ -353,13 +353,13 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card {
-    gap: 4px;
+    gap: var(--ui-space-2);
     padding: 8px !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__content {
     min-height: 0;
-    gap: 4px;
+    gap: var(--ui-space-2);
     overflow: hidden;
   }
 
@@ -371,13 +371,13 @@
     width: 22px;
     height: 22px;
     flex-basis: 22px;
-    border-radius: 6px;
+    border-radius: var(--ui-radius-sm);
   }
 
   html body .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card__title {
     display: -webkit-box;
     overflow: hidden;
-    font-size: 11px !important;
+    font-size: var(--ui-font-micro) !important;
     line-height: 14px !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -409,7 +409,7 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-    gap: 4px;
+    gap: var(--ui-space-2);
     padding: 8px !important;
   }
 
@@ -421,13 +421,13 @@
     width: 24px;
     height: 24px;
     flex-basis: 24px;
-    border-radius: 7px;
+    border-radius: var(--ui-radius-md);
   }
 
   html body .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card__title-row > span {
     display: -webkit-box;
     overflow: hidden;
-    font-size: 11px !important;
+    font-size: var(--ui-font-micro) !important;
     line-height: 14px !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -480,7 +480,7 @@
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card {
     gap: 3px;
     padding: 6px !important;
-    border-radius: 10px !important;
+    border-radius: var(--ui-radius-lg) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card-body {
@@ -497,13 +497,13 @@
     width: 20px;
     height: 20px;
     flex-basis: 20px;
-    border-radius: 6px;
+    border-radius: var(--ui-radius-sm);
   }
 
   html body .settings-page-wrapper[data-settings-route='environments'] .environment-card h2 {
     display: -webkit-box;
     overflow: hidden;
-    font-size: 11px !important;
+    font-size: var(--ui-font-micro) !important;
     line-height: 14px !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;

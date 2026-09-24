@@ -8,13 +8,13 @@
   margin: 0 0 6px;
   padding: 0 4px;
   color: var(--workspace-text-secondary, var(--color-text-2));
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   line-height: 18px;
 }
 
 .thought-display--compact {
   min-height: 26px;
-  margin-bottom: 4px;
+  margin-bottom: var(--ui-space-2);
 }
 
 .thought-display__spinner {
@@ -28,7 +28,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--workspace-text, var(--color-text-1));
-  font-weight: 500;
+  font-weight: var(--ui-weight-medium);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -52,7 +52,7 @@
 @media (max-width: 767px) {
   .thought-display {
     min-height: 26px;
-    margin-bottom: 4px;
+    margin-bottom: var(--ui-space-2);
     padding-inline: 2px;
   }
 }

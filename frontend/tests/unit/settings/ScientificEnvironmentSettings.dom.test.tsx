@@ -25,6 +25,18 @@ const item = {
   status: 'waiting_for_selection',
   packages: [{ manager: 'pip', spec: 'vina==1.2.7' }],
 };
+const coreItem = {
+  id: 'synon-biomed-python',
+  kind: 'core' as const,
+  required: true,
+  estimatedInstallBytes: 0,
+  estimatedInstallMB: 0,
+  defaultEnabled: true,
+  selected: true,
+  available: true,
+  status: 'ready',
+  packages: [{ manager: 'conda', spec: 'python' }],
+};
 describe('scientific environment library', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -113,6 +125,44 @@ describe('scientific environment library', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '确认卸载' }));
     await waitFor(() => expect(mocks.uninstall).toHaveBeenCalledWith('autodock-vina'));
+  });
+
+  it('keeps required core runtimes visible but outside optional selection actions', async () => {
+    mocks.load.mockResolvedValue({ configured: false, options: [coreItem, item] });
+    await renderWithSettingsI18n(<ScientificEnvironmentSettings />, 'en-US');
+    expect(await screen.findByText('Synon Biomed Python')).toBeInTheDocument();
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Manage predownloads' }));
+    const dialog = await screen.findByRole('dialog');
+    const coreCheckbox = within(dialog).getAllByRole('checkbox')[0];
+    expect(coreCheckbox).toBeChecked();
+    expect(coreCheckbox).toBeDisabled();
+  });
+  it.each(['ready', 'preparing'])('keeps required %s runtimes protected in the merged toolkit', async (status) => {
+    mocks.load.mockResolvedValue({ configured: true, options: [{ ...coreItem, status }] });
+    const view = await renderWithSettingsI18n(
+      <ScientificEnvironmentSettings withWrapper={false} withHeader={false} compactHeader />,
+      'en-US'
+    );
+    const required = await screen.findByText('Required');
+    const card = required.closest('article');
+    expect(card).toHaveClass('settings-library-card');
+    expect(within(card!).queryByRole('button', { name: 'Pause install' })).not.toBeInTheDocument();
+    expect(within(card!).queryByRole('button', { name: 'Uninstall' })).not.toBeInTheDocument();
+    expect(mocks.pause).not.toHaveBeenCalled();
+    expect(mocks.uninstall).not.toHaveBeenCalled();
+    view.unmount();
+  });
+  it('retries a failed required runtime from the merged toolkit without changing optional selection', async () => {
+    mocks.load.mockResolvedValue({ configured: true, options: [{ ...coreItem, status: 'failed' }] });
+    await renderWithSettingsI18n(
+      <ScientificEnvironmentSettings withWrapper={false} withHeader={false} compactHeader />,
+      'en-US'
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirm download' }));
+    await waitFor(() => expect(mocks.retry).toHaveBeenCalledWith('synon-biomed-python'));
+    expect(mocks.save).not.toHaveBeenCalled();
   });
   it('polls observed preparation and stops polling after network failure', async () => {
     mocks.load.mockResolvedValueOnce({

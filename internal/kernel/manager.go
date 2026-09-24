@@ -40,7 +40,6 @@ type Config struct {
 	SDFValidatorPath         string
 	RWorkerPath              string
 	DefaultREnv              string
-	DefaultREnvPackages      []string
 	RSharedLibsBase          string
 	RSharedPackages          []string
 	DisableROperationLog     bool
@@ -53,6 +52,9 @@ type Config struct {
 	// observed installer output, CPU work, process-tree changes, or I/O. It is
 	// deliberately separate from a wall-clock execution deadline.
 	ManagedEnvironmentInstallerInactivityTimeout time.Duration
+	// InstallerProxy is the normalized product network proxy used only for
+	// bundled package installation. It is never inherited by task runtimes.
+	InstallerProxy string
 	// ExecutionTimeout is an optional active-cell wall-clock deadline. Zero
 	// leaves active cells running until completion, explicit cancellation, or
 	// worker shutdown; the separate worker idle policy owns unused lifetimes.
@@ -103,8 +105,9 @@ type Manager struct {
 	restartMu      sync.Mutex
 	pendingRestart map[string]pendingKernelRestart
 
-	managedPythonMu                   sync.Mutex
-	managedPythonProvision            *managedPythonProvision
+	managedPythonState                managedRuntimeProvisioningState
+	managedRState                     managedRuntimeProvisioningState
+	managedRReadiness                 managedRReadinessCache
 	scientificRuntimeMu               sync.Mutex
 	managedEnvironmentMu              sync.Mutex
 	managedEnvironmentSupervisor      context.Context
@@ -155,12 +158,17 @@ func (m *Manager) currentStdoutObserver() func(ExecStdoutChunk) {
 	return m.stdoutObserver
 }
 
-type managedPythonProvision struct {
+type managedRuntimeProvision struct {
 	done           chan struct{}
 	err            error
 	phase          string
 	startedAt      time.Time
 	lastProgressAt time.Time
+}
+
+type managedRuntimeProvisioningState struct {
+	mu        sync.Mutex
+	provision *managedRuntimeProvision
 }
 
 type pendingKernelRestart struct {
@@ -220,7 +228,12 @@ func NewManager(config Config) *Manager {
 	}
 	config.RWorkerPath = cleanOptionalPath(config.RWorkerPath)
 	if strings.TrimSpace(config.DefaultREnv) == "" {
-		config.DefaultREnv = "r"
+		config.DefaultREnv = defaultManagedREnvironment
+	}
+	if strings.TrimSpace(config.CondaHome) == "" && strings.TrimSpace(config.CondaEnvsPath) != "" {
+		// Keep installer caches beside an explicitly supplied environment root;
+		// never fall back to a relative `pkgs` directory or the process cwd.
+		config.CondaHome = filepath.Dir(filepath.Clean(config.CondaEnvsPath))
 	}
 	if strings.TrimSpace(config.CondaEnvsPath) == "" && strings.TrimSpace(config.CondaHome) != "" {
 		config.CondaEnvsPath = filepath.Join(config.CondaHome, "envs")

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -22,6 +23,32 @@ func TestLoadUsesBoundedRunnerToolRoundDefault(t *testing.T) {
 	}
 	if cfg.Runner.ChatToolRoundLimit != 64 {
 		t.Fatalf("Runner.ChatToolRoundLimit = %d, want bounded default 64", cfg.Runner.ChatToolRoundLimit)
+	}
+}
+
+func TestDefaultHomeUsesPlatformUserHomeWhenHOMEIsUnset(t *testing.T) {
+	t.Setenv("HOME", "")
+	home, err := os.UserHomeDir()
+	if err != nil || strings.TrimSpace(home) == "" {
+		t.Skipf("platform user home is unavailable: %v", err)
+	}
+	if got, want := defaultHome(), filepath.Join(home, ".synon-go"); got != want {
+		t.Fatalf("defaultHome=%q, want %q", got, want)
+	}
+}
+
+func TestDefaultHomeIgnoresForeignHOMEOnWindows(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows-specific HOME precedence")
+	}
+	foreign := filepath.Join(t.TempDir(), "foreign-home")
+	t.Setenv("HOME", foreign)
+	home, err := os.UserHomeDir()
+	if err != nil || strings.TrimSpace(home) == "" {
+		t.Skipf("platform user home is unavailable: %v", err)
+	}
+	if got, want := defaultHome(), filepath.Join(home, ".synon-go"); got != want {
+		t.Fatalf("defaultHome=%q, want platform user home %q", got, want)
 	}
 }
 

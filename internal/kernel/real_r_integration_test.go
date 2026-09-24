@@ -28,7 +28,7 @@ func TestRealMicromambaRepairAndRWorkerProtocol(t *testing.T) {
 		t.Fatal("locate repository root")
 	}
 	repositoryRoot := filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
-	environmentName := "r-go-protocol-gate"
+	environmentName := defaultManagedREnvironment
 	environmentRoot := filepath.Join(runtimeRoot, "envs")
 	environmentPrefix := filepath.Join(environmentRoot, environmentName)
 	if err := os.RemoveAll(environmentPrefix); err != nil {
@@ -36,12 +36,18 @@ func TestRealMicromambaRepairAndRWorkerProtocol(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(environmentPrefix) })
 
+	assetRoot := filepath.Join(repositoryRoot, "assets", "optional")
 	manager := newLifecycleTestManager(t, Config{
-		Micromamba:          filepath.Join(repositoryRoot, "assets", "optional", "micromamba", "linux-x86_64", "micromamba"),
+		Micromamba:          filepath.Join(assetRoot, "micromamba", "linux-x86_64", "micromamba"),
 		CondaHome:           filepath.Join(runtimeRoot, "mamba"),
 		CondaEnvsPath:       environmentRoot,
+		AssetRoot:           assetRoot,
+		ManifestPath:        filepath.Join(assetRoot, "kernel-compute.manifest.json"),
+		WorkerPath:          filepath.Join(assetRoot, "kernels", "kernel_worker.py"),
+		RWorkerPath:         filepath.Join(assetRoot, "kernels", "kernel_worker.R"),
+		CondaRuntimeCatalog: filepath.Join(assetRoot, "conda-runtimes", "manifest.json"),
+		PythonHelperPath:    filepath.Join(assetRoot, "kernels", "cheminfo_render_helpers.py"),
 		DefaultREnv:         environmentName,
-		DefaultREnvPackages: []string{"r-base=4.4", "r-jsonlite"},
 		ExecutionTimeout:    10 * time.Second,
 	})
 	repairCtx, cancelRepair := context.WithTimeout(context.Background(), 10*time.Minute)
@@ -50,7 +56,14 @@ func TestRealMicromambaRepairAndRWorkerProtocol(t *testing.T) {
 		t.Fatalf("repair real R environment: %v", err)
 	}
 	statuses := manager.RuntimeEnvironmentStatuses(false)
-	if len(statuses) != 2 || statuses[1].Language != "r" || statuses[1].Status != "ready" || statuses[1].PackageCount < 2 {
+	var rStatus *RuntimeEnvironmentStatus
+	for index := range statuses {
+		if statuses[index].Language == "r" {
+			rStatus = &statuses[index]
+			break
+		}
+	}
+	if rStatus == nil || rStatus.Status != "ready" || rStatus.PackageCount < 2 {
 		t.Fatalf("real R environment status = %#v", statuses)
 	}
 
@@ -126,7 +139,7 @@ func TestManagedRRuntimeHardeningAndWireCompatibility(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info, err := os.Stat(filepath.Join(environmentRoot, "r", "bin", "Rscript")); err != nil || !info.Mode().IsRegular() {
+	if info, err := os.Stat(filepath.Join(environmentRoot, defaultManagedREnvironment, "bin", "Rscript")); err != nil || !info.Mode().IsRegular() {
 		t.Fatalf("Claude R environment is unavailable: %v", err)
 	}
 	_, file, _, ok := runtime.Caller(0)
@@ -255,7 +268,7 @@ func TestManagedRRuntimeHardeningAndWireCompatibility(t *testing.T) {
 	if err != nil || strings.TrimSpace(afterInterrupt.Stdout) != "43" || afterInterrupt.Error != "" {
 		t.Fatalf("R state after interrupt=%#v err=%v", afterInterrupt, err)
 	}
-	library := filepath.Join(workspace, ".r-libs", "claude-r-wire", "r")
+	library := filepath.Join(workspace, ".r-libs", "claude-r-wire", defaultManagedREnvironment)
 	marker := filepath.Join(library, "stale-marker")
 	if err := os.WriteFile(marker, []byte("stale"), 0o600); err != nil {
 		t.Fatal(err)

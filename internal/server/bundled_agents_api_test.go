@@ -118,7 +118,11 @@ func TestHealthReportsVerifiedAgentCatalog(t *testing.T) {
 	if err := json.NewDecoder(response.Body).Decode(&health); err != nil {
 		t.Fatal(err)
 	}
-	if health["status"] != "healthy" || health["service"] != "gateway" || health["agents_registered"] != float64(14) || health["agent_catalog_ready"] != true {
+	if health["status"] != "healthy" || health["service"] != "gateway" || health["agents_registered"] != float64(14) || health["agent_catalog_ready"] != true || health["scientific_runtime_ready"] != false {
 		t.Fatalf("health=%#v", health)
+	}
+	core, ok := health["scientific_runtime_core"].(map[string]any)
+	if !ok || core["ready"] != false || core["required"] != true {
+		t.Fatalf("scientific runtime health=%#v", health["scientific_runtime_core"])
 	}
 }

@@ -78,7 +78,7 @@ func TestBundledOptionalAssetsAndMicromambaManifestVerify(t *testing.T) {
 	}
 }
 
-func TestDiscoverManagerPublishesReadyRWithoutHostPython(t *testing.T) {
+func TestDiscoverManagerRequiresBundledRGenerationWithoutHostPython(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("managed R discovery uses the Unix environment layout")
 	}
@@ -105,8 +105,8 @@ func TestDiscoverManagerPublishesReadyRWithoutHostPython(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !manager.RuntimeReady("r", "r") || manager.RuntimeReady("python", "python") {
-		t.Fatalf("runtime readiness r=%t python=%t", manager.RuntimeReady("r", "r"), manager.RuntimeReady("python", "python"))
+	if manager.RuntimeReady("r", "r") || manager.RuntimeReady("python", "python") {
+		t.Fatalf("legacy runtime was advertised before bundled provisioning: r=%t python=%t", manager.RuntimeReady("r", "r"), manager.RuntimeReady("python", "python"))
 	}
 	if _, err := manager.Start("python-kernel", t.TempDir()); err == nil || !strings.Contains(err.Error(), "Python executable is not configured") {
 		t.Fatalf("unconfigured Python start error=%v", err)

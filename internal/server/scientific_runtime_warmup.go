@@ -251,6 +251,9 @@ func scientificRuntimeWarmupHealthValue(status scientificRuntimeWarmupStatus) ma
 
 func (s *Server) scientificRuntimeWarmupsHealth() map[string]any {
 	result := make(map[string]any)
+	for _, id := range []string{managedPythonScientificRuntimeID, managedRScientificRuntimeID} {
+		result[id] = s.managedScientificRuntimeHealth(id)
+	}
 	for _, definition := range scientificRuntimeWarmupDefinitions() {
 		result[definition.ID] = scientificRuntimeWarmupHealthValue(s.scientificRuntimeWarmupStatus(definition.ID))
 	}

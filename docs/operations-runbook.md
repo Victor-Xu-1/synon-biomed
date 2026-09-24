@@ -8,8 +8,17 @@ authorize a release.
 ## Runtime contract
 
 - A release contains native binaries, compiled `web/` assets, retained Skills/assets, installers, integrity metadata, an SBOM, license evidence, and provenance.
-- The installed core runtime does not require Go, Bun, Node.js, npm, or Python. Node.js/npm are build-time requirements only. Optional kernel and MCP sidecars declare their own runtimes.
+- Go, Bun, Node.js and npm are build-time requirements only. On Linux/WSL amd64,
+  first service startup provisions the required Python and R scientific runtimes
+  from the verified bundled Conda catalog; later tasks reuse those immutable
+  generations. Native Windows releases currently provide the gateway/UI but do
+  not ship the bundled Python/R runtime assets, so use WSL or Linux for
+  scientific execution. Optional kernel and MCP sidecars declare their own
+  runtimes.
 - Runtime state is external to the release directory. Set `SYNON_HOME` to a dedicated state directory and preserve it across upgrades.
+- Advanced deployments may set absolute `SYNON_CONDA_HOME` and
+  `SYNON_CONDA_ENVS_PATH` overrides; otherwise both roots are derived from the
+  current user's `SYNON_HOME`/platform data directory and validated at startup.
 - The default listener is `127.0.0.1:8765`. A non-loopback listener is rejected unless `SYNON_LINK_AUTH_PASSWORD` is configured.
 - The default operator username is `local`. There is no compiled-in password; set a unique deployment password.
 - The production runner uses the active saved workspace model provider. `go_builtin` is a test/development authority only.
@@ -92,9 +101,10 @@ migration or new storage engine is required by this interface.
 ### Local scientific software
 
 Settings → Scientific Toolkit → Scientific environments is the single
-catalog for local scientific software preparation. It presents the registered
-predownload environments as categorized cards, including their actual package
-specifications, estimated size, observed readiness and installation progress.
+catalog for local scientific software preparation. It presents the required
+Python/R core runtimes and the registered optional predownload environments as
+categorized cards, including package specifications, observed readiness and
+installation progress.
 Category and status filters also include newly registered catalog entries.
 Storage retains usage accounting and links to this catalog.
 Saving a selection starts preparation in the background through the same managed
@@ -111,14 +121,29 @@ from elapsed time. Ready means the managed environment passed its checks, not
 that a scientific task or result has been validated.
 
 Package caches and environment generations use the configured data/conda roots
-shown in Storage. Reopening or restarting the application reuses validated
-environments. A task discovers software through its existing tools and executes
-under the same managed environment authority; task outputs remain in the
-task/project artifact workflow, not in the software installation directory.
+shown in Storage. The default root is resolved per user from `SYNON_HOME` or
+the platform user data directory; product code and release assets never embed a
+developer's absolute path. The layout is stable and shared by all tasks:
+`${SYNON_HOME}/conda/envs/<environment>` is the active pointer and
+`${SYNON_HOME}/conda/envs/.generations/<environment>/<generation>` stores the
+immutable generation. Reopening or restarting the application verifies and
+reuses a matching generation instead of downloading it again. A task discovers
+software through its existing tools and executes under the same managed
+environment authority; task outputs remain in the task/project artifact
+workflow, not in the software installation directory.
+The R installer writes directly to its final generation path because R launchers
+can embed that path. A generation is published only after the R smoke test and
+shared-library preparation pass. An unusable or interrupted generation is moved
+aside under the same environment root and preserved for inspection; the product
+does not silently delete that quarantined content. Runtime health rechecks the
+published generation and reports a missing or unusable one instead of treating
+an old success record as current readiness.
 The authenticated `/api/preferences/scientific-runtimes` endpoint provides
 status with GET, saves registered `enabled_ids` with PUT, and retries one selected
-registered environment with POST `{ "id": "..." }`. Mutations require the
-normal authenticated session and CSRF protection.
+optional environment with POST `{ "id": "..." }`; the same POST can retry a
+failed required core runtime, while core runtimes cannot be paused or
+uninstalled. Mutations require the normal authenticated session and CSRF
+protection.
 
 ### Source startup
 
@@ -158,15 +183,30 @@ Web password is compiled into the repository.
 
 ### First-run scientific runtime preparation
 
-On Linux/WSL, the gateway starts before optional scientific environments are
-prepared. The onboarding **Local software** tab records one host-level install
-selection and immediately returns control to the workspace; installation stays
-in the service-owned background queue. Every catalog entry is selected
-initially, and a user may clear any selection before continuing. Estimates are
-planning information rather than validation ceilings: a registered environment
-is not rejected or disabled solely because its resolved install grows beyond a
-previous estimate. An upgraded host without a saved selection does not infer
-one or begin downloading these environments.
+On Linux/WSL amd64, the gateway starts its service-owned core supervisor before
+optional scientific environments are prepared. Python and R are required core
+runtimes: they are verified/provisioned once, exposed as ready only after their
+interpreter and package smoke checks pass, and cannot be paused or uninstalled
+from the optional-selection UI. If a core install fails, the status card offers
+an explicit retry. The onboarding **Local software** tab records one host-level
+selection for optional environments and immediately returns control to the
+workspace; optional installation stays in the background queue. Optional
+entries start unselected, so an upgraded host does not infer a large download
+without a saved selection. Estimates are planning information rather than
+validation ceilings: a registered environment is not rejected or disabled
+solely because its resolved install grows beyond a previous estimate.
+
+The required core contract is intentionally small and explicit:
+
+| Required runtime | Baseline contract | Why it is required |
+| --- | --- | --- |
+| `synon-biomed-python` | Python 3.11, RDKit, py3Dmol and the bundled rendering helpers | Default molecular, structure and general scientific task path |
+| `synon-biomed-r` | R 4.5, `data.table`, `ggplot2`, `jsonlite`, and `tidyverse` namespaces | Supported R analysis and shared report/data handling |
+
+Shell, Java, GPU frameworks, docking engines, omics stacks and other large
+specialized tools are not hidden additional prerequisites. They remain
+optional, task-selected runtimes and are installed through the same managed
+environment authority when a workflow requires them.
 
 The catalog includes the following independently versioned environments in
 addition to the common structure, 2D interaction, biomolecular electrostatics,
@@ -187,14 +227,18 @@ catalog is approximately 5.7 GiB when all groups are selected.
 | Medical imaging analysis | 420 MiB | pydicom, NiBabel, SimpleITK, scikit-image |
 | Instrument and analytical data | 260 MiB | Allotropy, Pandas, OpenPyXL, PDFPlumber |
 
-The estimates describe additional immutable environment storage after the
-release-owned managed Python baseline is present; exact downloads vary by
-platform, dependency resolution, and package-cache reuse. There is no fixed
+The estimates describe optional immutable environment storage after the
+required Python/R generations are present; exact downloads vary by platform,
+dependency resolution, and package-cache reuse. There is no fixed
 per-environment or aggregate rejection threshold. Sequential preparation,
 bounded timeouts, finite retries, and explicit selection provide the resource
 controls instead. No environment, wheel, or Conda package is written into the
-Git checkout. A fresh host needs network access to the pinned package sources
-once; subsequent starts verify and reuse the active generation.
+Git checkout. A fresh Linux/WSL host needs network access to the pinned package
+sources once; subsequent starts and tasks verify and reuse the active
+generations. On native Windows, `/health` may still report the gateway as
+healthy because the gateway/UI is available, but `scientific_runtime_ready`
+remains false with `bundled_runtime_platform_unsupported`; this is not a claim
+that Python/R scientific execution is available.
 
 The structure viewer requests this runtime lazily when a protein, pocket, or
 ligand surface is first enabled. PDB2PQR assigns AMBER protein charges after

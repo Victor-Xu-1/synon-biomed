@@ -92,21 +92,24 @@ Wait for `READY_URL=http://127.0.0.1:8765/#/login`, then open that URL in your b
 首次运行可能进入 onboarding 引导；系统没有默认 Web 密码。
 There is no default Web password.
 
-The first-run capability settings show optional local scientific runtimes and
-their estimated additional storage. Every listed group is selected initially;
-users can clear any selection before continuing. The catalog covers common
-structure tools, APBS/PDB2PQR biomolecular electrostatics, AutoDock Vina, drug
-chemistry, QSAR/ADMET, clinical statistics, omics, genomics, simulation, imaging,
-and instrument data. Storage figures are
-estimates rather than installer ceilings, so a valid registered selection is
-not disabled as the catalog grows. The Web workspace remains available while
-preparation runs. See the operations runbook for status and recovery.
+On Linux/WSL amd64, the service provisions the required Python and R scientific
+runtimes once at startup. Their immutable generations live under the
+user-resolved managed state root (`SYNON_HOME`, or the platform user data
+directory) and are reused by later tasks; no checkout or machine-specific
+absolute path is embedded in the product. Native Windows releases currently
+provide the gateway/UI only and do not include the bundled Python/R runtime
+assets; use WSL or Linux for scientific execution. First-run settings list
+these required runtimes separately from optional local scientific runtimes.
+Optional groups start unselected and are prepared only after an explicit
+choice. See the operations runbook for the storage layout, reuse contract,
+status and recovery guidance.
 
-首次设置会显示可选本地科学运行时及预计新增占用。目录内的常用结构工具、
-APBS/PDB2PQR 生物分子电性、AutoDock Vina、药物化学、QSAR/ADMET、临床统计、组学、基因组、模拟、影像和仪器
-数据环境首次全部默认勾选，用户可在继续前取消任意组；当前各组估算值均低于 1 GiB，
-全部选择预计约 5.7 GiB。容量数字仅用于提示，不作为安装上限；后续目录增长不会使有效
-选择被禁用。准备期间不阻塞进入工作台，状态与恢复方式见运维手册。
+在 Linux/WSL amd64 上，服务启动时会一次性准备必需的 Python 和 R 科研环境。不可变环境生成保存在
+系统根据当前用户解析出的统一状态目录（`SYNON_HOME`，未设置时使用平台用户数据目录）下，
+后续任务直接复用，不写入代码仓库，也不包含任何机器专属绝对路径。首次设置会把必需环境
+与可选科研环境分开显示；可选环境默认不勾选，只有用户明确选择后才会准备。存储布局、
+复用规则、状态和恢复方式见运维手册。当前原生 Windows 发布包只提供网关/UI，未包含
+Python/R 科研运行时资产，需要使用 WSL 或 Linux 才能执行科研任务。
 
 ## Learn more / 了解更多
 

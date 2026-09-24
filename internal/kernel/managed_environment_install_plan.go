@@ -44,7 +44,7 @@ func (m *Manager) runManagedPipCommand(ctx context.Context, prefix string, argum
 	if err != nil {
 		return err
 	}
-	return m.runManagedEnvironmentProcessWithEnv(ctx, python, managedEnvironmentInstallerRuntimeEnv(prefix), arguments...)
+	return m.runManagedEnvironmentProcessWithEnv(ctx, python, managedEnvironmentInstallerRuntimeEnv(prefix, m.config.InstallerProxy), arguments...)
 }
 
 // A newly requested installer stage may need capabilities absent from a native

@@ -1,12 +1,14 @@
 import type { ScientificRuntimeOption } from '@/renderer/services/scientificRuntimeSettings';
 import type { SettingsGeneratedIconId } from '../components/SettingsGeneratedAsset';
 
-export const environmentCategories = ['all', 'structure', 'medicine', 'omics', 'imaging', 'other'] as const;
+export const environmentCategories = ['all', 'core', 'structure', 'medicine', 'omics', 'imaging', 'other'] as const;
 export type EnvironmentCategory = (typeof environmentCategories)[number];
 export type EnvironmentFilter = 'all' | 'ready' | 'available' | 'active' | 'failed';
 export const activeEnvironmentStates = new Set(['scheduled', 'preparing', 'retrying', 'uninstalling']);
 
 const categories: Record<string, EnvironmentCategory> = {
+  'synon-biomed-python': 'core',
+  'synon-biomed-r': 'core',
   'common-structure-toolkit': 'structure',
   'structure-interaction': 'structure',
   'biomolecular-electrostatics': 'structure',
@@ -25,6 +27,7 @@ export const environmentCategory = (id: string): EnvironmentCategory => categori
 
 const categoryIcons: Record<EnvironmentCategory, SettingsGeneratedIconId> = {
   all: 'connector-molecule',
+  core: 'connector-molecule',
   structure: 'connector-molecule',
   medicine: 'connector-clipboard',
   omics: 'connector-dna',

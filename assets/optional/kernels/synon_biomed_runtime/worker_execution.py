@@ -62,6 +62,8 @@ class Worker:
                 self.transport.send({"type": "execution_started", "id": cell_id})
                 exec(compiled, self.namespace, self.namespace)
         except BaseException as error:
+            # Stop accepting retries once the cell is leaving user code.
+            self.executing = False
             result["error"] = "".join(traceback.format_exception(type(error), error, error.__traceback__))[-1024 * 1024:]
             result["interrupted"] = isinstance(error, KeyboardInterrupt)
             frames = [frame for frame in traceback.extract_tb(error.__traceback__) if frame.filename == filename]

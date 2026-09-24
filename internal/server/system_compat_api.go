@@ -98,6 +98,13 @@ func (s *Server) handleEnvironmentRetry(w http.ResponseWriter, r *http.Request) 
 			retryRuntime = true
 			retried = append(retried, environment.EnvironmentName)
 			if environment.Language == "r" {
+				// Legacy/unconfigured R status is read-only during migration. Do
+				// not revive the removed dynamic package installer; only the
+				// verified bundled R authority may be retried.
+				if !s.kernelManager.ManagedRProvisioningEnabled() {
+					retried = retried[:len(retried)-1]
+					continue
+				}
 				if err := s.kernelManager.RepairDefaultREnvironment(r.Context()); err != nil {
 					repairErrors[environment.EnvironmentName] = err.Error()
 				}

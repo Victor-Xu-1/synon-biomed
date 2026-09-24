@@ -113,8 +113,8 @@
     },
     {
       "path": "kernels/synon_biomed_runtime/worker_execution.py",
-      "sha256": "6d71e81fa72b4619dc094f8d43b36e671c65485ca092cc66281449d651f1f446",
-      "bytes": 4429
+      "sha256": "1d655be2a0548d74d50bcc28fdfd36065f278a4c613e37e98cf11e0aff4045e8",
+      "bytes": 4537
     },
     {
       "path": "kernels/synon_biomed_runtime/worker_reads.py",

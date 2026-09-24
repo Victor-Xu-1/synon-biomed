@@ -44,14 +44,24 @@ type RuntimeEnvironmentMetadata struct {
 }
 
 func (m *Manager) ReadRuntimeEnvironmentMetadata(environment string) (RuntimeEnvironmentMetadata, error) {
-	metadata := RuntimeEnvironmentMetadata{EnvironmentName: strings.TrimSpace(environment), Language: "r", OperationLog: []RPackageOperation{}}
+	requested := strings.TrimSpace(environment)
+	if !ValidEnvironmentName(requested) {
+		return RuntimeEnvironmentMetadata{EnvironmentName: requested, Language: "r", OperationLog: []RPackageOperation{}}, errors.New("environment name must be a bounded path-free identifier")
+	}
+	canonical := requested
+	if m != nil {
+		canonical = m.canonicalManagedREnvironment(requested)
+	}
+	metadata := RuntimeEnvironmentMetadata{EnvironmentName: canonical, Language: "r", OperationLog: []RPackageOperation{}}
 	if m == nil {
 		return metadata, errors.New("kernel manager is not configured")
 	}
-	if !ValidEnvironmentName(metadata.EnvironmentName) {
-		return metadata, errors.New("environment name must be a bounded path-free identifier")
-	}
 	prefix, err := filepath.EvalSymlinks(filepath.Join(m.config.CondaEnvsPath, metadata.EnvironmentName))
+	if err != nil && requested != metadata.EnvironmentName {
+		// Read-only compatibility for an older alias; new writes always target
+		// the canonical managed R environment.
+		prefix, err = filepath.EvalSymlinks(filepath.Join(m.config.CondaEnvsPath, requested))
+	}
 	if err != nil || !filepath.IsAbs(prefix) {
 		return metadata, errors.New("managed environment is unavailable")
 	}

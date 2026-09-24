@@ -22,11 +22,13 @@ import (
 
 const (
 	defaultManagedPythonEnvironment = "synon-biomed-python"
+	defaultManagedREnvironment      = "synon-biomed-r"
 	maxCondaRuntimeMetadataBytes    = 16 * 1024 * 1024
 	maxManagedPythonHelperBytes     = 1 * 1024 * 1024
 	managedRuntimeMarkerName        = ".synon-runtime.json"
 	managedRuntimeMarkerVersion     = 2
 	managedPythonActivationContract = "synon-managed-python-runtime-v2"
+	managedRActivationContract      = "synon-managed-r-runtime-v1"
 )
 
 type condaRuntimeReference struct {
@@ -91,12 +93,16 @@ type condaRuntimeManifest struct {
 	ManifestSHA256         string                    `json:"manifestSHA256,omitempty"`
 }
 
+type managedCondaRuntime struct {
+	entry           condaRuntimeCatalogEntry
+	manifest        condaRuntimeManifest
+	explicitPath    string
+	manifestDigest  string
+	packageVersions map[string]string
+}
+
 type managedPythonRuntime struct {
-	entry                condaRuntimeCatalogEntry
-	manifest             condaRuntimeManifest
-	manifestPath         string
-	explicitPath         string
-	manifestDigest       string
+	managedCondaRuntime
 	helperDigest         string
 	activationGeneration string
 	rdkitVersion         string
@@ -111,8 +117,10 @@ type managedRuntimeMarker struct {
 	ManifestSHA256       string `json:"manifestSHA256"`
 	ExplicitSHA256       string `json:"explicitSHA256"`
 	HelperManifestSHA256 string `json:"helperManifestSHA256"`
-	PythonVersion        string `json:"pythonVersion"`
-	RDKitVersion         string `json:"rdkitVersion"`
+	Language             string `json:"language,omitempty"`
+	RuntimeVersion       string `json:"runtimeVersion,omitempty"`
+	PythonVersion        string `json:"pythonVersion,omitempty"`
+	RDKitVersion         string `json:"rdkitVersion,omitempty"`
 }
 
 func currentCondaPlatform() string {
@@ -120,6 +128,13 @@ func currentCondaPlatform() string {
 		return "linux-x86_64"
 	}
 	return runtime.GOOS + "-" + runtime.GOARCH
+}
+
+// ManagedScientificRuntimePlatform is the stable platform identity used by
+// runtime status consumers. It deliberately reports the catalog platform
+// spelling (for example, linux-x86_64) rather than a machine-specific path.
+func ManagedScientificRuntimePlatform() string {
+	return currentCondaPlatform()
 }
 
 func managedPythonName(config Config) string {
@@ -173,29 +188,46 @@ func (m *Manager) ManagedPythonProvisioningDetails() ManagedPythonProvisioningDe
 	if m == nil {
 		return ManagedPythonProvisioningDetails{Status: "unavailable"}
 	}
-	m.managedPythonMu.Lock()
-	defer m.managedPythonMu.Unlock()
-	if m.managedPythonProvision == nil {
-		if m.ManagedPythonProvisioningEnabled() {
+	return managedRuntimeProvisioningDetails(&m.managedPythonState, m.ManagedPythonProvisioningEnabled(), m.managedPythonRuntimeReady)
+}
+
+func managedRuntimeProvisioningDetails(
+	state *managedRuntimeProvisioningState,
+	enabled bool,
+	ready func() error,
+) ManagedPythonProvisioningDetails {
+	state.mu.Lock()
+	if state.provision == nil {
+		state.mu.Unlock()
+		if enabled {
 			return ManagedPythonProvisioningDetails{Status: "pending", Phase: "waiting-to-start"}
 		}
 		return ManagedPythonProvisioningDetails{Status: "failed", Phase: "unavailable"}
 	}
 	details := ManagedPythonProvisioningDetails{
-		Phase:          m.managedPythonProvision.phase,
-		StartedAt:      m.managedPythonProvision.startedAt,
-		LastProgressAt: m.managedPythonProvision.lastProgressAt,
+		Phase:          state.provision.phase,
+		StartedAt:      state.provision.startedAt,
+		LastProgressAt: state.provision.lastProgressAt,
 	}
 	select {
-	case <-m.managedPythonProvision.done:
-		if m.managedPythonProvision.err != nil {
+	case <-state.provision.done:
+		if state.provision.err != nil {
 			details.Status = "failed"
-			details.Error = boundedManagedPythonProvisioningError(m.managedPythonProvision.err)
+			details.Error = boundedManagedPythonProvisioningError(state.provision.err)
+			state.mu.Unlock()
 			return details
 		}
 		details.Status = "ready"
 	default:
 		details.Status = "installing"
+	}
+	state.mu.Unlock()
+	if details.Status == "ready" && ready() != nil {
+		// The operation record is not evidence that its published generation
+		// still exists or can run. Keep the read model tied to that generation.
+		details.Status = "failed"
+		details.Phase = "verifying-generation"
+		details.Error = "verified runtime generation is unavailable"
 	}
 	return details
 }
@@ -216,13 +248,17 @@ func (m *Manager) setManagedPythonProvisioningPhase(phase string) {
 	if m == nil || strings.TrimSpace(phase) == "" {
 		return
 	}
-	m.managedPythonMu.Lock()
-	defer m.managedPythonMu.Unlock()
-	if m.managedPythonProvision == nil {
+	setManagedRuntimeProvisioningPhase(&m.managedPythonState, phase)
+}
+
+func setManagedRuntimeProvisioningPhase(state *managedRuntimeProvisioningState, phase string) {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	if state.provision == nil {
 		return
 	}
-	m.managedPythonProvision.phase = phase
-	m.managedPythonProvision.lastProgressAt = time.Now().UTC()
+	state.provision.phase = phase
+	state.provision.lastProgressAt = time.Now().UTC()
 }
 
 // RunManagedPythonProvisioner owns the installer for the service lifetime.
@@ -288,28 +324,69 @@ func (m *Manager) managedPythonProvisioning(
 	install func(context.Context) error,
 	wait bool,
 ) error {
-	if m.managedPythonRuntimeReady() == nil {
+	return m.managedRuntimeProvisioning(
+		waitCtx, installParent, retry, install, wait,
+		&m.managedPythonState, m.managedPythonRuntimeReady,
+	)
+}
+
+func (m *Manager) managedRuntimeProvisioning(
+	waitCtx context.Context,
+	installParent context.Context,
+	retry bool,
+	install func(context.Context) error,
+	wait bool,
+	state *managedRuntimeProvisioningState,
+	ready func() error,
+) error {
+	if ready() == nil {
+		// A repaired/published generation can make a previously failed
+		// provisioning record stale. Record the verified reuse in the same
+		// state read by health; keep an active installer visible to its waiters.
+		state.mu.Lock()
+		publish := state.provision == nil
+		if !publish {
+			select {
+			case <-state.provision.done:
+				publish = state.provision.err != nil
+			default:
+			}
+		}
+		if publish {
+			now := time.Now().UTC()
+			verified := &managedRuntimeProvision{
+				done: make(chan struct{}), phase: "verified-generation", startedAt: now, lastProgressAt: now,
+			}
+			close(verified.done)
+			state.provision = verified
+		}
+		state.mu.Unlock()
+		if publish {
+			m.notifyRuntimeChange()
+		}
 		return nil
 	}
-	m.managedPythonMu.Lock()
-	provision := m.managedPythonProvision
-	if provision != nil && retry {
+	state.mu.Lock()
+	provision := state.provision
+	if provision != nil {
 		select {
 		case <-provision.done:
-			if provision.err != nil {
+			// A formerly successful generation is no longer ready. Repair it
+			// on the next Ensure, but keep failed installs explicit-retry only.
+			if provision.err == nil || retry {
 				provision = nil
-				m.managedPythonProvision = nil
+				state.provision = nil
 			}
 		default:
 		}
 	}
 	if provision == nil {
 		now := time.Now().UTC()
-		provision = &managedPythonProvision{
+		provision = &managedRuntimeProvision{
 			done: make(chan struct{}), phase: "queued", startedAt: now, lastProgressAt: now,
 		}
-		m.managedPythonProvision = provision
-		go func(active *managedPythonProvision) {
+		state.provision = provision
+		go func(active *managedRuntimeProvision) {
 			if installParent == nil {
 				m.managedEnvironmentMu.Lock()
 				installParent = m.managedEnvironmentSupervisor
@@ -323,14 +400,14 @@ func (m *Manager) managedPythonProvisioning(
 			// supervisor (or an explicit caller deadline), never to an invented
 			// fixed wall-clock timeout. Waiters remain independently cancellable.
 			err := install(installParent)
-			m.managedPythonMu.Lock()
+			state.mu.Lock()
 			active.err = err
 			close(active.done)
-			m.managedPythonMu.Unlock()
+			state.mu.Unlock()
 			m.notifyRuntimeChange()
 		}(provision)
 	}
-	m.managedPythonMu.Unlock()
+	state.mu.Unlock()
 	if !wait {
 		return nil
 	}
@@ -338,9 +415,9 @@ func (m *Manager) managedPythonProvisioning(
 	case <-waitCtx.Done():
 		return waitCtx.Err()
 	case <-provision.done:
-		m.managedPythonMu.Lock()
+		state.mu.Lock()
 		err := provision.err
-		m.managedPythonMu.Unlock()
+		state.mu.Unlock()
 		return err
 	}
 }
@@ -419,25 +496,25 @@ func fileSHA256(path string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func loadManagedPythonRuntime(config Config) (managedPythonRuntime, error) {
+func loadManagedCondaRuntime(config Config, name string) (managedCondaRuntime, error) {
 	catalogPath := strings.TrimSpace(config.CondaRuntimeCatalog)
 	if catalogPath == "" {
-		return managedPythonRuntime{}, errors.New("managed Python runtime catalog is not configured")
+		return managedCondaRuntime{}, errors.New("managed runtime catalog is not configured")
 	}
 	var catalog condaRuntimeCatalog
 	if _, err := readBoundedJSON(catalogPath, &catalog); err != nil {
-		return managedPythonRuntime{}, fmt.Errorf("read managed Python runtime catalog: %w", err)
+		return managedCondaRuntime{}, fmt.Errorf("read managed runtime catalog: %w", err)
 	}
 	if (catalog.SchemaVersion != 1 && catalog.SchemaVersion != 2) || catalog.Platform != currentCondaPlatform() || !validSHA256(catalog.CatalogSHA256) {
-		return managedPythonRuntime{}, errors.New("managed Python runtime catalog contract is invalid")
+		return managedCondaRuntime{}, errors.New("managed runtime catalog contract is invalid")
 	}
 	if catalog.SchemaVersion == 2 {
 		if catalog.Oracle != nil {
-			return managedPythonRuntime{}, errors.New("runtime catalog contains unsupported legacy metadata")
+			return managedCondaRuntime{}, errors.New("runtime catalog contains unsupported legacy metadata")
 		}
 		for _, item := range catalog.Runtimes {
 			if item.Oracle != nil || item.AlignmentReference != nil {
-				return managedPythonRuntime{}, errors.New("runtime entry contains unsupported legacy metadata")
+				return managedCondaRuntime{}, errors.New("runtime entry contains unsupported legacy metadata")
 			}
 		}
 	}
@@ -445,61 +522,67 @@ func loadManagedPythonRuntime(config Config) (managedPythonRuntime, error) {
 	catalogBody.CatalogSHA256 = ""
 	catalogDigest, err := canonicalJSONDigest(catalogBody)
 	if err != nil || catalogDigest != catalog.CatalogSHA256 {
-		return managedPythonRuntime{}, errors.New("managed Python runtime catalog digest does not match")
+		return managedCondaRuntime{}, errors.New("managed runtime catalog digest does not match")
 	}
-	name := managedPythonName(config)
+	name = canonicalCondaRuntimeName(strings.TrimSpace(name))
+	if name == "" {
+		return managedCondaRuntime{}, errors.New("managed runtime name is required")
+	}
 	var entry *condaRuntimeCatalogEntry
 	for index := range catalog.Runtimes {
 		if canonicalCondaRuntimeName(catalog.Runtimes[index].Name) == name {
 			if entry != nil {
-				return managedPythonRuntime{}, errors.New("managed Python runtime catalog contains duplicate entries")
+				return managedCondaRuntime{}, errors.New("managed runtime catalog contains duplicate entries")
 			}
 			entry = &catalog.Runtimes[index]
 		}
 	}
 	if entry == nil || entry.Platform != currentCondaPlatform() || !validSHA256(entry.Generation) || !validSHA256(entry.ExplicitSHA256) {
-		return managedPythonRuntime{}, errors.New("managed Python runtime catalog entry is invalid")
+		return managedCondaRuntime{}, errors.New("managed runtime catalog entry is invalid")
+	}
+	if !ValidEnvironmentName(entry.Name) {
+		return managedCondaRuntime{}, errors.New("managed runtime catalog entry name is invalid")
 	}
 	root := filepath.Dir(catalogPath)
 	manifestPath, err := runtimeAssetPath(root, entry.ManifestPath)
 	if err != nil {
-		return managedPythonRuntime{}, err
+		return managedCondaRuntime{}, err
 	}
 	explicitPath, err := runtimeAssetPath(root, entry.ExplicitPath)
 	if err != nil {
-		return managedPythonRuntime{}, err
+		return managedCondaRuntime{}, err
 	}
 	var manifest condaRuntimeManifest
 	if _, err := readBoundedJSON(manifestPath, &manifest); err != nil {
-		return managedPythonRuntime{}, fmt.Errorf("read managed Python runtime manifest: %w", err)
+		return managedCondaRuntime{}, fmt.Errorf("read managed runtime manifest: %w", err)
 	}
 	manifestBody := manifest
 	manifestBody.ManifestSHA256 = ""
 	manifestDigest, err := canonicalJSONDigest(manifestBody)
 	if err != nil || manifestDigest != manifest.ManifestSHA256 || manifestDigest != entry.Generation {
-		return managedPythonRuntime{}, errors.New("managed Python runtime manifest digest does not match")
+		return managedCondaRuntime{}, errors.New("managed runtime manifest digest does not match")
 	}
 	if manifest.SchemaVersion != catalog.SchemaVersion || manifest.Name != entry.Name || manifest.Platform != entry.Platform ||
 		manifest.PackageCount != len(manifest.Packages) || manifest.ExplicitSHA256 != entry.ExplicitSHA256 {
-		return managedPythonRuntime{}, errors.New("managed Python runtime manifest does not match its catalog entry")
+		return managedCondaRuntime{}, errors.New("managed runtime manifest does not match its catalog entry")
 	}
 	if manifest.SchemaVersion == 2 && (manifest.Oracle != nil || manifest.AlignmentReference != nil) {
-		return managedPythonRuntime{}, errors.New("runtime manifest contains unsupported legacy metadata")
+		return managedCondaRuntime{}, errors.New("runtime manifest contains unsupported legacy metadata")
 	}
 	if !sameRuntimeRequirements(entry.RequiredPackages, manifest.RequiredPackages) {
-		return managedPythonRuntime{}, errors.New("managed Python runtime requirements do not match the catalog entry")
+		return managedCondaRuntime{}, errors.New("managed runtime requirements do not match the catalog entry")
 	}
 	explicitDigest, err := fileSHA256(explicitPath)
 	if err != nil || explicitDigest != manifest.ExplicitSHA256 {
-		return managedPythonRuntime{}, errors.New("managed Python explicit lock digest does not match")
+		return managedCondaRuntime{}, errors.New("managed runtime explicit lock digest does not match")
 	}
 	packageVersions := map[string]string{}
 	for _, item := range manifest.Packages {
 		if item.Name == "" || item.Version == "" || item.Build == "" || !validSHA256(item.SHA256) {
-			return managedPythonRuntime{}, errors.New("managed Python runtime package contract is invalid")
+			return managedCondaRuntime{}, errors.New("managed runtime package contract is invalid")
 		}
 		if _, exists := packageVersions[item.Name]; exists {
-			return managedPythonRuntime{}, errors.New("managed Python runtime package names are not unique")
+			return managedCondaRuntime{}, errors.New("managed runtime package names are not unique")
 		}
 		packageVersions[item.Name] = item.Version
 	}
@@ -510,21 +593,39 @@ func loadManagedPythonRuntime(config Config) (managedPythonRuntime, error) {
 			matches = strings.HasPrefix(actual, strings.TrimSuffix(requirement.Version, "*"))
 		}
 		if !matches {
-			return managedPythonRuntime{}, errors.New("managed Python runtime required package is unavailable")
+			return managedCondaRuntime{}, errors.New("managed runtime required package is unavailable")
 		}
+	}
+	resolvedEntry := entryCopy(*entry)
+	resolvedEntry.Name = canonicalCondaRuntimeName(resolvedEntry.Name)
+	if !ValidEnvironmentName(resolvedEntry.Name) {
+		return managedCondaRuntime{}, errors.New("managed runtime canonical entry name is invalid")
+	}
+	return managedCondaRuntime{
+		entry: resolvedEntry, manifest: manifest, explicitPath: explicitPath,
+		manifestDigest: manifestDigest, packageVersions: packageVersions,
+	}, nil
+}
+
+func loadManagedPythonRuntime(config Config) (managedPythonRuntime, error) {
+	runtime, err := loadManagedCondaRuntime(config, managedPythonName(config))
+	if err != nil {
+		return managedPythonRuntime{}, err
 	}
 	helperDigest, err := fileSHA256(config.ManifestPath)
 	if err != nil {
 		return managedPythonRuntime{}, errors.New("managed Python helper manifest is unavailable")
 	}
-	activationHash := sha256.Sum256([]byte(managedPythonActivationContract + "\x00" + manifestDigest + "\x00" + helperDigest))
-	resolvedEntry := entryCopy(*entry)
-	resolvedEntry.Name = canonicalCondaRuntimeName(resolvedEntry.Name)
+	pythonVersion := runtime.packageVersions["python"]
+	rdkitVersion := runtime.packageVersions["rdkit"]
+	if pythonVersion == "" || rdkitVersion == "" || runtime.packageVersions["py3dmol"] == "" {
+		return managedPythonRuntime{}, errors.New("managed Python runtime required package is unavailable")
+	}
+	activationHash := sha256.Sum256([]byte(managedPythonActivationContract + "\x00" + runtime.manifestDigest + "\x00" + helperDigest))
 	return managedPythonRuntime{
-		entry: resolvedEntry, manifest: manifest, manifestPath: manifestPath, explicitPath: explicitPath,
-		manifestDigest: manifestDigest, helperDigest: helperDigest,
+		managedCondaRuntime: runtime, helperDigest: helperDigest,
 		activationGeneration: hex.EncodeToString(activationHash[:]),
-		pythonVersion:        packageVersions["python"], rdkitVersion: packageVersions["rdkit"],
+		pythonVersion:        pythonVersion, rdkitVersion: rdkitVersion,
 	}, nil
 }
 
@@ -719,33 +820,127 @@ func (m *Manager) smokeManagedPython(ctx context.Context, runtime managedPythonR
 	command := newWorkerProcessCommand(ctx, python, "-I", "-c", code)
 	command.Env = kernelEnvironment(map[string]string{
 		"CONDA_PREFIX": prefix, "CONDA_DEFAULT_ENV": runtime.entry.Name,
-		"PATH": filepath.Join(prefix, "bin"), "PYTHONNOUSERSITE": "1",
+		"PATH": managedExecutableSearchPath(filepath.Join(prefix, "bin")), "PYTHONNOUSERSITE": "1",
 	})
-	output := newTailBuffer(maxDiagnosticBytes)
-	command.Stdout, command.Stderr = output, output
+	stdout := newTailBuffer(maxDiagnosticBytes)
+	stderr := newTailBuffer(maxDiagnosticBytes)
+	command.Stdout, command.Stderr = stdout, stderr
 	if err := runWorkerProcess(command); err != nil {
-		return fmt.Errorf("managed Python scientific smoke failed: %w: %s", err, strings.TrimSpace(output.String()))
+		return fmt.Errorf("managed Python scientific smoke failed: %w: %s", err, boundedProcessDiagnostics(stdout.String(), stderr.String()))
 	}
 	var response struct {
 		OK    bool   `json:"ok"`
 		RDKit string `json:"rdkit"`
 	}
-	if err := json.Unmarshal([]byte(strings.TrimSpace(output.String())), &response); err != nil || !response.OK || response.RDKit != runtime.rdkitVersion {
+	valid := false
+	for _, line := range reverseNonEmptyOutputLines(stdout.String()) {
+		var candidate struct {
+			OK    bool   `json:"ok"`
+			RDKit string `json:"rdkit"`
+		}
+		if err := json.Unmarshal([]byte(line), &candidate); err == nil && candidate.OK && candidate.RDKit == runtime.rdkitVersion {
+			response = candidate
+			valid = true
+			break
+		}
+	}
+	if !valid || !response.OK || response.RDKit != runtime.rdkitVersion {
 		return errors.New("managed Python scientific smoke returned an invalid result")
 	}
 	return nil
 }
 
+func reverseNonEmptyOutputLines(value string) []string {
+	lines := strings.Split(value, "\n")
+	result := make([]string, 0, len(lines))
+	for index := len(lines) - 1; index >= 0; index-- {
+		line := strings.TrimSpace(lines[index])
+		if line != "" {
+			result = append(result, line)
+		}
+	}
+	return result
+}
+
+func boundedProcessDiagnostics(stdout, stderr string) string {
+	stderr = strings.TrimSpace(stderr)
+	stdout = strings.TrimSpace(stdout)
+	diagnostics := ""
+	if stderr == "" {
+		diagnostics = stdout
+	} else if stdout == "" {
+		diagnostics = stderr
+	} else {
+		diagnostics = stderr + " | stdout: " + stdout
+	}
+	if len(diagnostics) > maxDiagnosticBytes {
+		return diagnostics[len(diagnostics)-maxDiagnosticBytes:]
+	}
+	return diagnostics
+}
+
+func quarantineManagedRuntimeGeneration(path string) (string, error) {
+	_, err := os.Lstat(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil
+		}
+		return "", err
+	}
+	quarantine := filepath.Join(filepath.Dir(path), ".staging-invalid-"+uuid.NewString())
+	if err := os.Rename(path, quarantine); err != nil {
+		return "", err
+	}
+	return quarantine, nil
+}
+
+// prepareManagedRuntimeGeneration validates the deterministic generation while
+// holding the caller's install lock. A corrupt generation is moved aside rather
+// than reused, so a failed or interrupted install can recover on the next
+// attempt without touching a healthy active generation.
+func prepareManagedRuntimeGeneration(path string, verify func() error) (bool, string, error) {
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, "", nil
+	}
+	if err != nil {
+		return false, "", err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		quarantine, err := quarantineManagedRuntimeGeneration(path)
+		if err != nil {
+			return false, "", fmt.Errorf("quarantine invalid managed runtime generation: %w", err)
+		}
+		return false, quarantine, nil
+	}
+	if verify == nil {
+		return false, "", errors.New("managed runtime generation verifier is unavailable")
+	}
+	if err := verify(); err == nil {
+		return true, "", nil
+	} else if quarantine, quarantineErr := quarantineManagedRuntimeGeneration(path); quarantineErr != nil {
+		return false, "", fmt.Errorf("quarantine invalid managed runtime generation: %w (verification: %v)", quarantineErr, err)
+	} else {
+		return false, quarantine, nil
+	}
+}
+
 func (m *Manager) activateManagedPythonGeneration(runtime managedPythonRuntime) error {
-	active := filepath.Join(m.config.CondaEnvsPath, runtime.entry.Name)
+	return activateManagedRuntimeGeneration(
+		filepath.Join(m.config.CondaEnvsPath, runtime.entry.Name),
+		m.managedPythonGenerationPath(runtime),
+	)
+}
+
+func activateManagedRuntimeGeneration(active, generation string) error {
 	temporary := active + ".tmp-" + uuid.NewString()
 	defer os.Remove(temporary)
 	if info, err := os.Lstat(active); err == nil && info.Mode()&os.ModeSymlink == 0 {
-		return errors.New("managed Python active path is not an atomic generation pointer")
+		return errors.New("managed runtime active path is not an atomic generation pointer")
 	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	if err := os.Symlink(m.managedPythonGenerationPath(runtime), temporary); err != nil {
+	if err := os.Symlink(generation, temporary); err != nil {
 		return err
 	}
 	return os.Rename(temporary, active)
@@ -779,7 +974,16 @@ func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 		return nil
 	}
 	generationPath := m.managedPythonGenerationPath(runtime)
-	if _, err := os.Stat(generationPath); errors.Is(err, os.ErrNotExist) {
+	generationReady, quarantinedGeneration, err := prepareManagedRuntimeGeneration(generationPath, func() error {
+		return m.verifyManagedPythonGeneration(runtime, generationPath)
+	})
+	if err != nil {
+		return fmt.Errorf("inspect managed Python generation: %w", err)
+	}
+	if quarantinedGeneration != "" {
+		defer func() { _ = os.RemoveAll(quarantinedGeneration) }()
+	}
+	if !generationReady {
 		parent := filepath.Dir(generationPath)
 		staging, err := os.MkdirTemp(parent, ".staging-")
 		if err != nil {
@@ -788,12 +992,8 @@ func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 		defer os.RemoveAll(staging)
 		m.setManagedPythonProvisioningPhase("installing-bundled-generation")
 		arguments := []string{"--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath}
-		command := newWorkerProcessCommand(ctx, m.config.Micromamba, arguments...)
-		command.Env = m.managedEnvironmentInstallerEnv()
-		output := newTailBuffer(maxDiagnosticBytes)
-		command.Stdout, command.Stderr = output, output
-		if err := runWorkerProcess(command); err != nil {
-			return fmt.Errorf("install managed Python generation: %w: %s", err, strings.TrimSpace(output.String()))
+		if err := m.runManagedEnvironmentProcessWithEnv(ctx, m.config.Micromamba, m.managedEnvironmentInstallerEnv(), arguments...); err != nil {
+			return fmt.Errorf("install managed Python generation: %w", err)
 		}
 		m.setManagedPythonProvisioningPhase("installing-runtime-helpers")
 		if err := m.installManagedPythonHelpers(runtime, staging); err != nil {
@@ -808,12 +1008,10 @@ func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 		}
 		m.setManagedPythonProvisioningPhase("publishing-generation")
 		if err := os.Rename(staging, generationPath); err != nil {
-			if _, statErr := os.Stat(generationPath); statErr != nil {
-				return fmt.Errorf("publish managed Python generation: %w", err)
+			if verifyErr := m.verifyManagedPythonGeneration(runtime, generationPath); verifyErr != nil {
+				return fmt.Errorf("publish managed Python generation: %w (existing generation: %v)", err, verifyErr)
 			}
 		}
-	} else if err != nil {
-		return fmt.Errorf("inspect managed Python generation: %w", err)
 	}
 	m.setManagedPythonProvisioningPhase("activating-generation")
 	if err := m.activateManagedPythonGeneration(runtime); err != nil {

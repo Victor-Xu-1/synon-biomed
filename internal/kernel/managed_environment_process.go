@@ -111,7 +111,7 @@ func (m *Manager) managedEnvironmentInstallerEnv() []string {
 		// runtime boundary instead of making every task guess library-specific
 		// repair variables after a crash.
 		"KMP_AFFINITY": "disabled", "OMP_PROC_BIND": "false",
-	}))
+	}), m.config.InstallerProxy)
 }
 
 func managedEnvironmentInstallerThreadLimit() int {
@@ -203,8 +203,8 @@ func managedEnvironmentRuntimeThreadLimit() int {
 	return limit
 }
 
-func managedEnvironmentInstallerRuntimeEnv(prefix string) []string {
-	return managedEnvironmentInstallerProxyEnv(managedEnvironmentRuntimeEnv(prefix))
+func managedEnvironmentInstallerRuntimeEnv(prefix string, configured ...string) []string {
+	return managedEnvironmentInstallerProxyEnv(managedEnvironmentRuntimeEnv(prefix), configured...)
 }
 
 // Package hooks and interpreter launchers need OS utilities as well as the
@@ -231,18 +231,38 @@ func managedExecutableSearchPath(preferred string) string {
 // variables needed by package managers. Runtime kernels do not inherit them,
 // so a dependency installer can work on proxy-required networks without
 // turning proxy credentials into ambient task authority.
-func managedEnvironmentInstallerProxyEnv(environment []string) []string {
-	for _, key := range []string{
+func managedEnvironmentInstallerProxyEnv(environment []string, configured ...string) []string {
+	result := append([]string(nil), environment...)
+	set := func(key, value string) {
+		for index, item := range result {
+			name, _, ok := strings.Cut(item, "=")
+			if ok && name == key {
+				result[index] = key + "=" + value
+				return
+			}
+		}
+		result = append(result, key+"="+value)
+	}
+	keys := []string{
 		"HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
 		"http_proxy", "https_proxy", "no_proxy", "all_proxy",
-	} {
+	}
+	for _, key := range keys {
 		value, found := os.LookupEnv(key)
 		if !found || value == "" || len(value) > 4096 || strings.ContainsAny(value, "\x00\r\n") {
 			continue
 		}
-		environment = append(environment, key+"="+value)
+		set(key, value)
 	}
-	return environment
+	if len(configured) > 0 {
+		value := strings.TrimSpace(configured[0])
+		if value != "" && len(value) <= 4096 && !strings.ContainsAny(value, "\x00\r\n") {
+			for _, key := range []string{"HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"} {
+				set(key, value)
+			}
+		}
+	}
+	return result
 }
 
 func validateManagedEnvironmentImports(ctx context.Context, language, prefix string, imports []string) error {

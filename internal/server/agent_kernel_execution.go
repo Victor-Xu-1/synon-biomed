@@ -248,11 +248,28 @@ func (s *Server) executeAgentKernelToolInternal(
 			return nil, errors.New("managed Python scientific runtime provisioning failed")
 		}
 	}
+	if publicName == "r" && s.isManagedScientificREnvironment(environment) {
+		if s.kernelManager == nil {
+			return nil, errors.New("managed R scientific runtime is unavailable")
+		}
+		if err := s.kernelManager.EnsureManagedREnvironment(ctx); err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return nil, err
+			}
+			return nil, errors.New("managed R scientific runtime provisioning failed")
+		}
+	}
 	runtimeGeneration := ""
 	if (publicName == "python" || publicName == "bash") && environment == agentKernelManagedPythonEnvironment {
 		runtimeGeneration, err = s.kernelManager.ManagedPythonActiveGeneration()
 		if err != nil {
 			return nil, errors.New("managed Python scientific runtime generation is unavailable")
+		}
+	}
+	if publicName == "r" && s.isManagedScientificREnvironment(environment) {
+		runtimeGeneration, err = s.kernelManager.ManagedRActiveGeneration()
+		if err != nil {
+			return nil, errors.New("managed R scientific runtime generation is unavailable")
 		}
 	}
 	if runtimeGeneration == "" && agentKernelEnvironmentRequiresManagedGeneration(publicName, environment) {
@@ -654,4 +671,12 @@ func (s *Server) executeAgentKernelToolInternal(
 	}
 	return s.finishAgentKernelExecution(ctx, access, spec, session, started, outcome, outputLimitBytes,
 		kernelOperation, kernelOperationClaim, nil, inputArtifactCollector.snapshot())
+}
+
+func (s *Server) isManagedScientificREnvironment(environment string) bool {
+	if strings.EqualFold(strings.TrimSpace(environment), "r") {
+		return true
+	}
+	return s != nil && s.kernelManager != nil &&
+		strings.EqualFold(strings.TrimSpace(environment), s.kernelManager.ManagedREnvironmentName())
 }

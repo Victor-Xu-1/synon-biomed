@@ -5,7 +5,7 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "aab3311d57af9d5cd589772540bea060e0fcc83c4272b47798636f7eaf9d528a",
   "removalFingerprintSHA256": "70a676732efea3030080147fc7100096248f3fc0ce13b80256726d97fef98b5c",
-  "additionFingerprintSHA256": "2ff296954cabb579b76130a565056b192d1d646c367ac60ab133b38542caea13",
+  "additionFingerprintSHA256": "ee9a15d97f1b6afe5440cfed1b92cdfdffd052bfddae66597c5ac44810e076cc",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 400,
@@ -6684,8 +6684,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/components/synonBiomed/runtime/ContextUsagePanel.module.css",
-      "sha256": "424e47fa3fd450cae5ed75460e2baa42db788b1c97d5209ba9cf246fb740fb79",
-      "bytes": 4067,
+      "sha256": "520b486bffa84f4190fdf7971c4dd029a4031e71ab96fca99b59a3dee26776b7",
+      "bytes": 4990,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -8334,8 +8334,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/styles/tokens.css",
-      "sha256": "8530a2055021a84313d5bd347c5a74add2558bd2e797d50a0448455a0e796fb2",
-      "bytes": 2664,
+      "sha256": "b72c3e93ee2e001f308aca5f68a6260629841fd9611153af40788e49ffc5ce08",
+      "bytes": 2964,
       "reason": "Own the single canonical visual-primitive scale (space, radius, elevation, type, weight, stacking) that every renderer module references instead of restating literals."
     },
     {
@@ -10068,8 +10068,8 @@
     },
     {
       "path": "tests/unit/themeVisualTokens.test.ts",
-      "sha256": "d8d86d765995cc53324fb09eb5671dd2a7070b60d08e93321dd7590094cc1cd0",
-      "bytes": 5205,
+      "sha256": "d7f5e714dd0f1ea6ed2119ba6208e526a2bec91c108f49dd2d04ef707e83f81e",
+      "bytes": 5290,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -10116,8 +10116,8 @@
     },
     {
       "path": "tests/web-e2e/contextUsagePanel.browser.mjs",
-      "sha256": "7d18c7113203ce56e10c1b74d6e8f1859cc935ce86c6802d60732bc9792080d7",
-      "bytes": 6551,
+      "sha256": "ab450808babc4c43fd21b1d884598086dd4afeed9156be9bc79dc542b2a1f152",
+      "bytes": 10031,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {

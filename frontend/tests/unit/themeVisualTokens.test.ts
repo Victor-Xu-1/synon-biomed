@@ -44,20 +44,24 @@ describe('design primitive scale', () => {
     for (const step of [1, 2, 3, 4, 5, 6, 7, 8]) {
       expect(tokensCss).toMatch(new RegExp(`--ui-space-${step}:\\s*\\d+px;`));
     }
-    for (const step of ['xs', 'sm', 'md', 'lg', 'xl', '2xl', 'pill', 'circle']) {
+    for (const step of ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'pill', 'circle']) {
       expect(tokensCss).toMatch(new RegExp(`--ui-radius-${step}:`));
     }
     for (const step of [
       'micro',
       'meta',
       'body',
+      'body-lg',
       'subtitle',
       'title',
       'section',
       'lead',
       'display',
       'hero',
+      'hero-lg',
       'headline',
+      'headline-lg',
+      'metric',
     ]) {
       expect(tokensCss).toMatch(new RegExp(`--ui-font-${step}:\\s*\\d+px;`));
       expect(tokensCss).toMatch(new RegExp(`--ui-line-height-${step}:\\s*\\d+px;`));

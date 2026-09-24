@@ -107,6 +107,41 @@ try {
   assert.ok(descriptionId);
   const desktopBounds = await panel.boundingBox();
   assert.ok(desktopBounds && Math.abs(desktopBounds.width - 560) <= 1, JSON.stringify(desktopBounds));
+  assert.ok(Math.abs(desktopBounds.height - 486) <= 1, JSON.stringify(desktopBounds));
+  const visualTokens = await panel.evaluate((root) => {
+    const header = root.firstElementChild?.firstElementChild;
+    const bigPercent = root.querySelector('[data-testid="context-usage-percent"]');
+    const legend = root.querySelector('[data-testid="context-usage-legend"]');
+    const firstRow = legend?.firstElementChild;
+    if (!header || !bigPercent || !firstRow || !legend) throw new Error('Context usage visual elements missing');
+    return {
+      radius: getComputedStyle(root).borderRadius,
+      headerFont: getComputedStyle(header).fontSize,
+      headerLine: getComputedStyle(header).lineHeight,
+      bigFont: getComputedStyle(bigPercent).fontSize,
+      bigLine: getComputedStyle(bigPercent).lineHeight,
+      legendFont: getComputedStyle(firstRow).fontSize,
+      legendLine: getComputedStyle(firstRow).lineHeight,
+      dots: [...legend.querySelectorAll('i')].map((dot) => getComputedStyle(dot).backgroundColor),
+    };
+  });
+  assert.deepEqual(visualTokens, {
+    radius: '30px',
+    headerFont: '24px',
+    headerLine: '32px',
+    bigFont: '44px',
+    bigLine: '52px',
+    legendFont: '26px',
+    legendLine: '36px',
+    dots: ['rgb(99, 102, 241)', 'rgb(16, 185, 129)', 'rgb(245, 158, 11)', 'rgb(139, 92, 246)', 'rgb(236, 72, 153)'],
+  });
+  const closeStroke = async () =>
+    panel.getByRole('button', { name: '关闭' }).evaluate((button) => {
+      const path = button.querySelector('svg path');
+      if (!path) throw new Error('Close icon path missing');
+      return getComputedStyle(path).stroke;
+    });
+  assert.equal(await closeStroke(), 'rgb(76, 76, 76)');
   await page.screenshot({ path: join(artifacts, 'desktop.png'), fullPage: true });
   await panel.screenshot({ path: join(artifacts, 'card.png') });
   await summary.focus();
@@ -118,7 +153,46 @@ try {
   await expect(panel).toBeVisible();
   const bounds = await panel.boundingBox();
   assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 390, JSON.stringify(bounds));
+  const narrowContrast = async () =>
+    panel.evaluate((root) => {
+      const used = root.querySelector('[role="group"] span:nth-child(2)');
+      const legend = root.querySelector('[data-testid="context-usage-legend"] > div > span:last-child');
+      if (!used || !legend) throw new Error('Context usage labels missing');
+      const luminance = (color) => {
+        const channels = color
+          .match(/[\d.]+/g)
+          ?.slice(0, 3)
+          .map(Number);
+        if (!channels || channels.length !== 3) throw new Error(`Invalid color: ${color}`);
+        const linear = channels.map((value) => {
+          const normalized = value / 255;
+          return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+        });
+        return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+      };
+      const background = luminance(getComputedStyle(root).backgroundColor);
+      return [used, legend].map((element) => {
+        const foreground = luminance(getComputedStyle(element).color);
+        return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+      });
+    });
+  const narrowLightContrast = await narrowContrast();
+  assert.ok(
+    narrowLightContrast.every((ratio) => ratio >= 4.5),
+    JSON.stringify(narrowLightContrast)
+  );
   await page.screenshot({ path: join(artifacts, 'narrow.png'), fullPage: true });
+  await page.evaluate(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.body.setAttribute('arco-theme', 'dark');
+  });
+  const narrowDarkContrast = await narrowContrast();
+  assert.ok(
+    narrowDarkContrast.every((ratio) => ratio >= 4.5),
+    JSON.stringify(narrowDarkContrast)
+  );
+  assert.equal(await closeStroke(), 'rgb(197, 192, 184)');
+  await page.screenshot({ path: join(artifacts, 'narrow-dark.png'), fullPage: true });
   mode = 'zero';
   await page.reload();
   await trigger.click();

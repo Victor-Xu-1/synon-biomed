@@ -39,6 +39,9 @@ test -f "$package_dir/synon-go-live-im-smoke.exe"
 test -f "$package_dir/assets/optional/micromamba/windows-x86_64/micromamba.exe"
 test -f "$package_dir/assets/optional/micromamba/windows-x86_64/manifest.json"
 test -f "$package_dir/assets/optional/conda-runtimes/windows-x86_64/manifest.json"
+catalog_directories="$(find "$package_dir/assets/optional/conda-runtimes" \
+	-mindepth 1 -maxdepth 1 -type d -printf '%f\n')"
+test "$catalog_directories" = "windows-x86_64"
 test ! -e "$package_dir/assets/optional/micromamba/linux-x86_64"
 test ! -e "$package_dir/assets/optional/conda-runtimes/manifest.json"
 python3 scripts/verify-artifact-provenance.py "$package_dir" \

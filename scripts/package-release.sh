@@ -143,13 +143,15 @@ else
 	test -f "$installer_root/$runtime_platform/manifest.json"
 	test -f "$conda_catalog_root/$runtime_platform/manifest.json"
 	rm -f -- "$installer_root/manifest.json" "$conda_catalog_root/manifest.json"
-	rm -rf -- "$conda_catalog_root/python-baseline" "$conda_catalog_root/r" "$conda_catalog_root/synon-biomed-python"
 fi
 find "$installer_root" -mindepth 1 -maxdepth 1 -type d ! -name "$runtime_platform" -exec rm -rf -- {} +
-find "$conda_catalog_root" -mindepth 1 -maxdepth 1 -type d \
-	-name '*-x86_64' ! -name "$runtime_platform" -exec rm -rf -- {} +
-find "$conda_catalog_root" -mindepth 1 -maxdepth 1 -type d \
-	-name 'darwin-arm64' ! -name "$runtime_platform" -exec rm -rf -- {} +
+if [[ "$runtime_platform" == "linux-x86_64" ]]; then
+	find "$conda_catalog_root" -mindepth 1 -maxdepth 1 -type d \
+		\( -name '*-x86_64' -o -name 'darwin-arm64' \) ! -name "$runtime_platform" -exec rm -rf -- {} +
+else
+	find "$conda_catalog_root" -mindepth 1 -maxdepth 1 -type d \
+		! -name "$runtime_platform" -exec rm -rf -- {} +
+fi
 cp scripts/release-path-policy.sh "$pkg/scripts/release-path-policy.sh"
 cp scripts/release-identity-policy.ps1 "$pkg/scripts/release-identity-policy.ps1"
 cp scripts/install-systemd-user.sh "$pkg/scripts/install-systemd-user.sh"

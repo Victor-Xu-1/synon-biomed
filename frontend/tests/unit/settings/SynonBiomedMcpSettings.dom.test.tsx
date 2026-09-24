@@ -222,6 +222,37 @@ describe('SynonBiomedMcpSettingsContent', () => {
     );
   });
 
+  it('keeps health, refresh, and reconcile reachable in the merged toolkit tab', async () => {
+    let failReconcile = false;
+    const fetchMock = vi.fn(async (input: string) => {
+      if (input === '/api/mcp-servers/directory-health') {
+        return new Response(JSON.stringify({ directoryHealth: { ok: true } }), { status: 200 });
+      }
+      if (input === '/api/mcp-servers/reconcile') {
+        return new Response(JSON.stringify({ reconciled: 1 }), { status: failReconcile ? 503 : 200 });
+      }
+      return new Response(JSON.stringify([]), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await renderWithI18n(<SynonBiomedMcpSettingsContent compactHeader />, 'en-US');
+
+    expect(await screen.findByTestId('synon-biomed-mcp-directory-health')).toBeVisible();
+    expect(screen.queryByTestId('synon-biomed-mcp-search')).toBeNull();
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-refresh'));
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.filter(([path]) => path === '/api/mcp-servers/connectors').length).toBeGreaterThan(1)
+    );
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-reconcile'));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('/api/mcp-servers/reconcile', expect.objectContaining({ method: 'POST' }))
+    );
+    await waitFor(() => expect(screen.getByTestId('synon-biomed-mcp-reconcile')).toBeEnabled());
+    failReconcile = true;
+    fireEvent.click(screen.getByTestId('synon-biomed-mcp-reconcile'));
+    await waitFor(() => expect(Message.error).toHaveBeenCalledWith('Failed to sync the connector directory.'));
+    expect(screen.getByTestId('synon-biomed-mcp-refresh')).toBeVisible();
+  });
+
   it('loads real tool permissions and writes a deny grant', async () => {
     const fetchMock = vi.fn(async (input: string, init?: RequestInit) => {
       if (input === '/api/mcp-servers/directory-health') {

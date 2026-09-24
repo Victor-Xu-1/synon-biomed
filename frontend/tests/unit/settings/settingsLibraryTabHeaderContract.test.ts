@@ -10,9 +10,9 @@
  * filter, because a filterless catalog is unusable — and it must be exactly
  * one control, a single dropdown. A second refinement disclosure (a "filters"
  * toggle bolted next to the category select) is explicitly forbidden: one tab,
- * one filter. The search box, result summary, health row and secondary
- * maintenance controls stay on the standalone routes, so this contract pins the
- * header shape instead of trusting the next edit to remember it.
+ * one filter. Search and result summary stay on standalone routes; connector
+ * health and maintenance actions remain available below the merged header,
+ * without becoming another filter or a second page authority.
  */
 
 import { readFileSync } from 'node:fs';

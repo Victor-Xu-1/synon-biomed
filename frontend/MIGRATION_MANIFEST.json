@@ -3,15 +3,15 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "cb0754a83cac0238b5b081f03a8d64a7736148803f57a65a969a1b84e5d5307c",
+  "adaptationFingerprintSHA256": "56c7cbde1739ce33182f4c0cf37c8b56f1e58276db98b2fa8782333356d76659",
   "removalFingerprintSHA256": "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4",
-  "additionFingerprintSHA256": "d87b07a9103f9daf8912e31fd062688fbbfa0d1f7bef254b5ce5432b259dd794",
+  "additionFingerprintSHA256": "4a76d49f4796d6f0b20ba48fb662c83f68c149aed111a7994c7f0c1207bee784",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 401,
     "adaptedSourceFiles": 664,
     "removedSourceFiles": 289,
-    "addedFiles": 664
+    "addedFiles": 665
   },
   "adaptations": [
     {
@@ -4196,8 +4196,8 @@
     {
       "path": "tests/unit/settings/SynonBiomedMcpSettings.dom.test.tsx",
       "sourceSHA256": "e180f2ef876df521f08e312711d87b4b6c8409ec9ad229406d18e4810ca086fb",
-      "targetSHA256": "a8900cf132a99fc666bdf1f5614afc4a15965bb8d7c4e2b7b5ec55e664e6e204",
-      "bytes": 31177,
+      "targetSHA256": "8b5d75f53a675911eee7ad0a35fa1a68ccaf6baf915640659b9f46b88fe04a3b",
+      "bytes": 32872,
       "reason": "Verify localized and compact MCP connector presentation."
     },
     {
@@ -7632,8 +7632,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/ToolsSettings/McpLibraryToolbar.tsx",
-      "sha256": "6fbebf577ff299da70b7a93ebf2b23e170e6eaee29cdce2be3b2afc81d3381b8",
-      "bytes": 5081,
+      "sha256": "70e3303d56bbccc48086f4717612416b72f1def5af7d8dc90e20e453a921c86b",
+      "bytes": 5313,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -7920,8 +7920,8 @@
     },
     {
       "path": "packages/desktop/src/renderer/pages/settings/components/settings-tools.css",
-      "sha256": "0913c4c30d5d43f503c86a240dbe30fb357ceaeed01e1faf1f5f200dd35d2ffd",
-      "bytes": 4293,
+      "sha256": "4d75c5cd344ec33d56e41fe38aaacc2cc819582e036cbd854f1c65f14db35f7b",
+      "bytes": 4566,
       "reason": "Add bounded typed renderer components, hooks, pages, services, and utilities required by the authenticated Go-owned product surface."
     },
     {
@@ -9768,8 +9768,8 @@
     },
     {
       "path": "tests/unit/settings/settingsLibraryTabHeaderContract.test.ts",
-      "sha256": "6d02924384dbf5eb81e104458848a9295383a8c86a6ac034f7f5c1e89e85e9bc",
-      "bytes": 6251,
+      "sha256": "d4eb823dc1c17490b642a178c8db58d4c566c25d30d512a697c187a5bfb1edf9",
+      "bytes": 6249,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -10332,8 +10332,8 @@
     },
     {
       "path": "tests/web-e2e/synonbiomedSettingsVisualSystem.e2e.ts",
-      "sha256": "ac204feb2c48ae657e5b2538999ce70a7951e702391f97de84f9b3870c838212",
-      "bytes": 13735,
+      "sha256": "aace8d4a34bd9091f963c8e73105ff95be04dec536cd1930b9d8d40d8903f168",
+      "bytes": 14419,
       "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
@@ -10365,6 +10365,12 @@
       "sha256": "4680fcf4283de4f643832a384932dbb091f788545acfe99e37337dddc128ca3c",
       "bytes": 57428,
       "reason": "Reviewed narrow visual baseline for the third-party license inventory."
+    },
+    {
+      "path": "tests/web-e2e/synonbiomedToolkitMaintenance.e2e.ts",
+      "sha256": "a582df58877fad6696e1306214cd5f760e34df864711e76836e9a878c096b171",
+      "bytes": 1636,
+      "reason": "Add focused regression and real-browser coverage for the migrated product behavior."
     },
     {
       "path": "tests/web-e2e/synonbiomedTranscriptRebase.e2e.ts",

@@ -199,6 +199,15 @@ func (recorder *sessionContextUsageRecorder) finish(snapshot *runnerContextUsage
 
 func (recorder *sessionContextUsageRecorder) persist(snapshot runnerContextUsage, completing bool) error {
 	return recorder.store.EditNamespace(contextUsageNamespace(recorder.sessionID), func(entries map[string]runtimekv.Entry) (bool, error) {
+		// Task deletion commits the frame removal before taking this same
+		// runtime-store lock for scoped cleanup. Checking under the lock means
+		// a pending write either precedes cleanup or observes the removed frame.
+		if recorder.frameExists != nil {
+			found, err := recorder.frameExists()
+			if err != nil || !found {
+				return false, err
+			}
+		}
 		if entry, found := entries["latest"]; found {
 			previous, err := decodeRunnerContextUsage(entry)
 			if err != nil {

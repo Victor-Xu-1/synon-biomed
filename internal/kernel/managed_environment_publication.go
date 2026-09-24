@@ -90,6 +90,7 @@ func (m *Manager) publishManagedEnvironment(
 	requireAbsent bool,
 	importNames []string,
 	validateResolved func([]string) error,
+	replayPhases func() []managedPipReplayPhase,
 	install func(string) error,
 ) (ManagedEnvironment, error) {
 	const totalMilestones int64 = 8
@@ -172,6 +173,20 @@ func (m *Manager) publishManagedEnvironment(
 		return ManagedEnvironment{}, err
 	}
 	reportManagedEnvironmentMilestone(ctx, "staging_environment_validated", 4, totalMilestones)
+	var pipReplay []managedPipReplayPhase
+	var pipReplayRevision int
+	var pipReplayBaseDigest string
+	if replayPhases != nil {
+		pipReplay = cloneManagedPipReplay(replayPhases())
+	}
+	if len(pipReplay) != 0 {
+		pipReplayRevision = 1
+		pipReplayBaseDigest = specDigest
+		specDigest, err = managedPipReplaySpecDigest(specDigest, pipReplay)
+		if err != nil {
+			return ManagedEnvironment{}, err
+		}
+	}
 	generation := managedEnvironmentGeneration(name, language, packages, specDigest)
 	marker := managedEnvironmentMarker{
 		ValidationRevision: managedEnvironmentValidationRevision,
@@ -179,7 +194,9 @@ func (m *Manager) publishManagedEnvironment(
 		Generation: generation, Packages: packages, Channels: append([]string(nil), channels...),
 		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano), Operation: operation,
 		Kind: "conda", OperationKey: operationKey, SpecDigest: specDigest,
-		ImportNames: append([]string(nil), importNames...),
+		ImportNames:       append([]string(nil), importNames...),
+		PipReplay:         pipReplay,
+		PipReplayRevision: pipReplayRevision, PipReplayBaseDigest: pipReplayBaseDigest,
 	}
 	generationPath := filepath.Join(generationRoot, generation)
 	if _, err := os.Stat(generationPath); errors.Is(err, os.ErrNotExist) {

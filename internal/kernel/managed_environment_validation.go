@@ -124,6 +124,25 @@ func readManagedEnvironmentMarker(prefix string) (managedEnvironmentMarker, erro
 	if _, err := validateManagedImportNames(marker.ImportNames); err != nil {
 		return managedEnvironmentMarker{}, errors.New("managed environment marker import witness is invalid")
 	}
+	if err := validateManagedPipReplay(marker.PipReplay); err != nil {
+		return managedEnvironmentMarker{}, err
+	}
+	switch marker.PipReplayRevision {
+	case 0:
+		if len(marker.PipReplay) != 0 || marker.PipReplayBaseDigest != "" {
+			return managedEnvironmentMarker{}, errors.New("legacy environment marker has unbound pip replay")
+		}
+	case 1:
+		if marker.PipReplayBaseDigest != "" && !validSHA256(marker.PipReplayBaseDigest) {
+			return managedEnvironmentMarker{}, errors.New("managed environment pip replay base digest is invalid")
+		}
+		boundDigest, err := managedPipReplaySpecDigest(marker.PipReplayBaseDigest, marker.PipReplay)
+		if err != nil || boundDigest != marker.SpecDigest {
+			return managedEnvironmentMarker{}, errors.New("managed environment pip replay digest is invalid")
+		}
+	default:
+		return managedEnvironmentMarker{}, errors.New("managed environment pip replay revision is unsupported")
+	}
 	if marker.Kind == "" {
 		marker.Kind = "conda"
 	}

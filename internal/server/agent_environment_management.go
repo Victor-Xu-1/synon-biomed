@@ -1206,7 +1206,7 @@ func managedEnvironmentFailureReceipt(toolName string, err error, metadata ...ma
 	failure := map[string]any{
 		"category": category, "cause": cause, "details": details,
 		"diagnostic_tail": boundedManagedEnvironmentErrorTail(err, 2400),
-		"recovery":        managedEnvironmentFailureRecovery(category),
+		"recovery":        managedEnvironmentFailureRecoveryForDetails(category, details),
 	}
 	receipt := map[string]any{
 		"tool": toolName, "ok": false, "status": "failed",
@@ -1283,12 +1283,36 @@ func managedEnvironmentFailureRecovery(category string) string {
 	}
 }
 
+func managedEnvironmentFailureRecoveryForDetails(category string, details map[string]any) string {
+	if stringValue(details["operation_stage"]) != "restore_previous_pip_packages" {
+		return managedEnvironmentFailureRecovery(category)
+	}
+	intro := "The active source environment remains verified. Restore its previous pip packages inside the unpublished successor using their original sources and build conditions."
+	if boolValue(details["legacy_inventory"], false) {
+		intro += " This older generation lacks a source receipt; supply the previously verified wheel/index source when retrying."
+	}
+	if boolValue(details["requested_package_not_started"], false) {
+		intro += " The requested new package has not been installed yet."
+	}
+	if category == "build_isolation_missing_dependency" {
+		return intro + " Prepare the missing build provider in the successor before rebuilding its dependent package; do not reinstall an already importable package in the active source."
+	}
+	return intro + " " + managedEnvironmentFailureRecovery(category)
+}
+
 func classifyManagedEnvironmentFailure(err error) (category, cause string, details map[string]any) {
 	message := ""
 	if err != nil {
 		message = strings.TrimSpace(err.Error())
 	}
 	details = map[string]any{}
+	var restore *kernelruntime.ManagedPipRestorationError
+	if errors.As(err, &restore) {
+		details["operation_stage"] = "restore_previous_pip_packages"
+		details["source_generation_ready"] = true
+		details["legacy_inventory"] = restore.Legacy
+		details["requested_package_not_started"] = restore.BeforeRequestedPackage
+	}
 	var inactivity *kernelruntime.ManagedEnvironmentInstallerInactivityError
 	if errors.As(err, &inactivity) {
 		details["failure_stage"] = "installer_execution"

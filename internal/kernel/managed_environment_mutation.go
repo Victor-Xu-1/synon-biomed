@@ -68,6 +68,13 @@ func (m *Manager) CreateManagedEnvironment(ctx context.Context, input CreateMana
 		return ManagedEnvironment{}, errors.New("locked requirements cannot be combined with pip phases")
 	}
 	pipPlan := planManagedPipInstall(pipPhases, pipArgs, pipFindLinks, pipExtraIndexURLs, lockedRequirementsPath)
+	pipReplay := make([]managedPipReplayPhase, 0, len(pipPhases))
+	for _, phase := range pipPhases {
+		pipReplay = append(pipReplay, managedPipReplayPhase{
+			Requirements: append([]string(nil), phase...), Options: managedPipReplayOptions(pipArgs),
+			FindLinks: append([]string(nil), pipFindLinks...), ExtraIndexURLs: append([]string(nil), pipExtraIndexURLs...),
+		})
+	}
 	arguments := []string{"--no-rc", "create", "-y"}
 	if language == "python" || len(pipPlan) != 0 {
 		if sourceEnvironment == "" {
@@ -144,7 +151,7 @@ func (m *Manager) CreateManagedEnvironment(ctx context.Context, input CreateMana
 		validateResolved := func(resolved []string) error {
 			return validateManagedRequiredAccelerator(resolved, input.RequiredAccelerator)
 		}
-		return m.publishManagedEnvironment(operationContext, input.Name, language, "create", operationKey, channels, specDigest, input.RequireAbsent, importNames, validateResolved, func(staging string) error {
+		return m.publishManagedEnvironment(operationContext, input.Name, language, "create", operationKey, channels, specDigest, input.RequireAbsent, importNames, validateResolved, func() []managedPipReplayPhase { return pipReplay }, func(staging string) error {
 			commandArguments := []string{}
 			if sourcePrefix != "" {
 				commandArguments = []string{"--no-rc", "create", "-y", "-p", staging, "--clone", sourcePrefix}
@@ -407,6 +414,10 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 	if err != nil {
 		return ManagedEnvironment{}, errors.New("managed environment generation is unavailable")
 	}
+	sourceMarker, err := readManagedEnvironmentMarker(sourcePrefix)
+	if err != nil || sourceMarker.Generation != source.Generation {
+		return ManagedEnvironment{}, errors.New("managed environment source generation changed before mutation")
+	}
 	authorityMigrations := plannedManagedPackageAuthorityMigrations(source.Packages, packages, input.UsePip)
 	// Micromamba clone does not reliably carry pip-owned distributions into
 	// the successor prefix. Preserve that verified inventory for both pip and
@@ -416,7 +427,49 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 	if err != nil {
 		return ManagedEnvironment{}, err
 	}
+	restorePhases := cloneManagedPipReplay(sourceMarker.PipReplay)
+	if input.UsePip && operation == "uninstall" {
+		restorePhases = managedPipReplayWithout(restorePhases, packages)
+	}
+	legacyRestore := len(restorePhases) == 0 && len(restorePipRequirements) != 0
+	resultPhases := cloneManagedPipReplay(restorePhases)
+	var requestedPhase *managedPipReplayPhase
+	if input.UsePip && operation == "install" {
+		phase := managedPipReplayPhase{
+			Requirements: append([]string(nil), packages...), Options: managedPipReplayOptions(pipArgs),
+			FindLinks: append([]string(nil), pipFindLinks...), ExtraIndexURLs: append([]string(nil), pipExtraIndexURLs...),
+		}
+		requestedPhase = &phase
+		resultPhases = append(resultPhases, phase)
+	}
 	return m.runManagedEnvironmentOperation(ctx, operationKey, func(operationContext context.Context) (ManagedEnvironment, error) {
+		wrapRestore := func(err error) error {
+			if err == nil {
+				return nil
+			}
+			return &ManagedPipRestorationError{
+				Legacy: legacyRestore, BeforeRequestedPackage: input.UsePip && operation == "install", Cause: err,
+			}
+		}
+		restoreExisting := func(prefix string) error {
+			if legacyRestore && len(restorePhases) == 0 {
+				// Only old generations need this compatibility reconstruction.
+				// The resulting ordered phases become the successor's durable recipe.
+				phases, err := m.restoreLegacyManagedPipInventory(
+					operationContext, prefix, sourcePrefix, restorePipRequirements, pipFindLinks, pipExtraIndexURLs,
+				)
+				if err != nil {
+					return wrapRestore(err)
+				}
+				restorePhases = phases
+				resultPhases = cloneManagedPipReplay(phases)
+				if requestedPhase != nil {
+					resultPhases = append(resultPhases, *requestedPhase)
+				}
+				return nil
+			}
+			return wrapRestore(m.runManagedPipReplay(operationContext, prefix, restorePhases, restorePipRequirements))
+		}
 		var validateResolved func([]string) error
 		if operation == "install" {
 			validateResolved = func(resolved []string) error {
@@ -425,8 +478,12 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 				}
 				return validateManagedRequiredAccelerator(resolved, input.RequiredAccelerator)
 			}
+		} else if input.UsePip && operation == "uninstall" {
+			validateResolved = func(resolved []string) error {
+				return validateManagedPipUninstallResolution(source.Packages, resolved, packages)
+			}
 		}
-		return m.publishManagedEnvironment(operationContext, targetName, source.Language, operation, operationKey, channels, "", strings.TrimSpace(input.ForkTo) != "", nil, validateResolved, func(staging string) error {
+		return m.publishManagedEnvironment(operationContext, targetName, source.Language, operation, operationKey, channels, "", strings.TrimSpace(input.ForkTo) != "", nil, validateResolved, func() []managedPipReplayPhase { return resultPhases }, func(staging string) error {
 			if err := m.runManagedEnvironmentCommand(operationContext, "--no-rc", "create", "-y", "-p", staging, "--clone", sourcePrefix); err != nil {
 				return err
 			}
@@ -453,11 +510,8 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 						return err
 					}
 				}
-				if len(restorePipRequirements) > 0 {
-					restore := planManagedPipInstall([][]string{restorePipRequirements}, []string{"--no-deps"}, pipFindLinks, pipExtraIndexURLs, "")
-					if err := m.runManagedPipInstallPlan(operationContext, staging, restore); err != nil {
-						return err
-					}
+				if err := restoreExisting(staging); err != nil {
+					return err
 				}
 				if operation == "uninstall" {
 					return nil
@@ -469,10 +523,7 @@ func (m *Manager) mutateManagedPackages(ctx context.Context, operation string, i
 			if err := m.runManagedEnvironmentCommand(operationContext, arguments...); err != nil {
 				return err
 			}
-			if len(restorePipRequirements) == 0 {
-				return nil
-			}
-			return m.runManagedPipInstallPlan(operationContext, staging, planManagedPipInstall([][]string{restorePipRequirements}, []string{"--no-deps"}, pipFindLinks, pipExtraIndexURLs, ""))
+			return restoreExisting(staging)
 		})
 	})
 }
@@ -514,7 +565,7 @@ func (m *Manager) publishRegisteredEnvironmentFork(
 	return m.runManagedEnvironmentOperation(ctx, operationKey, func(operationContext context.Context) (ManagedEnvironment, error) {
 		return m.publishManagedEnvironment(
 			operationContext, targetName, "python", "registered-"+operation, operationKey,
-			channels, requestDigest, requireAbsent, nil, nil,
+			channels, requestDigest, requireAbsent, nil, nil, nil,
 			func(staging string) error {
 				arguments := []string{"--no-rc", "create", "-y", "-p", staging}
 				arguments = append(arguments, managedChannelArguments(channels)...)

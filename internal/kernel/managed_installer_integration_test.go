@@ -173,7 +173,7 @@ func TestManagedInstallerRealPublicationAndRestartRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := installCount
-	created, err := manager.publishManagedEnvironment(ctx, name, "python", "create", operation, nil, "", false, []string{"json"}, nil, install)
+	created, err := manager.publishManagedEnvironment(ctx, name, "python", "create", operation, nil, "", false, []string{"json"}, nil, nil, install)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,13 +187,13 @@ func TestManagedInstallerRealPublicationAndRestartRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	restarted := NewManager(config)
-	recovered, err := restarted.publishManagedEnvironment(ctx, name, "python", "create", operation, nil, "", false, []string{"json"}, nil, func(string) error { t.Fatal("restart reinstalled a verified generation"); return nil })
+	recovered, err := restarted.publishManagedEnvironment(ctx, name, "python", "create", operation, nil, "", false, []string{"json"}, nil, nil, func(string) error { t.Fatal("restart reinstalled a verified generation"); return nil })
 	if err != nil || recovered.Generation != created.Generation {
 		t.Fatalf("recovery=%+v err=%v", recovered, err)
 	}
 	failureRoot := t.TempDir()
 	failureArchive := managedInstallerFixturePackage(t, failureRoot, "#!/bin/sh\nexit 19\n")
-	_, err = manager.publishManagedEnvironment(ctx, "failed-fixture", "python", "create", strings.Repeat("b", 64), nil, "", false, nil, nil, func(prefix string) error {
+	_, err = manager.publishManagedEnvironment(ctx, "failed-fixture", "python", "create", strings.Repeat("b", 64), nil, "", false, nil, nil, nil, func(prefix string) error {
 		return manager.runManagedEnvironmentCommand(ctx, "--no-rc", "create", "-y", "--offline", "-p", prefix, failureArchive)
 	})
 	if err == nil {

@@ -337,16 +337,11 @@ func TestSessionRunnerModelFailureDetectsEveryCommittedSelectionRevision(t *test
 
 func TestSessionRunnerDynamicModelClientHandsOffTimedOutUnstartedCallAfterSwitch(t *testing.T) {
 	var switchSelection func() error
-	arkAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	arkAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if err := switchSelection(); err != nil {
 			t.Errorf("switch model: %v", err)
 		}
-		select {
-		case <-r.Context().Done():
-			return
-		case <-time.After(100 * time.Millisecond):
-			_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"late ARK response"}}]}`))
-		}
+		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer arkAPI.Close()
 	deepseekCalls := atomic.Int64{}
@@ -365,9 +360,21 @@ func TestSessionRunnerDynamicModelClientHandsOffTimedOutUnstartedCallAfterSwitch
 		_, err := store.SetCompatibilityConversationModel(frameID, "deepseek-v4-flash")
 		return err
 	}
+	// Inject the provider-local deadline only after the real HTTP handler has
+	// committed the switch. A 25 ms wall-clock deadline raced SQLite and could
+	// expire before the scenario's prerequisite existed on a busy runner.
+	srv.httpClient = &http.Client{Transport: runnerStreamRoundTripFunc(func(request *http.Request) (*http.Response, error) {
+		response, err := http.DefaultTransport.RoundTrip(request)
+		if err == nil && request.URL.Host == strings.TrimPrefix(arkAPI.URL, "http://") {
+			_ = response.Body.Close()
+			return nil, context.DeadlineExceeded
+		}
+		return response, err
+	})}
 	client := newDynamicModelTestClient(srv, projectID, frameID)
-	client.resolutionInput.RequestTimeout = 25 * time.Millisecond
-	response, err := client.Complete(context.Background(), agentruntime.ModelRequest{
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	response, err := client.Complete(ctx, agentruntime.ModelRequest{
 		Messages: []agentruntime.Message{{Role: "user", Content: "continue the same task after provider timeout"}},
 	})
 	if err != nil || response.Message.Content != "continued after timeout" || response.Model != "deepseek-v4-flash" {

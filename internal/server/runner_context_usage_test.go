@@ -1,8 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -11,6 +14,7 @@ import (
 	"time"
 
 	"synon-go/internal/agentruntime"
+	eventjournal "synon-go/internal/persistence/journal"
 	"synon-go/internal/persistence/runtimekv"
 	workspace "synon-go/internal/persistence/workspace"
 )
@@ -34,25 +38,114 @@ func TestContextUsageEstimatesActualRequestWithoutFixedShares(t *testing.T) {
 			{Role: "system", Content: "abcd"},
 			{Role: "user", Content: "分子模拟", ToolCalls: []agentruntime.ToolCall{{ID: "call", Name: "read", Arguments: json.RawMessage("{}")}}},
 			{Role: "tool", Parts: []agentruntime.ContentPart{{Type: agentruntime.ContentPartText, Text: "result"}, {Type: agentruntime.ContentPartImage}}},
+			{Role: "system", Content: "selected methodology", ContextUsageSource: agentruntime.ContextUsageSkills},
+			{Role: "system", Content: "admitted connector list", ContextUsageSource: agentruntime.ContextUsageMCP},
+			{Role: "system", Content: "prior work summary", ContextUsageSource: agentruntime.ContextUsageMessages},
 		},
-		Tools: []agentruntime.ToolSchema{{Name: "read", Parameters: map[string]any{"type": "object"}}},
+		Tools: []agentruntime.ToolSchema{
+			{Name: "read", Parameters: map[string]any{"type": "object"}},
+			{Name: "connector", Parameters: map[string]any{"type": "object"}, Capabilities: []string{"mcp"}},
+		},
 	}
 	rows, media, err := estimateRunnerRequestUsage(request)
-	if err != nil || !media || len(rows) != 3 {
+	if err != nil || !media || len(rows) != 5 {
 		t.Fatalf("rows=%+v media=%v err=%v", rows, media, err)
 	}
-	if rows[0].Tokens != 7 || rows[1].Tokens != 19 || rows[2].Tokens <= 0 {
+	for index, key := range contextUsageCategoryKeys {
+		if rows[index].Key != key || rows[index].Tokens <= 0 {
+			t.Fatalf("missing category %s in %+v", key, rows)
+		}
+	}
+	if rows[0].Tokens != 7 || rows[2].Tokens <= 19 {
 		t.Fatalf("actual request estimates = %+v", rows)
 	}
 	request.Tools[0].OutputSchema = map[string]any{"notSent": strings.Repeat("x", 1000)}
 	request.Tools[0].Capabilities = []string{strings.Repeat("not-sent", 100)}
 	unchanged, _, _ := estimateRunnerRequestUsage(request)
-	if unchanged[2].Tokens != rows[2].Tokens {
+	if unchanged[1].Tokens != rows[1].Tokens {
 		t.Fatal("runtime-only metadata inflated the provider tool estimate")
 	}
 	request.Tools[0].Parameters["invalid"] = func() {}
 	if _, _, err := estimateRunnerRequestUsage(request); err == nil {
 		t.Fatal("unencodable schema accepted")
+	}
+}
+
+type contextUsageRoundModel struct {
+	requests []agentruntime.ModelRequest
+}
+
+func (model *contextUsageRoundModel) Complete(_ context.Context, request agentruntime.ModelRequest) (agentruntime.ModelResponse, error) {
+	model.requests = append(model.requests, request)
+	if len(model.requests) == 1 {
+		return agentruntime.ModelResponse{Message: agentruntime.Message{
+			Role: "assistant", ToolCalls: []agentruntime.ToolCall{{ID: "one", Name: "inspect", Arguments: json.RawMessage(`{}`)}},
+		}}, nil
+	}
+	return agentruntime.ModelResponse{Message: agentruntime.Message{Role: "assistant", Content: "done"}}, nil
+}
+
+func TestContextUsageProvenanceSurvivesToolRoundAndReplayRebuild(t *testing.T) {
+	messages := []chatCompletionMessage{{Role: "system", Content: "base policy"}, {Role: "user", Content: "inspect records"}}
+	messages = appendRuntimeSkillCandidateContextMessage(messages, "available methodology")
+	messages = appendRuntimeAgentPolicyContextMessageWithSource(messages, "skill execution order", agentruntime.ContextUsageSkills)
+	messages = appendRuntimeSkillContextMessage(messages, "loaded method")
+	messages = appendRuntimeTerminalPolicyContextMessageWithSource(messages, "skill decision rule", agentruntime.ContextUsageSkills)
+	messages = appendRuntimeMCPContextMessage(messages, "admitted connector")
+	model := &contextUsageRoundModel{}
+	engine := agentruntime.Engine{Model: model, Tools: agentruntime.FuncToolGateway(func(_ context.Context, _ agentruntime.ToolCall) (agentruntime.ToolResult, error) {
+		return agentruntime.ToolResult{Value: map[string]any{"ok": true}}, nil
+	})}
+	_, err := engine.Run(context.Background(), agentruntime.RunRequest{
+		Messages: agentRuntimeMessagesFromChat(messages),
+		Tools: []agentruntime.ToolSchema{
+			{Name: "inspect", Parameters: map[string]any{"type": "object"}},
+			{Name: "connector", Parameters: map[string]any{"type": "object"}, Capabilities: []string{"mcp"}},
+		},
+		MaxToolRounds: 2,
+	})
+	if err != nil || len(model.requests) != 2 {
+		t.Fatalf("model rounds=%d err=%v", len(model.requests), err)
+	}
+	first, _, err := estimateRunnerRequestUsage(model.requests[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, _, err := estimateRunnerRequestUsage(model.requests[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first[0].Tokens <= 0 || first[1].Tokens <= 0 || first[2].Tokens <= 0 || first[3].Tokens <= 0 || first[4].Tokens <= 0 ||
+		second[2].Tokens <= first[2].Tokens || second[0].Tokens != first[0].Tokens || second[1].Tokens != first[1].Tokens ||
+		second[3].Tokens != first[3].Tokens || second[4].Tokens != first[4].Tokens {
+		t.Fatalf("tool round changed fixed provenance: first=%+v second=%+v", first, second)
+	}
+	for _, message := range model.requests[1].Messages {
+		if message.Role == "tool" && message.ContextUsageSource != "" {
+			t.Fatalf("tool result inherited system provenance: %+v", message)
+		}
+	}
+	if encoded, err := json.Marshal(messages); err != nil || bytes.Contains(encoded, []byte("contextUsageSource")) || bytes.Contains(encoded, []byte(`"skills"`)) {
+		t.Fatalf("prompt provenance leaked into durable/wire JSON: err=%v value=%s", err, encoded)
+	}
+	// A restarted run rebuilds these transient labels from trusted prompt
+	// constructors; it does not need to store prompt text in usage telemetry.
+	replayed, err := sessionEntriesToProviderMessages("base policy", []eventjournal.Entry{
+		{EventID: 1, Message: eventjournal.Message{"type": "message", "role": "user", "text": "initial task"}},
+		{EventID: 2, Message: eventjournal.Message{"type": "session_compact", "summary": "prior work"}},
+		{EventID: 3, Message: eventjournal.Message{"type": "message", "role": "user", "text": "continue"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(replayed) < 2 || replayed[1].ContextUsageSource != agentruntime.ContextUsageMessages {
+		t.Fatalf("compacted conversation replay lost attribution: %+v", replayed)
+	}
+	replayed = appendRuntimeSkillContextMessage(replayed, "restored selected method")
+	replayed = appendRuntimeMCPContextMessage(replayed, "restored admitted connector")
+	rebuilt, _, err := estimateRunnerRequestUsage(agentruntime.ModelRequest{Messages: agentRuntimeMessagesFromChat(replayed)})
+	if err != nil || rebuilt[2].Tokens <= 0 || rebuilt[3].Tokens <= 0 || rebuilt[4].Tokens <= 0 {
+		t.Fatalf("replay rebuild attribution=%+v err=%v", rebuilt, err)
 	}
 }
 
@@ -160,10 +253,14 @@ func TestContextUsageDynamicClientUsesRealProviderProtocol(t *testing.T) {
 			calls := 0
 			provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				calls++
+				raw, readErr := io.ReadAll(r.Body)
+				if readErr != nil || bytes.Contains(raw, []byte("contextUsageSource")) || bytes.Contains(raw, []byte(`"skills"`)) {
+					t.Errorf("request leaked usage provenance: err=%v body=%s", readErr, raw)
+				}
 				var input struct {
 					Messages []agentruntime.Message `json:"messages"`
 				}
-				if err := json.NewDecoder(r.Body).Decode(&input); err != nil || len(input.Messages) != 1 {
+				if err := json.Unmarshal(raw, &input); err != nil || len(input.Messages) != 1 {
 					t.Errorf("provider input=%+v err=%v", input, err)
 				}
 				if stream {
@@ -182,7 +279,7 @@ func TestContextUsageDynamicClientUsesRealProviderProtocol(t *testing.T) {
 			}})
 			client := newDynamicModelTestClient(srv, project, frame)
 			client.contextUsage = newSessionContextUsageRecorder(srv, frame, 1, SessionRunnerChatOptions{RuntimeSessionConfig: map[string]any{"contextWindow": 500}})
-			request := agentruntime.ModelRequest{Messages: []agentruntime.Message{{Role: "user", Content: "observe this request"}}}
+			request := agentruntime.ModelRequest{Messages: []agentruntime.Message{{Role: "user", Content: "observe this request", ContextUsageSource: agentruntime.ContextUsageSkills}}}
 			var err error
 			if stream {
 				_, err = client.CompleteStream(context.Background(), request, nil)
@@ -219,5 +316,41 @@ func TestContextUsageDynamicClientUsesRealProviderProtocol(t *testing.T) {
 func TestContextUsageInvalidRecordRejected(t *testing.T) {
 	if _, err := decodeRunnerContextUsage(runtimekv.Entry{Value: map[string]any{"usedTokens": -1}}); err == nil {
 		t.Fatal("invalid snapshot accepted")
+	}
+	legacy := runnerContextUsage{
+		SessionID: "one", RequestID: "old", Attempt: 1, Model: "model", ObservedAt: time.Now().UTC(),
+		State: "complete", Source: "provider", UsedTokens: 20, OutputTokens: 2,
+		LimitTokens: 100, LimitSource: "configured", InputEstimates: []runnerContextUsageRow{
+			{Key: "systemPrompt", Tokens: 3}, {Key: "messages", Tokens: 8}, {Key: "toolDefinitions", Tokens: 7},
+		},
+	}
+	if _, err := decodeRunnerContextUsage(runtimekv.Entry{Value: legacy}); !errors.Is(err, errLegacyRunnerContextUsage) {
+		t.Fatalf("valid old snapshot must be marked legacy: %v", err)
+	}
+	legacy.State = "request"
+	if _, err := decodeRunnerContextUsage(runtimekv.Entry{Value: legacy}); errors.Is(err, errLegacyRunnerContextUsage) || err == nil {
+		t.Fatalf("provider-sourced pending request treated as legacy: %v", err)
+	}
+	legacy.State, legacy.Source, legacy.OutputTokens = "failed", "estimated", 1
+	if _, err := decodeRunnerContextUsage(runtimekv.Entry{Value: legacy}); errors.Is(err, errLegacyRunnerContextUsage) || err == nil {
+		t.Fatalf("failed request with output treated as legacy: %v", err)
+	}
+	legacy.State, legacy.OutputTokens = "complete", 21
+	if _, err := decodeRunnerContextUsage(runtimekv.Entry{Value: legacy}); errors.Is(err, errLegacyRunnerContextUsage) || err == nil {
+		t.Fatalf("output exceeded total but was treated as legacy: %v", err)
+	}
+	legacy.OutputTokens = 0
+	missingMedia := map[string]any{}
+	raw, err := json.Marshal(legacy)
+	if err != nil || json.Unmarshal(raw, &missingMedia) != nil {
+		t.Fatal("encode complete legacy fixture", err)
+	}
+	delete(missingMedia, "hasMedia")
+	if _, err := decodeRunnerContextUsage(runtimekv.Entry{Value: missingMedia}); errors.Is(err, errLegacyRunnerContextUsage) || err == nil {
+		t.Fatalf("incomplete old projection treated as legacy: %v", err)
+	}
+	legacy.Attempt = -1
+	if _, err := decodeRunnerContextUsage(runtimekv.Entry{Value: legacy}); errors.Is(err, errLegacyRunnerContextUsage) || err == nil {
+		t.Fatalf("negative attempt treated as valid legacy projection: %v", err)
 	}
 }

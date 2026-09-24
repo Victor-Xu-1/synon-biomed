@@ -27,10 +27,11 @@ func agentRuntimeMessagesFromChat(messages []chatCompletionMessage) []agentrunti
 	out := make([]agentruntime.Message, 0, len(messages))
 	for _, message := range messages {
 		out = append(out, agentruntime.Message{
-			Role:       message.Role,
-			Content:    message.Content,
-			ToolCallID: message.ToolCallID,
-			ToolCalls:  agentRuntimeToolCallsFromChat(message.ToolCalls),
+			Role:               message.Role,
+			Content:            message.Content,
+			ToolCallID:         message.ToolCallID,
+			ToolCalls:          agentRuntimeToolCallsFromChat(message.ToolCalls),
+			ContextUsageSource: message.ContextUsageSource,
 		})
 	}
 	return out

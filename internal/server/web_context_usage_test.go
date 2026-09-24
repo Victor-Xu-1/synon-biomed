@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"sync"
 	"testing"
@@ -69,6 +71,112 @@ func TestWebContextUsageMissingRecordIsExplicit(t *testing.T) {
 	}
 	if _, found, err := app.runtimeStore.Get(contextUsageNamespace(id), "latest"); err != nil || found {
 		t.Fatalf("deleted task retains context usage: found=%v err=%v", found, err)
+	}
+}
+
+func TestWebContextUsageLegacyRecordIsUnavailableUntilNextRequest(t *testing.T) {
+	app, store := newP3WebConversationServer(t)
+	project := createP3Project(t, store, "context-legacy", "local")
+	created := p3JSONRequest(t, app, http.MethodPost, "/api/conversations", map[string]any{
+		"name": "Legacy context usage", "assistant": map[string]any{"id": "synonbiomed:OPERON"},
+		"extra": map[string]any{"project_id": project.ID},
+	}, "")
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create HTTP %d", created.Code)
+	}
+	id := webString(p3DecodeObject(t, created)["id"])
+	legacy := runnerContextUsage{
+		SessionID: id, RequestID: "old-request", Attempt: 1, Model: "old-model",
+		ObservedAt: time.Now().UTC(), State: "complete", Source: "provider",
+		UsedTokens: 31, LimitTokens: 100, LimitSource: "configured", OutputTokens: 4,
+		InputEstimates: []runnerContextUsageRow{
+			{Key: "systemPrompt", Tokens: 10}, {Key: "messages", Tokens: 10}, {Key: "toolDefinitions", Tokens: 7},
+		},
+	}
+	if _, err := app.runtimeStore.Set(contextUsageNamespace(id), "latest", legacy); err != nil {
+		t.Fatal(err)
+	}
+	before := p3JSONRequest(t, app, http.MethodGet, "/api/conversations/"+id+"/context-usage", nil, "")
+	if before.Code != http.StatusOK || p3DecodeObject(t, before)["status"] != "unavailable" {
+		t.Fatalf("legacy three-category record fabricated five buckets: HTTP %d body=%s", before.Code, before.Body.String())
+	}
+	recorder := newSessionContextUsageRecorder(app, id, 1, SessionRunnerChatOptions{})
+	if recorder.begin("new-model", agentruntime.ModelRequest{Messages: []agentruntime.Message{{Role: "user", Content: "fresh"}}}) == nil {
+		t.Fatal("new request could not replace legacy projection")
+	}
+	after := p3JSONRequest(t, app, http.MethodGet, "/api/conversations/"+id+"/context-usage", nil, "")
+	snapshot, _ := p3DecodeObject(t, after)["snapshot"].(map[string]any)
+	rows, _ := snapshot["inputEstimates"].([]any)
+	if after.Code != http.StatusOK || len(rows) != 5 || snapshot["model"] != "new-model" {
+		t.Fatalf("fresh request failed to replace legacy projection: HTTP %d body=%s", after.Code, after.Body.String())
+	}
+	legacy.InputEstimates[2].Key = "incorrect"
+	if _, err := app.runtimeStore.Set(contextUsageNamespace(id), "latest", legacy); err != nil {
+		t.Fatal(err)
+	}
+	malformed := p3JSONRequest(t, app, http.MethodGet, "/api/conversations/"+id+"/context-usage", nil, "")
+	if malformed.Code != http.StatusServiceUnavailable {
+		t.Fatalf("malformed legacy projection accepted: HTTP %d", malformed.Code)
+	}
+}
+
+func TestWebContextUsageRejectsIncompleteCategoryRows(t *testing.T) {
+	app, store := newP3WebConversationServer(t)
+	project := createP3Project(t, store, "context-invalid-rows", "local")
+	created := p3JSONRequest(t, app, http.MethodPost, "/api/conversations", map[string]any{
+		"name": "Invalid context usage", "assistant": map[string]any{"id": "synonbiomed:OPERON"},
+		"extra": map[string]any{"project_id": project.ID},
+	}, "")
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create HTTP %d", created.Code)
+	}
+	id := webString(p3DecodeObject(t, created)["id"])
+	defects := []struct {
+		name   string
+		change func(map[string]any)
+	}{
+		{"missing-tokens", func(row map[string]any) { delete(row, "tokens") }},
+		{"null-tokens", func(row map[string]any) { row["tokens"] = nil }},
+		{"missing-key", func(row map[string]any) { delete(row, "key") }},
+		{"null-key", func(row map[string]any) { row["key"] = nil }},
+	}
+	for _, legacy := range []bool{false, true} {
+		for _, defect := range defects {
+			version := "current"
+			if legacy {
+				version = "legacy"
+			}
+			t.Run(version+"/"+defect.name, func(t *testing.T) {
+				rows := []runnerContextUsageRow{{Key: "systemPrompt", Tokens: 10}, {Key: "tools", Tokens: 5}, {Key: "messages", Tokens: 5}, {Key: "mcp", Tokens: 0}, {Key: "skills", Tokens: 0}}
+				if legacy {
+					rows = []runnerContextUsageRow{{Key: "systemPrompt", Tokens: 10}, {Key: "messages", Tokens: 5}, {Key: "toolDefinitions", Tokens: 5}}
+				}
+				valid := runnerContextUsage{
+					SessionID: id, RequestID: "request", Attempt: 1, Model: "model", ObservedAt: time.Now().UTC(),
+					State: "complete", Source: "provider", UsedTokens: 20, OutputTokens: 0,
+					LimitTokens: 100, LimitSource: "configured", InputEstimates: rows,
+				}
+				raw, err := json.Marshal(valid)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var candidate map[string]any
+				if err := json.Unmarshal(raw, &candidate); err != nil {
+					t.Fatal(err)
+				}
+				defect.change(candidate["inputEstimates"].([]any)[0].(map[string]any))
+				if _, err := decodeRunnerContextUsage(runtimekv.Entry{Value: candidate}); err == nil || errors.Is(err, errLegacyRunnerContextUsage) {
+					t.Fatalf("incomplete row was accepted: %v", err)
+				}
+				if _, err := app.runtimeStore.Set(contextUsageNamespace(id), "latest", candidate); err != nil {
+					t.Fatal(err)
+				}
+				response := p3JSONRequest(t, app, http.MethodGet, "/api/conversations/"+id+"/context-usage", nil, "")
+				if response.Code != http.StatusServiceUnavailable {
+					t.Fatalf("incomplete row became available/unavailable: HTTP %d body=%s", response.Code, response.Body.String())
+				}
+			})
+		}
 	}
 }
 

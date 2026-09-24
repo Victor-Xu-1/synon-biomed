@@ -81,6 +81,30 @@ func TestManagedRNameCanonicalizesLegacyAliases(t *testing.T) {
 	}
 }
 
+func TestPersistedRAliasUsesConfiguredLegacyRuntimeWhenBundledProvisioningIsDisabled(t *testing.T) {
+	root := t.TempDir()
+	worker := filepath.Join(root, "kernel_worker.R")
+	if err := os.WriteFile(worker, []byte("cat(1)\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	prefix := filepath.Join(root, "envs", "custom-r")
+	rscript := environmentExecutableCandidates(prefix, "Rscript")[0]
+	if err := os.MkdirAll(filepath.Dir(rscript), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(rscript, []byte(""), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	manager := NewManager(Config{
+		CondaEnvsPath: filepath.Join(root, "envs"),
+		DefaultREnv:   "custom-r",
+		RWorkerPath:   worker,
+	})
+	if !manager.RuntimeReady("r", persistedRRuntimeAlias) {
+		t.Fatal("persisted R alias did not resolve the configured legacy runtime")
+	}
+}
+
 func TestManagedRGenerationValidationUsesBundledMarkerAuthority(t *testing.T) {
 	config := bundledManagedRConfig(t)
 	config.CondaEnvsPath = t.TempDir()

@@ -347,7 +347,7 @@ func (s *Server) managedScientificRuntimeHealth(id string) map[string]any {
 }
 
 func managedScientificRuntimeUnavailableCode() string {
-	if kernelruntime.ManagedScientificRuntimePlatform() != "linux-x86_64" {
+	if !kernelruntime.ManagedScientificRuntimePlatformSupported() {
 		return "bundled_runtime_platform_unsupported"
 	}
 	return "managed_runtime_unavailable"

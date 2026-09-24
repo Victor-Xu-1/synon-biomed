@@ -56,11 +56,11 @@ func (m *Manager) ReadRuntimeEnvironmentMetadata(environment string) (RuntimeEnv
 	if m == nil {
 		return metadata, errors.New("kernel manager is not configured")
 	}
-	prefix, err := filepath.EvalSymlinks(filepath.Join(m.config.CondaEnvsPath, metadata.EnvironmentName))
+	prefix, err := m.managedEnvironmentPrefix(metadata.EnvironmentName)
 	if err != nil && requested != metadata.EnvironmentName {
 		// Read-only compatibility for an older alias; new writes always target
 		// the canonical managed R environment.
-		prefix, err = filepath.EvalSymlinks(filepath.Join(m.config.CondaEnvsPath, requested))
+		prefix, err = m.managedEnvironmentPrefix(requested)
 	}
 	if err != nil || !filepath.IsAbs(prefix) {
 		return metadata, errors.New("managed environment is unavailable")

@@ -9,11 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -121,20 +120,6 @@ type managedRuntimeMarker struct {
 	RuntimeVersion       string `json:"runtimeVersion,omitempty"`
 	PythonVersion        string `json:"pythonVersion,omitempty"`
 	RDKitVersion         string `json:"rdkitVersion,omitempty"`
-}
-
-func currentCondaPlatform() string {
-	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
-		return "linux-x86_64"
-	}
-	return runtime.GOOS + "-" + runtime.GOARCH
-}
-
-// ManagedScientificRuntimePlatform is the stable platform identity used by
-// runtime status consumers. It deliberately reports the catalog platform
-// spelling (for example, linux-x86_64) rather than a machine-specific path.
-func ManagedScientificRuntimePlatform() string {
-	return currentCondaPlatform()
 }
 
 func managedPythonName(config Config) string {
@@ -496,7 +481,50 @@ func fileSHA256(path string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
+func validateManagedRuntimeExplicitLock(path string, platform managedRuntimePlatform, packages []condaRuntimePackage) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	raw, err := io.ReadAll(io.LimitReader(file, 64*1024+1))
+	if err != nil || len(raw) == 0 || len(raw) > 64*1024 {
+		return errors.New("managed runtime explicit lock is invalid")
+	}
+	lines := strings.Split(string(raw), "\n")
+	if len(lines) != len(packages)+4 ||
+		lines[0] != "# Generated from verified Conda package metadata. DO NOT EDIT." ||
+		lines[1] != "# platform: "+platform.ID || lines[2] != "@EXPLICIT" || lines[len(lines)-1] != "" {
+		return errors.New("managed runtime explicit lock does not match its manifest")
+	}
+	for index, item := range packages {
+		if item.Subdir != "noarch" && item.Subdir != platform.CondaSubdir {
+			return errors.New("managed runtime package platform does not match the host")
+		}
+		parsed, err := url.Parse(item.URL)
+		if err != nil || parsed.Scheme != "https" || parsed.Host != "conda.anaconda.org" ||
+			parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" ||
+			!strings.HasPrefix(parsed.Path, "/conda-forge/"+item.Subdir+"/") ||
+			strings.Contains(parsed.Path, "\\") ||
+			!(strings.HasSuffix(parsed.Path, ".conda") || strings.HasSuffix(parsed.Path, ".tar.bz2")) {
+			return errors.New("managed runtime package source is invalid")
+		}
+		if lines[index+3] != item.URL+"#"+item.SHA256 {
+			return errors.New("managed runtime explicit lock does not match its manifest")
+		}
+	}
+	return nil
+}
+
 func loadManagedCondaRuntime(config Config, name string) (managedCondaRuntime, error) {
+	platform, supported := currentManagedRuntimePlatform()
+	if !supported {
+		return managedCondaRuntime{}, errors.New("managed scientific runtime is unsupported on this platform")
+	}
+	return loadManagedCondaRuntimeForPlatform(config, name, platform)
+}
+
+func loadManagedCondaRuntimeForPlatform(config Config, name string, platform managedRuntimePlatform) (managedCondaRuntime, error) {
 	catalogPath := strings.TrimSpace(config.CondaRuntimeCatalog)
 	if catalogPath == "" {
 		return managedCondaRuntime{}, errors.New("managed runtime catalog is not configured")
@@ -505,7 +533,7 @@ func loadManagedCondaRuntime(config Config, name string) (managedCondaRuntime, e
 	if _, err := readBoundedJSON(catalogPath, &catalog); err != nil {
 		return managedCondaRuntime{}, fmt.Errorf("read managed runtime catalog: %w", err)
 	}
-	if (catalog.SchemaVersion != 1 && catalog.SchemaVersion != 2) || catalog.Platform != currentCondaPlatform() || !validSHA256(catalog.CatalogSHA256) {
+	if (catalog.SchemaVersion != 1 && catalog.SchemaVersion != 2) || catalog.Platform != platform.ID || !validSHA256(catalog.CatalogSHA256) {
 		return managedCondaRuntime{}, errors.New("managed runtime catalog contract is invalid")
 	}
 	if catalog.SchemaVersion == 2 {
@@ -537,7 +565,7 @@ func loadManagedCondaRuntime(config Config, name string) (managedCondaRuntime, e
 			entry = &catalog.Runtimes[index]
 		}
 	}
-	if entry == nil || entry.Platform != currentCondaPlatform() || !validSHA256(entry.Generation) || !validSHA256(entry.ExplicitSHA256) {
+	if entry == nil || entry.Platform != platform.ID || !validSHA256(entry.Generation) || !validSHA256(entry.ExplicitSHA256) {
 		return managedCondaRuntime{}, errors.New("managed runtime catalog entry is invalid")
 	}
 	if !ValidEnvironmentName(entry.Name) {
@@ -563,7 +591,9 @@ func loadManagedCondaRuntime(config Config, name string) (managedCondaRuntime, e
 		return managedCondaRuntime{}, errors.New("managed runtime manifest digest does not match")
 	}
 	if manifest.SchemaVersion != catalog.SchemaVersion || manifest.Name != entry.Name || manifest.Platform != entry.Platform ||
-		manifest.PackageCount != len(manifest.Packages) || manifest.ExplicitSHA256 != entry.ExplicitSHA256 {
+		manifest.PackageCount != len(manifest.Packages) || manifest.PackageCount != entry.PackageCount ||
+		manifest.ExplicitSHA256 != entry.ExplicitSHA256 ||
+		manifest.LicenseInventorySHA256 != entry.LicenseInventorySHA256 || entry.LicenseTextsIncluded {
 		return managedCondaRuntime{}, errors.New("managed runtime manifest does not match its catalog entry")
 	}
 	if manifest.SchemaVersion == 2 && (manifest.Oracle != nil || manifest.AlignmentReference != nil) {
@@ -576,10 +606,24 @@ func loadManagedCondaRuntime(config Config, name string) (managedCondaRuntime, e
 	if err != nil || explicitDigest != manifest.ExplicitSHA256 {
 		return managedCondaRuntime{}, errors.New("managed runtime explicit lock digest does not match")
 	}
+	if err := validateManagedRuntimeExplicitLock(explicitPath, platform, manifest.Packages); err != nil {
+		return managedCondaRuntime{}, err
+	}
+	licensesPath, err := runtimeAssetPath(root, entry.LicensesPath)
+	if err != nil {
+		return managedCondaRuntime{}, err
+	}
+	licenseDigest, err := fileSHA256(licensesPath)
+	if err != nil || licenseDigest != manifest.LicenseInventorySHA256 {
+		return managedCondaRuntime{}, errors.New("managed runtime license inventory digest does not match")
+	}
 	packageVersions := map[string]string{}
 	for _, item := range manifest.Packages {
 		if item.Name == "" || item.Version == "" || item.Build == "" || !validSHA256(item.SHA256) {
 			return managedCondaRuntime{}, errors.New("managed runtime package contract is invalid")
+		}
+		if item.Subdir != "noarch" && item.Subdir != platform.CondaSubdir {
+			return managedCondaRuntime{}, errors.New("managed runtime package platform does not match the host")
 		}
 		if _, exists := packageVersions[item.Name]; exists {
 			return managedCondaRuntime{}, errors.New("managed runtime package names are not unique")
@@ -660,16 +704,7 @@ func (m *Manager) managedPythonMarker(runtime managedPythonRuntime) managedRunti
 }
 
 func managedPythonPurelibRelative(pythonVersion string) (string, error) {
-	parts := strings.Split(strings.TrimSpace(pythonVersion), ".")
-	if len(parts) < 2 {
-		return "", errors.New("managed Python version is invalid")
-	}
-	major, majorErr := strconv.Atoi(parts[0])
-	minor, minorErr := strconv.Atoi(parts[1])
-	if majorErr != nil || minorErr != nil || major != 3 || minor < 8 || minor > 99 {
-		return "", errors.New("managed Python version is unsupported")
-	}
-	return filepath.Join("lib", fmt.Sprintf("python%d.%d", major, minor), "site-packages"), nil
+	return managedRuntimePythonPurelibRelative(pythonVersion)
 }
 
 func (m *Manager) managedPythonHelperAssets() ([]string, error) {
@@ -759,7 +794,7 @@ func (m *Manager) verifyManagedPythonHelpers(runtime managedPythonRuntime, prefi
 }
 
 func (m *Manager) verifyManagedPythonGeneration(runtime managedPythonRuntime, prefix string) error {
-	resolved, err := filepath.EvalSymlinks(prefix)
+	resolved, err := resolveManagedRuntimeGeneration(prefix)
 	if err != nil {
 		return err
 	}
@@ -774,8 +809,7 @@ func (m *Manager) verifyManagedPythonGeneration(runtime managedPythonRuntime, pr
 	if marker != m.managedPythonMarker(runtime) {
 		return errors.New("managed Python generation marker does not match the verified runtime")
 	}
-	python := filepath.Join(resolved, "bin", executableName("python"))
-	if info, err := os.Stat(python); err != nil || !executableRegularFile(info) {
+	if _, err := managedPythonExecutableAtPrefix(resolved); err != nil {
 		return errors.New("managed Python executable is unavailable")
 	}
 	return m.verifyManagedPythonHelpers(runtime, resolved)
@@ -812,7 +846,10 @@ func writeManagedRuntimeMarker(path string, marker managedRuntimeMarker) error {
 }
 
 func (m *Manager) smokeManagedPython(ctx context.Context, runtime managedPythonRuntime, prefix string) error {
-	python := filepath.Join(prefix, "bin", executableName("python"))
+	python, err := managedPythonExecutableAtPrefix(prefix)
+	if err != nil {
+		return err
+	}
 	prefixJSON, _ := json.Marshal(prefix)
 	code := "import json,pathlib,tempfile;import rdkit,py3Dmol,shutil,cheminfo_render_helpers as h;out=tempfile.mkdtemp(prefix='synon-rdkit-smoke-',dir=" +
 		string(prefixJSON) + ");r=h.render_molecule_images(['CCO'],['smoke'],out_dir=out);p=pathlib.Path(r['grid']);" +
@@ -820,7 +857,7 @@ func (m *Manager) smokeManagedPython(ctx context.Context, runtime managedPythonR
 	command := newWorkerProcessCommand(ctx, python, "-I", "-c", code)
 	command.Env = kernelEnvironment(map[string]string{
 		"CONDA_PREFIX": prefix, "CONDA_DEFAULT_ENV": runtime.entry.Name,
-		"PATH": managedExecutableSearchPath(filepath.Join(prefix, "bin")), "PYTHONNOUSERSITE": "1",
+		"PATH": managedExecutableSearchPath(managedRuntimePath(prefix)), "PYTHONNOUSERSITE": "1",
 	})
 	stdout := newTailBuffer(maxDiagnosticBytes)
 	stderr := newTailBuffer(maxDiagnosticBytes)
@@ -932,20 +969,6 @@ func (m *Manager) activateManagedPythonGeneration(runtime managedPythonRuntime) 
 	)
 }
 
-func activateManagedRuntimeGeneration(active, generation string) error {
-	temporary := active + ".tmp-" + uuid.NewString()
-	defer os.Remove(temporary)
-	if info, err := os.Lstat(active); err == nil && info.Mode()&os.ModeSymlink == 0 {
-		return errors.New("managed runtime active path is not an atomic generation pointer")
-	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	if err := os.Symlink(generation, temporary); err != nil {
-		return err
-	}
-	return os.Rename(temporary, active)
-}
-
 func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 	m.environmentMu.Lock()
 	defer m.environmentMu.Unlock()
@@ -992,7 +1015,7 @@ func (m *Manager) ensureManagedPythonEnvironment(ctx context.Context) error {
 		defer os.RemoveAll(staging)
 		m.setManagedPythonProvisioningPhase("installing-bundled-generation")
 		arguments := []string{"--no-rc", "create", "-y", "-p", staging, "-f", runtime.explicitPath}
-		if err := m.runManagedEnvironmentProcessWithEnv(ctx, m.config.Micromamba, m.managedEnvironmentInstallerEnv(), arguments...); err != nil {
+		if err := m.runManagedEnvironmentCommand(ctx, arguments...); err != nil {
 			return fmt.Errorf("install managed Python generation: %w", err)
 		}
 		m.setManagedPythonProvisioningPhase("installing-runtime-helpers")
@@ -1099,7 +1122,7 @@ func (m *Manager) managedPythonActivePrefix() (string, managedPythonRuntime, err
 	if err := m.verifyManagedPythonGeneration(runtime, active); err != nil {
 		return "", managedPythonRuntime{}, err
 	}
-	resolved, err := filepath.EvalSymlinks(active)
+	resolved, err := resolveManagedRuntimeGeneration(active)
 	if err != nil || filepath.Base(resolved) != runtime.activationGeneration {
 		return "", managedPythonRuntime{}, errors.New("managed Python active generation is invalid")
 	}
@@ -1118,7 +1141,7 @@ func (m *Manager) ScientificArtifactValidator() (python, validator, generation, 
 	if err := m.verifyManagedPythonGeneration(runtime, active); err != nil {
 		return "", "", "", "", err
 	}
-	prefix, err := filepath.EvalSymlinks(active)
+	prefix, err := resolveManagedRuntimeGeneration(active)
 	if err != nil {
 		return "", "", "", "", err
 	}
@@ -1129,5 +1152,9 @@ func (m *Manager) ScientificArtifactValidator() (python, validator, generation, 
 	if info, err := os.Stat(validator); err != nil || !info.Mode().IsRegular() {
 		return "", "", "", "", errors.New("scientific artifact validator is unavailable")
 	}
-	return filepath.Join(prefix, "bin", executableName("python")), validator, runtime.activationGeneration, runtime.rdkitVersion, nil
+	python, err = managedPythonExecutableAtPrefix(prefix)
+	if err != nil {
+		return "", "", "", "", err
+	}
+	return python, validator, runtime.activationGeneration, runtime.rdkitVersion, nil
 }

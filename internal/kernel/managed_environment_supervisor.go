@@ -196,7 +196,7 @@ func (m *Manager) sweepManagedInstallerCacheTemps(
 	if !filepath.IsAbs(condaHome) {
 		return report, errors.New("managed installer cache root is not configured")
 	}
-	cacheRoot := filepath.Join(condaHome, "pkgs", "cache")
+	cacheRoot := filepath.Join(managedInstallerPackageCacheRoot(m.config), "cache")
 	entries, err := os.ReadDir(cacheRoot)
 	if errors.Is(err, os.ErrNotExist) {
 		return report, nil

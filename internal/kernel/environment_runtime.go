@@ -212,7 +212,22 @@ func (m *Manager) sessionRuntimeWithMounts(spec SessionSpec) (string, []string, 
 				return "", nil, nil, nil, err
 			}
 		}
-		return python, pythonWorkerArguments(m.config.WorkerPath), m.runtimeEnvironmentAtPrefix(spec.Environment, "python", spec.WorkspaceDir, spec.KernelID, "", "", "", prefix), nil, nil
+		supervisorPrefix := prefix
+		var selectedRuntime []string
+		if spec.KernelKind == "bash" {
+			// The selected environment contributes PATH/native tools, while
+			// m.config.Python remains the protocol supervisor. Both are separate
+			// server-verified read-only authorities on Windows.
+			supervisorPrefix = ""
+			if prefix != "" {
+				selectedRuntime = []string{prefix}
+			}
+		}
+		mounts, err := platformSessionRuntimeMounts(python, supervisorPrefix, m.config.WorkerPath, selectedRuntime...)
+		if err != nil {
+			return "", nil, nil, nil, err
+		}
+		return python, pythonWorkerArguments(m.config.WorkerPath), m.runtimeEnvironmentAtPrefix(spec.Environment, "python", spec.WorkspaceDir, spec.KernelID, "", "", "", prefix), mounts, nil
 	case "r":
 		worker := strings.TrimSpace(m.config.RWorkerPath)
 		if worker == "" {
@@ -232,13 +247,16 @@ func (m *Manager) sessionRuntimeWithMounts(spec SessionSpec) (string, []string, 
 		if err := m.validateSessionRuntimeGeneration(spec); err != nil {
 			return "", nil, nil, nil, err
 		}
+		mounts, err := platformSessionRuntimeMounts(rscript, prefix, worker)
+		if err != nil {
+			return "", nil, nil, nil, err
+		}
 		if len(m.config.RSharedPackages) > 0 {
 			repairContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			_ = m.repairRSharedLibrary(repairContext, rscript)
 			cancel()
 		}
 		opLogPath := ""
-		mounts := []WorkerMount{}
 		if !m.config.DisableROperationLog {
 			var opLogFile *os.File
 			opLogPath, opLogFile, err = m.ensureROperationLog(spec.Environment)
@@ -321,13 +339,14 @@ func (m *Manager) RuntimeReady(language, environment string) bool {
 			return false
 		}
 		if environment == managedRName(m.config) {
-			// Keep a narrow read-only migration path for an older `r` prefix when
-			// the verified bundled installer is not configured. The service-owned
-			// bundled path remains authoritative whenever provisioning is enabled;
-			// execution admission still calls EnsureManagedREnvironment and never
-			// treats this legacy fallback as the required core runtime.
+			// Honor an explicitly configured legacy R prefix or the requested old
+			// alias without treating an inferred core name and a bare executable
+			// as a verified generation. Bundled provisioning remains authoritative.
 			if !m.ManagedRProvisioningEnabled() &&
 				(requestedEnvironment == "r" || isPersistedRRuntimeAlias(requestedEnvironment)) {
+				if strings.TrimSpace(m.config.DefaultREnv) == environment {
+					return m.legacyRExecutableAvailable(environment)
+				}
 				return m.legacyRExecutableAvailable(requestedEnvironment)
 			}
 			return m.managedRRuntimeReady() == nil
@@ -380,12 +399,18 @@ func (m *Manager) canonicalManagedREnvironment(environment string) string {
 	if environment == "" || environment == "r" || isPersistedRRuntimeAlias(environment) {
 		return managedRName(m.config)
 	}
-	return environment
+	return canonicalCondaRuntimeName(environment)
 }
 
 func (m *Manager) managedEnvironmentPrefix(environment string) (string, error) {
 	if !ValidEnvironmentName(environment) {
 		return "", errors.New("environment name must be a bounded path-free identifier")
+	}
+	if environment == managedPythonName(m.config) {
+		return m.ManagedPythonActivePrefix()
+	}
+	if environment == managedRName(m.config) && strings.TrimSpace(m.config.CondaRuntimeCatalog) != "" {
+		return m.ManagedRActivePrefix()
 	}
 	root := strings.TrimSpace(m.config.CondaEnvsPath)
 	if root == "" {
@@ -410,14 +435,15 @@ func (m *Manager) managedEnvironmentPrefix(environment string) (string, error) {
 }
 
 func environmentExecutableCandidates(prefix, executable string) []string {
-	if runtime.GOOS == "windows" {
-		name := executable
-		if !strings.HasSuffix(strings.ToLower(name), ".exe") {
-			name += ".exe"
-		}
-		return []string{filepath.Join(prefix, name), filepath.Join(prefix, "Scripts", name), filepath.Join(prefix, "bin", name)}
+	name := executable
+	if runtime.GOOS == "windows" && !strings.HasSuffix(strings.ToLower(name), ".exe") {
+		name += ".exe"
 	}
-	return []string{filepath.Join(prefix, "bin", executable)}
+	result := make([]string, 0, len(managedRuntimeExecutableDirectories(prefix)))
+	for _, directory := range managedRuntimeExecutableDirectories(prefix) {
+		result = append(result, filepath.Join(directory, name))
+	}
+	return result
 }
 
 func managedPythonExecutableAtPrefix(prefix string) (string, error) {
@@ -460,7 +486,7 @@ func (m *Manager) runtimeEnvironmentAtPrefix(environment, language, workspaceDir
 	if !isSystemPythonEnvironment(environment) || language == "r" {
 		extra["CONDA_PREFIX"] = prefix
 		extra["CONDA_DEFAULT_ENV"] = environment
-		extra["PATH"] = filepath.Join(prefix, "bin") + string(os.PathListSeparator) + os.Getenv("PATH")
+		extra["PATH"] = managedExecutableSearchPath(managedRuntimePath(prefix))
 	}
 	if strings.TrimSpace(m.config.CondaHome) != "" {
 		extra["MAMBA_ROOT_PREFIX"] = m.config.CondaHome
@@ -502,7 +528,7 @@ func (m *Manager) ensureROperationLog(environment string) (string, *os.File, err
 	if !ValidEnvironmentName(environment) {
 		return "", nil, errors.New("R environment name must be a bounded path-free identifier")
 	}
-	prefix, err := filepath.EvalSymlinks(filepath.Join(m.config.CondaEnvsPath, environment))
+	prefix, err := m.managedEnvironmentPrefix(environment)
 	if err != nil || !filepath.IsAbs(prefix) {
 		return "", nil, errors.New("R operation log environment is unavailable")
 	}
@@ -598,8 +624,10 @@ func (m *Manager) RuntimeEnvironmentStatuses(retry bool) []RuntimeEnvironmentSta
 	managedPython := RuntimeEnvironmentStatus{
 		EnvironmentName: managedName,
 		Language:        "python",
-		PackageCount:    managedPackageCount(filepath.Join(m.config.CondaEnvsPath, managedName)),
 		Status:          provisioning.Status,
+	}
+	if prefix, err := m.ManagedPythonActivePrefix(); err == nil {
+		managedPython.PackageCount = managedPackageCount(prefix)
 	}
 	managedPython.Phase = provisioning.Phase
 	managedPython.StartedAt = provisioning.StartedAt
@@ -612,7 +640,9 @@ func (m *Manager) RuntimeEnvironmentStatuses(retry bool) []RuntimeEnvironmentSta
 	}
 	rName := managedRName(m.config)
 	rStatus := m.runtimeRStatus(rName)
-	rStatus.PackageCount = managedPackageCount(filepath.Join(m.config.CondaEnvsPath, rName))
+	if prefix, err := m.ManagedRActivePrefix(); err == nil {
+		rStatus.PackageCount = managedPackageCount(prefix)
+	}
 	return []RuntimeEnvironmentStatus{python, managedPython, rStatus}
 }
 

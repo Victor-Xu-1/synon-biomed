@@ -36,8 +36,19 @@ package_dir="$(find "$tmp/unpack" -mindepth 1 -maxdepth 1 -type d -print -quit)"
 test -f "$package_dir/web/index.html"
 test -f "$package_dir/synon-go.exe"
 test -f "$package_dir/synon-go-live-im-smoke.exe"
-test ! -e "$package_dir/assets/optional/micromamba"
-if find "$package_dir" -type f ! -name synon-go.exe ! -name synon-go-live-im-smoke.exe -size +10M -print | grep -q .; then
+test -f "$package_dir/assets/optional/micromamba/windows-x86_64/micromamba.exe"
+test -f "$package_dir/assets/optional/micromamba/windows-x86_64/manifest.json"
+test -f "$package_dir/assets/optional/conda-runtimes/windows-x86_64/manifest.json"
+catalog_directories="$(find "$package_dir/assets/optional/conda-runtimes" \
+	-mindepth 1 -maxdepth 1 -type d -printf '%f\n')"
+test "$catalog_directories" = "windows-x86_64"
+test ! -e "$package_dir/assets/optional/micromamba/linux-x86_64"
+test ! -e "$package_dir/assets/optional/conda-runtimes/manifest.json"
+python3 scripts/verify-artifact-provenance.py "$package_dir" \
+	"$package_dir/assets/optional/micromamba/windows-x86_64/micromamba.exe"
+if find "$package_dir" -type f ! -name synon-go.exe ! -name synon-go-live-im-smoke.exe \
+	! -path "$package_dir/assets/optional/micromamba/windows-x86_64/micromamba.exe" \
+	-size +10M -print | grep -q .; then
 	echo "Windows release contains an unclassified file larger than 10MB" >&2
 	exit 1
 fi

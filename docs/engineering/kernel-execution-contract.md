@@ -51,6 +51,50 @@ submission, and new Unix/netlink sockets. The host's isolated network namespace
 and explicit egress relay govern IP transport. The interpreter applies
 `PR_SET_DUMPABLE=0` after startup.
 
+Native macOS runtime assets may be installed, but that does not make a kernel
+executable. Until a native boundary is verified, the Darwin kernel manager
+reports `kernel_confinement_unavailable` and refuses to launch Python, R, Bash,
+or provider workers. Requests for kernel egress also fail rather than silently
+dropping their domain policy. Removing this refusal requires a real macOS
+probe and regression coverage for per-task read/write and protected paths,
+direct network denial with approved egress through a host broker, inherited
+restrictions for Python/R subprocesses, and termination of descendants that
+detach from the initial process group. Cross-compilation alone proves none of
+these runtime properties. The separately supervised detached executor and
+backend are Linux-only; native macOS kernel confinement alone would not
+establish parity for their durable background-execution semantics. The native
+in-process manager is a separate path.
+
+On native Windows, the confinement probe also remains unavailable. An
+AppContainer launcher has been exercised with a local test executable: the
+target starts with a restricted token inside a kill-on-close Job, passes
+explicit stdin/stdout/stderr handles, writes only its temporary workspace,
+reads a separately granted temporary read-only tree, and cannot read an
+ungranted private file or connect directly to a local TCP listener. A
+server-owned lease receipt supports revoking temporary ACLs and deleting the
+profile after normal exit, cancellation, or a crashed host. The candidate
+launcher derives narrow read-only grants for a managed runtime and worker
+assets, checks frozen mount identity, grants only a trusted frozen R operation
+log for external writes, and starts Python with `-I`. These code and
+AppContainer-helper tests do not establish a complete managed Python/R
+runtime boundary. The kernel manager still refuses native Windows execution:
+protected-path denial, auxiliary provider channels, approved egress, and
+actual installed-interpreter startup/recovery lack equivalent native evidence.
+No network request is silently allowed or dropped: without a broker, an
+approved-egress request fails closed. Managed environment installation and
+native kernel execution remain separate readiness facts.
+
+The opt-in Windows interpreter probe sets `SYNON_TEST_WINDOWS_PYTHON_EXE` to an
+installed Python generation's executable and `SYNON_TEST_WINDOWS_KERNEL_ASSETS`
+to an ordinary drive-rooted copy of the current kernel assets. It runs the
+worker with `-I -S` to isolate the process/transport boundary, verifies a
+completed cell, denied direct network access, EOF and cancellation, and checks
+ACL cleanup. It does not verify the production `-I` startup path: the installed
+generation's site startup and Python-created private subdirectories still need
+native readiness tests. The candidate now validates frozen single-file mount
+identity and R operation-log write scope; their behavior under an installed R
+generation still requires native testing.
+
 See the public [Linux seccomp interface](https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html)
 and [Python signal semantics](https://docs.python.org/3/library/signal.html).
 These describe platform APIs, not an imported execution implementation.

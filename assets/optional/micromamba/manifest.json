@@ -27,8 +27,8 @@
     },
     {
       "path": "BUILD.md",
-      "sha256": "43f1ae448b99feb7a48e8a7c1f731dd3975e37917c7d35c5d22db6f229909216",
-      "bytes": 2976
+      "sha256": "eca44485e4f9a4d47f6d04a5367f2005d2041f03866eee811ac07dac2e213b80",
+      "bytes": 3591
     },
     {
       "path": "build-linux-64.sh",

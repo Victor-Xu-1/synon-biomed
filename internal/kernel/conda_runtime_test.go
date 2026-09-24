@@ -92,7 +92,7 @@ func TestManagedEnvironmentRuntimePinsExecutableAndPrefixToOneResolvedGeneration
 	environment := manager.runtimeEnvironmentAtPrefix("test-python", "python", t.TempDir(), "kernel-a", "", "", "", resolvedPrefix)
 	joined := "\n" + strings.Join(environment, "\n") + "\n"
 	if !strings.Contains(joined, "\nCONDA_PREFIX="+generation+"\n") ||
-		!strings.Contains(joined, "\nPATH="+filepath.Join(generation, "bin")+string(os.PathListSeparator)+os.Getenv("PATH")+"\n") {
+		!strings.Contains(joined, "\nPATH="+managedExecutableSearchPath(filepath.Join(generation, "bin"))+"\n") {
 		t.Fatalf("runtime environment does not use the resolved generation: %s", joined)
 	}
 }

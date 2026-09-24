@@ -135,6 +135,20 @@ func operationalAssetPacks(root string) []operationalAssetPack {
 			Name: "micromamba", ManifestPath: micromambaManifest,
 			AssetRoot: filepath.Join(root, "assets", "optional", "micromamba"),
 		})
+	} else {
+		// Native release packages contain exactly one platform installer manifest
+		// after the release packager removes the source-only Linux manifest and
+		// foreign binaries. Verify every present native manifest, rather than
+		// silently omitting installer integrity from assets verify.
+		for _, platform := range []string{"linux-x86_64", "windows-x86_64", "darwin-x86_64", "darwin-arm64"} {
+			assetRoot := filepath.Join(root, "assets", "optional", "micromamba", platform)
+			manifestPath := filepath.Join(assetRoot, "manifest.json")
+			if info, err := os.Stat(manifestPath); err == nil && info.Mode().IsRegular() {
+				packs = append(packs, operationalAssetPack{
+					Name: "micromamba-" + platform, ManifestPath: manifestPath, AssetRoot: assetRoot,
+				})
+			}
+		}
 	}
 	return packs
 }

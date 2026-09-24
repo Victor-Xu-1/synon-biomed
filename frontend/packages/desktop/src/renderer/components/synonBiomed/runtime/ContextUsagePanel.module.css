@@ -6,12 +6,12 @@
 
 .root {
   box-sizing: border-box;
-  width: min(560px, calc(100vw - 24px));
+  width: min(280px, calc(100vw - 24px));
   display: flex;
   flex-direction: column;
-  padding: 32px 32px 28px;
+  padding: 16px 16px 14px;
   border: 1px solid #e8e8e8;
-  border-radius: var(--ui-radius-4xl);
+  border-radius: var(--ui-radius-2xl);
   background: #fff;
   box-shadow:
     0 9px 28px rgb(0 0 0 / 9%),
@@ -34,14 +34,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 32px;
-  margin-bottom: 24px;
+  height: 16px;
+  margin-bottom: 12px;
 }
 
 .headerTitle {
-  font-size: var(--ui-font-hero);
+  font-size: var(--ui-font-meta);
   font-weight: var(--ui-weight-medium);
-  line-height: var(--ui-line-height-hero);
+  line-height: var(--ui-line-height-micro);
   color: inherit;
 }
 
@@ -49,8 +49,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: var(--ui-radius-md);
@@ -77,9 +77,9 @@
   display: flex;
   align-items: baseline;
   width: 100%;
-  min-height: 52px;
-  gap: 16px;
-  margin-bottom: 12px;
+  min-height: 26px;
+  gap: 8px;
+  margin-bottom: 6px;
   outline: none;
 }
 
@@ -91,16 +91,16 @@
 
 .bigPercent {
   flex: 0 0 auto;
-  font-size: var(--ui-font-metric);
+  font-size: var(--ui-font-display);
   font-weight: var(--ui-weight-bold);
-  line-height: var(--ui-line-height-metric);
+  line-height: var(--ui-line-height-display);
   font-variant-numeric: tabular-nums;
 }
 
 .usedText {
   color: #7f7f7f;
-  font-size: var(--ui-font-hero);
-  line-height: 34px;
+  font-size: var(--ui-font-meta);
+  line-height: var(--ui-line-height-meta);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -113,9 +113,9 @@
 .bar {
   display: flex;
   width: 100%;
-  height: 16px;
-  gap: 2px;
-  border-radius: var(--ui-radius-md);
+  height: 8px;
+  gap: 0;
+  border-radius: var(--ui-radius-xs);
   background: #f2f2f2;
   overflow: hidden;
 }
@@ -127,10 +127,6 @@
   min-width: 0;
 }
 
-.barSegment {
-  min-width: 1px;
-}
-
 .barRemaining {
   background: #f2f2f2;
 }
@@ -138,40 +134,40 @@
 .legend {
   display: flex;
   flex-direction: column;
-  margin-top: 28px;
+  margin-top: 14px;
 }
 
 .legendRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  height: 52px;
-  font-size: var(--ui-font-hero-lg);
+  gap: 8px;
+  height: 26px;
+  font-size: var(--ui-font-body);
   font-weight: var(--ui-weight-regular);
-  line-height: var(--ui-line-height-hero-lg);
+  line-height: var(--ui-line-height-meta);
   color: inherit;
 }
 
 .legendLabel {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 9px;
   min-width: 0;
 }
 
 .legendDot {
   display: inline-block;
-  flex: 0 0 16px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ui-radius-circle);
 }
 
 .legendPercent {
   flex: 0 0 auto;
   color: #7f7f7f;
-  font-size: var(--ui-font-hero);
+  font-size: var(--ui-font-meta);
   font-variant-numeric: tabular-nums;
 }
 
@@ -179,7 +175,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 260px;
+  min-height: 120px;
 }
 
 .details {
@@ -210,10 +206,10 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 16px;
-  min-height: 260px;
-  font-size: var(--ui-font-lead);
-  line-height: 27px;
+  gap: 10px;
+  min-height: 120px;
+  font-size: var(--ui-font-body);
+  line-height: var(--ui-line-height-meta);
 }
 
 .retry {
@@ -228,61 +224,62 @@
 
 @media (max-width: 520px) {
   .root {
-    padding: 22px 20px 20px;
-    border-radius: var(--ui-radius-3xl);
+    width: min(280px, calc(100vw - 24px));
+    padding: 16px 14px 14px;
+    border-radius: var(--ui-radius-2xl);
   }
 
   .header {
-    margin-bottom: 18px;
+    margin-bottom: 12px;
   }
 
   .headerTitle {
-    font-size: var(--ui-font-lead);
+    font-size: var(--ui-font-meta);
   }
 
   .statRow {
-    min-height: 40px;
-    gap: 10px;
-    margin-bottom: 10px;
+    min-height: 26px;
+    gap: 8px;
+    margin-bottom: 6px;
   }
 
   .bigPercent {
-    font-size: var(--ui-font-headline-lg);
-    line-height: var(--ui-line-height-headline-lg);
+    font-size: var(--ui-font-display);
+    line-height: var(--ui-line-height-display);
   }
 
   .usedText {
     color: var(--workspace-text-secondary);
-    font-size: var(--ui-font-title);
-    line-height: var(--ui-line-height-section);
+    font-size: var(--ui-font-meta);
+    line-height: var(--ui-line-height-meta);
   }
 
   .bar {
-    height: 10px;
+    height: 8px;
   }
 
   .legend {
-    margin-top: 18px;
+    margin-top: 14px;
   }
 
   .legendRow {
-    height: 38px;
-    font-size: var(--ui-font-body-lg);
-    line-height: var(--ui-line-height-body-lg);
+    height: 26px;
+    font-size: var(--ui-font-body);
+    line-height: var(--ui-line-height-meta);
   }
 
   .legendLabel {
-    gap: 12px;
+    gap: 9px;
   }
 
   .legendDot {
-    flex-basis: 11px;
-    width: 11px;
-    height: 11px;
+    flex-basis: 8px;
+    width: 8px;
+    height: 8px;
   }
 
   .legendPercent {
     color: var(--workspace-text-secondary);
-    font-size: var(--ui-font-section);
+    font-size: var(--ui-font-meta);
   }
 }

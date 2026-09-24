@@ -717,7 +717,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	engine.Model = &sessionRunnerDynamicModelClient{
 		server: s, sessionID: session.ID, session: session, fallback: engine.Model,
 		fallbackModel: options.Model, role: "agent", audit: options.ModelAudit,
-		contextUsage: newSessionContextUsageRecorder(s, session.ID, run.Attempt, options),
+		contextUsage: newSessionContextUsageRecorder(s, session.ID, sessionRunnerAttempt(run), options),
 		initial:      initialModel, initialReady: initialReady,
 		initialSelection: options.modelSelection, initialRevision: options.modelSelectionRevision,
 		resolutionInput: providers.ResolutionInput{

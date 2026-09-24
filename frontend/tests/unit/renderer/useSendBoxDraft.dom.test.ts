@@ -79,6 +79,54 @@ describe('useSendBoxDraft', () => {
     expect(loadSendBoxDraft('owner-a', 'draft-same-tick-update-test')).toBeUndefined();
   });
 
+  it('replaces only the expected persisted draft and preserves newer user edits', async () => {
+    const useDraft = getSendBoxDraftHook('acp', initialDraft);
+    const conversationId = 'draft-compare-and-set-test';
+    const draft = renderHook(() => useDraft(conversationId, 'owner-a'));
+
+    act(() => {
+      draft.result.current.mutate((current) => ({ ...current, content: 'original' }));
+    });
+    await waitFor(() => expect(draft.result.current.data?.content).toBe('original'));
+
+    let replaced = false;
+    act(() => {
+      replaced = draft.result.current.replaceContentIfUnchanged('original', 'optimized');
+    });
+    expect(replaced).toBe(true);
+    expect(loadSendBoxDraft('owner-a', conversationId)?.content).toBe('optimized');
+
+    act(() => {
+      draft.result.current.mutate((current) => ({ ...current, content: 'later edit' }));
+      replaced = draft.result.current.replaceContentIfUnchanged('optimized', 'original');
+    });
+    expect(replaced).toBe(false);
+    expect(loadSendBoxDraft('owner-a', conversationId)?.content).toBe('later edit');
+  });
+
+  it('rejects a stale cross-tab draft and preserves other-tab attachments', async () => {
+    const useDraft = getSendBoxDraftHook('acp', initialDraft);
+    const conversationId = 'draft-cross-tab-test';
+    const draft = renderHook(() => useDraft(conversationId, 'owner-a'));
+    act(() => {
+      draft.result.current.mutate((current) => ({ ...current, content: 'original' }));
+    });
+    await waitFor(() => expect(draft.result.current.data?.content).toBe('original'));
+
+    expect(
+      saveSendBoxDraft('owner-a', conversationId, {
+        ...initialDraft,
+        content: 'other tab edit',
+        uploadFile: ['/workspace/new-attachment.csv'],
+      })
+    ).toBe(true);
+    expect(draft.result.current.replaceContentIfUnchanged('original', 'optimized')).toBe(false);
+    expect(loadSendBoxDraft('owner-a', conversationId)).toMatchObject({
+      content: 'other tab edit',
+      uploadFile: ['/workspace/new-attachment.csv'],
+    });
+  });
+
   it('isolates drafts by owner and rejects malformed stored state', () => {
     expect(
       saveSendBoxDraft('owner-a', 'shared-conversation', {

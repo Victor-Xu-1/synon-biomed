@@ -106,8 +106,14 @@ try {
   const descriptionId = await summary.getAttribute('aria-describedby');
   assert.ok(descriptionId);
   const desktopBounds = await panel.boundingBox();
-  assert.ok(desktopBounds && Math.abs(desktopBounds.width - 560) <= 1, JSON.stringify(desktopBounds));
-  assert.ok(Math.abs(desktopBounds.height - 486) <= 1, JSON.stringify(desktopBounds));
+  assert.ok(desktopBounds && desktopBounds.width <= 300, JSON.stringify(desktopBounds));
+  assert.ok(desktopBounds && desktopBounds.height <= 280, JSON.stringify(desktopBounds));
+  const barLayout = await panel.getByTestId('context-usage-bar').evaluate((bar) => ({
+    gap: getComputedStyle(bar).gap,
+    categories: [...bar.querySelectorAll('[data-category]')].map((segment) => segment.getAttribute('data-category')),
+  }));
+  assert.equal(barLayout.gap, '0px');
+  assert.deepEqual(barLayout.categories, ['mcp', 'skills', 'systemPrompt', 'tools', 'messages']);
   const visualTokens = await panel.evaluate((root) => {
     const header = root.firstElementChild?.firstElementChild;
     const bigPercent = root.querySelector('[data-testid="context-usage-percent"]');
@@ -126,13 +132,13 @@ try {
     };
   });
   assert.deepEqual(visualTokens, {
-    radius: '30px',
-    headerFont: '24px',
-    headerLine: '32px',
-    bigFont: '44px',
-    bigLine: '52px',
-    legendFont: '26px',
-    legendLine: '36px',
+    radius: '16px',
+    headerFont: '12px',
+    headerLine: '16px',
+    bigFont: '20px',
+    bigLine: '28px',
+    legendFont: '13px',
+    legendLine: '18px',
     dots: ['rgb(99, 102, 241)', 'rgb(16, 185, 129)', 'rgb(245, 158, 11)', 'rgb(139, 92, 246)', 'rgb(236, 72, 153)'],
   });
   const closeStroke = async () =>

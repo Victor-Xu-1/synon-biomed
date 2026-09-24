@@ -89,6 +89,10 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, a
   const usage = state.status === 'available' ? state.snapshot : null;
   const usagePercent = usage ? (usage.usedTokens / usage.limitTokens) * 100 : 0;
   const rows = usage ? reconcileContextUsageBreakdown(usage) : [];
+  // Keep the semantic legend order stable, but make the visual bar readable:
+  // tiny shares are not swallowed by a later large segment and ties retain
+  // the authoritative category order from reconcileContextUsageBreakdown.
+  const barRows = rows.filter((row) => row.tokens > 0).toSorted((left, right) => left.tokens - right.tokens);
   const barTotal = usage ? Math.max(usage.limitTokens, usage.usedTokens) : 1;
   const remaining = usage ? Math.max(0, barTotal - usage.usedTokens) : 0;
   const labels = {
@@ -184,15 +188,14 @@ const ContextUsagePanel: React.FC<ContextUsagePanelProps> = ({ conversationId, a
                 {details.join(' · ')}
               </span>
               <div className={styles.bar} aria-hidden='true' data-testid='context-usage-bar'>
-                {rows
-                  .filter((row) => row.tokens > 0)
-                  .map((row) => (
-                    <span
-                      key={row.key}
-                      className={styles.barSegment}
-                      style={{ flexGrow: row.tokens / barTotal, background: COLORS[row.key] }}
-                    />
-                  ))}
+                {barRows.map((row) => (
+                  <span
+                    key={row.key}
+                    data-category={row.key}
+                    className={styles.barSegment}
+                    style={{ flexGrow: row.tokens / barTotal, background: COLORS[row.key] }}
+                  />
+                ))}
                 {remaining > 0 && <span className={styles.barRemaining} style={{ flexGrow: remaining / barTotal }} />}
               </div>
               <div className={styles.legend} data-testid='context-usage-legend'>

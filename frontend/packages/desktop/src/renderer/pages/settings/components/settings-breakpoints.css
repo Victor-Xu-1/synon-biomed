@@ -15,7 +15,7 @@
 
 @container (min-width: 1500px) {
   .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
   }
 }
 

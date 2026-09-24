@@ -15,12 +15,12 @@
   html body .settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > section {
     display: flex;
     flex-direction: column;
-    padding: 24px 28px !important;
+    padding: var(--settings-section-padding) var(--settings-section-padding) !important;
     overflow: hidden !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > details {
-    padding: 20px 28px !important;
+    padding: var(--settings-section-padding) var(--settings-section-padding) !important;
   }
 
   html body .settings-page-wrapper[data-settings-route='network'] .network-section--preset-groups {

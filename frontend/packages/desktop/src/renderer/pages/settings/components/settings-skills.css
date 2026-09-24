@@ -64,10 +64,12 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   flex-wrap: wrap;
 }
 
+/* The shared merged-library sheet (settings-card-density.css) owns the column
+   count for every tab, so the skills wall no longer states one of its own and
+   the four tabs cannot disagree about it again. */
 .settings-page-wrapper[data-settings-route='skills'] .settings-skills-page .settings-entity-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)) !important;
   align-content: start;
-  gap: 16px !important;
+  gap: var(--settings-card-gap) !important;
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
@@ -171,7 +173,7 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   border-radius: var(--ui-radius-pill);
   background: var(--settings-accent-soft);
   color: var(--settings-accent-strong);
-  font-size: var(--ui-font-meta);
+  font-size: var(--settings-meta-size);
 }
 
 .settings-skill-market-dialog .arco-modal-content {
@@ -221,7 +223,7 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   align-items: center;
   justify-content: space-between;
   gap: var(--ui-space-6);
-  padding: 24px 26px;
+  padding: var(--settings-section-padding) var(--settings-section-padding);
   color: var(--settings-text-secondary);
 }
 
@@ -239,10 +241,10 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   line-height: 28px;
 }
 
-/* Skills and other entity cards */
+/* Skills and other entity cards. The four-column rhythm itself comes from the
+   shared merged-library sheet so every tab reads the same column count. */
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-entity-grid {
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   align-items: stretch;
   gap: var(--settings-card-gap) !important;
 }
@@ -258,38 +260,14 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   color: var(--settings-text);
 }
 
+/* The card anatomy, type ramp and control geometry come from
+   settings-card-density.css (`.settings-library-card`); this route keeps only
+   the skill tile's own composition. */
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .settings-skill-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  min-height: 236px;
-  padding: 18px !important;
   text-align: left;
-}
-
-.settings-skill-card__content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-space-5);
-}
-
-.settings-skill-card__heading {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  min-width: 0;
-}
-
-.settings-skill-card__icon {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--ui-radius-md);
-  overflow: hidden;
 }
 
 .settings-skill-card__icon-image {
@@ -297,48 +275,6 @@ html body .settings-page-wrapper[data-settings-route='skills'] .settings-page-co
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-
-.settings-skill-card__title {
-  min-width: 0;
-  align-self: center;
-  overflow-wrap: anywhere;
-  color: var(--settings-text);
-  font-size: var(--ui-font-title);
-  font-weight: var(--ui-weight-semibold);
-  line-height: 22px;
-}
-
-.settings-skill-card__description {
-  display: block;
-  margin: 0;
-  overflow-wrap: anywhere;
-  color: var(--settings-text-secondary);
-  font-size: var(--ui-font-body);
-  line-height: 21px;
-}
-
-.settings-skill-card__metadata {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--ui-space-4);
-  margin-top: auto;
-  color: var(--settings-text-tertiary);
-  font-size: var(--ui-font-meta);
-  line-height: 19px;
-  overflow-wrap: anywhere;
-}
-
-.settings-skill-card__metadata .arco-tag {
-  flex-shrink: 0;
-}
-
-.settings-skill-card__footer {
-  flex-shrink: 0;
-  min-height: 40px;
-  margin-top: auto;
-  border-color: var(--settings-border) !important;
 }
 
 @media (max-width: 767px) {

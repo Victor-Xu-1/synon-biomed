@@ -29,14 +29,18 @@ import { resolveSynonBiomedMcpDescription } from '@/renderer/services/mcp/synonB
 import { McpConnectorCard } from './McpConnectorCard';
 import { McpConnectorConfigurationModal } from './McpConnectorConfigurationModal';
 import { McpLibraryToolbar, type ConnectorFilter, type ConnectorBrowseView } from './McpLibraryToolbar';
-import SettingsPagination from '../components/SettingsPagination';
-
-// Keep page size independent of viewport and card content.
-const MCP_PAGE_SIZE = 12;
+import { CONNECTOR_DOMAIN_IDS, resolveConnectorDomain, type ConnectorDomainId } from './connectorDomains';
 
 const ignoreHandledMutationError = (_error: unknown): undefined => undefined;
 
-export const SynonBiomedMcpSettingsContent: React.FC = () => {
+type SynonBiomedMcpSettingsContentProps = {
+  /** When true, renders the merged-page one-line compact header. */
+  compactHeader?: boolean;
+};
+
+export const SynonBiomedMcpSettingsContent: React.FC<SynonBiomedMcpSettingsContentProps> = ({
+  compactHeader = false,
+}) => {
   const { t, i18n } = useTranslation();
   const [servers, setServers] = useState<SynonBiomedMcpServer[]>([]);
   const [customServers, setCustomServers] = useState<SynonBiomedCustomMcpServer[]>([]);
@@ -51,13 +55,28 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
   const [editingServer, setEditingServer] = useState<SynonBiomedCustomMcpServer | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ConnectorFilter>('all');
-  const [mcpPage, setMcpPage] = useState(1);
+  const [domainFilter, setDomainFilter] = useState<ConnectorDomainId>('all');
   const [browseView, setBrowseView] = useState<ConnectorBrowseView | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const loadGenerationRef = useRef(0);
   const initializationPollsRef = useRef(0);
 
   const customById = useMemo(() => new Map(customServers.map((server) => [server.id, server])), [customServers]);
+  const domainOf = useCallback(
+    (server: SynonBiomedMcpServer) => resolveConnectorDomain(server, customById.has(server.id)),
+    [customById]
+  );
+  const domainOptions = useMemo(() => {
+    const counts = new Map<ConnectorDomainId, number>();
+    for (const server of servers) {
+      const domain = domainOf(server);
+      counts.set(domain, (counts.get(domain) ?? 0) + 1);
+    }
+    return CONNECTOR_DOMAIN_IDS.filter((id) => id === 'all' || (counts.get(id) ?? 0) > 0).map((id) => ({
+      id,
+      count: id === 'all' ? servers.length : (counts.get(id) ?? 0),
+    }));
+  }, [domainOf, servers]);
 
   const loadServers = useCallback(async () => {
     const generation = ++loadGenerationRef.current;
@@ -228,30 +247,20 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
         !`${server.displayName} ${server.name} ${description} ${server.source}`.toLowerCase().includes(query)
       )
         return false;
+      if (domainFilter !== 'all' && domainOf(server) !== domainFilter) return false;
       if (filter === 'connected') return server.enabled && server.connectionStatus === 'connected';
       if (filter === 'needs-attention')
         return !server.enabled || !server.health.ok || server.connectionStatus !== 'connected';
       if (filter === 'custom') return customById.has(server.id) || server.source === 'custom';
       return true;
     });
-  }, [customById, filter, i18n.language, search, servers]);
+  }, [customById, domainFilter, domainOf, filter, i18n.language, search, servers]);
 
-  const mcpTotalPages = Math.max(1, Math.ceil(visibleServers.length / MCP_PAGE_SIZE));
-  const visiblePageServers = useMemo(
-    () => visibleServers.slice((mcpPage - 1) * MCP_PAGE_SIZE, mcpPage * MCP_PAGE_SIZE),
-    [mcpPage, visibleServers]
-  );
-  useEffect(() => {
-    setMcpPage(1);
-  }, [filter, search]);
-
-  useEffect(() => {
-    if (mcpPage > mcpTotalPages) setMcpPage(mcpTotalPages);
-  }, [mcpPage, mcpTotalPages]);
+  const visiblePageServers = visibleServers;
 
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [mcpPage, filter, search]);
+  }, [filter, search]);
 
   const enabledConnectorCount = servers.filter((server) => server.enabled).length;
   const connectedConnectorCount = servers.filter(
@@ -266,12 +275,16 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
   return (
     <div className='mcp-library' data-testid='synon-biomed-mcp-settings'>
       <McpLibraryToolbar
+        compactHeader={compactHeader}
         count={servers.length}
         customCount={customServers.length}
         search={search}
         onSearch={setSearch}
         filter={filter}
         onFilter={setFilter}
+        domainFilter={domainFilter}
+        onDomainFilter={setDomainFilter}
+        domainOptions={domainOptions}
         onCreate={() => {
           setEditingServer(null);
           setEditorVisible(true);
@@ -376,19 +389,7 @@ export const SynonBiomedMcpSettingsContent: React.FC = () => {
           ) : null}
         </Spin>
       </div>
-      <footer className='mcp-library-footer' data-testid='mcp-library-footer'>
-        {visibleServers.length > MCP_PAGE_SIZE ? (
-          <SettingsPagination
-            page={mcpPage}
-            totalPages={mcpTotalPages}
-            onChange={(page) => {
-              setMcpPage(page);
-              if (scrollRef.current) scrollRef.current.scrollTop = 0;
-            }}
-            label={t('settings.synonBiomedMcpPaginationLabel')}
-          />
-        ) : null}
-      </footer>
+      <footer className='mcp-library-footer' data-testid='mcp-library-footer' />
 
       <McpConnectorEditorModal
         visible={editorVisible}

@@ -74,7 +74,7 @@
   }
 
   html body .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-rate-card .text-11px {
-    font-size: var(--ui-font-meta) !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 18px !important;
   }
 
@@ -265,6 +265,6 @@
     + div {
     margin-left: 8px !important;
     color: var(--settings-text-tertiary) !important;
-    font-size: var(--ui-font-meta) !important;
+    font-size: var(--settings-meta-size) !important;
   }
 }

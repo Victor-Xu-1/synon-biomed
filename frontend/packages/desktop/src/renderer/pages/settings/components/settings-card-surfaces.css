@@ -6,15 +6,19 @@
  */
 
 .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card {
-  --settings-card-interaction-accent: var(--settings-module-accent, #39a4da);
+  --settings-card-interaction-accent: var(--settings-module-accent);
 }
 
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card {
-  --settings-card-interaction-accent: var(--mcp-accent, var(--settings-module-accent, #39a4da));
+  --settings-card-interaction-accent: var(--settings-module-accent);
 }
 
 .settings-page-wrapper[data-settings-route='experts'] .expert-card {
   --settings-card-interaction-accent: #2d82cf;
+}
+
+.settings-page-wrapper[data-settings-route='environments'] .environment-card {
+  --settings-card-interaction-accent: var(--settings-module-accent);
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
@@ -41,7 +45,8 @@
 
 .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card,
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card,
-.settings-page-wrapper[data-settings-route='experts'] .expert-card {
+.settings-page-wrapper[data-settings-route='experts'] .expert-card,
+.settings-page-wrapper[data-settings-route='environments'] .environment-card {
   border-color: color-mix(in srgb, var(--settings-border) 82%, var(--settings-surface)) !important;
   border-radius: var(--ui-radius-2xl) !important;
   background: var(--settings-surface) !important;
@@ -61,7 +66,8 @@
 
 .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card::before,
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card::before,
-.settings-page-wrapper[data-settings-route='experts'] .expert-card::before {
+.settings-page-wrapper[data-settings-route='experts'] .expert-card::before,
+.settings-page-wrapper[data-settings-route='environments'] .environment-card::before {
   position: absolute;
   z-index: var(--ui-z-base);
   inset: 0;
@@ -103,7 +109,8 @@
 
 .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:focus-visible,
 .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:focus-within,
-.settings-page-wrapper[data-settings-route='experts'] .expert-card:focus-within {
+.settings-page-wrapper[data-settings-route='experts'] .expert-card:focus-within,
+.settings-page-wrapper[data-settings-route='environments'] .environment-card:focus-within {
   outline: none;
   border-color: color-mix(in srgb, var(--settings-card-interaction-accent) 52%, var(--settings-border)) !important;
   box-shadow:
@@ -115,7 +122,8 @@
 @media (hover: hover) and (pointer: fine) {
   .settings-page-wrapper[data-settings-route='skills'] .settings-skill-card:hover,
   .settings-page-wrapper[data-settings-route='tools'] .synon-mcp-card:hover,
-  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover {
+  .settings-page-wrapper[data-settings-route='experts'] .expert-card:hover,
+  .settings-page-wrapper[data-settings-route='environments'] .environment-card:hover {
     border-color: color-mix(in srgb, var(--settings-card-interaction-accent) 34%, var(--settings-border)) !important;
     background: var(--settings-surface) !important;
     box-shadow:
@@ -123,7 +131,8 @@
       0 2px 6px rgba(32, 78, 121, 0.06),
       0 16px 38px rgba(15, 41, 67, 0.11),
       0 0 0 1px color-mix(in srgb, var(--settings-card-interaction-accent) 7%, transparent) !important;
-    transform: translate3d(0, -4px, 0) scale(1.006);
+    /* One shared lift: every library card leaves the page by exactly 1px. */
+    transform: translate3d(0, -1px, 0);
     filter: saturate(1.025);
   }
 

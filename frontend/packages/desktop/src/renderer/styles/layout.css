@@ -316,6 +316,34 @@
   background: var(--synon-sidebar-hover) !important;
 }
 
+/* Keep account-menu glyphs optically centered and independent of the text baseline. */
+html body .sider-account-menu-icon-slot {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+html body .sider-account-menu-icon-slot > .i-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+html body .sider-account-menu-icon-slot > .i-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
 @media (max-width: 767px) {
   .synon-sidebar-header {
     min-height: 58px !important;

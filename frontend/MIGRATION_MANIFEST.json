@@ -3,7 +3,7 @@
   "source": "/home/victor_1/synonbiomed-workbench/frontend",
   "sourceMutationPolicy": "read-only",
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
-  "adaptationFingerprintSHA256": "aab3311d57af9d5cd589772540bea060e0fcc83c4272b47798636f7eaf9d528a",
+  "adaptationFingerprintSHA256": "97d37ddc4daffd85fdf10b84e751848f67a337118e8fec8ae1c374e92ce5b339",
   "removalFingerprintSHA256": "70a676732efea3030080147fc7100096248f3fc0ce13b80256726d97fef98b5c",
   "additionFingerprintSHA256": "91560d67f941cd4c8db188401c1f54d6ea106321d38877981d012c018a14b02b",
   "summary": {
@@ -360,8 +360,8 @@
     {
       "path": "packages/desktop/src/renderer/components/layout/Sider/SiderFooter.tsx",
       "sourceSHA256": "cfdb0eb9e05e1c05a0c8954a76e6079fe791e3b5a9a5aae1e1446e5aa7364805",
-      "targetSHA256": "d0a618de4dfb9afa7cdbe146c22c919198deb8e9cd690cef4e294fdf8eeff606",
-      "bytes": 8501,
+      "targetSHA256": "042650e088792cf181f59c04fbaee36f06c3b3db3140f78a44f93f1f6423a784",
+      "bytes": 9261,
       "reason": "Adapt the desktop layout, command palette, navigation, and window controls to authenticated responsive browser operation."
     },
     {
@@ -2768,8 +2768,8 @@
     {
       "path": "packages/desktop/src/renderer/styles/layout.css",
       "sourceSHA256": "7c770e55d7927b0c7c3dddd607cd783fa6b2007eb3828267fe95e04bd19f8f7b",
-      "targetSHA256": "d0124106bf20b5a3c854ab9f0e4c16ad08ead82e4052089ab226aa134041f9f8",
-      "bytes": 14646,
+      "targetSHA256": "c1280f9a207aacd6a85c57f9265c4c283812925a456b0cdd60575cac5969e3bc",
+      "bytes": 15258,
       "reason": "Converge global styles, builtin theme declarations, PWA assets, service-worker behavior, and renderer type declarations on the focused Web product."
     },
     {
@@ -3706,8 +3706,8 @@
     {
       "path": "tests/unit/renderer/SiderFooterAccountMenu.dom.test.tsx",
       "sourceSHA256": "49cac31e5de5a221ea0fc01db49554f6fa35c89d5f6d675edded8ba2617aa698",
-      "targetSHA256": "651ac9eb3acf640f0d3c56f9dbb54f25ec3f28759dd3ded366bb54a99023610e",
-      "bytes": 6795,
+      "targetSHA256": "7fbc676405b04f81ad1711b46541bd87f11ac860dad63ef4908319a04ad5a0b4",
+      "bytes": 7137,
       "reason": "Align behavioral tests with the migrated Go contracts, full localization, responsive states, and deterministic test isolation."
     },
     {

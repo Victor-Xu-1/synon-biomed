@@ -71,6 +71,13 @@ describe('SiderFooter account menu', () => {
     expect(screen.getByRole('menu', { name: 'Account and settings' })).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: /Help and feedback/i })).not.toBeInTheDocument();
 
+    const menuItems = screen.getAllByRole('menuitem');
+    expect(menuItems).toHaveLength(5);
+    for (const menuItem of menuItems.slice(1)) {
+      expect(menuItem.querySelector('.sider-account-menu-icon-slot')).toBeInTheDocument();
+      expect(menuItem.querySelector('.sider-account-menu-icon-slot > .i-icon')).toBeInTheDocument();
+    }
+
     fireEvent.click(screen.getByTestId('synon-account-profile'));
     expect(onAccountClick).toHaveBeenCalledTimes(1);
 

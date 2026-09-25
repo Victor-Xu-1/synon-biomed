@@ -146,7 +146,13 @@ const SiderFooter: React.FC<SiderFooterProps> = ({
             onFocus={onSettingsIntent}
             onClick={() => runAndClose(onSettingsClick)}
           >
-            {isSettings ? <ArrowCircleLeft theme='outline' size={16} /> : <SettingTwo theme='outline' size={16} />}
+            <span className='sider-account-menu-icon-slot' aria-hidden='true'>
+              {isSettings ? (
+                <ArrowCircleLeft theme='outline' size={16} fill='currentColor' strokeWidth={2.5} />
+              ) : (
+                <SettingTwo theme='outline' size={16} fill='currentColor' strokeWidth={2.5} />
+              )}
+            </span>
             <span>{settingsLabel}</span>
           </button>
           <button
@@ -155,7 +161,9 @@ const SiderFooter: React.FC<SiderFooterProps> = ({
             className='w-full h-36px px-10px flex items-center gap-10px border-none bg-transparent rd-6px text-14px text-t-primary cursor-pointer hover:bg-fill-3'
             onClick={() => runAndClose(onPlansUsageClick)}
           >
-            <Wallet theme='outline' size={16} />
+            <span className='sider-account-menu-icon-slot' aria-hidden='true'>
+              <Wallet theme='outline' size={16} fill='currentColor' strokeWidth={2.5} />
+            </span>
             <span>{t('settings.plansUsageSettings.menuLabel')}</span>
           </button>
           <button
@@ -165,7 +173,15 @@ const SiderFooter: React.FC<SiderFooterProps> = ({
             className='w-full h-36px px-10px flex items-center gap-10px border-none bg-transparent rd-6px text-14px text-t-primary cursor-pointer hover:bg-fill-3 disabled:cursor-wait disabled:opacity-60'
             onClick={() => void checkForUpdates()}
           >
-            <UpdateRotation theme='outline' size={16} className={checkingUpdates ? 'animate-spin' : undefined} />
+            <span className='sider-account-menu-icon-slot' aria-hidden='true'>
+              <UpdateRotation
+                theme='outline'
+                size={16}
+                fill='currentColor'
+                strokeWidth={2.5}
+                className={checkingUpdates ? 'animate-spin' : undefined}
+              />
+            </span>
             <span>{t('settings.synonBiomedCheckUpdates')}</span>
           </button>
           {showLogout && onLogoutClick && (
@@ -175,7 +191,9 @@ const SiderFooter: React.FC<SiderFooterProps> = ({
               className='w-full h-36px px-10px flex items-center gap-10px border-none bg-transparent rd-6px text-14px text-t-primary cursor-pointer hover:bg-fill-3'
               onClick={() => runAndClose(onLogoutClick)}
             >
-              <CloseOne theme='outline' size={16} />
+              <span className='sider-account-menu-icon-slot' aria-hidden='true'>
+                <CloseOne theme='outline' size={16} fill='currentColor' strokeWidth={2.5} />
+              </span>
               <span>{t('settings.googleLogout')}</span>
             </button>
           )}

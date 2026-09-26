@@ -34,7 +34,9 @@ authorize a release.
 - Advanced deployments may set absolute `SYNON_CONDA_HOME` and
   `SYNON_CONDA_ENVS_PATH` overrides; otherwise both roots are derived from the
   current user's `SYNON_HOME`/platform data directory and validated at startup.
-- The default listener is `127.0.0.1:8765`. A non-loopback listener is rejected unless `SYNON_LINK_AUTH_PASSWORD` is configured.
+- The default listener is `127.0.0.1:8765`. Non-loopback listening requires either
+  `SYNON_LINK_AUTH_PASSWORD` or a complete supported external authentication
+  configuration with `SYNON_AUTH_PUBLIC_BASE_URL`; unauthenticated binding is rejected.
 - The default operator username is `local`. There is no compiled-in password; set a unique deployment password.
 - The production runner uses the active saved workspace model provider. `go_builtin` is a test/development authority only.
 

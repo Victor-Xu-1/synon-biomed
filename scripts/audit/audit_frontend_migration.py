@@ -120,6 +120,7 @@ ALLOWED_ADAPTATIONS = {
 }
 
 ALLOWED_ADDITIONS = {
+    "README.md": "Document the browser-only source boundary, dependency authority, scoped checks, and isolated real-backend testing prerequisites.",
     "packages/desktop/src/renderer/styles/tokens.css": "Own the single canonical visual-primitive scale (space, radius, elevation, type, weight, stacking) that every renderer module references instead of restating literals.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryCard.tsx": "Render installed and draft skills with complete readable copy, declared-category icons and isolated keyboard actions.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillFilePreview.tsx": "Render original Markdown and source files through distinct safe read-only previews.",
@@ -504,7 +505,7 @@ ALLOWED_ADAPTATION_RULES = (
 
 APPROVED_ADAPTATION_FINGERPRINT = "97d37ddc4daffd85fdf10b84e751848f67a337118e8fec8ae1c374e92ce5b339"
 APPROVED_REMOVAL_FINGERPRINT = "70a676732efea3030080147fc7100096248f3fc0ce13b80256726d97fef98b5c"
-APPROVED_ADDITION_FINGERPRINT = "91560d67f941cd4c8db188401c1f54d6ea106321d38877981d012c018a14b02b"
+APPROVED_ADDITION_FINGERPRINT = "4874f1906067c6a7fd347c1890c4633bccf9fb1946f01b88e92a5502298b9b69"
 
 MANUAL_LICENSES = {
     "@nightingale-elements/nightingale-msa": {

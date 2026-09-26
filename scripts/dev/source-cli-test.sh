@@ -46,7 +46,7 @@ chmod 0755 "$SOURCE_ROOT/scripts/dev/source-quickstart.sh"
 HOME="$TMP_DIR/home" PATH="/usr/bin:/bin" \
   bash "$SOURCE_ROOT/scripts/dev/install-source-cli.sh" >"$TMP_DIR/install.log"
 grep -Fq '[synon-install] installed:' "$TMP_DIR/install.log"
-grep -Fq 'export PATH="/tmp/' "$TMP_DIR/install.log"
+grep -Fq "export PATH=\"$TMP_DIR/home/.local/bin:\$PATH\"" "$TMP_DIR/install.log"
 [[ ! -e "$TMP_DIR/home/.bashrc" ]]
 [[ "$(realpath -e "$TMP_DIR/home/.local/bin/synon")" == "$SOURCE_ROOT/scripts/dev/synon" ]]
 

@@ -13,6 +13,11 @@ SPEC.loader.exec_module(MODULE)
 
 
 class FrontendMigrationPolicyTests(unittest.TestCase):
+    def test_frontend_readme_is_an_exact_documentation_addition(self) -> None:
+        self.assertIsNotNone(MODULE.addition_reason("README.md"))
+        self.assertIsNone(MODULE.addition_reason("UNREVIEWED.md"))
+        self.assertIsNone(MODULE.addition_reason("docs/README.md"))
+
     def test_text_publication_coverage_is_an_exact_addition_not_a_directory_grant(self) -> None:
         self.assertIsNotNone(MODULE.addition_reason("packages/desktop/src/common/chat/textPublicationCoverage.ts"))
         self.assertIsNone(MODULE.addition_reason("packages/desktop/src/common/chat/unreviewedPublicationCoverage.ts"))

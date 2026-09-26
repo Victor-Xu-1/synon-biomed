@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -2714,22 +2715,34 @@ func TestSessionRunnerChatFullAccessDelegatedSessionUsesExactParentSnapshot(t *t
 }
 
 func TestSessionRunnerChatOnceTimesOutSlowModelEndpoint(t *testing.T) {
+	requestStarted := make(chan struct{}, 1)
+	requestCancelled := make(chan error, 1)
+	releaseHandler := make(chan struct{})
 	modelAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(500 * time.Millisecond)
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{
-			"choices": [{
-				"message": {
-					"role": "assistant",
-					"content": "late response"
-				}
-			}]
-		}`))
+		// Drain the request so the real HTTP server can observe a disconnected
+		// client while the handler deliberately withholds its response.
+		if _, err := io.Copy(io.Discard, r.Body); err != nil {
+			t.Errorf("read model request: %v", err)
+			return
+		}
+		select {
+		case requestStarted <- struct{}{}:
+		default:
+		}
+		select {
+		case <-r.Context().Done():
+			select {
+			case requestCancelled <- r.Context().Err():
+			default:
+			}
+		case <-releaseHandler:
+		}
 	}))
 	defer modelAPI.Close()
+	defer close(releaseHandler)
 
 	root := t.TempDir()
-	srv := New(Options{FileRoot: root})
+	srv := New(Options{FileRoot: root, HTTPClient: modelAPI.Client()})
 	allowPairingForTest(t, srv, "feishu", "ou_chat_timeout_runner")
 	httpServer := httptestServer(t, srv)
 
@@ -2749,8 +2762,12 @@ func TestSessionRunnerChatOnceTimesOutSlowModelEndpoint(t *testing.T) {
 	}`))
 	sessionID := first["sessionId"].(string)
 
-	started := time.Now()
-	result, err := srv.RunSessionRunnerChatOnce(context.Background(), SessionRunnerChatOptions{RunnerID: "chat-timeout-runner-a",
+	// This deadline only bounds a broken test. RequestTimeout must cancel the
+	// HTTP call while this parent context is still live; runner bookkeeping is
+	// not part of the model request's 40 ms budget.
+	watchdog, cancelWatchdog := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelWatchdog()
+	result, err := srv.RunSessionRunnerChatOnce(watchdog, SessionRunnerChatOptions{RunnerID: "chat-timeout-runner-a",
 		Endpoint:         modelAPI.URL + "/v1/chat/completions",
 		Model:            "test-model",
 		RequestTimeout:   40 * time.Millisecond,
@@ -2758,15 +2775,30 @@ func TestSessionRunnerChatOnceTimesOutSlowModelEndpoint(t *testing.T) {
 		ReplayLimit:      20,
 		OutputLimitBytes: 64 * 1024,
 	})
-	elapsed := time.Since(started)
+	if err := watchdog.Err(); err != nil {
+		t.Fatalf("outer watchdog ended the runner instead of its request timeout: %v", err)
+	}
 	if err != nil {
 		t.Fatalf("RunSessionRunnerChatOnce() error = %v", err)
 	}
 	if !result.Claimed || result.SessionID != sessionID || result.Status != "failed" || result.FinishEventID == 0 {
 		t.Fatalf("runner result = %+v", result)
 	}
-	if elapsed > 300*time.Millisecond {
-		t.Fatalf("runner did not respect request timeout, elapsed=%s", elapsed)
+	select {
+	case <-requestStarted:
+	case <-watchdog.Done():
+		t.Fatal("model endpoint never received the request")
+	}
+	select {
+	case err := <-requestCancelled:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("model request context error = %v, want client cancellation", err)
+		}
+	case <-watchdog.Done():
+		t.Fatal("model request timeout did not cancel the server-side request")
+	}
+	if err := watchdog.Err(); err != nil {
+		t.Fatalf("request cancellation was only observed after the outer watchdog: %v", err)
 	}
 
 	replayed := postToolInput(t, httpServer.URL, "session_replay", map[string]any{

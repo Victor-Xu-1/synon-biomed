@@ -3,7 +3,8 @@ set -Eeuo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 QUICKSTART="$SCRIPT_DIR/source-quickstart.sh"
-TMP_DIR=$(mktemp -d)
+TMP_ROOT=$(realpath -e "${TMPDIR:-/tmp}")
+TMP_DIR=$(mktemp -d "$TMP_ROOT/synon-source-quickstart-test.XXXXXX")
 QUICKSTART_PID=''
 OCCUPIED_PID=''
 
@@ -14,7 +15,15 @@ cleanup() {
       wait "$pid" 2>/dev/null || true
     fi
   done
-  [[ "$TMP_DIR" == /tmp/tmp.* ]] && rm -rf -- "$TMP_DIR"
+  # Clean only this invocation's directory, including under an isolated TMPDIR.
+  # A location-specific false condition must not turn passing assertions into
+  # a failure exit from the EXIT trap.
+  if [[ "$TMP_DIR" == "$TMP_ROOT"/synon-source-quickstart-test.* && -d "$TMP_DIR" && ! -L "$TMP_DIR" ]]; then
+    rm -rf -- "$TMP_DIR"
+  else
+    echo 'refusing an unverified quickstart test cleanup path' >&2
+    return 1
+  fi
 }
 trap cleanup EXIT INT TERM
 

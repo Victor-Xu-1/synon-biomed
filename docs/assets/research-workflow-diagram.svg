@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1170" viewBox="0 0 960 1170" role="img" aria-labelledby="workflow-title workflow-description">
+  <title id="workflow-title">从问题到可复核的产物</title>
+  <desc id="workflow-description">产品解释图。五步依次为：一，明确问题，定义范围、输入和期望产物；二，配置能力，选择模型、工具和环境；三，跟进执行，查看反馈并按需授权；四，检查产物，核对版本、来源和局限；五，继续研究，补充证据并提出新问题。只有第五步通过一条细回路返回第一步。这是概念流程，不代表固定任务状态机，不是运行截图，也不代表任务或科研验收。</desc>
+
+  <defs>
+    <marker id="forward-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 2 1 L 8 5 L 2 9" fill="none" stroke="#167b73" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="return-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 2 1 L 8 5 L 2 9" fill="none" stroke="#b79b62" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="960" height="1170" fill="#ffffff"/>
+
+  <g font-family="'Microsoft YaHei', 'Noto Sans SC', 'PingFang SC', sans-serif" fill="#17323d">
+    <text x="64" y="68" font-size="30" font-weight="600" letter-spacing="1.5" fill="#167b73">WORKFLOW / 产品解释图</text>
+    <text x="64" y="138" font-size="54" font-weight="700">从问题到可复核的产物</text>
+    <path d="M 64 174 H 144" stroke="#b79b62" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Five numbered reading steps; these are not application states. -->
+    <g id="step-1">
+      <rect x="146" y="210" width="706" height="140" rx="24" fill="#edf6f3"/>
+      <circle cx="98" cy="280" r="30" fill="#167b73"/>
+      <text x="98" y="293" font-size="38" font-weight="600" text-anchor="middle" fill="#ffffff">1</text>
+      <g transform="translate(182 254)" fill="none" stroke="#167b73" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 9 0 H 0 V 12 M 39 0 H 48 V 12 M 48 36 V 48 H 39 M 9 48 H 0 V 36"/>
+        <circle cx="24" cy="24" r="11"/>
+        <path d="M 24 9 V 16 M 24 32 V 39 M 9 24 H 16 M 32 24 H 39"/>
+      </g>
+      <text x="260" y="267" font-size="44" font-weight="700">明确问题</text>
+      <text x="260" y="316" font-size="30">范围 / 输入 / 期望产物</text>
+    </g>
+
+    <g id="step-2">
+      <rect x="146" y="374" width="706" height="140" rx="24" fill="#edf6f3"/>
+      <circle cx="98" cy="444" r="30" fill="#167b73"/>
+      <text x="98" y="457" font-size="38" font-weight="600" text-anchor="middle" fill="#ffffff">2</text>
+      <g transform="translate(182 418)" fill="none" stroke="#167b73" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 4 9 H 13 M 23 9 H 44 M 4 24 H 29 M 39 24 H 44 M 4 39 H 9 M 19 39 H 44"/>
+        <circle cx="18" cy="9" r="5"/>
+        <circle cx="34" cy="24" r="5"/>
+        <circle cx="14" cy="39" r="5"/>
+      </g>
+      <text x="260" y="431" font-size="44" font-weight="700">配置能力</text>
+      <text x="260" y="480" font-size="30">模型 / 工具 / 环境</text>
+    </g>
+
+    <g id="step-3">
+      <rect x="146" y="538" width="706" height="140" rx="24" fill="#edf6f3"/>
+      <circle cx="98" cy="608" r="30" fill="#167b73"/>
+      <text x="98" y="621" font-size="38" font-weight="600" text-anchor="middle" fill="#ffffff">3</text>
+      <g transform="translate(182 582)" fill="none" stroke="#167b73" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="24" cy="24" r="20"/>
+        <path d="M 24 12 V 25 L 33 31 M 24 0 V 4 M 48 24 H 44 M 24 48 V 44 M 0 24 H 4"/>
+      </g>
+      <text x="260" y="595" font-size="44" font-weight="700">跟进执行</text>
+      <text x="260" y="644" font-size="30">查看反馈 / 按需授权</text>
+    </g>
+
+    <g id="step-4">
+      <rect x="146" y="702" width="706" height="140" rx="24" fill="#edf6f3"/>
+      <circle cx="98" cy="772" r="30" fill="#167b73"/>
+      <text x="98" y="785" font-size="38" font-weight="600" text-anchor="middle" fill="#ffffff">4</text>
+      <g transform="translate(182 746)" fill="none" stroke="#167b73" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 6 43 H 2 V 2 H 28 L 37 11 V 19 M 28 2 V 11 H 37 M 10 13 H 20 M 10 22 H 18"/>
+        <circle cx="29" cy="32" r="11"/>
+        <path d="M 37 40 L 46 49"/>
+      </g>
+      <text x="260" y="759" font-size="44" font-weight="700">检查产物</text>
+      <text x="260" y="808" font-size="30">版本 / 来源 / 局限</text>
+    </g>
+
+    <g id="step-5">
+      <rect x="146" y="866" width="706" height="140" rx="24" fill="#edf6f3"/>
+      <circle cx="98" cy="936" r="30" fill="#167b73"/>
+      <text x="98" y="949" font-size="38" font-weight="600" text-anchor="middle" fill="#ffffff">5</text>
+      <g transform="translate(182 910)" fill="none" stroke="#167b73" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 2 27 L 15 27 L 24 12 L 44 12 M 15 27 L 27 42 H 44"/>
+        <circle cx="3" cy="27" r="3" fill="#edf6f3"/>
+        <circle cx="44" cy="12" r="4" fill="#edf6f3"/>
+        <circle cx="44" cy="42" r="4" fill="#edf6f3"/>
+      </g>
+      <text x="260" y="923" font-size="44" font-weight="700">继续研究</text>
+      <text x="260" y="972" font-size="30">补充证据 / 提出新问题</text>
+    </g>
+
+    <g fill="none" stroke="#167b73" stroke-width="2.5" stroke-linecap="round" marker-end="url(#forward-arrow)">
+      <path d="M 98 318 V 406"/>
+      <path d="M 98 482 V 570"/>
+      <path d="M 98 646 V 734"/>
+      <path d="M 98 810 V 898"/>
+    </g>
+
+    <!-- One return route only: new evidence or questions lead back to framing. -->
+    <path d="M 862 936 H 880 Q 902 936 902 914 V 302 Q 902 280 880 280 H 862" fill="none" stroke="#b79b62" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#return-arrow)"/>
+
+    <text x="64" y="1073" font-size="30">概念流程，不代表固定任务状态机。</text>
+    <text x="64" y="1126" font-size="28">产品解释图 · 非运行截图 · 不代表任务或科研验收</text>
+  </g>
+</svg>

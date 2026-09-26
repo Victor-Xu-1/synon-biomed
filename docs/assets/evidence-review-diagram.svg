@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000" role="img" aria-labelledby="evidence-review-title evidence-review-desc">
+  <title id="evidence-review-title">结果，连回支持它的材料</title>
+  <desc id="evidence-review-desc">产品解释图，不是运行截图，也不代表科学有效性。中心是可查看具体文件与版本的研究产物。三组不带方向箭头的细线将它与来源、输入、执行三类复核材料联系起来：来源包括论文、数据、引用；输入包括文件、对象、参数；执行包括工具输出、方法、错误。连接表示复核时结合这些信息，不表示系统已经自动完整捕获这些元数据。下方独立的领域复核提示询问证据是否充分、方法是否适用。已记录信息供复核，缺失信息仍需核查。</desc>
+
+  <rect width="1000" height="1000" fill="#fff"/>
+  <g font-family="Noto Sans CJK SC, Microsoft YaHei, PingFang SC, Heiti SC, sans-serif" fill="#17323d">
+    <!-- Editorial heading; the image is deliberately not a product screenshot. -->
+    <text x="48" y="54" font-size="30" font-weight="600" letter-spacing="1.5" fill="#167b73">REVIEW / 产品解释图</text>
+    <text x="48" y="121" font-size="54" font-weight="650">结果，连回支持它的材料</text>
+    <text x="48" y="168" font-size="28" fill="#17323d">产品解释图 · 非运行截图 · 不代表科学有效性</text>
+    <path d="M48 194H952" fill="none" stroke="#b79b62" stroke-width="1.5"/>
+
+    <text x="500" y="264" text-anchor="middle" font-size="30" fill="#167b73">复核时结合</text>
+
+    <!-- Association lines, not a data-capture or execution-completion flow. -->
+    <g fill="none" stroke="#167b73" stroke-width="2.5" stroke-linecap="round">
+      <path d="M267 349C307 349 325 377 360 404"/>
+      <path d="M733 349C693 349 675 377 640 404"/>
+      <path d="M500 585V626"/>
+    </g>
+
+    <!-- The artifact is the object under review, not an approval or success badge. -->
+    <circle cx="500" cy="440" r="145" fill="#edf6f3"/>
+    <circle cx="500" cy="440" r="145" fill="none" stroke="#167b73" stroke-opacity="0.24" stroke-width="1.5"/>
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M470 338H514L533 357V412H470Z" fill="#fff" stroke="#167b73" stroke-width="3"/>
+      <path d="M514 338V357H533" stroke="#167b73" stroke-width="3"/>
+      <path d="M483 374H517M483 387H507M483 400H512" stroke="#b79b62" stroke-width="2.5"/>
+      <path d="M458 350V424H520" stroke="#167b73" stroke-opacity="0.4" stroke-width="2.5"/>
+    </g>
+    <text x="500" y="474" text-anchor="middle" font-size="44" font-weight="650">研究产物</text>
+    <text x="500" y="521" text-anchor="middle" font-size="28">查看具体文件与版本</text>
+
+    <!-- Source: an original open-book outline, with no fabricated citations. -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M164 292C148 282 135 282 120 286V330C135 326 148 328 164 338C180 328 193 326 208 330V286C193 282 180 282 164 292Z" fill="#edf6f3" stroke="#167b73" stroke-width="3"/>
+      <path d="M164 294V338" stroke="#167b73" stroke-width="3"/>
+      <path d="M130 300C140 298 147 300 154 305M130 313C140 311 147 313 154 318M174 305C182 300 190 298 199 300M174 318C182 313 190 311 199 313" stroke="#167b73" stroke-opacity="0.55" stroke-width="2.2"/>
+      <path d="M120 340C138 337 151 341 164 348C177 341 190 337 208 340" stroke="#b79b62" stroke-width="2.5"/>
+    </g>
+    <text x="165" y="395" text-anchor="middle" font-size="42" font-weight="650">来源</text>
+    <text x="165" y="438" text-anchor="middle" font-size="28">论文 / 数据 / 引用</text>
+
+    <!-- Inputs: a file outline and its backing sheet, rather than a UI panel. -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M808 282H847L866 301V348H808Z" fill="#edf6f3" stroke="#167b73" stroke-width="3"/>
+      <path d="M847 282V301H866" stroke="#167b73" stroke-width="3"/>
+      <path d="M797 293V359H855" stroke="#b79b62" stroke-width="2.5"/>
+      <path d="M821 316H850M821 331H839" stroke="#167b73" stroke-opacity="0.6" stroke-width="2.5"/>
+    </g>
+    <text x="835" y="395" text-anchor="middle" font-size="42" font-weight="650">输入</text>
+    <text x="835" y="438" text-anchor="middle" font-size="28">文件 / 对象 / 参数</text>
+
+    <!-- Execution: an open process trace; no arrows, status dots, or checkmarks. -->
+    <g fill="none" stroke="#167b73" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M466 643H489V663H512V683H535"/>
+      <path d="M456 635H466V651H456M535 675H545V691H535"/>
+      <path d="M498 647V656M498 670V679" stroke="#b79b62"/>
+    </g>
+    <text x="500" y="730" text-anchor="middle" font-size="42" font-weight="650">执行</text>
+    <text x="500" y="773" text-anchor="middle" font-size="28">工具输出 / 方法 / 错误</text>
+
+    <!-- Human domain review is separate from recorded provenance. -->
+    <rect x="48" y="816" width="904" height="111" fill="#edf6f3"/>
+    <path d="M48 816V927" fill="none" stroke="#b79b62" stroke-width="5"/>
+    <text x="82" y="862" font-size="38" font-weight="650">领域复核：</text>
+    <text x="82" y="906" font-size="30">证据是否充分？方法是否适用？</text>
+    <text x="500" y="977" text-anchor="middle" font-size="28">已记录信息供复核；缺失信息仍需核查</text>
+  </g>
+</svg>

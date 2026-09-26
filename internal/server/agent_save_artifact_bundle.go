@@ -98,11 +98,17 @@ func (s *Server) augmentAgentSaveArtifactsWithExecutionBundles(
 			if output.Delivery != "snapshot" && output.Delivery != "working_data" {
 				continue
 			}
-			relative, found := managedExecutionBundleOutputPath(workspaceRoot, owned.Root, output.Path)
+			readableRoot := managedExecutionAuthorityReadableRoot(owned)
+			relative, found := managedExecutionBundleOutputPath(workspaceRoot, readableRoot, output.Path)
 			if !found {
 				continue
 			}
-			if digest := owned.Digests[relative]; digest == "" {
+			withinRoot, err := filepath.Rel(readableRoot, filepath.Join(workspaceRoot, filepath.FromSlash(relative)))
+			if err != nil {
+				continue
+			}
+			logical, err := filepath.Rel(workspaceRoot, filepath.Join(owned.Root, withinRoot))
+			if err != nil || owned.Digests[filepath.ToSlash(logical)] == "" {
 				continue
 			}
 			if !fileSet[relative] {

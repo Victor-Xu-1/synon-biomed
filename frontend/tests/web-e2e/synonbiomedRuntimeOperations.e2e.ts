@@ -30,8 +30,9 @@ for (const viewport of viewports) {
             body: JSON.stringify({
               ...frame,
               status: 'failed',
-              status_description: 'Checking safe-mol availability',
-              output_data: { error: 'safe-mol dependency process exited unexpectedly' },
+              status_description: 'Checking network bridge availability',
+              runtime_failure_kind: 'network_bridge_down',
+              output_data: { error: 'network bridge process exited unexpectedly' },
             }),
           });
         });
@@ -60,7 +61,8 @@ for (const viewport of viewports) {
         await page.getByTestId('synon-biomed-task-details-trigger').click();
         const taskCenter = page.getByTestId('synon-biomed-task-status-panel');
         await expect(taskCenter).toBeVisible();
-        await expect(taskCenter).toContainText('safe-mol dependency process exited unexpectedly');
+        await expect(taskCenter).toContainText('网络桥接服务不可用');
+        await expect(taskCenter).not.toContainText('network bridge process exited unexpectedly');
         await expect(taskCenter.getByTestId('synon-biomed-task-refresh')).toBeVisible();
         await assertInsideViewport(runtimeControls, viewport.width);
         await assertInsideViewport(taskCenter, viewport.width);
@@ -75,7 +77,6 @@ for (const viewport of viewports) {
         }, frameId);
         expect(streamingBatch.status).toBe(200);
         expect(streamingBatch.body).toMatchObject({ root_frame_id: frameId, buffers: [] });
-
       });
     });
 
@@ -191,10 +192,7 @@ async function exerciseApprovalScopeControls(page: Page, approval: Locator) {
 
   const projectScope = page.getByRole('menuitemradio', { name: '本项目 在本项目中记住' });
   await expect(page.getByRole('menuitemradio')).toHaveCount(4);
-  await expect(page.getByRole('menuitemradio', { name: '本次 仅本次调用' })).toHaveAttribute(
-    'aria-checked',
-    'true'
-  );
+  await expect(page.getByRole('menuitemradio', { name: '本次 仅本次调用' })).toHaveAttribute('aria-checked', 'true');
   await projectScope.click();
   await expect(approval.getByRole('button', { name: '允许 本项目' })).toBeVisible();
   await expect(approval).toBeVisible();

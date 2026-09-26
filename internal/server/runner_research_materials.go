@@ -302,7 +302,7 @@ func researchCheckpointExecutedTerminal(checkpoint sessionRunnerDurableToolCheck
 		return true
 	}
 	var value any
-	return json.Unmarshal([]byte(result), &value) != nil || !agentruntime.IsNonExecutingPreflight(value)
+	return json.Unmarshal([]byte(result), &value) != nil || !agentruntime.ToolResultDidNotExecute(value)
 }
 
 func (s *Server) sessionRunnerResearchAttemptTool(checkpoint sessionRunnerDurableToolCheckpoint) bool {

@@ -9,12 +9,55 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 )
+
+func TestHostGrantAdmissionRejectsProtectedKernelNamespaceWithoutChangingGrants(t *testing.T) {
+	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" {
+		t.Skip("Linux kernel namespace contract")
+	}
+	s := New(Options{FileRoot: t.TempDir()})
+	t.Cleanup(func() { _ = s.Close(context.Background()) })
+	safe := t.TempDir()
+	if _, err := s.upsertHostGrant("owner", safe, "read"); err != nil {
+		t.Fatal(err)
+	}
+	alias := filepath.Join(t.TempDir(), "namespace-alias")
+	if err := os.Symlink("/tmp", alias); err != nil {
+		t.Fatal(err)
+	}
+	for _, route := range []string{"/api/preferences/host-grants", "/api/preferences/host-grants/picker", "/api/go/preferences/host-grants"} {
+		for _, path := range []string{"/tmp", "/proc", alias} {
+			mode := "rw"
+			if strings.Contains(route, "/go/") {
+				mode = "read_write"
+			}
+			runtimeCompatJSON(t, s.Handler(), http.MethodPost, route, "owner", map[string]any{"path": path, "mode": mode}, http.StatusBadRequest)
+		}
+	}
+	grants, err := s.loadHostGrants("owner")
+	if err != nil || len(grants) != 1 || grants[0].Path != safe {
+		t.Fatalf("rejected grants changed existing permission: %#v %v", grants, err)
+	}
+	// Historical invalid permissions remain visible and revocable, not silently
+	// ignored or rewritten. Changing their mode cannot reinstall them.
+	if _, err := s.settingsStore.Set(hostGrantsSettingKeyForUser("owner"), []hostGrant{{ID: "/tmp", Path: "/tmp", Mode: "read_write"}}); err != nil {
+		t.Fatal(err)
+	}
+	runtimeCompatJSON(t, s.Handler(), http.MethodPatch, "/api/preferences/host-grants", "owner", map[string]any{"path": "/tmp", "mode": "ro"}, http.StatusBadRequest)
+	if _, err := s.agentKernelConfinementMounts("owner", t.TempDir(), nil); err == nil {
+		t.Fatal("legacy invalid grant reached process startup without admission feedback")
+	}
+	runtimeCompatJSON(t, s.Handler(), http.MethodDelete, "/api/preferences/host-grants", "owner", map[string]any{"path": "/tmp"}, http.StatusOK)
+	if grants, err := s.loadHostGrants("owner"); err != nil || len(grants) != 0 {
+		t.Fatalf("legacy invalid grant could not be explicitly revoked: %#v %v", grants, err)
+	}
+}
 
 func TestCompatibilityHostGrantsListCreatePickerAndRestart(t *testing.T) {
 	root := t.TempDir()

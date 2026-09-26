@@ -143,7 +143,7 @@ func (s *Server) interruptClaimedSessionRunnerWithCause(
 	return withActiveRunSettlementContext(activeRun, 2*time.Second, func(persistCtx context.Context) error {
 		return s.interruptClaimedSessionRunnerLockedWithCause(
 			persistCtx, options, result, activeRun, projectionClaim, transcriptAuthority,
-			reasonCode, runnerInterruptionAutoResume(reasonCode), resumeDetail, cause,
+			reasonCode, runnerInterruptionAutoResume(reasonCode) && !result.AwaitingRecoveryCondition, resumeDetail, cause,
 		)
 	})
 }
@@ -253,10 +253,9 @@ func (s *Server) interruptClaimedSessionRunnerLockedWithCause(
 			ResumeDetail:             resumeDetail,
 			Cause:                    cause,
 			RecoveryContractRevision: sessionRunnerRecoveryContractRevision,
-			Resumable: reasonCode == sessionRunnerModelProviderUnavailableReasonCode ||
-				reasonCode == sessionRunnerCorrectionNoProgressExhaustedReasonCode,
-			AutoResume:   autoResume,
-			Destinations: transcriptRunnerDestinations(transcriptAuthority),
+			Resumable:                !autoResume && runnerInterruptionMayContinueSameTask(reasonCode),
+			AutoResume:               autoResume,
+			Destinations:             transcriptRunnerDestinations(transcriptAuthority),
 		})
 		if err != nil {
 			return fmt.Errorf("persist resumable runner interruption: %w", err)

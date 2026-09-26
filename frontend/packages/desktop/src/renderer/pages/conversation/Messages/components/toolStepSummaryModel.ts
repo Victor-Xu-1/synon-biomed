@@ -103,11 +103,6 @@ export function buildToolStepGroupSummary(
   }
 
   const failed = executedTools.filter((tool) => tool.status === 'error').length;
-  const stepLabel = executedTools.length
-    ? chinese
-      ? `${executedTools.length} 步`
-      : `${executedTools.length} ${executedTools.length === 1 ? 'step' : 'steps'}`
-    : '';
   const notExecutedLabel = notExecutedTools.length
     ? chinese
       ? `${notExecutedTools.length} 项未执行`
@@ -134,7 +129,7 @@ export function buildToolStepGroupSummary(
     headline:
       (activeDescription && localizedHumanDescription(activeDescription, chinese)) ??
       `${phrases.join(chinese ? '、' : ', ')}${hasMoreActivityKinds ? (chinese ? '等' : ', and more') : ''}`,
-    meta: [stepLabel, notExecutedLabel, failureLabel].filter(Boolean).join(' · '),
+    meta: [notExecutedLabel, failureLabel].filter(Boolean).join(' · '),
   };
 }
 
@@ -154,10 +149,6 @@ export function buildToolStepResultSummary(tool: NormalizedToolCall, language: s
   if (tool.status === 'interrupted') return chinese ? '执行已中断' : 'Interrupted';
   if (tool.status === 'unknown') return chinese ? '状态待确认' : 'Status unknown';
   if (tool.status === 'running' || tool.status === 'pending') {
-    if (tool.progress) {
-      const progress = buildToolProgressPublicPresentation(tool.progress, language);
-      if (progress.compactResult) return progress.compactResult;
-    }
     return chinese ? '进行中' : 'Running';
   }
   if (tool.status === 'canceled') return chinese ? '已停止' : 'Stopped';

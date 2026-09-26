@@ -68,10 +68,14 @@ func (g serverAgentRuntimeToolGateway) noProgressBatchPreflight(ctx context.Cont
 	err = g.server.scanSessionRunnerRecoveryEntries(ctx, run.Transcript, func(entry eventjournal.Entry) error {
 		previousScope := recovery.ObligationFingerprint
 		recovery.observeEntry(entry, run.Transcript)
-		if previousScope != recovery.ObligationFingerprint || runnerEntryStartsNewLogicalTask(entry) || runnerCheckpointHasMaterialProgress(entry.Message) {
+		superseded := runnerRecoveryCheckpointSuperseded(entry)
+		if superseded || previousScope != recovery.ObligationFingerprint || runnerEntryStartsNewLogicalTask(entry) || runnerCheckpointHasMaterialProgress(entry.Message) {
 			for key := range targets {
 				targets[key] = noProgressReceiptMatch{}
 			}
+		}
+		if superseded {
+			return nil
 		}
 		message := entry.Message
 		if message["type"] != "runner_checkpoint" {
@@ -121,7 +125,7 @@ func (g serverAgentRuntimeToolGateway) noProgressBatchPreflight(ctx context.Cont
 		for _, key := range keys {
 			if targets[key].closed {
 				if diagnostics[index] == "" {
-					diagnostics[index] = noProgressClosedRouteDiagnostic
+					diagnostics[index] = g.noProgressClosedRouteDiagnostic(calls[index])
 				}
 				break
 			}
@@ -131,6 +135,34 @@ func (g serverAgentRuntimeToolGateway) noProgressBatchPreflight(ctx context.Cont
 }
 
 const noProgressClosedRouteDiagnostic = `{"code":"durable_no_progress_route_closed","message":"This exact tool route is closed in the current recovery obligation.","recovery":"Reuse completed receipts and choose materially different arguments or another advertised capability; finish if no further evidence is needed."}`
+
+func (g serverAgentRuntimeToolGateway) noProgressClosedRouteDiagnostic(call agentruntime.ToolCall) string {
+	return g.closedRouteDiagnostic(call, noProgressClosedRouteDiagnostic)
+}
+
+func (g serverAgentRuntimeToolGateway) closedRouteDiagnostic(call agentruntime.ToolCall, fallback string) string {
+	name, err := canonicalRuntimeToolName(call.Name)
+	if err != nil || g.server == nil || g.taskRun == nil {
+		return fallback
+	}
+	input := map[string]any{}
+	if len(call.Arguments) == 0 || json.Unmarshal(call.Arguments, &input) != nil {
+		return fallback
+	}
+	correction := g.agentRuntimeRegisteredAcquisitionPreflight(name, input)
+	if correction == nil && name == "skill" {
+		correction = g.retainedSkillExecutionDiagnostic(stringValue(input["skill"]))
+	}
+	if correction == nil {
+		return fallback
+	}
+	var closed map[string]any
+	if json.Unmarshal([]byte(fallback), &closed) != nil {
+		return fallback
+	}
+	correction["status"] = closed["code"]
+	return agentRuntimePreflightDiagnostic(correction)
+}
 
 func runnerCheckpointHasReusableNoProgressReceipt(message eventjournal.Message) bool {
 	if _, ok := message["toolInput"].(map[string]any); !ok {
@@ -142,7 +174,8 @@ func runnerCheckpointHasReusableNoProgressReceipt(message eventjournal.Message) 
 	}
 	result := mapValue(message["toolResult"])
 	return len(result) > 0 && agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded &&
-		!agentruntime.IsNonExecutingPreflight(result) && !runnerCheckpointHasMaterialProgress(message)
+		!agentruntime.ToolResultDidNotExecute(result) &&
+		!runnerCheckpointHasMaterialProgress(message)
 }
 
 // A persisted admission rejection is evidence that the unchanged route is
@@ -158,5 +191,6 @@ func runnerCheckpointHasRejectedRouteReceipt(message eventjournal.Message) bool 
 		return false
 	}
 	result := mapValue(message["toolResult"])
-	return result["ok"] == false && result["executed"] == false && strings.TrimSpace(stringValue(result["code"])) != ""
+	return result["ok"] == false && result["executed"] == false &&
+		strings.TrimSpace(stringValue(result["code"])) != "" && !runnerDerivedClosedRouteResult(result)
 }

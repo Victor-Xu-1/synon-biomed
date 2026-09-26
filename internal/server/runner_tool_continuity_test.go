@@ -8,6 +8,23 @@ import (
 	eventjournal "synon-go/internal/persistence/journal"
 )
 
+func TestSessionRunnerToolContinuityUsesExecutedSkillIdentity(t *testing.T) {
+	entries := []eventjournal.Entry{{EventID: 1, Message: eventjournal.Message{
+		"type": "runner_checkpoint", "toolCallId": "skill-call", "toolName": "skill",
+		"toolPhase": "completed", "toolInput": map[string]any{"skill": "chemistry"},
+		"executedToolInput": map[string]any{"skill": "p2rank-pocket-detection"},
+		"toolResult":        map[string]any{"ok": true},
+	}}}
+
+	records, err := sessionRunnerToolContinuityRecords(entries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records) != 1 || records[0].SkillName != "p2rank-pocket-detection" {
+		t.Fatalf("continuity records=%#v", records)
+	}
+}
+
 func TestSessionRunnerToolContinuityPreservesLoadedSkillsAndSourcesAcrossLongCompaction(t *testing.T) {
 	entries := []eventjournal.Entry{
 		{EventID: 1, Message: eventjournal.Message{

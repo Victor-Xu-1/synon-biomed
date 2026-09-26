@@ -24,6 +24,34 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+func TestConfinementFailureDiagnosticIsBoundedAndRedacted(t *testing.T) {
+	got := confinementFailureDiagnostic(kernelConfinementOuter, ErrProtectedHostMount)
+	if !strings.Contains(got, "phase=outer, code=protected_path_overlap") {
+		t.Fatalf("failure stage was lost: %s", got)
+	}
+	got = confinementFailureDiagnostic("private-stage-value", errors.New("private-argument-and-secret"))
+	if strings.Contains(got, "private") || !strings.Contains(got, "phase=unknown, code=setup_failed") {
+		t.Fatalf("untrusted diagnostic escaped: %s", got)
+	}
+	got = confinementFailureDiagnostic(kernelConfinementTarget, unix.EACCES)
+	if !strings.Contains(got, "phase=target, code=system_error_13") {
+		t.Fatalf("system error class was lost: %s", got)
+	}
+}
+
+func TestConfinementRejectsHostGrantOverPrivateRuntimeNamespace(t *testing.T) {
+	command, err := newConfinedWorkerCommand(t.TempDir(), "/usr/bin/true", nil,
+		[]string{"PATH=/usr/bin:/bin"}, []WorkerMount{{Path: "/tmp", Writable: true}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeKernelCommandExtraFiles(command)
+	output, err := command.CombinedOutput()
+	if err == nil || !strings.Contains(string(output), "phase=outer, code=protected_path_overlap") {
+		t.Fatalf("unsafe host mount did not fail with an actionable, redacted cause: %s %v", output, err)
+	}
+}
+
 func TestSynonKernelConfinementPolicyIdentity(t *testing.T) {
 	var raw bytes.Buffer
 	for _, instruction := range synonKernelFilter {
@@ -698,7 +726,24 @@ func TestConfinedWorkerCommandOwnsFrozenExtraFilesUntilStart(t *testing.T) {
 }
 
 func TestConfinedWorkerPreservesAuditedAuxiliarySocketWithoutAllowingNewUnixSockets(t *testing.T) {
+	for _, mounted := range []bool{false, true} {
+		t.Run(fmt.Sprintf("immutable_mount_%t", mounted), func(t *testing.T) {
+			testConfinedWorkerPreservesAuxiliarySocket(t, mounted)
+		})
+	}
+}
+
+func testConfinedWorkerPreservesAuxiliarySocket(t *testing.T, mounted bool) {
+	t.Helper()
 	workspace := t.TempDir()
+	var mounts []WorkerMount
+	if mounted {
+		output := filepath.Join(workspace, "immutable-output")
+		if err := os.Mkdir(output, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		mounts = append(mounts, TrustedReadOnlyDirectoryMount(output))
+	}
 	pair, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -708,8 +753,8 @@ func TestConfinedWorkerPreservesAuditedAuxiliarySocketWithoutAllowingNewUnixSock
 	defer parent.Close()
 	command, err := newConfinedWorkerCommandWithAuxiliary(
 		workspace, os.Args[0], []string{"-test.run=^TestConfinedWorkerAuxiliarySocketHelper$"},
-		[]string{"HOME=" + workspace, "PATH=/usr/bin:/bin", "GO_WANT_PROVIDER_AUX_HELPER=1", "PROVIDER_AUX_FD=4"},
-		nil, nil, []*os.File{child},
+		[]string{"HOME=" + workspace, "PATH=/usr/bin:/bin", "GO_WANT_PROVIDER_AUX_HELPER=1", "PROVIDER_AUX_FD=" + strconv.Itoa(4+len(mounts))},
+		mounts, nil, []*os.File{child},
 	)
 	if err != nil {
 		t.Fatal(err)

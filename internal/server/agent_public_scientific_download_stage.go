@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"synon-go/internal/networkpolicy"
 	"synon-go/internal/tools/securefetch"
 )
 
@@ -336,6 +337,10 @@ func agentPublicScientificResponseHostAllowed(
 		if strings.EqualFold(strings.TrimSpace(allowed), strings.TrimSpace(host)) {
 			return true
 		}
+	}
+	if request.AllowPublicRedirects {
+		normalized, err := networkpolicy.NormalizePattern(host)
+		return err == nil && !networkpolicy.PrivateOrReserved(normalized)
 	}
 	return false
 }

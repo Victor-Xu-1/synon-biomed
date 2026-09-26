@@ -4,7 +4,7 @@ func planToolDefinitions() []Tool {
 	return []Tool{
 		{
 			Name:        "generate_plan",
-			Description: "Create or revise one durable working plan using the complete current plan content. Phases and steps are ordered control state. Each research step is one substantive output module or decision question and names its output_module and research_question; source discovery and extraction happen inside that module, not as generic research steps. Synthesis combines completed modules and delivery creates final outputs. The working plan pauses only in explicit plan-review mode.",
+			Description: "Create or revise one durable working plan using the complete current plan content. Phases and steps are ordered control state. Use execution steps with an execution_tool for actual computation or tool-produced results; completion requires a successful current-task execution receipt. Research steps name an output_module and research_question. Synthesis combines findings and delivery creates outputs. The working plan pauses only in explicit plan-review mode.",
 			Capabilities: []string{
 				"plan", "approval", "durable-state", "artifact-version", "single-plan-authority", "synon-plan-v3",
 			},
@@ -31,8 +31,9 @@ func planToolDefinitions() []Tool {
 													"title":       map[string]any{"type": "string"},
 													"description": map[string]any{"type": "string"},
 													"kind": map[string]any{
-														"type": "string", "enum": []string{"work", "research", "synthesis", "delivery"},
+														"type": "string", "enum": []string{"work", "execution", "research", "synthesis", "delivery"},
 													},
+													"execution_tool": map[string]any{"type": "string"},
 													"output_module": map[string]any{
 														"type": "string",
 													},
@@ -86,7 +87,7 @@ func planToolDefinitions() []Tool {
 		},
 		{
 			Name:         "update_step_status",
-			Description:  "Update a currently actionable step in the durable plan. Research receipts, query-language coverage, and source-proposed follow-ups remain visible, but an explicit completed status is applied even when those signals are incomplete; any gap returns as a non-blocking quality advisory. Observations and follow-ups are optional working notes for later synthesis. The receipt returns immutable source bindings and the next actionable step. Omitted navigation fields preserve their prior value; empty values clear model-authored data.",
+			Description:  "Update a currently actionable step in the durable plan. Execution completion binds a successful current-task receipt: a unique matching receipt is resolved automatically, or execution_ref selects its exact tool-call ID. Ambiguous and legacy tool bindings return verified candidates; reuse completed work instead of rerunning it. A receipt cannot complete another execution step. Research receipts and source follow-ups remain visible. Omitted navigation fields preserve prior values; empty values clear model-authored data.",
 			Capabilities: []string{"plan", "progress", "research-navigation", "durable-state", "single-plan-authority"},
 			Input: map[string]Field{
 				"human_description": {Type: "string", Required: false},
@@ -94,7 +95,8 @@ func planToolDefinitions() []Tool {
 				"status": {Type: "string", Required: true, Schema: map[string]any{
 					"enum": []string{"in_progress", "completed", "blocked", "skipped"},
 				}},
-				"notes": {Type: "string", Required: false},
+				"notes":         {Type: "string", Required: false},
+				"execution_ref": {Type: "string", Required: false},
 				"observations": {Type: "array", Required: false, Schema: map[string]any{
 					"maxItems": 256, "items": map[string]any{"type": "string"},
 				}},

@@ -139,9 +139,11 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 			entrypoint := engine.ExecutionPack.MaterializedSkillEntrypoint()
 			if publicName == "bash" && commandExecutesManagedExecutionPack(skill.Name, engine.ExecutionPack, command) {
 				g.server.bindExplicitTaskEvidenceResolver(g.taskRun, engine.ExecutionPack)
+				directImplementation, _ := g.selectedDirectExecutionPackImplementation(engine.ExecutionPack)
 				if preflight := managedExecutionPackParameterEvidencePreflight(
 					engine.ExecutionPack, command, g.taskRun.resolvedUserEvidenceRecordsSnapshot(),
 					managedExecutionResponseLanguage(g.taskRun), g.taskRun.selectedEvidenceResolversSnapshot(),
+					directImplementation,
 				); preflight != nil {
 					return preflight
 				}
@@ -170,6 +172,9 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 				"matched_identifier": identifier, "required_entrypoint": entrypoint,
 				"message":  "The scientific capability registry assigns this implementation to one reviewed execution-pack entrypoint; a competing direct command was rejected before process start.",
 				"recovery": "Execute the exact materialized execution-pack entrypoint once with the task inputs and registered arguments. Do not invoke its implementation CLI, preparation utilities, imports, splitters, or report writers through a competing path.",
+			}
+			if retained := g.retainedSkillExecutionDiagnostic(skill.Name); retained != nil {
+				result["required_entrypoint"] = retained["required_entrypoint"]
 			}
 			if sourcePath != "" {
 				result["competing_source"] = sourcePath
@@ -227,8 +232,9 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 					if _, present := values[parameter.Argument]; present {
 						continue
 					}
-					if selected, found := selectedEvidenceResolverParameterValue(
-						pack, g.taskRun.selectedEvidenceResolversSnapshot(),
+					directImplementation, _ := g.selectedDirectExecutionPackImplementation(pack)
+					if selected, found := selectedExecutionPackParameterValue(
+						pack, g.taskRun.selectedEvidenceResolversSnapshot(), directImplementation,
 					); found {
 						extra = append(extra, parameter.Argument, selected)
 					}
@@ -247,6 +253,33 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 		}
 	}
 	return input
+}
+
+func (g serverAgentRuntimeToolGateway) selectedDirectExecutionPackImplementation(
+	pack sciencecapability.ExecutionPack,
+) (string, bool) {
+	if g.server == nil || g.server.skillCatalog == nil || g.taskRun == nil {
+		return "", false
+	}
+	skill, found := findCatalogSkill(g.server.skillCatalog, pack.Skill)
+	if !found {
+		return "", false
+	}
+	selected := g.taskRun.selectedImplementationsSnapshot()
+	matched := make([]string, 0, 1)
+	for _, identity := range skill.ImplementationIdentities {
+		for _, current := range selected {
+			if taskImplementationMatchesRegistered(current, identity) {
+				matched = append(matched, identity)
+				break
+			}
+		}
+		if len(selected) == 0 && taskExplicitlyNamesImplementation(g.taskRun.TaskIntent, identity) {
+			matched = append(matched, identity)
+		}
+	}
+	matched = uniqueSortedFolded(matched)
+	return firstString(matched), len(matched) == 1
 }
 
 func (s *Server) bindExplicitTaskEvidenceResolver(
@@ -391,64 +424,6 @@ func managedExecutionResponseLanguage(run *sessionRunnerChatRun) string {
 		}
 	}
 	return "en"
-}
-
-func managedExecutionSourceIdentifier(
-	content string,
-	identifiers []string,
-	kernel *agentKernelContext,
-) (string, string, bool) {
-	if kernel == nil || strings.TrimSpace(kernel.workspaceDir) == "" {
-		return "", "", false
-	}
-	root, err := filepath.Abs(kernel.workspaceDir)
-	if err != nil {
-		return "", "", false
-	}
-	resolvedRoot, err := filepath.EvalSymlinks(root)
-	if err != nil {
-		return "", "", false
-	}
-	allowedExtensions := map[string]bool{
-		".py": true, ".r": true, ".sh": true, ".bash": true, ".zsh": true,
-		".ps1": true, ".pl": true, ".rb": true, ".js": true, ".mjs": true, ".cjs": true,
-	}
-	seen := map[string]bool{}
-	for _, token := range managedExecutionCommandTokens(content) {
-		token = managedExecutionPathToken(token)
-		if !allowedExtensions[strings.ToLower(filepath.Ext(token))] {
-			continue
-		}
-		path := token
-		if !filepath.IsAbs(path) {
-			path = filepath.Join(root, path)
-		}
-		path, err = filepath.Abs(filepath.Clean(path))
-		if err != nil || seen[path] {
-			continue
-		}
-		seen[path] = true
-		resolvedPath, err := filepath.EvalSymlinks(path)
-		if err != nil {
-			continue
-		}
-		relative, err := filepath.Rel(resolvedRoot, resolvedPath)
-		if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-			continue
-		}
-		info, err := os.Stat(resolvedPath)
-		if err != nil || !info.Mode().IsRegular() || info.Size() <= 0 || info.Size() > 2<<20 {
-			continue
-		}
-		raw, err := os.ReadFile(resolvedPath)
-		if err != nil {
-			continue
-		}
-		if identifier, matched := managedExecutionIdentifier(managedExecutionSourceLanguage(resolvedPath), string(raw), identifiers); matched {
-			return identifier, filepath.ToSlash(relative), true
-		}
-	}
-	return "", "", false
 }
 
 func managedExecutionMaterializedEntrypointReference(

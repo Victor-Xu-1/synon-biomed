@@ -135,8 +135,8 @@ func TestUpdateStepStatusUsesOneApprovedPlanAuthority(t *testing.T) {
 		t.Fatal(err)
 	}
 	remaining, err = srv.incompleteGeneratedPlanCondition(frame.ID)
-	if err != nil || remaining != nil {
-		t.Fatalf("terminal plan steps=%#v err=%v", remaining, err)
+	if err != nil || remaining == nil || len(remaining.condition.Steps) != 1 || remaining.condition.Steps[0].ID != "step-2" {
+		t.Fatalf("skipped work was mistaken for whole-plan completion: %#v err=%v", remaining, err)
 	}
 }
 
@@ -189,7 +189,7 @@ func TestUpdateStepStatusAcceptsAutonomousExecutablePlan(t *testing.T) {
 	}
 	remaining, err := srv.incompleteGeneratedPlanCondition(frame.ID)
 	if err != nil || remaining != nil {
-		t.Fatalf("autonomous plan must remain non-blocking: remaining=%#v err=%v", remaining, err)
+		t.Fatalf("completed autonomous work remained open: remaining=%#v err=%v", remaining, err)
 	}
 }
 

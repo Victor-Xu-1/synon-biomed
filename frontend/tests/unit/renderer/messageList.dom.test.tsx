@@ -404,6 +404,74 @@ describe('MessageList', () => {
     expect(screen.queryByText('scientific_files')).not.toBeInTheDocument();
   });
 
+  it('does not render a second artifact strip when the assistant body already presents the exact version', async () => {
+    mockConversationArtifacts = [
+      {
+        id: 'scientific-files:conversation-1',
+        conversation_id: 'conversation-1',
+        kind: 'scientific_files',
+        status: 'active',
+        payload: {
+          project_id: 'project-1',
+          root_frame_id: 'conversation-1',
+          files: [
+            {
+              artifact_id: 'artifact-1',
+              version_id: 'version-1',
+              version_number: 1,
+              project_id: 'project-1',
+              root_frame_id: 'conversation-1',
+              frame_id: 'conversation-1',
+              creating_frame_id: 'conversation-1',
+              filename: 'figure.png',
+              content_type: 'image/png',
+              size_bytes: 128,
+              preview_kind: 'image',
+              content_url: '/api/artifacts/artifact-1/versions/version-1',
+              created_at: 2,
+              updated_at: 2,
+              agent_name: 'OPERON',
+              is_user_upload: false,
+              is_intermediate: false,
+            },
+          ],
+        },
+        created_at: 2,
+        updated_at: 2,
+      },
+    ];
+    const assistantMessage = {
+      ...createTextMessage(),
+      status: 'finish',
+      content: {
+        content: [
+          '### 保存结果文件',
+          '- [figure.png](api/artifacts/artifact-1/versions/version-1)',
+          '',
+          '### 交付文件',
+          '- [figure.png]({{artifact:version-1}})',
+        ].join('\n'),
+      },
+      artifact_refs: [
+        {
+          artifact_id: 'artifact-1',
+          version_id: 'version-1',
+          relation: 'produced',
+          availability: 'available',
+          filename: 'figure.png',
+          content_type: 'image/png',
+        },
+      ],
+    } as IMessageText;
+
+    await render(<MessageList />, {
+      wrapper: ({ children }) => <Wrapper messages={[assistantMessage]}>{children}</Wrapper>,
+    });
+
+    expect(screen.queryByTestId('artifact-reference-strip')).not.toBeInTheDocument();
+    expect(screen.getByTestId('msgtext-message-1')).toHaveTextContent('figure.png');
+  });
+
   it('renders attached project files directly after the user message that sent them', async () => {
     mockConversationArtifacts = [
       {

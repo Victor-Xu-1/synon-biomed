@@ -119,6 +119,45 @@ with open("data.tar", "wb") as f:
 	}
 }
 
+func TestPythonFormattedDownloadURLUsesDurableAcquisition(t *testing.T) {
+	for _, source := range []string{
+		`import urllib.request
+version = "3.2.1"
+url = f"https://example.org/releases/{version}/engine_{version}.tar.gz"
+try:
+    urllib.request.urlretrieve(url, "engine.tar.gz")
+except Exception as error:
+    print(error)`,
+		`import requests
+revision = 12
+url = f"https://example.org/releases/{revision}/data.csv"
+response = requests.get(url)
+open("data.csv", "wb").write(response.content)`,
+	} {
+		result := analyzePythonSourceForTest(t, source)
+		if len(result.Requirements) != 1 || result.Requirements[0].Authority != "durable_download" {
+			t.Fatalf("formatted constant URL bypassed acquisition authority: %#v", result)
+		}
+	}
+}
+
+func TestPythonFormattedURLDoesNotEvaluateDynamicValuesOrExpandWithoutBound(t *testing.T) {
+	for _, source := range []string{
+		`import urllib.request
+url = f"https://example.org/{unknown_value()}/data.csv"
+urllib.request.urlretrieve(url, "data.csv")`,
+		"import urllib.request\npart = \"" + strings.Repeat("x", 100000) + "\"\nurl = f\"https://example.org/{part}{part}{part}\"\nurllib.request.urlretrieve(url, \"data.csv\")",
+		`import urllib.request
+host = "127.0.0.1"
+url = f"http://{host}/data.csv"
+urllib.request.urlretrieve(url, "data.csv")`,
+	} {
+		if result := analyzePythonSourceForTest(t, source); len(result.Requirements) != 0 {
+			t.Fatalf("unknown, over-budget or private URL became public acquisition authority: %#v", result)
+		}
+	}
+}
+
 func analyzePythonSourceForTest(t *testing.T, source string) Result {
 	t.Helper()
 	python, err := exec.LookPath("python3")

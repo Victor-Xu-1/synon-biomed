@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"context"
 	"encoding/json"
 	"path/filepath"
 	"testing"
@@ -110,6 +111,14 @@ func TestWakeCompatibilityFrameResumeDispatchClearsNotBefore(t *testing.T) {
 }
 
 func TestModelSelectionWaitIsNotClaimedUntilModelSwitch(t *testing.T) {
+	testConditionWaitIsNotClaimedUntilModelSwitch(t, CompatibilityFrameResumeDispatchWaitModelSelection)
+}
+
+func TestRecoveryConditionWaitIsNotClaimedUntilStateChanges(t *testing.T) {
+	testConditionWaitIsNotClaimedUntilModelSwitch(t, CompatibilityFrameResumeDispatchWaitRecoveryCondition)
+}
+
+func testConditionWaitIsNotClaimedUntilModelSwitch(t *testing.T, condition string) {
 	store, err := Open(filepath.Join(t.TempDir(), "workspace.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -140,17 +149,27 @@ func TestModelSelectionWaitIsNotClaimedUntilModelSwitch(t *testing.T) {
 		ResumeEventID: claimed.ResumeEvent.ID, ExpectedAttempt: claimed.Attempt,
 		ClaimToken: claimed.ClaimToken, ReasonCode: "model_provider_unavailable",
 		RunnerAttempt: 1, CheckpointEventID: 7,
-		WaitingFor: CompatibilityFrameResumeDispatchWaitModelSelection,
+		WaitingFor: condition, RecoveryContractRevision: 26,
 	}); err != nil {
 		t.Fatal(err)
 	}
 	parked, found, err := store.GetCompatibilityFrameResumeDispatch(claimed.ResumeEvent.ID)
 	if err != nil || !found || parked.Status != frameResumeDispatchRegistered ||
-		parked.WaitingFor != CompatibilityFrameResumeDispatchWaitModelSelection {
+		parked.WaitingFor != condition {
 		t.Fatalf("parked dispatch=%#v found=%t err=%v", parked, found, err)
 	}
 	if next, ok, err := store.ClaimNextCompatibilityFrameResumeDispatch("model-wait-worker", time.Minute); err != nil || ok {
 		t.Fatalf("waiting dispatch claimed=%#v ok=%t err=%v", next, ok, err)
+	}
+	if condition == CompatibilityFrameResumeDispatchWaitRecoveryCondition {
+		page, err := store.ListRecoveryConditionWaitDispatches(context.Background(), "", 1)
+		if err != nil || len(page) != 1 || page[0].ResumeEvent.ID != claimed.ResumeEvent.ID {
+			t.Fatalf("waiting recovery disappeared from the existing queue: %#v %v", page, err)
+		}
+		page, err = store.ListRecoveryConditionWaitDispatches(context.Background(), page[0].ResumeEvent.ID, 1)
+		if err != nil || len(page) != 0 {
+			t.Fatalf("waiting recovery pagination repeated a row: %#v %v", page, err)
+		}
 	}
 
 	wake, state, err := store.SignalCompatibilityFrameResumeDispatchModelSwitch(

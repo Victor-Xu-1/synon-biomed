@@ -21,7 +21,7 @@ type sessionRunnerPlanStepsIncomplete struct {
 }
 
 func (err sessionRunnerPlanStepsIncomplete) Error() string {
-	return "approved plan has steps without terminal status: " + strings.Join(err.stepTitles(), ", ")
+	return "executable plan has unfinished steps: " + strings.Join(err.stepTitles(), ", ")
 }
 
 func (err sessionRunnerPlanStepsIncomplete) stepTitles() []string {
@@ -34,7 +34,7 @@ func (err sessionRunnerPlanStepsIncomplete) stepTitles() []string {
 
 func (err sessionRunnerPlanStepsIncomplete) runnerCorrection() transcriptstore.RunnerInterruptionCause {
 	return newRunnerCorrection(sessionRunnerPlanStepsIncompleteReasonCode,
-		"before completing, call update_step_status for every unreported plan step and mark each completed, blocked, or skipped; exact remaining titles: "+strings.Join(err.stepTitles(), "; "),
+		"The task is not complete. Continue to execute the remaining plan work and validate its results; use update_step_status only after substantive work. For a material user decision, use ask_user and preserve the unfinished goal. Exact remaining steps: "+strings.Join(err.stepTitles(), "; "),
 		transcriptstore.RunnerCorrectionCondition{Plan: &err.condition})
 }
 
@@ -43,6 +43,7 @@ type generatedPlanStepIdentity struct {
 	Title            string
 	Description      string
 	Kind             string
+	ExecutionTool    string
 	OutputModule     string
 	ResearchQuestion string
 	ResearchDepth    string
@@ -68,7 +69,8 @@ func (s *Server) executeAgentUpdateStepStatus(
 	requestedStep := strings.TrimSpace(stringValue(input["step"]))
 	status := strings.TrimSpace(stringValue(input["status"]))
 	notes := strings.TrimSpace(stringValue(input["notes"]))
-	if len([]rune(requestedStep)) > 512 || len([]rune(notes)) > 4096 {
+	executionRef := strings.TrimSpace(stringValue(input["execution_ref"]))
+	if len([]rune(requestedStep)) > 512 || len([]rune(notes)) > 4096 || len(executionRef) > 128 {
 		return nil, errors.New("plan progress step or notes exceed the bounded contract")
 	}
 
@@ -108,6 +110,9 @@ func (s *Server) executeAgentUpdateStepStatus(
 		statuses = map[string]any{}
 	}
 	run, _ := ctx.Value(transcriptRunnerChatRunContextKey{}).(*sessionRunnerChatRun)
+	if run != nil && generatedPlanHasTaskBinding(contextData) && !sessionRunnerPlanMatchesTask(contextData, run) {
+		return nil, errors.New("plan progress belongs to a different task input")
+	}
 	allSourceReceipts := []sessionRunnerResearchSourceReceipt{}
 	allSourceAttempts := []sessionRunnerResearchSourceAttempt{}
 	newSourceReceipts := []sessionRunnerResearchSourceReceipt{}
@@ -214,6 +219,28 @@ func (s *Server) executeAgentUpdateStepStatus(
 	}
 	requestedStatus := status
 	var researchContinuation map[string]any
+	var executionContinuation map[string]any
+	var executionBinding generatedPlanExecutionBinding
+	if step.Kind == generatedPlanStepKindExecution && requestedStatus == "completed" {
+		binding, candidates, evidenceErr := s.resolveGeneratedPlanExecutionReceipt(ctx, run, step, executionRef, contextData)
+		if evidenceErr != nil {
+			return nil, evidenceErr
+		}
+		if binding.CallID == "" {
+			status = "in_progress"
+			executionContinuation = map[string]any{
+				"reason": "execution_receipt_required", "step": step.ID,
+				"execution_tool":              step.ExecutionTool,
+				"detail":                      "Reuse a verified result for this step by its execution_ref; execute missing work only when no matching result exists. An ambiguous or unrelated receipt cannot complete this step.",
+				"eligible_execution_receipts": candidates,
+			}
+			if !s.generatedPlanExecutionToolKnown(run, step.ExecutionTool) {
+				executionContinuation["reason"] = "execution_contract_binding_required"
+			}
+		} else {
+			executionRef, executionBinding = binding.CallID, binding
+		}
+	}
 	if step.Kind == generatedPlanStepKindResearch && run != nil && run.Transcript != nil {
 		var pendingSourceContinuation map[string]any
 		if researchMaterialsAvailable {
@@ -279,9 +306,20 @@ func (s *Server) executeAgentUpdateStepStatus(
 	unchanged = unchanged && equalGeneratedPlanResearchContinuation(
 		mapValue(current["research_continuation"]), researchContinuation,
 	)
+	recordedExecutionRef := ""
+	if step.Kind == generatedPlanStepKindExecution && status == "completed" {
+		recordedExecutionRef = executionRef
+	}
+	unchanged = unchanged && stringValue(current["execution_ref"]) == recordedExecutionRef &&
+		equalGeneratedPlanResearchContinuation(mapValue(current["execution_continuation"]), executionContinuation)
 	unchanged = unchanged && len(newSourceReceipts) == 0 && !cursorAdvanced && !evidenceReconciled
 	if unchanged {
 		receipt := generatedPlanStatusReceipt(document, contextData, step, status, notes, navigation, boundSourceReceiptValues, queryLanguages, true)
+		if executionContinuation != nil {
+			receipt["execution_continuation"] = executionContinuation
+			receipt["applied"] = false
+			receipt["requested_status"] = requestedStatus
+		}
 		if researchContinuation != nil {
 			receipt["research_continuation"] = researchContinuation
 			if researchContinuationRequiresExecution(researchContinuation) {
@@ -301,6 +339,16 @@ func (s *Server) executeAgentUpdateStepStatus(
 		"query_languages": queryLanguages,
 		"tool_call_id":    toolCallID, "updated_at": now.Format(time.RFC3339Nano),
 	}
+	if recordedExecutionRef != "" {
+		nextState["execution_ref"] = recordedExecutionRef
+		nextState["execution_binding"] = map[string]any{
+			"call_id": executionBinding.CallID, "tool": executionBinding.Tool, "event_id": executionBinding.EventID,
+			"execution_pack_id": executionBinding.PackID,
+		}
+	}
+	if executionContinuation != nil {
+		nextState["execution_continuation"] = executionContinuation
+	}
 	if researchContinuation != nil {
 		nextState["research_continuation"] = researchContinuation
 	}
@@ -316,6 +364,11 @@ func (s *Server) executeAgentUpdateStepStatus(
 		return nil, fmt.Errorf("persist plan progress: %w", err)
 	}
 	receipt := generatedPlanStatusReceipt(document, contextData, step, status, notes, navigation, boundSourceReceiptValues, queryLanguages, false)
+	if executionContinuation != nil {
+		receipt["execution_continuation"] = executionContinuation
+		receipt["applied"] = false
+		receipt["requested_status"] = requestedStatus
+	}
 	receipt["research_transition"] = generatedPlanResearchTransition(document, contextData, step, newSourceReceipts)
 	if researchContinuation != nil {
 		receipt["research_continuation"] = researchContinuation
@@ -345,7 +398,7 @@ func generatedPlanStatusReceipt(
 	queryLanguages []string,
 	idempotent bool,
 ) map[string]any {
-	return map[string]any{
+	receipt := map[string]any{
 		"ok": true, "status": status, "step": step.ID, "title": step.Title,
 		"notes": notes, "observations": navigation["observations"], "source_refs": navigation["source_refs"],
 		"follow_ups": navigation["follow_ups"], "plan_artifact_id": contextData["_plan_artifact_id"],
@@ -355,6 +408,12 @@ func generatedPlanStatusReceipt(
 		"research_transition": generatedPlanResearchTransition(document, contextData, step, nil), "idempotent": idempotent,
 		"effect": agentruntime.ToolEffectValue(toolEffectState(idempotent), "control-state", "plan-progress"),
 	}
+	state := mapValue(mapValue(contextData["_step_statuses"])[step.ID])
+	if status == "completed" && stringValue(state["execution_ref"]) != "" {
+		receipt["execution_ref"] = state["execution_ref"]
+		receipt["execution_binding"] = state["execution_binding"]
+	}
+	return receipt
 }
 
 func toolEffectState(idempotent bool) agentruntime.ToolEffectState {
@@ -375,6 +434,7 @@ func generatedPlanStepIdentities(plan map[string]any) ([]generatedPlanStepIdenti
 				identity := generatedPlanStepIdentity{
 					ID: strings.TrimSpace(stringValue(step["id"])), Title: strings.TrimSpace(stringValue(step["title"])),
 					Description: strings.TrimSpace(stringValue(step["description"])), Kind: strings.TrimSpace(stringValue(step["kind"])),
+					ExecutionTool:    strings.TrimSpace(stringValue(step["execution_tool"])),
 					OutputModule:     strings.TrimSpace(stringValue(step["output_module"])),
 					ResearchQuestion: strings.TrimSpace(stringValue(step["research_question"])),
 					ResearchDepth:    strings.TrimSpace(stringValue(step["research_depth"])),
@@ -442,7 +502,7 @@ func resolveGeneratedPlanStepIdentity(
 	return match, nil
 }
 
-func (s *Server) incompleteGeneratedPlanCondition(frameID string) (*sessionRunnerPlanStepsIncomplete, error) {
+func (s *Server) incompleteGeneratedPlanCondition(frameID string, runs ...*sessionRunnerChatRun) (*sessionRunnerPlanStepsIncomplete, error) {
 	if s == nil || s.workspaceStore == nil || strings.TrimSpace(frameID) == "" {
 		return nil, nil
 	}
@@ -451,7 +511,10 @@ func (s *Server) incompleteGeneratedPlanCondition(frameID string) (*sessionRunne
 		return nil, err
 	}
 	contextData := mapValue(metadata.ContextData)
-	if !boolValue(contextData["_plan_approved"], false) {
+	if !generatedPlanExecutionAuthorized(contextData) {
+		return nil, nil
+	}
+	if len(runs) > 0 && runs[0] != nil && !sessionRunnerPlanMatchesTask(contextData, runs[0]) {
 		return nil, nil
 	}
 	steps, err := generatedPlanStepIdentities(mapValue(contextData["_plan_json"]))
@@ -462,7 +525,7 @@ func (s *Server) incompleteGeneratedPlanCondition(frameID string) (*sessionRunne
 	remaining := &sessionRunnerPlanStepsIncomplete{condition: transcriptstore.RunnerPlanCondition{ArtifactID: stringValue(contextData["_plan_artifact_id"]), VersionID: stringValue(contextData["_plan_version_id"])}}
 	for _, step := range steps {
 		status := strings.TrimSpace(stringValue(mapValue(statuses[step.ID])["status"]))
-		if status != "completed" && status != "blocked" && status != "skipped" {
+		if status != "completed" {
 			remaining.condition.Steps = append(remaining.condition.Steps, transcriptstore.RunnerPlanConditionStep{ID: step.ID, Title: step.Title})
 		}
 	}

@@ -121,19 +121,42 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeCanonicalPackEnvironmentPrefl
 		packageSpecs = append(packageSpecs, "pip::"+spec)
 	}
 	dependencies, _ := managedEnvironmentPreflightDependencyNames(packageSpecs)
+	requestedEnvironment := strings.TrimSpace(stringValue(input["environment"]))
 	parent := context.Background()
 	if len(parents) > 0 && parents[0] != nil {
 		parent = parents[0]
 	}
-	ctx, cancel := context.WithTimeout(parent, 5*time.Second)
+	// Inventory can contain hundreds of immutable generations. A full strict
+	// health scan is intentionally not part of this admission gate: it makes a
+	// ready, explicitly requested environment lose a short deadline while
+	// unrelated environments are inspected. The execution boundary performs
+	// the final generation-health check immediately before process start.
+	const discoveryTimeout = 30 * time.Second
+	ctx, cancel := context.WithTimeout(parent, discoveryTimeout)
 	defer cancel()
 	candidates, listErr := g.server.kernelManager.ListManagedEnvironments(ctx, kernelruntime.ManagedEnvironmentQuery{
-		Language: strings.TrimSpace(pack.Language), Dependencies: dependencies,
+		Name:            requestedEnvironment,
+		Language:        strings.TrimSpace(pack.Language),
+		Dependencies:    dependencies,
 		IncludePackages: true,
+		SkipHealth:      true,
 	})
 	if listErr == nil {
-		rankManagedEnvironmentPreflightCandidates(candidates, strings.TrimSpace(stringValue(input["environment"])))
+		rankManagedEnvironmentPreflightCandidates(candidates, requestedEnvironment)
 		for _, candidate := range candidates[:min(len(candidates), maxManagedEnvironmentPreflightAlternatives)] {
+			if err := g.server.kernelManager.VerifyManagedEnvironmentExecutable(candidate.Name, pack.Executable); err != nil {
+				continue
+			}
+			witnessesValid := true
+			for _, witness := range pack.CLIWitnesses {
+				if err := g.server.kernelManager.VerifyManagedEnvironmentExecutable(candidate.Name, witness.Executable); err != nil {
+					witnessesValid = false
+					break
+				}
+			}
+			if !witnessesValid {
+				continue
+			}
 			if err := g.server.kernelManager.VerifyManagedEnvironmentImports(ctx, candidate.Name, pack.Imports); err != nil {
 				continue
 			}
@@ -143,7 +166,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeCanonicalPackEnvironmentPrefl
 	}
 	return map[string]any{
 		"ok": false, "status": "execution_pack_environment_preflight_required", "executed": false,
-		"execution_pack_id": pack.ID, "requested_environment": strings.TrimSpace(stringValue(input["environment"])),
+		"execution_pack_id": pack.ID, "requested_environment": requestedEnvironment,
 		"required_packages": packageSpecs, "required_imports": append([]string(nil), pack.Imports...),
 		"message":  "No ready managed environment satisfies the registered execution pack's complete package and import contract.",
 		"recovery": "Use manage_environments preflight with the same implementation. Reuse the returned compatible environment, or create one immutable environment from the registered package contract before retrying this exact entrypoint.",

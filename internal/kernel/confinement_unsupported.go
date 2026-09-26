@@ -49,6 +49,10 @@ func platformConfinementEvidence() ConfinementEvidence {
 	}
 }
 
+// This platform has no local managed-kernel namespace. Host file permissions
+// retain their existing validation; kernel execution itself stays unavailable.
+func platformHostMountPathProtected(string) bool { return false }
+
 func probePlatformConfinement() ConfinementEvidence {
 	return platformConfinementEvidence()
 }

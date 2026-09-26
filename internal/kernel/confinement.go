@@ -7,6 +7,17 @@ import (
 )
 
 var ErrConfinementUnavailable = errors.New("kernel process confinement is unavailable")
+var ErrProtectedHostMount = errors.New("host grant overlaps a protected path required by kernel isolation; choose a task-specific directory")
+
+// ValidateHostMountPath shares the current platform's fixed namespace policy
+// with permission admission. Per-session workspace/runtime checks remain at
+// worker startup; user grants never override either boundary.
+func ValidateHostMountPath(path string) error {
+	if platformHostMountPathProtected(path) {
+		return ErrProtectedHostMount
+	}
+	return nil
+}
 
 // ConfinementEvidence describes the process boundary used for every managed
 // kernel worker. It is deliberately separate from language/runtime readiness.

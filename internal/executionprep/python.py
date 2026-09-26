@@ -21,6 +21,34 @@ class Analyzer(ast.NodeVisitor):
             return node.value
         if isinstance(node, ast.Name):
             return self.bindings.get(node.id, ("symbol", node.id))
+        if isinstance(node, ast.JoinedStr):
+            # Resolve only literal scalar interpolation, never execute a
+            # formatter, property, function or user-defined __str__ method.
+            parts = []
+            size = 0
+            for part in node.values:
+                value = self.value(part)
+                if not isinstance(value, str):
+                    return None
+                size += len(value)
+                if size > 262144:
+                    return None
+                parts.append(value)
+            return "".join(parts)
+        if isinstance(node, ast.FormattedValue) and node.format_spec is None:
+            value = self.value(node.value)
+            if type(value) not in (str, int, float, bool, type(None)):
+                return None
+            # None from unresolved expressions is not a resolved None literal.
+            if value is None and not isinstance(node.value, ast.Constant):
+                return None
+            if node.conversion in (-1, 115):
+                return str(value)
+            if node.conversion == 114:
+                return repr(value)
+            if node.conversion == 97:
+                return ascii(value)
+            return None
         if isinstance(node, (ast.List, ast.Tuple)):
             return [self.value(item) for item in node.elts]
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):

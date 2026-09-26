@@ -186,3 +186,100 @@ func TestSaveArtifactsDoesNotTrustUnknownExecutionBundleMarker(t *testing.T) {
 		t.Fatalf("untrusted bundle changed request: %#v", request)
 	}
 }
+
+func TestManagedExecutionSnapshotRecoversReplacedAliases(t *testing.T) {
+	for _, replacement := range []string{"missing", "empty", "occupied", "foreign-symlink"} {
+		t.Run(replacement, func(t *testing.T) {
+			root := t.TempDir()
+			output := filepath.Join(root, "results")
+			if err := os.Mkdir(output, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			contents := map[string]string{
+				managedExecutionOutputOwnershipMarker: `{"schema":"synon.execution-pack-output-owner.v1","execution_pack_id":"capability.engine"}`,
+				"report.md":                           "original result\n",
+			}
+			writes := map[string]string{}
+			for name, content := range contents {
+				path := filepath.Join(output, name)
+				if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				digest := sha256.Sum256([]byte(content))
+				writes[path] = hex.EncodeToString(digest[:])
+			}
+			server := &Server{scienceCapabilities: &sciencecapability.Catalog{Capabilities: []sciencecapability.Definition{{
+				ID: "capability", AcceptedEngines: []sciencecapability.EngineDefinition{{
+					ID: "engine", ExecutionPack: sciencecapability.ExecutionPack{
+						ID: "capability.engine", Mode: "local", Outputs: []sciencecapability.ExecutionOutput{{Path: "out/report.md", Delivery: "snapshot"}},
+					},
+				}},
+			}}}}
+			verify := func() (managedExecutionOutputAuthority, error) {
+				return server.verifyManagedExecutionOutputAuthority(context.Background(), root, output, "capability.engine", "execution-one", writes)
+			}
+			authority, err := verify()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := publishManagedExecutionOutputSnapshot(context.Background(), root, authority); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Remove(output); err != nil {
+				t.Fatal(err)
+			}
+			foreign := t.TempDir()
+			switch replacement {
+			case "empty", "occupied":
+				if err := os.Mkdir(output, 0o700); err != nil {
+					t.Fatal(err)
+				}
+				if replacement == "occupied" {
+					if err := os.WriteFile(filepath.Join(output, "user.txt"), []byte("preserve me"), 0o600); err != nil {
+						t.Fatal(err)
+					}
+				}
+			case "foreign-symlink":
+				if err := os.Symlink(foreign, output); err != nil {
+					t.Fatal(err)
+				}
+			}
+			authority, err = verify()
+			if err != nil {
+				t.Fatalf("a replaced alias poisoned valid immutable execution evidence: %v", err)
+			}
+			if err := publishManagedExecutionOutputSnapshot(context.Background(), root, authority); err != nil {
+				t.Fatalf("recover snapshot access: %v", err)
+			}
+			if got, err := os.ReadFile(filepath.Join(authority.ResolvedRoot, "report.md")); err != nil || string(got) != contents["report.md"] {
+				t.Fatalf("immutable result=%q error=%v", got, err)
+			}
+			switch replacement {
+			case "missing", "empty":
+				if got, err := os.ReadFile(filepath.Join(output, "report.md")); err != nil || string(got) != contents["report.md"] {
+					t.Fatalf("repaired alias=%q error=%v", got, err)
+				}
+			case "occupied":
+				if got, err := os.ReadFile(filepath.Join(output, "user.txt")); err != nil || string(got) != "preserve me" {
+					t.Fatalf("user file changed: %q %v", got, err)
+				}
+				if managedExecutionAuthorityContainsPath(authority, filepath.Join(output, "user.txt")) {
+					t.Fatal("a conflicting alias granted execution-output authority to user bytes")
+				}
+			case "foreign-symlink":
+				if got, err := os.Readlink(output); err != nil || got != foreign {
+					t.Fatalf("foreign alias was overwritten: %q %v", got, err)
+				}
+			}
+			if _, err := server.verifyManagedExecutionOutputAuthority(context.Background(), root, output, "capability.engine", "foreign-execution", writes); err == nil {
+				t.Fatal("another execution inherited the snapshot")
+			}
+			if err := os.WriteFile(filepath.Join(authority.ResolvedRoot, "report.md"), []byte("changed bytes"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := verify(); err == nil {
+				t.Fatal("corrupted immutable bytes retained successful execution authority")
+			}
+		})
+	}
+}

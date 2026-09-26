@@ -210,10 +210,11 @@ type AskUserQuestionOptionV1 struct {
 }
 
 type AskUserQuestionV1 struct {
-	Question    string                    `json:"question"`
-	Header      string                    `json:"header"`
-	Options     []AskUserQuestionOptionV1 `json:"options"`
-	MultiSelect bool                      `json:"multiSelect"`
+	Question      string                    `json:"question"`
+	Header        string                    `json:"header"`
+	Options       []AskUserQuestionOptionV1 `json:"options"`
+	MultiSelect   bool                      `json:"multiSelect"`
+	StageProgress *AskUserStageProgressV1   `json:"stage_progress,omitempty"`
 }
 
 type AskUserPromptV1 struct {
@@ -797,7 +798,7 @@ func normalizeAskUserQuestions(values []any) ([]AskUserQuestionV1, error) {
 	seenQuestions := map[string]bool{}
 	for _, rawQuestion := range values {
 		questionRecord, ok := rawQuestion.(map[string]any)
-		if !ok || !hasOnlyAskUserKeys(questionRecord, "question", "header", "options", "multiSelect") {
+		if !ok || !hasOnlyAskUserKeys(questionRecord, "question", "header", "options", "multiSelect", "stage_progress") {
 			return nil, errors.New("AskUser questions are invalid")
 		}
 		question, questionOK := strictTrimmedAskUserString(questionRecord["question"])
@@ -855,8 +856,17 @@ func normalizeAskUserQuestions(values []any) ([]AskUserQuestionV1, error) {
 				Preview: preview, Metadata: metadata,
 			})
 		}
+		var stageProgress *AskUserStageProgressV1
+		if raw, found := questionRecord["stage_progress"]; found {
+			var stageErr error
+			stageProgress, stageErr = normalizeAskUserStageProgress(raw)
+			if stageErr != nil {
+				return nil, errors.New("AskUser questions are invalid")
+			}
+		}
 		questions = append(questions, AskUserQuestionV1{
 			Question: question, Header: header, Options: options, MultiSelect: multiSelect,
+			StageProgress: stageProgress,
 		})
 	}
 	encoded, err := json.Marshal(questions)

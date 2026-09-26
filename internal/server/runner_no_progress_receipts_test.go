@@ -301,6 +301,16 @@ func TestRejectedRouteReceiptRequiresTerminalAdmissionProvenance(t *testing.T) {
 	if !runnerCheckpointHasRejectedRouteReceipt(base) {
 		t.Fatal("typed admission receipt was lost")
 	}
+	for _, code := range []string{"correction_route_closed", "durable_no_progress_route_closed"} {
+		copy := eventjournal.Message{}
+		for name, value := range base {
+			copy[name] = value
+		}
+		copy["toolResult"] = map[string]any{"ok": false, "executed": false, "code": code}
+		if runnerCheckpointHasRejectedRouteReceipt(copy) {
+			t.Fatalf("derived closure %s became a new admission rejection", code)
+		}
+	}
 	for _, key := range []string{"type", "status", "toolPhase", "toolName", "toolInput", "rejectedBeforeExecution", "toolResult"} {
 		copy := eventjournal.Message{}
 		for name, value := range base {

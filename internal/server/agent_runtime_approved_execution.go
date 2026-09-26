@@ -32,7 +32,7 @@ func (s *Server) executeApprovedAgentRuntimeTool(
 func agentRuntimeApprovalStatus(status string, result any) string {
 	status = strings.ToLower(strings.TrimSpace(status))
 	if status == "partial" && result != nil {
-		if agentruntime.IsNonExecutingPreflight(result) || agentruntime.ClassifyToolResult(result).HardFailed() {
+		if agentruntime.ToolResultDidNotExecute(result) || agentruntime.ClassifyToolResult(result).HardFailed() {
 			return "failed"
 		}
 		return "completed"

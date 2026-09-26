@@ -577,7 +577,32 @@ func TestLatestRunnerInterruptionProjectsProviderReasonAndCreatedAt(t *testing.T
 	if got.Attempt != claim.Attempt || got.CheckpointSequence != interrupted.Checkpoint.Sequence ||
 		got.ReasonCode != "model_provider_unavailable" ||
 		got.ResumeDetail != "provider quota is exhausted; choose another model and continue" ||
-		got.CreatedAt.IsZero() {
+		got.CreatedAt.IsZero() || got.AutoResume {
 		t.Fatalf("projected interruption=%#v", got)
+	}
+}
+
+func TestLatestRunnerInterruptionPreservesAutomaticEligibility(t *testing.T) {
+	for _, tc := range []struct {
+		name, reason string
+		auto, want   bool
+	}{
+		{"waiting", "plan_step_status_required", false, false},
+		{"continuing", "plan_step_status_required", true, true},
+		{"retired-policy", RetiredCorrectionBudgetReason, false, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			repo, db, _ := newTranscriptRepository(t)
+			claim := seedArtifactProjectionClaim(t, repo, db, "stream-wait", "owner-a")
+			if _, err := repo.InterruptRunner(context.Background(), InterruptRunnerInput{
+				Claim: claim, ClientMessageID: "interrupt", ReasonCode: tc.reason, Resumable: true, AutoResume: tc.auto,
+			}); err != nil {
+				t.Fatal(err)
+			}
+			got, found, err := repo.LatestRunnerInterruption(context.Background(), claim.StreamUID, claim.OwnerID)
+			if err != nil || !found || got.AutoResume != tc.want {
+				t.Fatalf("automatic eligibility: %#v %v", got, err)
+			}
+		})
 	}
 }

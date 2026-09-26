@@ -166,15 +166,42 @@ func TestExplicitTaskEvidenceBindsUniqueRegisteredResolver(t *testing.T) {
 	unscoped := unscopedGateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{
 		"command": `python "` + script + `"`,
 	})
-	if got := managedExecutionArgumentValues(stringValue(unscoped["command"]))["--method"]; got != "" {
-		t.Fatalf("an auxiliary resolver invented its parent implementation: %#v", unscoped)
+	if got := managedExecutionArgumentValues(stringValue(unscoped["command"]))["--method"]; got != "P2Rank" {
+		t.Fatalf("explicit standalone implementation did not reach its own pack: %#v", unscoped)
 	}
-	if blocked := unscopedGateway.agentRuntimeManagedExecutionPackPreflight("bash", unscoped); blocked == nil ||
-		blocked["status"] != "execution_selected_resolver_parameter_required" {
-		t.Fatalf("a resolver without its explicit parent was accepted: %#v", blocked)
+	if blocked := unscopedGateway.agentRuntimeManagedExecutionPackPreflight("bash", unscoped); blocked != nil {
+		t.Fatalf("standalone selected pack remained blocked: %#v", blocked)
 	}
 	if got := unscopedRun.selectedImplementationsSnapshot(); len(got) != 0 {
 		t.Fatalf("a standalone resolver mention selected an unrequested parent: %v", got)
+	}
+	selectedRun := &sessionRunnerChatRun{
+		TaskIntent: "Predict binding pockets with the selected method.",
+		ExecutedSkillNames: []string{"pocket-skill"},
+		SelectedImplementations: []string{"P2Rank"},
+	}
+	selectedGateway := serverAgentRuntimeToolGateway{server: gateway.server, taskRun: selectedRun, kernel: gateway.kernel}
+	selectedInput := selectedGateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{
+		"command": `python "` + script + `"`,
+	})
+	if got := managedExecutionArgumentValues(stringValue(selectedInput["command"]))["--method"]; got != "P2Rank" {
+		t.Fatalf("current-task primary selection did not reach its pack: %#v", selectedInput)
+	}
+	if blocked := selectedGateway.agentRuntimeManagedExecutionPackPreflight("bash", selectedInput); blocked != nil {
+		t.Fatalf("selected primary pack remained blocked: %#v", blocked)
+	}
+	noSelection := &sessionRunnerChatRun{TaskIntent: "Predict binding pockets.", ExecutedSkillNames: []string{"pocket-skill"}}
+	noSelectionGateway := serverAgentRuntimeToolGateway{server: gateway.server, taskRun: noSelection, kernel: gateway.kernel}
+	noSelectionInput := noSelectionGateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{
+		"command": `python "` + script + `"`,
+	})
+	if got := managedExecutionArgumentValues(stringValue(noSelectionInput["command"]))["--method"]; got != "" {
+		t.Fatalf("skill presence invented a method selection: %#v", noSelectionInput)
+	}
+	wrong := map[string]any{"command": `python "` + script + `" --method DifferentEngine`}
+	if blocked := unscopedGateway.agentRuntimeManagedExecutionPackPreflight("bash", wrong); blocked == nil ||
+		blocked["status"] != "execution_selected_resolver_parameter_required" {
+		t.Fatalf("unselected standalone method passed: %#v", blocked)
 	}
 }
 

@@ -22,6 +22,13 @@ func TestExecutionPreparationHasOneAdmissionAndExecutionDecision(t *testing.T) {
 	for _, test := range []struct{ source, status string }{
 		{`import subprocess as child
 child.run(["python", "-m", "pip", "install", "package-name"], check=True)`, "managed_package_authority_required"},
+		{`import urllib.request
+version = "3.2.1"
+url = f"https://example.org/releases/{version}/engine_{version}.tar.gz"
+try:
+    urllib.request.urlretrieve(url, "engine.tar.gz")
+except Exception as error:
+    print(error)`, "durable_download_preflight_required"},
 		{`import requests
 response=requests.get("https://example.org/data.csv")
 open("data.csv","wb").write(response.content)`, "durable_download_preflight_required"},

@@ -215,6 +215,10 @@ func (state *sessionRunnerNoProgressRecovery) observeEntry(
 	if strings.TrimSpace(stringValue(message["type"])) != "runner_checkpoint" {
 		return
 	}
+	if runnerRecoveryCheckpointSuperseded(entry) {
+		state.resetMaterialProgress()
+		return
+	}
 	if runnerCheckpointHasMaterialProgress(message) {
 		state.resetMaterialProgress()
 		return
@@ -248,6 +252,14 @@ func (state *sessionRunnerNoProgressRecovery) observeEntry(
 		return
 	}
 	state.Consecutive++
+}
+
+func runnerRecoveryCheckpointSuperseded(entry eventjournal.Entry) bool {
+	if entry.SourceEventType != "runner_checkpoint" || entry.Message["type"] != "runner_checkpoint" {
+		return false
+	}
+	revision := int(numberValue(entry.Message["recovery_contract_revision"]))
+	return revision > 0 && revision < sessionRunnerRecoveryContractRevision
 }
 
 type sessionRunnerRecoveryProjectionAccumulator struct {

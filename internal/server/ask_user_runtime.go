@@ -29,6 +29,9 @@ func (s *Server) executeAgentAskUserQuestion(ctx context.Context, sessionID, too
 		if err := s.normalizeAgentAskUserDecisionEvidence(ctx, run, resultMap); err != nil {
 			return nil, err
 		}
+		if correction := askUserRecoveryDecisionCorrection(run, resultMap); correction != nil {
+			return correction, nil
+		}
 		if resolution, resolved := s.resolveUniqueRegisteredImplementationAskUser(ctx, run, resultMap); resolved {
 			return resolution, nil
 		}
@@ -45,6 +48,16 @@ func (s *Server) executeAgentAskUserQuestion(ctx context.Context, sessionID, too
 		}
 		if correction := askUserImplementationSelectionContractCorrection(run, resultMap); correction != nil {
 			return correction, nil
+		}
+		if progress := s.generatedPlanStageProgressSnapshot(sessionID, run); progress != nil {
+			questions, ok := resultMap["questions"].([]askUserQuestion)
+			if !ok || len(questions) == 0 {
+				return nil, errors.New("ask_user stage progress requires a normalized question")
+			}
+			for index := range questions {
+				questions[index].StageProgress = progress
+			}
+			resultMap["questions"] = questions
 		}
 	}
 	answers, _ := result.(map[string]any)["answers"].(map[string]any)

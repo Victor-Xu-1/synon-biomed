@@ -584,7 +584,8 @@ func (s *Server) publishTranscriptWebClaim(ctx context.Context, claim transcript
 		return err
 	}
 	waitingForModel := transcriptWebModelSelectionInterruption(payload)
-	if claim.Event.Type == "runner_checkpoint" && !richAskUser && !waitingForModel &&
+	waitingForRecovery := transcriptWebRecoveryWaitInterruption(payload)
+	if claim.Event.Type == "runner_checkpoint" && !richAskUser && !waitingForModel && !waitingForRecovery &&
 		!transcriptRunnerAttemptStarted(payload, attempt) && !transcriptWebRuntimeDrainToolBoundary(payload) {
 		// Planning, model-resolution, memory, review-policy and similar durable
 		// checkpoints are valuable for recovery/audit, but they have no distinct
@@ -759,18 +760,20 @@ func (s *Server) publishTranscriptWebClaim(ctx context.Context, claim transcript
 			"scope": map[string]any{"kind": "conversation", "id": stream.SessionID},
 			"phase": "waiting_for_lock", "artifact_refs": refs,
 		}
-		if waitingForModel {
-			runtimePayload["phase"] = "waiting_input"
-			runtimePayload["reason_code"] = sessionRunnerModelProviderUnavailableReasonCode
-			runtimePayload["message"] = firstNonEmpty(
-				webString(payload["resume_detail"]),
-				"No active model configuration is available. Configure or select a model, then continue this same task.",
-			)
+		if waitingForModel || waitingForRecovery {
+			reason := firstNonEmpty(webString(payload["reason_code"]), webString(payload["reasonCode"]))
+			runtimePayload["phase"] = "paused"
+			runtimePayload["reason_code"] = reason
+			runtimePayload["message"] = runnerRecoveryWaitPublicMessage(frameContext.Frame.Name)
+			if waitingForModel {
+				runtimePayload["phase"] = "waiting_input"
+				runtimePayload["message"] = firstNonEmpty(webString(payload["resume_detail"]), "No active model configuration is available. Configure or select a model, then continue this same task.")
+			}
 			if err := s.publishWebFrameEvent(frameContext, baseID+":runtime", "runtime.statusChanged", runtimePayload); err != nil {
 				return err
 			}
 			return s.publishWebFrameEvent(frameContext, baseID+":frame", "frame_update", map[string]any{
-				"status": "paused", "runtime_interruption_reason": sessionRunnerModelProviderUnavailableReasonCode,
+				"status": "paused", "runtime_interruption_reason": reason,
 			})
 		}
 		if attemptStarted {
@@ -801,6 +804,19 @@ func transcriptWebModelSelectionInterruption(payload map[string]any) bool {
 			strings.TrimSpace(firstNonEmpty(webString(payload["reason_code"]), webString(payload["reasonCode"]))),
 			sessionRunnerModelProviderUnavailableReasonCode,
 		) && !compatibilityPlanBool(payload["auto_resume"])
+}
+
+func transcriptWebRecoveryWaitInterruption(payload map[string]any) bool {
+	return strings.EqualFold(webString(payload["status"]), "interrupted") &&
+		payload["auto_resume"] == false && !transcriptWebModelSelectionInterruption(payload) &&
+		runnerInterruptionMayContinueSameTask(firstNonEmpty(webString(payload["reason_code"]), webString(payload["reasonCode"])))
+}
+
+func runnerRecoveryWaitPublicMessage(task string) string {
+	if sessionRunnerResponseLanguage(task) == "zh" {
+		return "连续恢复未改变当前阻塞条件，任务已暂停；原目标和已完成结果均已保留。条件修复、模型切换或补充输入后可继续。"
+	}
+	return "Recovery has not changed the blocking condition. The task is paused with its goal and completed results preserved; it can continue after the condition, model selection, or user input changes."
 }
 
 func (s *Server) publishTranscriptTerminal(

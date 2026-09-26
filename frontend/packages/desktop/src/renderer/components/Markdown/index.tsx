@@ -277,8 +277,10 @@ const ResolvedArtifactLink: React.FC<ResolvedArtifactLinkProps> = ({ originalHre
   return (
     <a
       {...anchorProps}
+      className={classNames(anchorProps.className, 'synon-artifact-link')}
       href={resolvedHref ?? '#'}
       data-original-href={originalHref}
+      data-synon-artifact-link='true'
       data-artifact-link-resolution={resolvedHref === undefined ? 'pending' : resolvedHref ? 'resolved' : 'unavailable'}
       aria-busy={resolvedHref === undefined ? true : undefined}
       target='_blank'

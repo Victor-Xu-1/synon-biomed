@@ -108,6 +108,19 @@ func Merge(current, incoming Update) Update {
 		incoming.BytesPerSecond == nil &&
 		incoming.BytesCompleted == nil &&
 		incoming.BytesTotal == nil
+	// Installers can report several downloads under the same phase. A new
+	// byte range must not inherit the preceding file's total, rate or percent.
+	newByteRange := incoming.BytesCompleted != nil &&
+		((current.BytesCompleted != nil && *incoming.BytesCompleted < *current.BytesCompleted) ||
+			(incoming.BytesTotal == nil && current.BytesTotal != nil) ||
+			(incoming.BytesTotal != nil && current.BytesTotal != nil && *incoming.BytesTotal != *current.BytesTotal))
+	if newByteRange {
+		merged.PhasePercent = nil
+		merged.BytesPerSecond = nil
+	}
+	if incoming.BytesCompleted != nil && incoming.BytesTotal == nil {
+		merged.BytesTotal = nil
+	}
 	if incoming.Phase != "" {
 		if incoming.Phase != current.Phase && incoming.PhasePercent == nil {
 			merged.PhasePercent = nil

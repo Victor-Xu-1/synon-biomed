@@ -395,6 +395,9 @@ func (s *Server) agentKernelConfinementMounts(userID, workspaceDir string, prote
 		if resolveErr != nil {
 			return nil, errors.New("working_dir authorization could not be verified")
 		}
+		if err := kernelruntime.ValidateHostMountPath(root); err != nil {
+			return nil, err
+		}
 		if hostPathWithin(workspaceDir, root) || hostPathWithin(root, workspaceDir) {
 			continue
 		}

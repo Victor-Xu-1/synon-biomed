@@ -77,7 +77,7 @@ func sessionRunnerFirstFailedToolCodes(messages []agentruntime.Message) ([]strin
 		var result any
 		if json.Unmarshal([]byte(message.Content), &result) != nil ||
 			!agentruntime.ClassifyToolResult(result).Failed() ||
-			agentruntime.IsNonExecutingPreflight(result) {
+			agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		return sessionRunnerMachineFailureCodes(result), true

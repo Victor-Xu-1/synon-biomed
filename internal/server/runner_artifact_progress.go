@@ -64,7 +64,7 @@ func sessionRunnerInlineArtifactRepairReadyForRevalidation(messages []agentrunti
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		normalized := normalizeAgentToolName(call.Name)

@@ -168,6 +168,31 @@ func TestDetachedKernelSetupContextTracksTaskAfterRequestHandoff(t *testing.T) {
 	}
 }
 
+func TestDetachedKernelSetupContextPreservesRunnerAuthorityWithTaskLifetimeParent(t *testing.T) {
+	server := &Server{sessionRuns: map[string]*activeSessionRun{}}
+	task, active, finish, err := server.registerActiveSessionRun(context.Background(), "runner-value-task", "runner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer finish()
+	run := &sessionRunnerChatRun{Transcript: &transcriptRunnerAuthority{}}
+	request := withTranscriptRunnerChatRun(task, run)
+	setup, cleanup := detachedKernelSetupContext(request, 0)
+	defer cleanup()
+	if got := setup.Value(transcriptRunnerChatRunContextKey{}); got != run {
+		t.Fatalf("detached setup lost runner authority across task lifetime parent: %#v", got)
+	}
+	active.cancel(ErrGenerationStopped)
+	select {
+	case <-setup.Done():
+		if !errors.Is(context.Cause(setup), ErrGenerationStopped) {
+			t.Fatalf("task stop cause=%v", context.Cause(setup))
+		}
+	case <-time.After(time.Second):
+		t.Fatal("task stop did not cancel detached setup")
+	}
+}
+
 func TestKernelHostGrantAdmissionRejectsPublishedRevocationFence(t *testing.T) {
 	server := &Server{hostGrantKernelFences: map[string]bool{"owner": true}}
 	called := false

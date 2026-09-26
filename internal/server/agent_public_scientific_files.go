@@ -86,6 +86,9 @@ type agentPublicScientificFileRequest struct {
 	AcceptedTypes    []string
 	RedirectHosts    []string
 	RegisteredSize   int64
+	// AllowPublicRedirects is derived only from the active conversation's
+	// full-access mode. It is never accepted from model input or source data.
+	AllowPublicRedirects bool
 }
 
 func (request agentPublicScientificFileRequest) maximumBytes() int64 {
@@ -128,7 +131,7 @@ type agentPublicScientificDownloadRecoveryState struct {
 func agentPublicScientificFileToolSchema() agentruntime.ToolSchema {
 	return agentruntime.ToolSchema{
 		Name:         "download_public_scientific_file",
-		Description:  "Download one public scientific file or complete HTML/XHTML source page whose exact URL already appears in a completed durable source-tool result. This is the only file-download path: use web_fetch for bounded page inspection, then use this tool for complete source pages, PDB/mmCIF/SDF, datasets, archives, PDFs, model checkpoints, or other supported scientific files. Use read_file with the returned immutable version_id to read bounded line or raw-byte windows. HTML is untrusted source data and is previewed passively. The server infers source_tool_call_id when omitted, validates the public destination and content type, preserves verified partial bytes across cancellation or service restart, resumes with Range and If-Range when supported, writes completed content atomically to the task workspace, and records immutable provenance.",
+		Description:  "Download one public scientific file or complete HTML/XHTML source page whose exact URL already appears in a completed durable source-tool result. This is the only file-download path: use web_fetch for bounded page inspection, then use this tool for complete source pages, PDB/mmCIF/SDF, datasets, archives, PDFs, model checkpoints, or other supported scientific files. Use read_file with the returned immutable version_id to read bounded line or raw-byte windows. HTML is untrusted source data and is previewed passively. The server infers source_tool_call_id when omitted, validates the public destination and content type, reuses an owner-scoped previously verified artifact across tasks when the exact URL, filename, and expected_sha256 match, preserves verified partial bytes across cancellation or service restart, resumes with Range and If-Range when supported, writes completed content atomically to the task workspace, and records immutable provenance.",
 		Capabilities: []string{"source-evidence", "source-download", "artifact-write"},
 		Exposure:     agentruntime.ToolExposureDirect,
 		Parameters: map[string]any{
@@ -137,7 +140,7 @@ func agentPublicScientificFileToolSchema() agentruntime.ToolSchema {
 				"source_tool_call_id": map[string]any{"type": "string", "maxLength": 512, "description": "Optional prior source tool-call id. Omit when the exact URL uniquely identifies the latest durable source result."},
 				"url":                 map[string]any{"type": "string", "minLength": 1, "maxLength": 4096, "description": "Exact public HTTPS URL already returned by a completed source tool."},
 				"filename":            map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "Optional path-free filename with the same format extension as the source URL."},
-				"expected_sha256":     map[string]any{"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Optional authoritative lowercase SHA-256 checksum."},
+				"expected_sha256":     map[string]any{"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Optional authoritative lowercase SHA-256 checksum; provide it for safe owner-scoped reuse of an already verified download across tasks."},
 				"human_description":   map[string]any{"type": "string", "minLength": 1, "maxLength": 256, "description": "Short present-participle label for the download."},
 			},
 			"required": []string{"url", "human_description"},
@@ -166,12 +169,17 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	if err != nil {
 		return nil, err
 	}
+	chatRun, _ := transcriptRunnerChatRunFromContext(ctx)
+	if correction := s.registeredAcquisitionPreflight(chatRun, "download_public_scientific_file", input); correction != nil {
+		return correction, nil
+	}
 	access, err := s.validateKernelHostIdentity(ctx, identity.access)
 	if err != nil {
 		log.Printf("download_public_scientific_file authority rejected frame=%q stage=kernel_identity err=%v",
 			identity.access.Frame.ID, err)
 		return nil, errAgentPublicScientificFileAuthority
 	}
+	request.AllowPublicRedirects = s.agentPublicScientificAllowsPublicRedirects(access.Frame.ID)
 	run, ok := transcriptArtifactRunFromContext(ctx)
 	if !ok || run.Authority == nil || run.SourceEventID <= 0 {
 		log.Printf("download_public_scientific_file authority rejected frame=%q call=%q stage=tool_source present=%t source_event_id=%d",
@@ -193,8 +201,20 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 			access.Frame.ID, toolCallID, run.SourceEventID, err)
 		return nil, errAgentPublicScientificFileAuthority
 	}
+	registered := false
 	if chatRun, _ := transcriptRunnerChatRunFromContext(ctx); chatRun != nil {
 		if download, _, found := s.registeredExecutionDownload(chatRun, request); found {
+			request.RedirectHosts = append([]string(nil), download.RedirectHosts...)
+			request.RegisteredSize = download.SizeBytes
+			registered = true
+		}
+	}
+	// A fresh run can request a registered execution asset before its model
+	// selection has been restored. The catalog is still the immutable authority
+	// for this exact URL, filename, checksum, size, and redirect policy, so use
+	// it to establish the same bounds before source-evidence validation.
+	if !registered {
+		if download, _, found := s.registeredExecutionDownloadCatalogSource(request); found {
 			request.RedirectHosts = append([]string(nil), download.RedirectHosts...)
 			request.RegisteredSize = download.SizeBytes
 		}
@@ -217,15 +237,25 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	); replayErr != nil || found {
 		return replayed, replayErr
 	}
-	if unavailable, found, unavailableErr := s.previouslyUnavailableAgentPublicScientificFileDownload(
-		ctx, stream, request,
-	); unavailableErr != nil || found {
-		return unavailable, unavailableErr
-	}
 	if reused, found, reuseErr := s.reuseCompletedAgentPublicScientificFileDownload(
 		ctx, workspaceDir, stream, claim, run.SourceEventID, toolCallID, artifactID, request,
 	); reuseErr != nil || found {
 		return reused, reuseErr
+	}
+	if reused, found, release, reuseErr := s.reuseOrCoordinateCachedAgentPublicScientificFileDownload(
+		ctx, workspaceDir, stream, claim, run.SourceEventID, toolCallID, artifactID, request,
+	); reuseErr != nil || found {
+		return reused, reuseErr
+	} else if release != nil {
+		defer release()
+	}
+	// A verified cache hit is authoritative even if an earlier network attempt
+	// in this task was unavailable. Only consult the no-retry receipt after all
+	// durable local reuse paths have been exhausted.
+	if unavailable, found, unavailableErr := s.previouslyUnavailableAgentPublicScientificFileDownload(
+		ctx, stream, request,
+	); unavailableErr != nil || found {
+		return unavailable, unavailableErr
 	}
 	if err := ensureAgentWorkspaceDownloadTarget(
 		ctx, workspaceDir, request.Filename, 0, "", request.maximumBytes(),
@@ -313,6 +343,11 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	reportAgentPublicScientificDownloadProgress(ctx, "download_ready", staged.sizeBytes, staged.sizeBytes, staged.bytesPerSecond)
 	staged.discard()
 	return s.agentPublicScientificFileResult(stream, artifact, version, request), nil
+}
+
+func (s *Server) agentPublicScientificAllowsPublicRedirects(frameID string) bool {
+	mode, err := s.webSessionApprovalMode(frameID)
+	return err == nil && mode == "allow"
 }
 
 func (s *Server) previouslyUnavailableAgentPublicScientificFileDownload(
@@ -767,6 +802,13 @@ func (s *Server) validateAgentPublicScientificSourceURL(
 		if source, found := s.registeredExecutionDownloadSource(run, request); found {
 			return agentPublicScientificSourceBinding{ToolCallID: source}, nil
 		}
+	}
+	// The selected-run view may be unavailable during a fresh acquisition. An
+	// exact match against the local execution-pack catalog is independently
+	// authoritative and permits cache reuse without inventing a web source
+	// receipt. Arbitrary URLs still take the durable source-evidence path below.
+	if _, source, found := s.registeredExecutionDownloadCatalogSource(request); found {
+		return agentPublicScientificSourceBinding{ToolCallID: source}, nil
 	}
 	snapshot, err := s.transcriptStore.GetProjectionSnapshot(ctx, streamUID, ownerID)
 	if err != nil {
@@ -1664,6 +1706,7 @@ func (s *Server) agentPublicScientificFileResult(
 			log.Printf("download_public_scientific_file compatibility projection failed for artifact %s", artifact.ID)
 		}
 	}
+	s.indexAgentPublicScientificDownload(stream, artifact, version, request)
 	artifactResult := map[string]any{
 		"artifact_id": artifact.ID, "version_id": version.ID, "version_number": version.VersionNumber,
 		"filename": artifact.Name, "content_type": artifact.Kind, "size_bytes": version.SizeBytes,

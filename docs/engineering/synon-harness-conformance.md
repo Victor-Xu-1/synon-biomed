@@ -78,6 +78,12 @@ batches and generic input/output fallbacks do not define the public layout.
   answered resolver remains in bounded replay, its exact, uniquely registered
   parent can be restored; ambiguous parentage cannot select an engine, and
   catalog-wide recovery cannot override an existing primary selection.
+  The accepted closed-option label can restore absent implementation metadata
+  only through exact registered identities and declared primary/resolver edges.
+  Unknown labels, independent-engine composites and free-text answers do not
+  select a route. Explicit typed identities and resolver tuples take precedence.
+  Answer acceptance and fenced typed-answer replay use the same reconciler;
+  historical question and answer records are never rewritten.
   Concurrent answers for one controlled input group cannot authorize conflicting
   resolver routes. The shared continuation constraint is checked before the
   response batch writes grants or answers, leaving conflicts correctable in the
@@ -293,6 +299,15 @@ batch against exact completed idempotent receipts, typed terminal admission
 rejections and explicit closure checkpoints. Matching state is bounded by the
 proposal, not history size. Failed or unavailable results are not implicitly
 completed evidence; a rejected route is not described as successful execution.
+An explicit `executed=false` decision or admission result cannot prove material
+progress, satisfy a correction action, or close an attempted execution route.
+Previously emitted `correction_route_closed` and
+`durable_no_progress_route_closed` replies are derived guard decisions, not new
+attempts; replay does not compound them into a permanent closure. During an
+active correction, an `ask_user` question supported only by the original task
+objective and no current typed decision authority returns an agent-owned
+recovery result without parking the task. A separately evidenced scientific,
+parameter, cost, resource, or permission choice remains available.
 Task/obligation changes and material progress retain their existing reset
 semantics. An authority read failure never falls back to the recent preview.
 Tool preflight receives one proposed batch and the execution context before
@@ -301,6 +316,34 @@ call indices in the existing rejection/repair path. Cancellation, unavailable
 preflight authority and invalid diagnostic indices stop admission as errors;
 they are not converted into a model-selection retry or a tool receipt. The
 server applies its existing validators through this single batch entry point.
+Model-facing preflight feedback preserves the exact required Skill, schema
+filter, evidence reads and registered implementation selectors. Only reviewed
+diagnostic fields cross this projection; raw arguments and arbitrary payload
+fields do not. The bounded projection always emits valid JSON and never cuts
+an identity in half. Oversized explanatory text or omitted supporting fields
+are explicitly marked, without weakening the original execution precondition.
+Registered software acquisition is checked at admission and the final download
+boundary. An exact catalog URL retains its filename and checksum contract even
+when the model omits or malforms those fields. For a selected implementation or
+evidence resolver, alternative release/source archives of the same upstream
+repository do not replace the registered asset. Unrelated data, repositories
+and source-document pages keep their ordinary access checks. Corrected calls
+use the existing owner-scoped, checksum-verified download cache and transfer
+service; there is no second acquisition executor. Constant Python f-string
+URLs are resolved by the non-executing AST preparation pass so inline downloads
+cannot escape that same durable acquisition route merely through formatting.
+Closed acquisition routes retain the exact registered correction. A repeated
+Skill route may return its current registered entrypoint only after verifying
+the task-scoped bundle against the source digest; guessed paths and modified
+assets are not callable authority. Such feedback remains non-executing and
+does not reset the no-progress state.
+Implementation-owned launcher inspection also follows one literal working
+directory prefix and task-local extensionless scripts with recognized shebangs.
+The same shell grammar resolves the invocation; bounded root-confined reads
+prevent a symlink or printed filename from supplying foreign source authority.
+An identified launcher remains subject to the existing canonical execution-pack
+gate, which returns the verified current entrypoint when available. No software
+name or alternate executor is introduced by this source inspection.
 Execution-source preparation inherits the task context while retaining its
 eight-second operation budget; a shorter parent deadline or cancellation is
 not extended by preparation or converted into permission to execute.
@@ -366,9 +409,9 @@ tools are absent from new model snapshots.
 3. A plan may be approved by the UI or by an explicit user message. Text
    approval must be interpreted by the model and recorded with
    `generate_plan(approve=true)` before execution.
-4. Every explicitly reviewed plan step must reach a terminal status before
-   completion. Autonomous plan statuses remain durable navigation and do not
-   become a second completion authority.
+4. Current-task executable plans retain unfinished obligations at final
+   settlement. They remain revisable navigation, not an independent scientific
+   quality verdict; reasoning-only work never acquires an execution quota.
 5. Repeated identical operations are bounded inside one execution unit;
    external blockers wait for user or external state instead of polling. The
    logical task itself has no attempt, continuation, age or duration ceiling:
@@ -383,6 +426,18 @@ tools are absent from new model snapshots.
    Resumable and automatic are separate durable properties: the interruption
    payload records `auto_resume=false`, so ordinary lease recovery and global
    recovery scans cannot mistake a user-owned model wait for unattended work.
+   Repeated attempts against the same typed condition without material progress
+   also park the same queue record with `waitingFor=recovery_condition`.
+   Completed evidence, the logical goal and resumable checkpoint remain intact.
+   New durable user/material evidence, model selection, a newer recovery contract
+   or explicit continue can wake it. Administrative progress and elapsed time
+   cannot. Live events and reloaded conversation state both show paused, not
+   running or failed. Healthy execution and historical counts from an older
+   recovery contract do not trigger this wait.
+   Route quarantines are scoped to the recovery contract that evaluated them.
+   An upgraded contract reevaluates admission while retaining successful
+   execution receipts, immutable results, task ownership and permission checks.
+   A guard's own rejection cannot create a new attempted-action receipt.
 6. Diagnostic tasks preserve raw failure evidence and never force a pass.
 7. `wait_for_notification` accepts an omitted display label and caps one wait
    at 1800 seconds; a timeout returns durable pending-work state so the model
@@ -412,7 +467,10 @@ tools are absent from new model snapshots.
     recovery worker.
 14. Tool progress checkpoints are durable best-effort observability. Start and
     terminal checkpoints remain strict execution authority; one transient progress
-    persistence error is logged and cannot interrupt the live tool.
+    persistence error is logged and cannot interrupt the live tool. Public
+    installer and download progress shows observed bytes, remaining bytes,
+    transfer rate, phase, and elapsed time without milestone counts or derived
+    percentages. A planned transfer size alone never proves bytes were received.
 15. The model may load a matching Skill when its instructions or an external
     schema are needed. Root tools remain governed by the exact advertised
     snapshot and their own typed input contracts; there is no Harness-imposed
@@ -442,8 +500,10 @@ tools are absent from new model snapshots.
     entire tool schema after a malformed call. A repeated rejection in the
     same tool/target/diagnostic family eventually exhausts its private correction
     window, while the capability stays available for genuinely corrected inputs.
-    Admission alone and unrelated successes do not reset that family. Every
-    `executed=false` result is also `ok=false`; a stale `edit_file` may use one
+    Admission alone and unrelated successes do not reset that family. A
+    non-executing rejection is `ok=false`; a successful policy or decision
+    preflight may instead be `ok=true, executed=false`, which still does not
+    attest that the requested action ran. A stale `edit_file` may use one
     successful `read_file` as inspection evidence and retry once, after which
     the same file/error family closes even if `old_string` keeps changing.
     Persisted native edit conditions also preflight changed invalid variants
@@ -588,16 +648,38 @@ tools are absent from new model snapshots.
     deliverable check; the check is scoped to the entire text artifact so a
     rendered report may still contain a fenced code example. Legacy continuations without an explicit flag retain their
     required semantics until executed or explicitly completed. Autonomous
-    plans remain revisable navigation and progress data: a pending autonomous
-    step does not force `update_step_status`; an explicit completion retains
-    its model-authored findings without an administrative start round. Only a plan explicitly
-    reviewed and approved by the user makes unfinished steps a
-    final-completion blocker. `generate_plan(approve=true)` remains a pure
+    plans remain revisable navigation and progress data during execution, but
+    every current-task-bound executable plan now retains unfinished, blocked, and skipped steps at
+    final settlement. The runner continues the same logical task from its
+    checkpoint instead of publishing a progress summary as whole-task success.
+    A plan `execution` step declares an `execution_tool` from the task's captured
+    tool authority. A unique successful current-task receipt can bind without
+    an extra status-only start round; explicit restart and plan-version fences
+    still apply. A receipt cannot complete two distinct steps. An old plan with
+    an unknown executor can bind an explicit `execution_ref` only to a registered
+    execution pack with frame-owned execution provenance and verified output
+    digests. Candidate references come from that same receipt scan, never model
+    claims. Rejected preflight, failed process, nonzero exit code, an unrelated
+    tool, or a status update alone cannot prove execution. Reasoning-only work
+    does not acquire an artificial tool-call quota. When an existing `ask_user`
+    decision occurs between completed and open plan steps, its question carries
+    a bounded server-derived progress snapshot. The optional `stage_progress`
+    is validated and persisted on the existing AskUser v1 prompt, including
+    plan identity, counts, and at most 12 displayed steps per state; model
+    input cannot supply it. Answering resumes the same logical task and its
+    open steps. A duration alone never creates a question or terminates work.
+    `generate_plan(approve=true)` remains a pure
     control transition; plan-shape normalization cannot add draft content to
     that approve-only call.
 
 ## Artifacts and compute
 
+- Receipt-bound managed execution snapshots remain authoritative when their
+  mutable workspace aliases are missing or replaced. Missing and empty aliases
+  are restored; occupied files and foreign links remain intact and do not gain
+  snapshot authority. Kernel protection and artifact publication resolve the
+  same verified snapshot. Superseded alias backups are removed only after
+  matching the receipt, and a corrupt snapshot cannot grant output ownership.
 - `save_artifacts` validates lineage, format and structured scientific
   references. Model-authored reports and readable deliverables retain citation
   diagnostics as quality grading without turning absence of a current-task
@@ -633,6 +715,15 @@ tools are absent from new model snapshots.
   remains valid.
 - Host and network access use explicit grants. Host deletion moves items to the
   system Trash and never performs a permanent delete.
+  Host grants do not override protected kernel namespaces. A conflicting mount
+  remains fail-closed; helper startup diagnostics expose only a bounded stage
+  and error code, never raw paths, arguments or environment values. Existing
+  user grants are not silently revoked to make execution start.
+  Host-grant creation, picker and mode changes validate the kernel's existing
+  namespace policy before persistence, including canonical symlink targets.
+  Historical conflicting grants remain visible and explicitly revocable;
+  execution admission reports the conflict before starting a worker. A narrow
+  task directory is allowed when it does not overlap a protected namespace.
 - SSH command, SCP, durable submit/wait/cancel, task-wide concurrency, provider
   notes, and the scoped `host.compute` SDK share the same compute stores.
 - Provider SDK and inference kernels run inside the same audited Linux

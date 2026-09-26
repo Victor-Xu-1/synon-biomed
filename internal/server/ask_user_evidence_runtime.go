@@ -62,6 +62,7 @@ func (s *Server) normalizeAgentAskUserDecisionEvidence(
 	if err != nil {
 		return err
 	}
+	questions = s.bindAskUserRegisteredOptionIdentities(questions)
 	questions = normalizeAskUserEvidenceAuthorities(questions, allowed)
 	result["questions"] = questions
 	// Return exact current-task identities as structured repair data, rather
@@ -75,6 +76,51 @@ func (s *Server) normalizeAgentAskUserDecisionEvidence(
 		"decision options contain internal execution details that cannot be shown to the user: %s; describe the scientific capability or public software instead",
 		strings.Join(publicProseIssues, "; "),
 	)
+}
+
+// A correction is owned by the runner until a distinct user decision has
+// current-task authority. Rephrasing a failed or unexecuted tool operation as
+// two setup options cannot turn it into a user-owned choice. This gate uses
+// normalized evidence identities, never the model's question wording.
+func askUserRecoveryDecisionCorrection(run *sessionRunnerChatRun, result map[string]any) map[string]any {
+	if run == nil || strings.TrimSpace(run.CorrectionReason) == "" {
+		return nil
+	}
+	questions, ok := result["questions"].([]askUserQuestion)
+	if !ok || len(questions) == 0 {
+		return nil
+	}
+	for _, question := range questions {
+		grounded := false
+		for _, option := range question.Options {
+			metadata := option.Metadata
+			if strings.TrimSpace(stringValue(metadata["implementation"])) != "" ||
+				len(mapValue(metadata["evidence_resolver"])) > 0 {
+				grounded = true
+			}
+			if parameters, valid := askUserExecutionParameterValuesMetadata(metadata["execution_parameter_values"]); valid && len(parameters) > 0 {
+				grounded = true
+			}
+			for _, reference := range append(
+				stringArrayValue(metadata["decision_evidence"]),
+				stringArrayValue(metadata["readiness_evidence"])...,
+			) {
+				if reference != askUserCurrentTaskEvidenceReference {
+					grounded = true
+				}
+			}
+		}
+		if grounded {
+			continue
+		}
+		return map[string]any{
+			"ok": false, "executed": false, "code": "agent_owned_decision",
+			"status": "agent_owned_decision", "decision_required": false, "retryable": true,
+			"message":  "The active recovery has no new verified user-owned choice. Its tool outcome remains an agent-owned condition, not a user decision.",
+			"recovery": "Inspect the latest exact tool receipt and the current validated state. Continue the affected step through a materially different governed action; ask the user only when a new scientific, parameter, cost, resource, or permission choice has current-task authority.",
+		}
+	}
+	return nil
 }
 
 func (s *Server) availableAgentAskUserEvidenceAuthorities(

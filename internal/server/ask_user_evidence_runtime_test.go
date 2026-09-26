@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,6 +15,27 @@ import (
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
 )
+
+func TestAskUserRecoveryDecisionGateKeepsTypedChoices(t *testing.T) {
+	run := &sessionRunnerChatRun{CorrectionReason: sessionRunnerToolRoundNoProgressReasonCode}
+	grounded := askUserQuestion{Options: []askUserQuestionOption{
+		{Metadata: map[string]any{"implementation": "Engine A"}},
+		{Metadata: map[string]any{"decision_evidence": []string{"user-input:current-task"}}},
+	}}
+	unsourced := askUserQuestion{Options: []askUserQuestionOption{
+		{Metadata: map[string]any{"decision_evidence": []string{"user-input:current-task"}}},
+		{Metadata: map[string]any{"decision_evidence": []string{"user-input:current-task"}}},
+	}}
+	if correction := askUserRecoveryDecisionCorrection(run, map[string]any{"questions": []askUserQuestion{grounded}}); correction != nil {
+		t.Fatalf("typed implementation choice was blocked: %#v", correction)
+	}
+	if correction := askUserRecoveryDecisionCorrection(run, map[string]any{"questions": []askUserQuestion{grounded, unsourced}}); stringValue(correction["code"]) != "agent_owned_decision" {
+		t.Fatalf("an unsourced second question bypassed recovery ownership: %#v", correction)
+	}
+	if correction := askUserRecoveryDecisionCorrection(&sessionRunnerChatRun{}, map[string]any{"questions": []askUserQuestion{unsourced}}); correction != nil {
+		t.Fatalf("fresh user decision was blocked outside recovery: %#v", correction)
+	}
+}
 
 func TestNormalizeAskUserEvidenceAuthoritiesDropsInventedReferences(t *testing.T) {
 	questions, err := askUserQuestionValue(map[string]any{
@@ -403,5 +425,23 @@ func TestAvailableAgentAskUserEvidenceAuthoritiesClassifyDurableReceipts(t *test
 	if authority, found := allowed["compute-provider:fixture"]; !found ||
 		authority.Class != askUserEvidenceConfiguredProvider || authority.ReadinessStatus != "configured" {
 		t.Fatalf("enabled compute provider not available: %#v", allowed)
+	}
+	run.CorrectionReason = sessionRunnerToolRoundNoProgressReasonCode
+	first := managedExecutionSafeAskUserOptionFields("Use the verified source", "Continue using the verified source.", "Preserves source evidence.", "Limits the result to one source.")
+	first["decision_evidence"] = []any{"user-input:current-task", "tool-call:read-receipt"}
+	first["recommended"] = true
+	second := managedExecutionSafeAskUserOptionFields("Request another source", "Ask for a different source.", "May broaden evidence.", "Requires another input.")
+	second["decision_evidence"] = []any{"user-input:current-task", "tool-call:read-receipt"}
+	second["recommended"] = false
+	result, askErr := server.executeAgentAskUserQuestion(
+		withTranscriptRunnerChatRun(context.Background(), run), run.SessionID,
+		"evidenced-recovery-choice", "ask_user", map[string]any{
+			"question": "Which source should guide the next analysis?", "header": "Source choice",
+			"options": []any{first, second},
+		},
+	)
+	var pause *agentruntime.PauseError
+	if result != nil || !errors.As(askErr, &pause) || pause.Status != "awaiting_user_response" {
+		t.Fatalf("evidence-backed user choice was suppressed: result=%#v err=%v", result, askErr)
 	}
 }

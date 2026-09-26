@@ -226,10 +226,14 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		// bounded provider message projection in a long task.
 		run.addRequiredScientificCapabilities(requiredScientificCapabilitiesFromRunnerEntries(scientificEntries)...)
 		run.addExecutedSkillNames(completedSkillNamesFromRunnerEntries(scientificEntries)...)
-		run.setSelectedImplementations(selectedAskUserImplementationsFromRunnerEntries(scientificEntries)...)
+		selectionEntries, err := s.runnerAskUserSelectionEntries(ctx, run)
+		if err != nil {
+			return "", err
+		}
+		run.setSelectedImplementations(selectedAskUserImplementationsFromRunnerEntries(selectionEntries)...)
 		selectedResolvers, validResolvers := validatedSelectedAskUserEvidenceResolvers(
 			s.skillCatalog, s.scienceCapabilities, run,
-			selectedAskUserEvidenceResolversFromRunnerEntries(scientificEntries),
+			selectedAskUserEvidenceResolversFromRunnerEntries(selectionEntries),
 		)
 		if !validResolvers {
 			return "", errors.New("answered AskUser evidence resolver is not authorized by the active capability registry")
@@ -368,13 +372,14 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		runtimeToolUniverse = append(runtimeToolUniverse, refreshed.Schemas...)
 		return true
 	}
+	selectedSkillNames := sessionRunnerEffectiveSelectedSkillNames(options.SelectedSkillNames, run)
 	explicitlySelectedSkills, err := s.runtimeSkillsByNameWithConnectorSchemas(
-		options.SelectedSkillNames, options.ExcludedSkillNames, runtimeToolUniverse,
+		selectedSkillNames, options.ExcludedSkillNames, runtimeToolUniverse,
 	)
 	if err != nil && errors.Is(err, errSelectedSkillContractUnavailable) &&
-		refreshSelectedMCPContracts(options.SelectedSkillNames) {
+		refreshSelectedMCPContracts(selectedSkillNames) {
 		explicitlySelectedSkills, err = s.runtimeSkillsByNameWithConnectorSchemas(
-			options.SelectedSkillNames, options.ExcludedSkillNames, runtimeToolUniverse,
+			selectedSkillNames, options.ExcludedSkillNames, runtimeToolUniverse,
 		)
 	}
 	if err != nil {
@@ -384,10 +389,6 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		explicitlySelectedSkills = runtimeSkillsForSelectedImplementation(
 			explicitlySelectedSkills, run.selectedImplementationsSnapshot(), run.TaskIntent,
 		)
-	}
-	selectedSkillNames := append([]string(nil), options.SelectedSkillNames...)
-	if run != nil {
-		selectedSkillNames = append(selectedSkillNames, run.executedSkillNamesSnapshot()...)
 	}
 	selectedSkills, err := s.runtimeSkillsByNameWithConnectorSchemas(
 		uniqueSortedFolded(selectedSkillNames), options.ExcludedSkillNames, runtimeToolUniverse,
@@ -1056,7 +1057,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 			Detail: "the model completed its tool rounds without producing a user-visible final answer",
 		}
 	}
-	if remaining, err := s.incompleteGeneratedPlanCondition(intakeFrameID); err != nil {
+	if remaining, err := s.incompleteGeneratedPlanCondition(intakeFrameID, run); err != nil {
 		return "", err
 	} else if remaining != nil {
 		return "", *remaining

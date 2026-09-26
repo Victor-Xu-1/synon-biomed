@@ -281,10 +281,14 @@ func serverAgentRuntimeGatewayAdmit(invocation *toolgateway.Invocation) {
 func serverAgentRuntimeGatewayPreflight(invocation *toolgateway.Invocation) {
 	execution := serverAgentRuntimeExecution(invocation)
 	gateway := execution.gateway
+	name := invocation.CanonicalName
+	if preflight := gateway.agentRuntimeRegisteredAcquisitionPreflight(name, invocation.Input); preflight != nil {
+		invocation.CompleteForAudit(preflight, "completed", "", nil)
+		return
+	}
 	if gateway.resumeAfterApproval {
 		return
 	}
-	name := invocation.CanonicalName
 	preflight := agentRuntimeUnresolvedToolResultTemplatePreflight(name, invocation.Input)
 	if preflight == nil {
 		preflight = agentRuntimeUnresolvedSkillDirectoryPreflight(name, invocation.Input)
@@ -460,6 +464,13 @@ func serverAgentRuntimeGatewayExecute(invocation *toolgateway.Invocation) {
 	execution := serverAgentRuntimeExecution(invocation)
 	gateway := execution.gateway
 	name := invocation.CanonicalName
+	// Keep the immutable binary-route invariant at the final execution
+	// boundary as well as the preflight stage. Approved resumes may bypass
+	// permission-oriented preflight, but they must never bypass route safety.
+	if boundary := gateway.agentRuntimeRegisteredAcquisitionPreflight(name, invocation.Input); boundary != nil {
+		invocation.CompleteForAudit(boundary, "completed", "", nil)
+		return
+	}
 	// Rebind the final source after all earlier stages, including approved
 	// resumes. The proof stays in a private host context, never tool arguments.
 	if boundary := gateway.agentRuntimeImplementationExecutionChoicePreflight(name, invocation.Input, invocation.Context); boundary != nil {

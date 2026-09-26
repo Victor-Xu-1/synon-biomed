@@ -94,21 +94,22 @@ describe('truthful phase progress', () => {
       buildToolProgressPublicPresentation({ phase: 'verifying_environment', indeterminate: true }, 'zh-CN').phaseLabel
     ).toBe('验证环境');
   });
-  it('qualifies a phase-only 100 percent rather than implying operation completion', () => {
-    expect(
-      buildToolProgressPublicPresentation(
-        { phase: 'installer_process_completed', phasePercent: 100, indeterminate: false },
-        'zh-CN'
-      ).compactResult
-    ).toBe('阶段 100%');
+  it('keeps a terminal installer phase readable without showing a percentage', () => {
+    const presentation = buildToolProgressPublicPresentation(
+      { phase: 'installer_process_completed', phasePercent: 100, indeterminate: false },
+      'zh-CN'
+    );
+    expect(presentation.compactDetail).toBe('依赖安装完成');
+    expect(JSON.stringify(presentation.rows)).not.toContain('%');
   });
   it('shows observed bytes when the transfer size is unknown', () => {
-    expect(
-      buildToolProgressPublicPresentation(
-        { phase: 'downloading_file', bytesCompleted: 2048, indeterminate: true },
-        'zh-CN'
-      ).compactDetail
-    ).toContain('2.05 KB');
+    const presentation = buildToolProgressPublicPresentation(
+      { phase: 'downloading_file', bytesCompleted: 2048, bytesPerSecond: 1024, indeterminate: true },
+      'zh-CN'
+    );
+    expect(presentation.rows).toContainEqual({ label: '已下载', value: '2.05 KB' });
+    expect(presentation.rows).toContainEqual({ label: '传输速度', value: '1.02 KB/s' });
+    expect(presentation.rows).not.toContainEqual(expect.objectContaining({ label: '剩余' }));
   });
 });
 
@@ -147,50 +148,47 @@ describe('localized operation copy', () => {
   });
 
   it.each([
-    ['zh-CN', '本步骤 1:05', '1 / 4 步', '下载 25%', '阶段 50%', '2 行任务代码', 'a, b, c 等'],
-    ['en-US', 'Step elapsed 1:05', '1 / 4 steps', 'Download 25%', 'Phase 50%', '2 lines of task code', 'a, b, c, …'],
-  ])(
-    'interpolates real observations without changing units in %s',
-    (language, elapsed, steps, download, phase, code, subjects) => {
-      const chinese = language.startsWith('zh');
-      const milestones = buildToolProgressPublicPresentation(
-        { phase: 'queued', elapsedMs: 65000, completedItems: 1, totalItems: 4 },
-        language
-      );
-      expect(milestones.compactDetail).toContain(elapsed);
-      expect(milestones.compactResult).toBe(steps);
-      expect(
-        buildToolProgressPublicPresentation(
-          { phase: 'downloading_file', bytesCompleted: 250, bytesTotal: 1000 },
-          language
-        ).compactResult
-      ).toBe(download);
-      expect(
-        buildToolProgressPublicPresentation({ phase: 'installing_packages', phasePercent: 50 }, language).compactResult
-      ).toBe(phase);
-      expect(
-        toolOperationSubject(
-          { key: 'code', name: 'python', status: 'running', input: JSON.stringify({ code: 'x = 1\nprint(x)' }) },
-          chinese
-        )
-      ).toBe(`python · ${code}`);
-      expect(
-        toolOperationSubject(
-          {
-            key: 'list',
-            name: 'manage_packages',
-            status: 'running',
-            input: JSON.stringify({ packages: ['a', 'b', 'c', 'd'] }),
-          },
-          chinese
-        )
-      ).toBe(subjects);
-      expect(
-        toolOperationAction(
-          { key: 'unknown', name: 'manage_packages', status: 'running', input: JSON.stringify({ mode: '__proto__' }) },
-          chinese
-        )
-      ).toBeUndefined();
-    }
-  );
+    ['zh-CN', '已用时 1:05', '剩余 750 B', '2 行任务代码', 'a, b, c 等'],
+    ['en-US', 'Elapsed 1:05', '750 B remaining', '2 lines of task code', 'a, b, c, …'],
+  ])('interpolates real observations without changing units in %s', (language, elapsed, remaining, code, subjects) => {
+    const chinese = language.startsWith('zh');
+    const milestones = buildToolProgressPublicPresentation(
+      { phase: 'queued', elapsedMs: 65000, completedItems: 1, totalItems: 4 },
+      language
+    );
+    expect(milestones.compactDetail).toContain(elapsed);
+    expect(JSON.stringify(milestones)).not.toContain('1 / 4');
+    const transfer = buildToolProgressPublicPresentation(
+      { phase: 'downloading_file', bytesCompleted: 250, bytesTotal: 1000 },
+      language
+    );
+    expect(transfer.compactDetail).toContain('250 B / 1 KB');
+    expect(transfer.compactDetail).toContain(remaining);
+    expect(transfer.compactDetail).not.toContain('%');
+    const phase = buildToolProgressPublicPresentation({ phase: 'installing_packages', phasePercent: 50 }, language);
+    expect(phase.compactDetail).not.toContain('%');
+    expect(
+      toolOperationSubject(
+        { key: 'code', name: 'python', status: 'running', input: JSON.stringify({ code: 'x = 1\nprint(x)' }) },
+        chinese
+      )
+    ).toBe(`python · ${code}`);
+    expect(
+      toolOperationSubject(
+        {
+          key: 'list',
+          name: 'manage_packages',
+          status: 'running',
+          input: JSON.stringify({ packages: ['a', 'b', 'c', 'd'] }),
+        },
+        chinese
+      )
+    ).toBe(subjects);
+    expect(
+      toolOperationAction(
+        { key: 'unknown', name: 'manage_packages', status: 'running', input: JSON.stringify({ mode: '__proto__' }) },
+        chinese
+      )
+    ).toBeUndefined();
+  });
 });

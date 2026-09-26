@@ -868,6 +868,8 @@
     },
     "askUser": {
       "responseRequired": "需要你的回答",
+      "stageRecorded": "计划中已记录完成 {{count}} 项",
+      "stageRemaining": "计划中仍待完成 {{count}} 项",
       "decideForMe": "让 Synon Biomed 决定",
       "decideForMeDescription": "根据当前任务上下文选择最合适的方案。",
       "customSelections": "自定义选择",

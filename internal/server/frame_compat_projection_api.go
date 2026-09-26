@@ -323,7 +323,7 @@ func (s *Server) compatibilityFrameRuntimeProjection(frameID string) (map[string
 	for key, value := range reviewProjection {
 		projection[key] = value
 	}
-	interruption, paused, err := latestNonResumableRunnerInterruption(ctx, s.transcriptStore, stream.UID, stream.OwnerID)
+	interruption, paused, err := latestPausedRunnerInterruption(ctx, s.transcriptStore, stream.UID, stream.OwnerID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -388,7 +388,7 @@ func compatibilityFrameNeedsFinalPresentation(status string, presentationReady b
 	return strings.EqualFold(strings.TrimSpace(status), workspace.FrameStatusCompleted) && !presentationReady
 }
 
-func latestNonResumableRunnerInterruption(
+func latestPausedRunnerInterruption(
 	ctx context.Context,
 	repository *transcriptstore.Repository,
 	streamUID string,
@@ -416,10 +416,9 @@ func latestNonResumableRunnerInterruption(
 	if err != nil {
 		return transcriptstore.RunnerInterruption{}, false, err
 	}
-	if interruption.ReasonCode == sessionRunnerModelProviderUnavailableReasonCode {
-		// A missing model is explicitly resumable after configuration, but it is
-		// still a visible waiting state while no runner owns the task. Do not let
-		// the recoverable checkpoint make the UI look active or failed.
+	if !interruption.AutoResume || interruption.ReasonCode == sessionRunnerModelProviderUnavailableReasonCode {
+		// A recoverable checkpoint may deliberately wait for changed conditions.
+		// Resumability alone does not mean a runner is executing the logical task.
 		return interruption, true, nil
 	}
 	return interruption, !resumable || resumableCheckpoint.Sequence != interruption.CheckpointSequence, nil

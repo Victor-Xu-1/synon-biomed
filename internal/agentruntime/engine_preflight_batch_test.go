@@ -3,6 +3,7 @@ package agentruntime
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -89,7 +90,7 @@ func TestEngineBatchPreflightBeforeAnyPublication(t *testing.T) {
 }
 
 func TestEngineBatchPreflightKeepsExactCallFeedback(t *testing.T) {
-	gateway := &batchPreflightGateway{diagnostics: map[int]string{1: `{"code":"durable_no_progress_route_closed","message":"An unchanged execution is already complete.","recovery":"Choose a materially different action."}`}}
+	gateway := &batchPreflightGateway{diagnostics: map[int]string{1: `{"code":"implementation_skill_required","required_skill":"exact-engine-contract","message":"Load the selected implementation contract.","recovery":"Load required_skill before retrying."}`}}
 	model := &capturingRequestModelClient{responses: []ModelResponse{
 		{Message: Message{Role: "assistant", ToolCalls: []ToolCall{
 			{ID: "unadvertised", Name: "unknown", Arguments: []byte(`{}`)},
@@ -113,6 +114,9 @@ func TestEngineBatchPreflightKeepsExactCallFeedback(t *testing.T) {
 	for _, message := range model.requests[1].Messages {
 		if message.Role == "tool" && message.ToolCallID == "closed" {
 			found = true
+			if !strings.Contains(message.Content, `"required_skill":"exact-engine-contract"`) {
+				t.Fatalf("model request lost the required Skill identity: %s", message.Content)
+			}
 		}
 	}
 	if !found {

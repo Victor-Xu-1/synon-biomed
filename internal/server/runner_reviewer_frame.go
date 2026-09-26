@@ -96,6 +96,55 @@ func runnerFixedJobFrameID(profileName, sessionID string, attempt, reviewIndex i
 	return "completion-" + strings.ToLower(profileName) + "-" + hex.EncodeToString(digest[:12])
 }
 
+func runnerFixedJobRetryFrameID(profileName, sessionID string, attempt, reviewIndex, retryOrdinal int) string {
+	profileName = strings.ToUpper(strings.TrimSpace(profileName))
+	if retryOrdinal <= 0 {
+		return runnerFixedJobFrameID(profileName, sessionID, attempt, reviewIndex)
+	}
+	digest := sha256.Sum256([]byte(fmt.Sprintf(
+		"%s\x00%s\x00%d\x00%d\x00retry\x00%d",
+		profileName, strings.TrimSpace(sessionID), attempt, reviewIndex, retryOrdinal,
+	)))
+	return "completion-" + strings.ToLower(profileName) + "-retry-" + hex.EncodeToString(digest[:12])
+}
+
+func reviewerRetryFrameName(baseName string, retryOrdinal int) string {
+	if retryOrdinal <= 0 {
+		return baseName
+	}
+	return fmt.Sprintf("%s retry %d", baseName, retryOrdinal)
+}
+
+func (s *Server) resolveSessionReviewFrameIdentity(
+	parent workspace.Frame,
+	profileName, sessionID string,
+	attempt, reviewIndex int,
+) (string, string, error) {
+	baseName := fmt.Sprintf("Completion %s %d", strings.ToLower(strings.TrimSpace(profileName)), reviewIndex+1)
+	baseID := runnerFixedJobFrameID(profileName, sessionID, attempt, reviewIndex)
+	frames, err := s.workspaceStore.ListFramesForRoot(parent.RootFrameID)
+	if err != nil {
+		return "", "", err
+	}
+	matching := 0
+	for _, candidate := range frames {
+		if candidate.ParentFrameID != parent.ID || candidate.ProjectID != parent.ProjectID ||
+			candidate.RootFrameID != parent.RootFrameID || !strings.EqualFold(candidate.AgentName, profileName) ||
+			(candidate.Name != baseName && !strings.HasPrefix(candidate.Name, baseName+" retry ")) {
+			continue
+		}
+		matching++
+		if strings.EqualFold(candidate.Status, "processing") {
+			return candidate.ID, candidate.Name, nil
+		}
+	}
+	if matching == 0 {
+		return baseID, baseName, nil
+	}
+	return runnerFixedJobRetryFrameID(profileName, sessionID, attempt, reviewIndex, matching),
+		reviewerRetryFrameName(baseName, matching), nil
+}
+
 // bindSessionReviewerRun gives fixed-job tools the reviewer Frame's own
 // transcript claim. Without this boundary, the runtime gateway inherits the
 // root task claim while resolving a reviewer kernel identity, so every local
@@ -192,8 +241,12 @@ func (s *Server) beginSessionReviewFrameWithClaim(
 	if !found {
 		return workspace.Frame{}, transcriptstore.RunnerClaim{}, fmt.Errorf("review target frame %q does not exist", session.ID)
 	}
-	frameID := runnerFixedJobFrameID(spec.ProfileName, session.ID, attempt, reviewIndex)
-	frameName := fmt.Sprintf("Completion %s %d", strings.ToLower(spec.ProfileName), reviewIndex+1)
+	frameID, frameName, err := s.resolveSessionReviewFrameIdentity(
+		parent, spec.ProfileName, session.ID, attempt, reviewIndex,
+	)
+	if err != nil {
+		return workspace.Frame{}, transcriptstore.RunnerClaim{}, fmt.Errorf("resolve reviewer frame identity: %w", err)
+	}
 	description := "Independent " + strings.ToLower(spec.ProfileName) + " fixed job is running"
 	inputText := spec.ProfileName + " completion checkpoint for frame " + parent.ID
 	messageOrigin := "internal_" + strings.ToLower(spec.ProfileName)
@@ -205,6 +258,9 @@ func (s *Server) beginSessionReviewFrameWithClaim(
 	})
 	if err != nil {
 		return workspace.Frame{}, transcriptstore.RunnerClaim{}, err
+	}
+	if found && strings.EqualFold(frame.Status, "processing") {
+		return workspace.Frame{}, transcriptstore.RunnerClaim{}, errors.New("completion reviewer frame is already active")
 	}
 	created := false
 	if !found {

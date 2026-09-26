@@ -40,7 +40,7 @@ func runnerCorrectionFailedEditChoice(choice any, messages []agentruntime.Messag
 		if nativeEditRecoverableCondition(result) {
 			failed[path] = true
 		} else if agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded &&
-			!agentruntime.IsNonExecutingPreflight(result) && runnerCorrectionResultMadeMutation(result) {
+			!agentruntime.ToolResultDidNotExecute(result) && runnerCorrectionResultMadeMutation(result) {
 			delete(failed, path)
 		}
 	}

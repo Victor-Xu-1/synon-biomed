@@ -92,6 +92,11 @@ type ManagedEnvironment struct {
 }
 
 type ManagedEnvironmentQuery struct {
+	// Name narrows inventory to one exact environment before any marker or
+	// health work. Callers that already have a model-selected environment must
+	// not scan the whole managed-environment catalog and then lose it to a
+	// short preflight deadline.
+	Name            string
 	Language        string
 	Dependencies    []string
 	IncludePackages bool
@@ -204,6 +209,10 @@ func (m *Manager) ListManagedEnvironments(ctx context.Context, query ManagedEnvi
 	if err != nil {
 		return nil, err
 	}
+	name := strings.TrimSpace(query.Name)
+	if name != "" && !ValidEnvironmentName(name) {
+		return nil, errors.New("managed environment query name is invalid")
+	}
 	root, err := m.managedEnvironmentRoot()
 	if err != nil {
 		return nil, err
@@ -218,6 +227,9 @@ func (m *Manager) ListManagedEnvironments(ctx context.Context, query ManagedEnvi
 			return nil, err
 		}
 		if !ValidEnvironmentName(entry.Name()) || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		if name != "" && entry.Name() != name {
 			continue
 		}
 		// Dependency filtering needs the immutable marker's package inventory

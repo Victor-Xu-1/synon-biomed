@@ -158,7 +158,7 @@ func runnerCorrectionCapabilityAttemptedSinceBoundary(
 		if json.Unmarshal([]byte(message.Content), &result) != nil {
 			return true
 		}
-		if !agentruntime.IsNonExecutingPreflight(result) {
+		if !agentruntime.ToolResultDidNotExecute(result) {
 			return true
 		}
 	}

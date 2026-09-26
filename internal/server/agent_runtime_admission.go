@@ -60,6 +60,9 @@ func (g serverAgentRuntimeToolGateway) ToolCallAdmissionDiagnostic(call agentrun
 	if value == nil {
 		return ""
 	}
+	if correction := g.agentRuntimeRegisteredAcquisitionPreflight(name, input); correction != nil {
+		return agentRuntimePreflightDiagnostic(correction)
+	}
 	if correction := g.invalidAskUserSelectedImplementationCorrection(name, input); correction != nil {
 		raw, err := json.Marshal(correction)
 		if err != nil {
@@ -136,7 +139,10 @@ func (g serverAgentRuntimeToolGateway) toolCallPreflightDiagnostic(ctx context.C
 	if g.validateAdmittedToolArguments(name, input) != nil {
 		return ""
 	}
-	preflight := agentRuntimeGeneratePlanContractPreflight(name, input)
+	preflight := g.agentRuntimeRegisteredAcquisitionPreflight(name, input)
+	if preflight == nil {
+		preflight = agentRuntimeGeneratePlanContractPreflight(name, input)
+	}
 	if preflight == nil {
 		preflight = g.computeQuestionImplementationPreflight(name, input)
 	}
@@ -213,22 +219,7 @@ func (g serverAgentRuntimeToolGateway) toolCallPreflightDiagnostic(ctx context.C
 	if preflight == nil {
 		return ""
 	}
-	diagnostic := map[string]any{
-		"code":     preflight["status"],
-		"message":  preflight["message"],
-		"recovery": preflight["recovery"],
-	}
-	if requiredReads := anySliceValue(preflight["required_reads"]); len(requiredReads) > 0 {
-		diagnostic["required_reads"] = requiredReads
-	}
-	raw, err := json.Marshal(diagnostic)
-	if err != nil {
-		return "runtime preflight is required"
-	}
-	if len(raw) > 1800 {
-		raw = raw[:1800]
-	}
-	return string(raw)
+	return agentRuntimePreflightDiagnostic(preflight)
 }
 
 // agentRuntimeGeneratePlanContractPreflight keeps the conditional plan

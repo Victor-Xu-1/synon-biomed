@@ -11,11 +11,17 @@ const STANDALONE_ARTIFACT_REFERENCE = /(^|\n)[ \t]*\{\{artifact:([^{}\r\n]+)\}\}
 const ARTIFACT_REFERENCE = /\{\{artifact:([^{}\r\n]+)\}\}/g;
 const TRUNCATED_ARTIFACT_IMAGE = /!\[([^\]\r\n]+)\]\([ \t]*(?=\r?\n|$)/g;
 const LEGACY_ARTIFACT_INLINE_CODE = /`(\/artifacts\/[^`/?#\s]+)`/g;
-const LEGACY_ARTIFACT_MARKDOWN_LINK = /(\]\(\s*)\/artifacts\/([^)/?#\s]+)(\s*\))/g;
+const LEGACY_ARTIFACT_MARKDOWN_LINK = /(\]\(\s*)(\/?(?:api\/)?artifacts\/([^)/?#\s]+))(\s*\))/g;
+const VERSIONED_ARTIFACT_API_MARKDOWN_LINK =
+  /(\]\(\s*)\/?api\/artifacts\/([^/?#)\s]+)\/versions\/([^&#)\s]+)([^)]*)(\s*\))/g;
 const VERSIONED_ARTIFACT_PREVIEW_INLINE_CODE = /(`)(\/#\/artifacts\/[^`/?#\s]+\?version=[^`&#\s]+)(`)/g;
 const VERSIONED_ARTIFACT_PREVIEW_MARKDOWN_LINK =
   /(\]\(\s*)\/#\/artifacts\/([^?/#)\s]+)\?version=([^&#)\s]+)([^)]*)(\s*\))/g;
 const IMAGE_EXTENSION = /\.(?:avif|bmp|gif|jpe?g|png|svg|webp)$/i;
+const PRESENTED_ARTIFACT_LINK = /!?\[[^\]\r\n]*\]\(\{\{artifact:([^{}\r\n]+)\}\}\)/g;
+const ARTIFACT_LIST_ITEM =
+  /^\s*(?:[-*+]|\d+[.)])\s+!?\[[^\]\r\n]*\]\(\{\{artifact:([^{}\r\n]+)\}\}\)(?:\s*(?:[-–—:]\s*).*)?\s*$/;
+const MARKDOWN_HEADING = /^\s{0,3}#{1,6}\s+\S/;
 
 type PresentedArtifactReference = {
   filename: string;
@@ -141,8 +147,22 @@ function presentLegacyArtifactLinks(
     return `[${escapeMarkdownLabel(resolution.filename)}]({{artifact:${resolution.versionId}}})`;
   });
   presented = presented.replace(
+    VERSIONED_ARTIFACT_API_MARKDOWN_LINK,
+    (
+      match: string,
+      prefix: string,
+      rawArtifactId: string,
+      rawVersionId: string,
+      _trailingQuery: string,
+      suffix: string
+    ) => {
+      const reference = findArtifactVersion(references, rawArtifactId, rawVersionId);
+      return reference ? `${prefix}{{artifact:${reference.version_id}}}${suffix}` : match;
+    }
+  );
+  presented = presented.replace(
     LEGACY_ARTIFACT_MARKDOWN_LINK,
-    (match, prefix: string, rawArtifactId: string, suffix: string) => {
+    (match, prefix: string, _rawPath: string, rawArtifactId: string, suffix: string) => {
       const resolution = resolve(rawArtifactId);
       return resolution ? `${prefix}{{artifact:${resolution.versionId}}}${suffix}` : match;
     }
@@ -174,6 +194,37 @@ function presentLegacyArtifactLinks(
     }
   );
   return presented;
+}
+
+function removeDuplicateArtifactListItems(content: string): string {
+  const seen = new Set<string>();
+  const lines = content.split(/\r?\n/);
+  const kept = lines.filter((line) => {
+    const match = ARTIFACT_LIST_ITEM.exec(line);
+    ARTIFACT_LIST_ITEM.lastIndex = 0;
+    if (!match) return true;
+    const versionId = match[1].trim();
+    if (!versionId || seen.has(versionId)) return false;
+    seen.add(versionId);
+    return true;
+  });
+
+  // A repeated delivery section can leave an orphan heading after all of its
+  // duplicate list items have been removed. Drop only headings with no
+  // following content; ordinary prose headings remain untouched.
+  const withoutOrphanHeadings: string[] = [];
+  for (let index = 0; index < kept.length; index += 1) {
+    const line = kept[index];
+    if (!MARKDOWN_HEADING.test(line)) {
+      withoutOrphanHeadings.push(line);
+      continue;
+    }
+    let next = index + 1;
+    while (next < kept.length && kept[next].trim() === '') next += 1;
+    if (next >= kept.length || MARKDOWN_HEADING.test(kept[next])) continue;
+    withoutOrphanHeadings.push(line);
+  }
+  return withoutOrphanHeadings.join('\n');
 }
 
 /**
@@ -210,5 +261,23 @@ export function presentArtifactReferenceContent(
     (match: string, _rawVersionId: string, offset: number, source: string) =>
       source.slice(Math.max(0, offset - 2), offset) === '](' ? match : ''
   );
-  return presented.replace(/\n{3,}/g, '\n\n').trimEnd();
+  return removeDuplicateArtifactListItems(presented)
+    .replace(/\n{3,}/g, '\n\n')
+    .trimEnd();
+}
+
+/** Returns the exact artifact versions already presented as clickable links. */
+export function artifactVersionIdsInPresentedContent(
+  content: string,
+  references: readonly ArtifactReferenceWire[] | undefined,
+  index: ConversationArtifactIndex,
+  settled: boolean
+): ReadonlySet<string> {
+  const presented = presentArtifactReferenceContent(content, references, index, settled);
+  const result = new Set<string>();
+  for (const match of presented.matchAll(PRESENTED_ARTIFACT_LINK)) {
+    const versionId = match[1]?.trim();
+    if (versionId) result.add(versionId);
+  }
+  return result;
 }

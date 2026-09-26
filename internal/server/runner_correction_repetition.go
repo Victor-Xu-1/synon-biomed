@@ -12,9 +12,12 @@ const runnerCorrectionRepetitionProjectionType = "runner_correction_repetition_p
 // This is derived in constant space from the fenced canonical transcript, not
 // from the provider's bounded history. It is never a second durable authority.
 type runnerCorrectionRepetition struct {
-	ReasonCode  string
-	Fingerprint string
-	Count       int
+	ReasonCode              string
+	Fingerprint             string
+	Count                   int
+	StalledCycles           int
+	AttemptedSinceCondition bool
+	ProgressSinceCondition  bool
 }
 
 func correctionRepetitionFingerprint(reason, detail string) string {
@@ -40,6 +43,15 @@ func (state *runnerCorrectionRepetition) observe(entry eventjournal.Entry) {
 	if strings.TrimSpace(stringValue(entry.Message["type"])) != "runner_checkpoint" {
 		return
 	}
+	if runnerCheckpointHasMaterialProgress(entry.Message) {
+		state.ProgressSinceCondition = true
+	}
+	if stringValue(entry.Message["toolName"]) != "" {
+		switch stringValue(entry.Message["toolPhase"]) {
+		case "failed", prestartToolFailurePhase, "completed":
+			state.AttemptedSinceCondition = true
+		}
+	}
 	correction, found := latestRunnerCorrection([]eventjournal.Entry{entry})
 	if !found {
 		return
@@ -53,8 +65,22 @@ func (state *runnerCorrectionRepetition) observe(entry eventjournal.Entry) {
 	fingerprint := runnerCorrectionFingerprint(correction.cause())
 	if state.Fingerprint != fingerprint {
 		*state = runnerCorrectionRepetition{ReasonCode: correction.ReasonCode, Fingerprint: fingerprint}
+	} else if int(numberValue(entry.Message["recovery_contract_revision"])) >= sessionRunnerRecoveryContractRevision &&
+		state.AttemptedSinceCondition && !state.ProgressSinceCondition {
+		state.StalledCycles++
+	} else {
+		state.StalledCycles = 0
 	}
 	state.Count++
+	state.AttemptedSinceCondition, state.ProgressSinceCondition = false, false
+}
+
+func (state runnerCorrectionRepetition) waitsForChangedCondition(cause transcriptstore.RunnerInterruptionCause) bool {
+	state.observe(eventjournal.Entry{SourceEventType: "runner_checkpoint", RuntimeProjection: cause, Message: eventjournal.Message{
+		"type": "runner_checkpoint", "status": "interrupted", "reason_code": cause.ReasonCode,
+		"resume_detail": cause.Detail, "recovery_contract_revision": sessionRunnerRecoveryContractRevision,
+	}})
+	return state.StalledCycles >= sessionRunnerConsecutiveIdenticalToolRoundBudget
 }
 
 // Count only the current unchanged obligation. A new typed obligation or user

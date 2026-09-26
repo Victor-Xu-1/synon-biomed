@@ -52,20 +52,10 @@ func publishManagedExecutionOutputSnapshot(
 	}
 	snapshotID := managedExecutionSnapshotID(authority)
 	finalRoot := filepath.Join(stableRoot, snapshotID)
-	backupRoot := outputRoot + ".synon-output-backup-" + snapshotID
-	if info, err := os.Lstat(outputRoot); err == nil && info.Mode()&os.ModeSymlink != 0 {
-		if _, managed, resolveErr := managedExecutionSnapshotRoot(workspaceRoot, outputRoot, authority.PackID, authority.ExecutionID); resolveErr != nil {
-			return resolveErr
-		} else if managed {
-			return removeManagedExecutionSnapshotBackup(backupRoot)
-		}
-	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
 	if valid, err := managedExecutionSnapshotManifestAt(finalRoot, authority.PackID, authority.ExecutionID); err != nil {
 		return err
 	} else if valid {
-		return linkManagedExecutionSnapshot(workspaceRoot, outputRoot, finalRoot, backupRoot, authority.PackID, authority.ExecutionID)
+		return linkManagedExecutionSnapshot(ctx, workspaceRoot, finalRoot, authority)
 	} else if _, err := os.Lstat(finalRoot); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	} else if err == nil {
@@ -81,7 +71,7 @@ func publishManagedExecutionOutputSnapshot(
 		if err := os.Rename(stagingRoot, finalRoot); err != nil {
 			return fmt.Errorf("recover managed execution snapshot: %w", err)
 		}
-		return linkManagedExecutionSnapshot(workspaceRoot, outputRoot, finalRoot, backupRoot, authority.PackID, authority.ExecutionID)
+		return linkManagedExecutionSnapshot(ctx, workspaceRoot, finalRoot, authority)
 	} else if _, err := os.Lstat(stagingRoot); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	} else if err == nil {
@@ -133,7 +123,7 @@ func publishManagedExecutionOutputSnapshot(
 	if err := os.Rename(stagingRoot, finalRoot); err != nil {
 		return fmt.Errorf("publish managed execution snapshot: %w", err)
 	}
-	if err := linkManagedExecutionSnapshot(workspaceRoot, outputRoot, finalRoot, backupRoot, authority.PackID, authority.ExecutionID); err != nil {
+	if err := linkManagedExecutionSnapshot(ctx, workspaceRoot, finalRoot, authority); err != nil {
 		return err
 	}
 	committed = true
@@ -163,78 +153,13 @@ func managedExecutionSnapshotManifestAt(root, packID, executionID string) (bool,
 	return true, nil
 }
 
-func linkManagedExecutionSnapshot(workspaceRoot, outputRoot, finalRoot, backupRoot, packID, executionID string) error {
-	backupMoved := false
-	info, err := os.Lstat(outputRoot)
-	if err == nil {
-		if info.Mode()&os.ModeSymlink != 0 {
-			_, managed, resolveErr := managedExecutionSnapshotRoot(workspaceRoot, outputRoot, packID, executionID)
-			if resolveErr != nil {
-				return resolveErr
-			}
-			if managed {
-				return removeManagedExecutionSnapshotBackup(backupRoot)
-			}
-		}
-		if _, backupErr := os.Lstat(backupRoot); backupErr == nil {
-			return errors.New("managed execution output recovery path is already occupied")
-		} else if !errors.Is(backupErr, os.ErrNotExist) {
-			return backupErr
-		}
-		if err := os.Rename(outputRoot, backupRoot); err != nil {
-			return fmt.Errorf("reserve managed execution output path: %w", err)
-		}
-		backupMoved = true
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	relativeTarget, err := filepath.Rel(filepath.Dir(outputRoot), finalRoot)
-	if err != nil {
-		if backupMoved {
-			_ = os.Rename(backupRoot, outputRoot)
-		}
-		return err
-	}
-	if err := os.Symlink(relativeTarget, outputRoot); err != nil {
-		if backupMoved {
-			_ = os.Rename(backupRoot, outputRoot)
-		}
-		return fmt.Errorf("publish managed execution output compatibility path: %w", err)
-	}
-	if _, managed, err := managedExecutionSnapshotRoot(workspaceRoot, outputRoot, packID, executionID); err != nil || !managed {
-		_ = os.Remove(outputRoot)
-		if backupMoved {
-			_ = os.Rename(backupRoot, outputRoot)
-		}
-		if err != nil {
-			return err
-		}
-		return errors.New("managed execution snapshot compatibility path did not verify")
-	}
-	if _, err := os.Lstat(backupRoot); err == nil {
-		if err := os.RemoveAll(backupRoot); err != nil {
-			return fmt.Errorf("remove superseded managed execution output: %w", err)
-		}
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	return nil
-}
-
-func removeManagedExecutionSnapshotBackup(backupRoot string) error {
-	if _, err := os.Lstat(backupRoot); errors.Is(err, os.ErrNotExist) {
-		return nil
-	} else if err != nil {
-		return err
-	} else if err := os.RemoveAll(backupRoot); err != nil {
-		return fmt.Errorf("remove superseded managed execution output: %w", err)
-	}
-	return nil
-}
-
 func managedExecutionSnapshotID(authority managedExecutionOutputAuthority) string {
 	digest := sha256.Sum256([]byte(authority.PackID + "\x00" + authority.ExecutionID + "\x00" + authority.Root))
 	return hex.EncodeToString(digest[:16])
+}
+
+func managedExecutionSnapshotDirectory(workspaceRoot string, authority managedExecutionOutputAuthority) string {
+	return filepath.Join(workspaceRoot, ".synon-artifacts", ".managed", managedExecutionSnapshotID(authority))
 }
 
 func managedExecutionSnapshotRoot(workspaceRoot, outputRoot, packID, executionID string) (string, bool, error) {
@@ -324,8 +249,18 @@ func makeManagedExecutionSnapshotReadOnly(root string) error {
 }
 
 func managedExecutionAuthorityContainsPath(authority managedExecutionOutputAuthority, candidate string) bool {
-	if managedExecutionPathWithinRoot(authority.Root, candidate) {
+	if managedExecutionPathWithinRoot(managedExecutionAuthorityReadableRoot(authority), candidate) {
 		return true
 	}
 	return authority.ResolvedRoot != "" && managedExecutionPathWithinRoot(authority.ResolvedRoot, candidate)
+}
+
+func managedExecutionAuthorityReadableRoot(authority managedExecutionOutputAuthority) string {
+	if authority.ResolvedRoot == "" || authority.ResolvedRoot == authority.Root {
+		return authority.Root
+	}
+	if resolved, err := filepath.EvalSymlinks(authority.Root); err == nil && filepath.Clean(resolved) == filepath.Clean(authority.ResolvedRoot) {
+		return authority.Root
+	}
+	return authority.ResolvedRoot
 }

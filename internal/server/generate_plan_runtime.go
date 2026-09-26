@@ -26,6 +26,7 @@ const (
 	maxGeneratedDelegations        = 64
 	maxGeneratedPlanSteps          = 256
 	generatedPlanStepKindWork      = "work"
+	generatedPlanStepKindExecution = "execution"
 	generatedPlanStepKindResearch  = "research"
 	generatedPlanStepKindSynthesis = "synthesis"
 	generatedPlanStepKindDelivery  = "delivery"
@@ -66,6 +67,7 @@ type generatedPlanStep struct {
 	Title            string               `json:"title"`
 	Description      string               `json:"description"`
 	Kind             string               `json:"kind,omitempty"`
+	ExecutionTool    string               `json:"execution_tool,omitempty"`
 	OutputModule     string               `json:"output_module,omitempty"`
 	ResearchQuestion string               `json:"research_question,omitempty"`
 	ResearchDepth    string               `json:"research_depth,omitempty"`
@@ -124,6 +126,9 @@ func (s *Server) executeAgentGeneratePlan(
 	}
 	document, normalized, encoded, err := normalizeGeneratedPlan(input)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.validateGeneratedPlanExecutionTools(run, document); err != nil {
 		return nil, err
 	}
 	// Revisions and progress updates share one metadata authority. Validate the
@@ -393,6 +398,7 @@ func normalizeGeneratedPlan(input map[string]any) (generatedPlanDocument, map[st
 				step.Title = strings.TrimSpace(step.Title)
 				step.Description = strings.TrimSpace(step.Description)
 				step.Kind = strings.ToLower(strings.TrimSpace(step.Kind))
+				step.ExecutionTool = strings.TrimSpace(step.ExecutionTool)
 				step.OutputModule = strings.TrimSpace(step.OutputModule)
 				step.ResearchQuestion = strings.TrimSpace(step.ResearchQuestion)
 				step.ResearchDepth = strings.ToLower(strings.TrimSpace(step.ResearchDepth))
@@ -409,12 +415,26 @@ func normalizeGeneratedPlan(input map[string]any) (generatedPlanDocument, map[st
 					return generatedPlanDocument{}, nil, nil, err
 				}
 				switch step.Kind {
-				case generatedPlanStepKindWork, generatedPlanStepKindResearch,
+				case generatedPlanStepKindWork, generatedPlanStepKindExecution, generatedPlanStepKindResearch,
 					generatedPlanStepKindSynthesis, generatedPlanStepKindDelivery:
 				default:
 					return generatedPlanDocument{}, nil, nil, errors.New(
-						"generate_plan step.kind must be work, research, synthesis, or delivery",
+						"generate_plan step.kind must be work, execution, research, synthesis, or delivery",
 					)
+				}
+				if step.Kind == generatedPlanStepKindExecution {
+					if err := validateGeneratedPlanText("step.execution_tool", step.ExecutionTool, 1, 128); err != nil {
+						return generatedPlanDocument{}, nil, nil, err
+					}
+					if !validGeneratedPlanExecutionToolName(step.ExecutionTool) {
+						return generatedPlanDocument{}, nil, nil, errors.New("execution_tool must name one advertised tool")
+					}
+					switch normalizeAgentToolName(step.ExecutionTool) {
+					case normalizeAgentToolName(generatePlanToolName), normalizeAgentToolName(updateStepStatusToolName), "askuser":
+						return generatedPlanDocument{}, nil, nil, errors.New("execution step requires a substantive tool")
+					}
+				} else if step.ExecutionTool != "" {
+					return generatedPlanDocument{}, nil, nil, errors.New("execution_tool belongs only to an execution step")
 				}
 				if step.Kind == generatedPlanStepKindResearch {
 					if step.OutputModule == "" || step.ResearchQuestion == "" {
@@ -499,6 +519,23 @@ func normalizeGeneratedPlan(input map[string]any) (generatedPlanDocument, map[st
 		return generatedPlanDocument{}, nil, nil, err
 	}
 	return document, normalized, encoded, nil
+}
+
+func validGeneratedPlanExecutionToolName(name string) bool {
+	if len(name) == 0 || len(name) > 128 {
+		return false
+	}
+	for index := 0; index < len(name); index++ {
+		char := name[index]
+		if char >= 'A' && char <= 'Z' || char >= 'a' && char <= 'z' {
+			continue
+		}
+		if index > 0 && (char >= '0' && char <= '9' || char == '_' || char == '.' || char == ':' || char == '-') {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func (s *Server) approveAgentGeneratedPlan(ctx context.Context, sessionID, toolCallID string, input map[string]any) (any, error) {

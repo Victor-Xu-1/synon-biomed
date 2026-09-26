@@ -1,5 +1,8 @@
 import type { ArtifactReferenceWire } from '@/common/adapter/messageStreamProtocol';
-import { presentArtifactReferenceContent } from '@/renderer/pages/conversation/Messages/components/artifactReferencePresentation';
+import {
+  artifactVersionIdsInPresentedContent,
+  presentArtifactReferenceContent,
+} from '@/renderer/pages/conversation/Messages/components/artifactReferencePresentation';
 
 const index = {
   byFilename: new Map(),
@@ -36,6 +39,26 @@ describe('presentArtifactReferenceContent', () => {
         true
       )
     ).toBe('[可访问链接]({{artifact:version-1}})');
+  });
+
+  it('canonicalizes the persisted API artifact URL emitted by older task answers', () => {
+    expect(
+      presentArtifactReferenceContent('[报告](api/artifacts/artifact-1/versions/version-1)', references, index, true)
+    ).toBe('[报告]({{artifact:version-1}})');
+  });
+
+  it('keeps one list item per artifact version when old and canonical delivery lists repeat', () => {
+    const content = [
+      '### 保存结果文件',
+      '- [report.csv](api/artifacts/artifact-1/versions/version-1) - 原始结果',
+      '',
+      '### 交付文件',
+      '- [report.csv]({{artifact:version-1}})',
+    ].join('\n');
+    expect(presentArtifactReferenceContent(content, references, index, true)).toBe(
+      '### 保存结果文件\n- [report.csv]({{artifact:version-1}}) - 原始结果'
+    );
+    expect(artifactVersionIdsInPresentedContent(content, references, index, true)).toEqual(new Set(['version-1']));
   });
 
   it('repairs a historical artifact path only when the conversation identifies one version', () => {

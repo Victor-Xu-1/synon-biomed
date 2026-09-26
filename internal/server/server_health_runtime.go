@@ -46,6 +46,9 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 		"runtime_draining":           runtimeDraining,
 		"scientific_runtime_warmups": s.scientificRuntimeWarmupsHealth(),
 	}
+	scientificCore := s.scientificCoreRuntimeHealth()
+	response["scientific_runtime_ready"] = scientificCore["ready"]
+	response["scientific_runtime_core"] = scientificCore
 	if len(degradedComponents) > 0 {
 		response["degraded_components"] = degradedComponents
 	}

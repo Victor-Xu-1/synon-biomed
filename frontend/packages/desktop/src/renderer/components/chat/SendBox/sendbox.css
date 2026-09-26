@@ -6,12 +6,12 @@
   max-width: min(560px, calc(100vw - 32px));
   max-height: min(360px, 48vh);
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ui-space-1);
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 6px;
+  padding: var(--ui-space-3);
   border: 1px solid var(--color-border-2);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
   background: color-mix(in srgb, var(--color-bg-1) 96%, transparent);
   box-sizing: border-box;
   box-shadow: 0 8px 24px rgb(0 0 0 / 14%);
@@ -20,14 +20,14 @@
 .composer-reference-menu__header {
   padding: 6px 8px 4px;
   color: var(--color-text-2);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--ui-font-meta);
+  font-weight: var(--ui-weight-semibold);
 }
 
 .composer-reference-menu__state {
   padding: 12px 8px;
   color: var(--color-text-3);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   overflow-wrap: anywhere;
 }
 
@@ -40,10 +40,10 @@
   width: 100%;
   min-width: 0;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px;
+  gap: var(--ui-space-1);
+  padding: var(--ui-space-4);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   background: transparent;
   color: var(--color-text-1);
   cursor: pointer;
@@ -59,7 +59,7 @@
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .composer-reference-menu__label,
@@ -72,19 +72,19 @@
 
 .composer-reference-menu__label {
   flex: 1;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--ui-font-body);
+  font-weight: var(--ui-weight-medium);
 }
 
 .composer-reference-menu__kind {
   flex: none;
   color: var(--color-text-3);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
 }
 
 .composer-reference-menu__detail {
   color: var(--color-text-3);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
 }
 
 /* Send button disabled state - override Arco Design default disabled styles */
@@ -109,7 +109,7 @@
   display: inline-flex;
   height: 32px;
   align-items: center;
-  gap: 6px;
+  gap: var(--ui-space-3);
   overflow: visible;
   background: transparent;
   border: 0;
@@ -136,7 +136,7 @@
   justify-content: center !important;
   padding: 0 !important;
   border: 0 !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   line-height: 0 !important;
   color: var(--workspace-accent-contrast) !important;
   background-color: var(--workspace-accent) !important;
@@ -158,7 +158,7 @@
   justify-content: center !important;
   padding: 0 !important;
   border: 0 !important;
-  border-radius: 10px !important;
+  border-radius: var(--ui-radius-lg) !important;
   line-height: 0 !important;
   color: var(--workspace-text-secondary) !important;
   background: var(--workspace-subtle) !important;
@@ -319,7 +319,7 @@
   color: var(--text-secondary) !important;
   background: transparent !important;
   border: 0 !important;
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
   box-shadow: none !important;
   outline: none !important;
   transform: none !important;
@@ -391,9 +391,9 @@
   margin: 0 !important;
   padding: 0 10px !important;
   gap: 8px !important;
-  border-radius: 8px !important;
-  font-size: 13px !important;
-  font-weight: 400 !important;
+  border-radius: var(--ui-radius-md) !important;
+  font-size: var(--ui-font-body) !important;
+  font-weight: var(--ui-weight-regular) !important;
   line-height: 18px !important;
 }
 
@@ -465,7 +465,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 2px;
+  gap: var(--ui-space-1);
   min-width: 0;
   width: 100%;
   height: 16px;
@@ -474,7 +474,7 @@
 
 .speech-input-feedback__bar {
   width: 2px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, var(--color-text-2) 72%, transparent);
   flex: 0 0 auto;
   transition:
@@ -489,14 +489,14 @@
 
 .speech-input-feedback__label {
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   line-height: 16px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--color-text-2);
   text-align: right;
   min-width: 34px;
-  padding-left: 2px;
+  padding-left: var(--ui-space-1);
 }
 
 .speech-input-button {
@@ -508,7 +508,7 @@
   box-shadow: none !important;
   background: transparent !important;
   color: var(--color-text-3) !important;
-  border-radius: 999px !important;
+  border-radius: var(--ui-radius-pill) !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -532,7 +532,7 @@
 .speech-loader-spinner {
   width: 16px;
   height: 16px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   border: 1.75px solid color-mix(in srgb, currentColor 22%, transparent);
   border-top-color: currentColor;
   display: block;
@@ -578,7 +578,7 @@
 .speech-input-button--listening:focus-visible {
   background: color-mix(in srgb, var(--color-primary-1) 78%, transparent) !important;
   color: var(--color-primary-6) !important;
-  border-radius: 999px !important;
+  border-radius: var(--ui-radius-pill) !important;
 }
 
 .speech-input-button--processing,
@@ -667,8 +667,8 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding-top: var(--ui-space-2);
+  padding-bottom: var(--ui-space-2);
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;
@@ -693,7 +693,7 @@
 
 .sendbox-highlight-textarea {
   position: relative;
-  z-index: 1;
+  z-index: var(--ui-z-raise);
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
   caret-color: var(--text-primary) !important;
@@ -741,7 +741,7 @@
   .sendbox-tools-scroll-mobile {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--ui-space-2);
     min-width: 0;
     max-width: calc(100vw - 140px);
     overflow-x: auto;
@@ -762,7 +762,7 @@
      container shares the same floor, and we trim the gap below the textarea
      (default inline 8px → 4px) so the toolbar sits closer. */
   .sendbox-input--mobile {
-    font-size: 14px !important;
+    font-size: var(--ui-font-subtitle) !important;
     line-height: 22px !important;
     min-height: 22px !important;
   }
@@ -788,23 +788,23 @@
   .sendbox-input--mobile::placeholder,
   .sendbox-input--mobile::-webkit-input-placeholder,
   .sendbox-highlight-textarea.sendbox-input--mobile::placeholder {
-    font-size: 14px !important;
+    font-size: var(--ui-font-subtitle) !important;
   }
 
   /* Tighter mobile sendbox: reduce outer padding so the bottom input takes
      less vertical space on narrow screens. */
   .sendbox-panel {
     padding: 8px 10px !important;
-    border-radius: 16px !important;
+    border-radius: var(--ui-radius-2xl) !important;
   }
 
   .speech-input-feedback {
     grid-template-columns: clamp(56px, 20vw, 92px) auto;
-    gap: 8px;
+    gap: var(--ui-space-4);
   }
 
   .speech-input-feedback__waveform {
-    gap: 2px;
+    gap: var(--ui-space-1);
   }
 
   .speech-input-feedback__bar {
@@ -819,8 +819,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: var(--ui-space-3);
+  margin-bottom: var(--ui-space-4);
 }
 
 .composer-context-chip {
@@ -829,8 +829,8 @@
   max-width: min(260px, 100%);
   height: 28px;
   align-items: center;
-  gap: 6px;
-  border-radius: 9px;
+  gap: var(--ui-space-3);
+  border-radius: var(--ui-radius-lg);
   background: var(--color-fill-2);
   color: var(--color-text-1);
   padding: 0 6px 0 8px;
@@ -857,7 +857,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   line-height: 1;
 }
 
@@ -869,7 +869,7 @@
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   background: transparent;
   color: var(--color-text-3);
   cursor: pointer;

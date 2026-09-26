@@ -14,6 +14,7 @@ const settingsPages: Record<SettingsRouteId, React.LazyExoticComponent<React.Com
   compute: React.lazy(settingsRouteLoaders.compute),
   governance: React.lazy(settingsRouteLoaders.governance),
   network: React.lazy(settingsRouteLoaders.network),
+  environments: React.lazy(settingsRouteLoaders.environments),
   credentials: React.lazy(settingsRouteLoaders.credentials),
   storage: React.lazy(settingsRouteLoaders.storage),
   general: React.lazy(settingsRouteLoaders.general),

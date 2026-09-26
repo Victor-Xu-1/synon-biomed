@@ -3,6 +3,7 @@
 package kernel
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,8 +14,10 @@ import (
 func configureWorkerProcess(_ *exec.Cmd) {}
 
 type workerProcess struct {
-	command *exec.Cmd
-	job     *processsupervisor.Job
+	command     *exec.Cmd
+	job         *processsupervisor.Job
+	confinement *windowsConfinementLease
+	cleanupErr  error
 }
 
 func startWorkerProcess(command *exec.Cmd, directories ...string) (*workerProcess, error) {
@@ -23,11 +26,25 @@ func startWorkerProcess(command *exec.Cmd, directories ...string) (*workerProces
 		return nil, err
 	}
 	defer release()
-	job, err := processsupervisor.Start(command)
+	request, err := windowsConfinedRequestFromCommand(command)
 	if err != nil {
 		return nil, err
 	}
-	process := &workerProcess{command: command, job: job}
+	var confinement *windowsConfinementLease
+	if request != nil {
+		confinement, err = prepareWindowsConfinedRequest(request)
+		if err != nil {
+			return nil, err
+		}
+	}
+	job, err := processsupervisor.Start(command)
+	if err != nil {
+		if confinement != nil {
+			err = errors.Join(err, confinement.close())
+		}
+		return nil, err
+	}
+	process := &workerProcess{command: command, job: job, confinement: confinement}
 	// The job supervisor already bound cancellation before starting the child.
 	// Keep that authority instead of racing exec.Cmd's context watcher here.
 	return process, nil
@@ -66,8 +83,17 @@ func (process *workerProcess) kill() error {
 }
 
 func (process *workerProcess) close() {
-	if process != nil && process.job != nil {
-		_ = process.job.Close()
+	if process == nil {
+		return
+	}
+	if process.job != nil {
+		process.cleanupErr = errors.Join(process.cleanupErr, process.job.Close())
+	}
+	if process.confinement != nil {
+		process.cleanupErr = errors.Join(process.cleanupErr, process.confinement.close())
+	}
+	if process.cleanupErr != nil {
+		_, _ = fmt.Fprintln(os.Stderr, "Windows kernel worker cleanup failed")
 	}
 }
 

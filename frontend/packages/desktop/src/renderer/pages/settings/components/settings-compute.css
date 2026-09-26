@@ -5,7 +5,7 @@
      238px minimum.  The approved sheet is a measured 206px card. */
   html body .settings-page-wrapper[data-settings-route='compute'] .compute-overview-grid > .settings-section {
     height: 206px !important;
-    min-height: 206px !important;
+    min-height: var(--settings-entity-card-height) !important;
     max-height: 206px !important;
     position: relative !important;
   }
@@ -22,7 +22,7 @@
     flex-direction: row !important;
     align-items: flex-start !important;
     gap: 18px !important;
-    padding: 24px !important;
+    padding: var(--settings-section-padding) !important;
   }
 
   html
@@ -52,7 +52,7 @@
     .compute-overview-grid
     > .settings-section
     .settings-section__title {
-    font-size: 16px !important;
+    font-size: var(--ui-font-section) !important;
     line-height: 22px !important;
   }
 
@@ -62,7 +62,7 @@
     .compute-overview-grid
     > .settings-section
     .settings-section__description {
-    font-size: 13px !important;
+    font-size: var(--ui-font-body) !important;
     line-height: 20px !important;
   }
 
@@ -75,7 +75,7 @@
     position: absolute !important;
     right: 24px !important;
     bottom: 14px !important;
-    z-index: 3;
+    z-index: var(--ui-z-layer-top);
   }
 
   html
@@ -88,7 +88,7 @@
     right: 24px !important;
     bottom: 10px !important;
     left: 24px !important;
-    z-index: 2;
+    z-index: var(--ui-z-layer);
     display: flex !important;
     min-height: 0 !important;
     height: 52px !important;
@@ -120,7 +120,7 @@
     > .settings-section
     .compute-product-row
     h3 {
-    font-size: 14px !important;
+    font-size: var(--ui-font-subtitle) !important;
     line-height: 20px !important;
   }
 
@@ -133,7 +133,7 @@
     p {
     max-width: 180px;
     overflow: hidden;
-    font-size: 12px !important;
+    font-size: var(--settings-meta-size) !important;
     line-height: 18px !important;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -152,7 +152,7 @@
     padding: 0 !important;
     border: 0 !important;
     background: transparent !important;
-    font-size: 14px;
+    font-size: var(--ui-font-subtitle);
   }
 
   html
@@ -214,7 +214,7 @@
     .compute-section-stack
     > .compute-section:nth-of-type(2)
     .settings-section__title {
-    font-size: 16px !important;
+    font-size: var(--ui-font-section) !important;
     line-height: 22px !important;
   }
 

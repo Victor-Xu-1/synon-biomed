@@ -13,6 +13,13 @@ import (
 const (
 	scientificRuntimeSelectionSettingKey = "runtime.scientificWarmups.v1"
 
+	// These identifiers are stable product-level handles for the two required
+	// runtimes. Their installation roots are resolved by the kernel from the
+	// current user's managed Conda home; the identifiers must never encode a
+	// machine-specific path.
+	managedPythonScientificRuntimeID = "synon-biomed-python"
+	managedRScientificRuntimeID      = "synon-biomed-r"
+
 	commonStructureRuntimeID            = "common-structure-toolkit"
 	structureInteractionRuntimeID       = "structure-interaction"
 	biomolecularElectrostaticsRuntimeID = "biomolecular-electrostatics"
@@ -35,12 +42,16 @@ type scientificRuntimeWarmupDefinition struct {
 	BuildRequest          func() (software.Request, []string, error)
 }
 
+func isRequiredScientificRuntimeID(id string) bool {
+	return id == managedPythonScientificRuntimeID || id == managedRScientificRuntimeID
+}
+
 func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 	return []scientificRuntimeWarmupDefinition{
 		pinnedPythonRuntime(
 			commonStructureRuntimeID,
 			32,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "rdkit==2024.3.5"},
 				{Manager: software.PackageManagerPip, Spec: "biopython==1.88"},
@@ -53,19 +64,19 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 			5*60,
 		),
 		{
-			ID: structureInteractionRuntimeID, EstimatedInstallBytes: 320 * 1024 * 1024, DefaultEnabled: true,
+			ID: structureInteractionRuntimeID, EstimatedInstallBytes: 320 * 1024 * 1024, DefaultEnabled: false,
 			BuildRequest: func() (software.Request, []string, error) {
 				return newStructureInteractionRuntimeRequest(""), nil, nil
 			},
 		},
 		{
-			ID: biomolecularElectrostaticsRuntimeID, EstimatedInstallBytes: 700 * 1024 * 1024, DefaultEnabled: true,
+			ID: biomolecularElectrostaticsRuntimeID, EstimatedInstallBytes: 700 * 1024 * 1024, DefaultEnabled: false,
 			BuildRequest: func() (software.Request, []string, error) {
 				return newStructureElectrostaticRuntimeRequest(""), []string{"apbs", "pdb2pqr", "inputgen"}, nil
 			},
 		},
 		{
-			ID: autoDockVinaRuntimeID, EstimatedInstallBytes: 900 * 1024 * 1024, DefaultEnabled: true,
+			ID: autoDockVinaRuntimeID, EstimatedInstallBytes: 900 * 1024 * 1024, DefaultEnabled: false,
 			BuildRequest: func() (software.Request, []string, error) {
 				request, _, engine, err := sciencecapability.BuildExecutionPackRuntimeRequest(
 					"molecular-docking.autodock-vina",
@@ -84,7 +95,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			drugChemistryRuntimeID,
 			180,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "thermo==0.6.1"},
 				{Manager: software.PackageManagerPip, Spec: "chemicals==1.5.2"},
@@ -102,7 +113,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			molecularConversionRuntimeID,
 			650,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerConda, Spec: "openbabel=3.2.1"},
 				{Manager: software.PackageManagerConda, Spec: "xtb=6.7.1"},
@@ -117,7 +128,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			qsarADMETRuntimeID,
 			600,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "scikit-learn==1.9.0"},
 				{Manager: software.PackageManagerPip, Spec: "xgboost==3.2.0"},
@@ -134,7 +145,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			clinicalPharmacometricsRuntimeID,
 			220,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "lifelines==0.30.3"},
 				{Manager: software.PackageManagerPip, Spec: "scikit-learn==1.9.0"},
@@ -151,7 +162,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			singleCellOmicsRuntimeID,
 			720,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "scanpy==1.11.5"},
 				{Manager: software.PackageManagerPip, Spec: "anndata==0.12.19"},
@@ -167,7 +178,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			genomicsCLIRuntimeID,
 			300,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerConda, Spec: "samtools=1.24"},
 				{Manager: software.PackageManagerConda, Spec: "bcftools=1.24"},
@@ -184,7 +195,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			molecularSimulationRuntimeID,
 			560,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "MDAnalysis==2.10.0"},
 				{Manager: software.PackageManagerPip, Spec: "mdtraj==1.11.1.post2"},
@@ -199,7 +210,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			medicalImagingRuntimeID,
 			420,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "pydicom==3.0.2"},
 				{Manager: software.PackageManagerPip, Spec: "nibabel==5.4.2"},
@@ -214,7 +225,7 @@ func scientificRuntimeWarmupDefinitions() []scientificRuntimeWarmupDefinition {
 		pinnedPythonRuntime(
 			instrumentAnalyticsRuntimeID,
 			260,
-			true,
+			false,
 			[]software.PackageRequirement{
 				{Manager: software.PackageManagerPip, Spec: "allotropy==0.1.55"},
 				{Manager: software.PackageManagerPip, Spec: "pandas==2.2.3"},
@@ -272,13 +283,17 @@ func defaultScientificRuntimeWarmupIDs() []string {
 }
 
 func normalizeScientificRuntimeWarmupIDs(values []string) ([]string, error) {
-	if len(values) > len(scientificRuntimeWarmupDefinitions()) {
-		return nil, errors.New("scientific runtime selection exceeds the supported count")
-	}
 	result := make([]string, 0, len(values))
 	seen := make(map[string]struct{}, len(values))
 	for _, raw := range values {
 		id := strings.TrimSpace(raw)
+		// Required runtimes are owned by the service lifecycle and are always
+		// installed/reused from the bundled catalog. They may be echoed by a
+		// client that submits the complete catalog, but are never persisted as
+		// optional predownload choices.
+		if isRequiredScientificRuntimeID(id) {
+			continue
+		}
 		_, found := scientificRuntimeWarmupDefinitionByID(id)
 		if !found {
 			return nil, fmt.Errorf("scientific runtime %q is not registered", id)
@@ -288,6 +303,9 @@ func normalizeScientificRuntimeWarmupIDs(values []string) ([]string, error) {
 		}
 		seen[id] = struct{}{}
 		result = append(result, id)
+	}
+	if len(result) > len(scientificRuntimeWarmupDefinitions()) {
+		return nil, errors.New("scientific runtime selection exceeds the supported count")
 	}
 	slices.Sort(result)
 	return result, nil

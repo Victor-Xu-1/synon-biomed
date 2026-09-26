@@ -35,6 +35,11 @@
   },
   "onboarding": {
     "brand": "Synon Biomed Workbench",
+    "account": {
+      "current": "Current account: {{username}}",
+      "switch": "Switch account",
+      "switching": "Switching…"
+    },
     "progressLabel": "Setup progress",
     "progressValue": "Step {{current}} of {{total}}: {{title}}",
     "projectDefaultName": "Getting started",
@@ -58,7 +63,7 @@
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name or description",
       "externalNotice": "Enabled connectors may communicate with the named external research services. Review the list before continuing.",
-      "runtimeNotice": "Every listed group is selected initially. Clear anything you do not need before continuing; preparation runs sequentially in the background and never blocks the workspace.",
+      "runtimeNotice": "Python and R are required core runtimes and are managed automatically. Optional groups start unselected; choose only what you need. Preparation runs in the background and never blocks the workspace.",
       "unavailable": "Not available to the selected first-run assistant",
       "noConnectors": "No connectors are available.",
       "noSkills": "No skills are available.",
@@ -68,6 +73,10 @@
       "runtimeReady": "ready",
       "runtimeQueued": "prepared in the background after setup",
       "runtimeUnavailable": "Local scientific runtimes are unavailable on this system",
+      "runtimePythonTitle": "Synon Biomed Python",
+      "runtimePythonDescription": "Required Python runtime for scientific tasks; installed once and reused from the managed environment store.",
+      "runtimeRTitle": "Synon Biomed R",
+      "runtimeRDescription": "Required R runtime for scientific tasks; installed once and reused from the managed environment store.",
       "runtimeCommonTitle": "Common structure toolkit",
       "runtimeCommonDescription": "RDKit, BioPython, Gemmi, and PyYAML for molecules, sequences, and PDB/mmCIF files.",
       "runtimeInteractionTitle": "2D interaction analysis",
@@ -124,12 +133,37 @@
       },
       "personalizing": "Preparing three tasks from your research context and attachments…",
       "fallback": "Personalized suggestions are taking longer than expected. You can start with one of these tasks now.",
-      "customPlaceholder": "Describe the task you want to start"
+      "customPlaceholder": "Describe the task you want to start",
+      "draftHint": "Your selected task opens as a conversation draft; nothing starts until you send it."
+    },
+    "model": {
+      "title": "Configure the model",
+      "subtitle": "Connect a model that powers your research tasks. You can also skip this and finish later in Settings.",
+      "add": "Add model profile",
+      "save": "Save and activate",
+      "current": "Currently active",
+      "unconfigured": "Not configured",
+      "unconfiguredHint": "No model configured yet",
+      "skipHint": "Model setup is optional; you can enter the workspace without it and add one later in Settings.",
+      "provider": "Provider",
+      "modelId": "Model ID",
+      "baseUrl": "Base URL",
+      "apiKey": "API key",
+      "apiKeyPlaceholder": "Paste the provider API key",
+      "test": "Test",
+      "setActive": "Set active",
+      "saved": "Model profile saved",
+      "activated": "Set as the active model",
+      "testSuccess": "Connection succeeded: {{model}}",
+      "testFailed": "Connection failed. Check the configuration and key.",
+      "saveFailed": "Save failed. Check the configuration and retry.",
+      "actionFailed": "The action failed. Retry to continue.",
+      "loadError": "Failed to load model profiles. Retry to continue."
     },
     "actions": {
       "back": "Back",
       "continue": "Continue",
-      "start": "Start task",
+      "finish": "Enter workspace",
       "reviewCapabilities": "Review capabilities"
     },
     "error": {

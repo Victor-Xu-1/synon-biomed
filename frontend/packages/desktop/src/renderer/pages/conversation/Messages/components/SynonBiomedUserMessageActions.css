@@ -12,7 +12,7 @@
   max-width: 100%;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .synon-biomed-user-message__content {
@@ -33,7 +33,7 @@
   color: var(--workspace-text-tertiary, var(--color-text-3));
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   cursor: pointer;
   opacity: 1;
   transition:
@@ -74,11 +74,11 @@
   width: min(720px, 100%);
   min-width: 0;
   margin-left: auto;
-  padding: 12px;
+  padding: var(--ui-space-5);
   color: var(--workspace-text, var(--color-text-1));
   background: var(--workspace-canvas, var(--bg-base));
   border: 0;
-  border-radius: 16px;
+  border-radius: var(--ui-radius-2xl);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--workspace-text) 10%, transparent),
     0 8px 24px rgb(0 0 0 / 7%);
@@ -96,7 +96,7 @@
   border: 0;
   outline: none;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 22px;
   resize: none;
 }
@@ -109,8 +109,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--ui-space-4);
+  margin-top: var(--ui-space-4);
 }
 
 .synon-biomed-user-message__cancel,
@@ -129,8 +129,8 @@
   padding: 0 8px;
   color: var(--workspace-text-secondary, var(--color-text-2));
   background: transparent;
-  border-radius: 7px;
-  font-size: 13px;
+  border-radius: var(--ui-radius-md);
+  font-size: var(--ui-font-body);
 }
 
 .synon-biomed-user-message__cancel:hover,
@@ -144,7 +144,7 @@
   width: 30px;
   color: var(--workspace-accent-contrast, #fff);
   background: var(--workspace-accent, var(--color-primary));
-  border-radius: 9px;
+  border-radius: var(--ui-radius-lg);
 }
 
 .synon-biomed-user-message__submit:hover,
@@ -168,5 +168,5 @@
   min-height: 28px;
   align-items: center;
   justify-content: flex-end;
-  margin-top: 2px;
+  margin-top: var(--ui-space-1);
 }

@@ -38,7 +38,6 @@ export type UseAcpMessageReturn = {
   setAiProcessing: React.Dispatch<React.SetStateAction<boolean>>;
   resetState: () => void;
   tokenUsage: TokenUsageData | null;
-  context_limit: number;
   hasThinkingMessage: boolean;
   slashCommands: SlashCommandItem[];
   fetchSlashCommands: () => void;
@@ -198,7 +197,6 @@ export const useAcpMessage = (
   >(null);
   const [aiProcessing, setAiProcessing] = useState(false); // New loading state for AI response
   const [tokenUsage, setTokenUsage] = useState<TokenUsageData | null>(null);
-  const [context_limit, setContextLimit] = useState<number>(0);
   const [slashCommands, setSlashCommands] = useState<SlashCommandItem[]>([]);
 
   // Use refs to sync state for immediate access in event handlers
@@ -594,12 +592,9 @@ export const useAcpMessage = (
           break;
         }
         case 'acp_context_usage': {
-          const usageData = message.data as { used: number; size: number };
+          const usageData = message.data as { used: number };
           if (usageData && typeof usageData.used === 'number') {
             setTokenUsage({ total_tokens: usageData.used });
-            if (usageData.size > 0) {
-              setContextLimit(usageData.size);
-            }
           }
           break;
         }
@@ -686,7 +681,6 @@ export const useAcpMessage = (
     clearThought();
     setAcpStatus(null);
     setTokenUsage(null);
-    setContextLimit(0);
     setSlashCommands([]);
     hasContentInTurnRef.current = false;
     turnFinishedRef.current = false;
@@ -737,14 +731,11 @@ export const useAcpMessage = (
         }
         setHasHydratedRunningState(true);
 
-        // Restore persisted context usage data
+        // Keep the existing task-center token fallback from durable metadata.
         if (res.type === 'acp' && res.extra?.last_token_usage) {
-          const { last_token_usage, last_context_limit } = res.extra;
+          const { last_token_usage } = res.extra;
           if (last_token_usage.total_tokens > 0) {
             setTokenUsage(last_token_usage);
-          }
-          if (last_context_limit && last_context_limit > 0) {
-            setContextLimit(last_context_limit);
           }
         }
       })
@@ -830,7 +821,6 @@ export const useAcpMessage = (
     setAiProcessing,
     resetState,
     tokenUsage,
-    context_limit,
     hasThinkingMessage,
     slashCommands,
     fetchSlashCommands,

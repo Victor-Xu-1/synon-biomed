@@ -122,9 +122,11 @@ if [ "$1" = "--version" ]; then
   echo "R version 4.5.1 (2025-06-13)"
   exit 0
 fi
-while [ "$1" != "--args" ]; do shift; done
-shift
+while [ "$#" -gt 0 ] && [ "$1" != "-e" ]; do shift; done
+[ "$#" -ge 3 ] || exit 64
+shift 2
 target="$1"
+[ "$target" != "--args" ] || exit 64
 shift
 mkdir -p "$target"
 for package in "$@"; do mkdir -p "$target/$package"; done

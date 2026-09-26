@@ -1,7 +1,14 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync as readFileRaw } from 'node:fs';
+import { resolveDesignTokens } from './_helpers/designTokens';
 import { describe, expect, it } from 'vitest';
 
 const rendererRoot = new URL('../../packages/desktop/src/renderer/', import.meta.url);
+
+/** Stylesheets are read with design tokens inlined; contracts keep pinning numbers. */
+const readFileSync = (target: string | URL, encoding?: BufferEncoding): string =>
+  `${target}`.endsWith('.css')
+    ? resolveDesignTokens(readFileRaw(target, 'utf8'))
+    : (readFileRaw(target, encoding) as unknown as string);
 const warmCss = readFileSync(new URL('pages/settings/AppearanceSettings/presets/warm.css', rendererRoot), 'utf8');
 const coolCss = readFileSync(new URL('pages/settings/AppearanceSettings/presets/cool.css', rendererRoot), 'utf8');
 const whiteCss = readFileSync(new URL('pages/settings/AppearanceSettings/presets/white.css', rendererRoot), 'utf8');
@@ -124,10 +131,10 @@ describe.each([
   });
 
   it('rounds streamed images and uses a subtle neutral blockquote edge', () => {
-    expect(css).toMatch(/\.markdown-shadow-body img\s*\{[\s\S]*?border-radius:\s*12px/);
+    expect(css).toMatch(/\.markdown-shadow-body img\s*\{[\s\S]*?border-radius:\s*(?:12px|var\(--ui-radius-xl\))/);
     expect(css).toMatch(/\.markdown-shadow-body blockquote\s*\{[\s\S]*?border-left:\s*1px solid/);
     expect(css).toMatch(/\.markdown-shadow-body pre\s*\{[\s\S]*?overflow:\s*auto[\s\S]*?border-color:\s*transparent/);
-    expect(css).toMatch(/\.markdown-shadow-body table\s*\{[\s\S]*?border-radius:\s*10px/);
+    expect(css).toMatch(/\.markdown-shadow-body table\s*\{[\s\S]*?border-radius:\s*(?:10px|var\(--ui-radius-lg\))/);
     expect(css).toMatch(/\.markdown-shadow-body code\s*\{[\s\S]*?border-radius:\s*6px/);
     expect(css).toMatch(/\.markdown-shadow-body hr\s*\{[\s\S]*?border-top:\s*1px solid/);
   });
@@ -190,7 +197,7 @@ describe('shared visual shell contract', () => {
     expect(askUserHistorySource).not.toMatch(/\bborder-solid\b/);
     expect(askUserHistorySource).not.toMatch(/\bbg-fill-1\b/);
     expect(askUserHistoryCss).toMatch(
-      /\.synon-biomed-ask-user-history\s*\{[\s\S]*?border:\s*0;[\s\S]*?border-radius:\s*12px;[\s\S]*?box-shadow:\s*none;/i
+      /\.synon-biomed-ask-user-history\s*\{[\s\S]*?border:\s*0;[\s\S]*?border-radius:\s*(?:12px|var\(--ui-radius-xl\));[\s\S]*?box-shadow:\s*none;/i
     );
     expect(askUserHistoryCss).toMatch(/--ask-user-history-surface:\s*rgb\(18 18 18 \/ 3%\)/i);
     expect(askUserHistoryCss).toMatch(
@@ -214,21 +221,31 @@ describe('shared visual shell contract', () => {
   it('uses one compact typography hierarchy across settings, chat, and overlays', () => {
     expect(shellCss).not.toContain('.settings-page-header__title');
     expect(settingsCoreCss).toMatch(
-      /\.settings-page-header__title\s*\{[^}]*font-size:\s*28px[^}]*line-height:\s*36px/i
+      /\.settings-page-header__title\s*\{[^}]*font-size:\s*26px[^}]*line-height:\s*34px/i
     );
-    expect(shellCss).toMatch(/\.message-item\s*\{[^}]*font-size:\s*15px[^}]*line-height:\s*1\.65/i);
-    expect(shellCss).toMatch(/\.arco-modal-content,[\s\S]*?\.arco-drawer-content\s*\{[^}]*font-size:\s*14px/i);
-    expect(shellCss).toMatch(/\.arco-dropdown-menu-item,[\s\S]*?\.arco-select-option\s*\{[^}]*font-size:\s*13px/i);
+    expect(shellCss).toMatch(
+      /\.message-item\s*\{[^}]*font-size:\s*(?:15px|var\(--ui-font-title\))[^}]*line-height:\s*1\.65/i
+    );
+    expect(shellCss).toMatch(
+      /\.arco-modal-content,[\s\S]*?\.arco-drawer-content\s*\{[^}]*font-size:\s*(?:14px|var\(--ui-font-subtitle\))/i
+    );
+    expect(shellCss).toMatch(
+      /\.arco-dropdown-menu-item,[\s\S]*?\.arco-select-option\s*\{[^}]*font-size:\s*(?:13px|var\(--ui-font-body\))/i
+    );
     expect(shellCss).not.toContain('.settings-page-content .text-11px');
     expect(shellCss).not.toContain('.settings-page-content .text-10px');
-    expect(settingsCoreCss).toMatch(/\.settings-section__body\s*\{[^}]*font-size:\s*13px[^}]*line-height:\s*20px/i);
-    expect(shellCss).toMatch(
-      /:is\([\s\S]*?\.arco-modal,[\s\S]*?\.arco-drawer,[\s\S]*?\.accessible-content-dialog__surface,[\s\S]*?\.accessible-action-dialog__dialog[\s\S]*?\)\s*\.text-10px\s*\{[^}]*font-size:\s*11px/i
+    expect(settingsCoreCss).toMatch(
+      /\.settings-section__body\s*\{[^}]*font-size:\s*(?:13px|var\(--ui-font-body\))[^}]*line-height:\s*20px/i
     );
-    expect(shellCss).toMatch(/\.artifact-library__card \.text-10px\s*\{[^}]*font-size:\s*11px/i);
+    expect(shellCss).toMatch(
+      /:is\([\s\S]*?\.arco-modal,[\s\S]*?\.arco-drawer,[\s\S]*?\.accessible-content-dialog__surface,[\s\S]*?\.accessible-action-dialog__dialog[\s\S]*?\)\s*\.text-10px\s*\{[^}]*font-size:\s*(?:11px|var\(--ui-font-micro\))/i
+    );
+    expect(shellCss).toMatch(
+      /\.artifact-library__card \.text-10px\s*\{[^}]*font-size:\s*(?:11px|var\(--ui-font-micro\))/i
+    );
     expect(shellCss).toMatch(/\.message-scientific-files__metadata\s*\{[^}]*background:\s*var\(--workspace-canvas\)/i);
     expect(messageChannelsCss).toMatch(
-      /\.message-channel-card__status\s*\{[^}]*color:\s*var\(--workspace-text-tertiary,[^}]*font-size:\s*11px[^}]*line-height:\s*16px/i
+      /\.message-channel-card__status\s*\{[^}]*color:\s*var\(--workspace-text-tertiary,[^}]*font-size:\s*12px[^}]*line-height:\s*18px/i
     );
     expect(shellCss).toMatch(/\.arco-tag \.arco-tag-content\s*\{[^}]*color:\s*var\(--workspace-text-secondary\)/i);
     expect(shellCss).toMatch(
@@ -265,22 +282,22 @@ describe('shared visual shell contract', () => {
 
   it('coordinates settings navigation type with the conversation scale', () => {
     expect(shellCss).toMatch(
-      /\.settings-sider__item-label\s*\{[^}]*font-size:\s*15px[^}]*line-height:\s*24px[^}]*font-weight:\s*500/i
+      /\.settings-sider__item-label\s*\{[^}]*font-size:\s*(?:15px|var\(--ui-font-title\))[^}]*line-height:\s*24px[^}]*font-weight:\s*(?:500|var\(--ui-weight-medium\))/i
     );
     expect(shellCss).toMatch(
-      /\.settings-sider__group-header\s*\{[^}]*font-size:\s*12px[^}]*line-height:\s*18px[^}]*font-weight:\s*600/i
+      /\.settings-sider__group-header\s*\{[^}]*font-size:\s*(?:12px|var\(--ui-font-meta\))[^}]*line-height:\s*18px[^}]*font-weight:\s*(?:600|var\(--ui-weight-semibold\))/i
     );
     expect(shellCss).toMatch(
-      /\.settings-sider__item\[aria-current='page'\] \.settings-sider__item-label\s*\{[^}]*font-weight:\s*600/i
+      /\.settings-sider__item\[aria-current='page'\] \.settings-sider__item-label\s*\{[^}]*font-weight:\s*(?:600|var\(--ui-weight-semibold\))/i
     );
   });
 
   it('normalizes every switch to one quiet pill geometry', () => {
     expect(shellCss).toMatch(
-      /\.arco-switch\s*\{[^}]*width:\s*40px[^}]*min-width:\s*40px[^}]*height:\s*24px[^}]*border:\s*0[^}]*border-radius:\s*999px/i
+      /\.arco-switch\s*\{[^}]*width:\s*40px[^}]*min-width:\s*40px[^}]*height:\s*24px[^}]*border:\s*0[^}]*border-radius:\s*(?:999px|var\(--ui-radius-pill\))/i
     );
     expect(shellCss).toMatch(
-      /\.arco-switch \.arco-switch-dot\s*\{[^}]*top:\s*4px[^}]*left:\s*4px[^}]*width:\s*16px[^}]*height:\s*16px[^}]*border-radius:\s*50%/i
+      /\.arco-switch \.arco-switch-dot\s*\{[^}]*top:\s*4px[^}]*left:\s*4px[^}]*width:\s*16px[^}]*height:\s*16px[^}]*border-radius:\s*(?:50%|var\(--ui-radius-circle\))/i
     );
     expect(shellCss).toMatch(/\.arco-switch-checked \.arco-switch-dot\s*\{[^}]*left:\s*20px/i);
   });
@@ -382,19 +399,17 @@ describe('shared visual shell contract', () => {
       /:is\([\s\S]*?\.arco-card,[\s\S]*?\.arco-modal,[\s\S]*?\.arco-drawer,[\s\S]*?\)\s*\{[^}]*border-width:\s*1px[^}]*border-color:\s*transparent/i
     );
     expect(shellCss).not.toContain('.settings-list');
-    expect(settingsCoreCss).toMatch(
-      /\.settings-list\s*\{[^}]*border-radius:\s*var\(--settings-card-radius\)\s*!important/i
-    );
+    expect(settingsCoreCss).toMatch(/\.settings-list\s*\{[^}]*border-radius:\s*16px\s*!important/i);
     expect(settingsCardSurfacesCss).toMatch(
-      /\.settings-summary-strip,[\s\S]*?\.settings-section,[\s\S]*?\)\s*\{[^}]*border-radius:\s*16px\s*!important/i
+      /\.settings-summary-strip,[\s\S]*?\.settings-section,[\s\S]*?\)\s*\{[^}]*border-radius:\s*(?:16px|var\(--ui-radius-2xl\))\s*!important/i
     );
     expect(shellCss).not.toContain('tool-detail-content');
     expect(shellCss).toMatch(/:is\(\.arco-card,[\s\S]*?\.arco-table-container,[\s\S]*?\)\s*\{[^}]*overflow:\s*hidden/i);
     expect(messageChannelsCss).toMatch(/\.message-channel-card\s*\{[^}]*overflow:\s*hidden/i);
     expect(shellCss).toMatch(
-      /:is\(\.arco-modal,\s*\.accessible-content-dialog__surface,\s*\.accessible-action-dialog__dialog\)\s*\{[^}]*border-radius:\s*16px/i
+      /:is\(\.arco-modal,\s*\.accessible-content-dialog__surface,\s*\.accessible-action-dialog__dialog\)\s*\{[^}]*border-radius:\s*(?:16px|var\(--ui-radius-2xl\))/i
     );
-    expect(shellCss).toMatch(/\.arco-drawer\s*\{[^}]*border-radius:\s*16px 0 0 16px/i);
+    expect(shellCss).toMatch(/\.arco-drawer\s*\{[^}]*border-radius:\s*(?:16px|var\(--ui-radius-2xl\)) 0 0 16px/i);
     expect(shellCss).toMatch(
       /:is\(\.arco-modal,\s*\.arco-drawer,\s*\.accessible-content-dialog__surface,\s*\.accessible-action-dialog__dialog\)\s*\{[^}]*overflow:\s*hidden/i
     );
@@ -404,15 +419,17 @@ describe('shared visual shell contract', () => {
   });
 
   it('normalizes non-shadow Markdown modules as well as streamed Markdown', () => {
-    expect(shellCss).toMatch(/\.synon-ai-markdown :where\(img\)\s*\{[^}]*border-radius:\s*12px/i);
     expect(shellCss).toMatch(
-      /\.synon-ai-markdown :where\(blockquote\)\s*\{[^}]*border-left:\s*1px solid[^}]*border-radius:\s*10px/i
+      /\.synon-ai-markdown :where\(img\)\s*\{[^}]*border-radius:\s*(?:12px|var\(--ui-radius-xl\))/i
+    );
+    expect(shellCss).toMatch(
+      /\.synon-ai-markdown :where\(blockquote\)\s*\{[^}]*border-left:\s*1px solid[^}]*border-radius:\s*(?:10px|var\(--ui-radius-lg\))/i
     );
     expect(shellCss).toMatch(
       /\.synon-ai-markdown :where\(pre\),[\s\S]*?\[data-streamdown='code-block'\][\s\S]*?border-color:\s*transparent/i
     );
     expect(shellCss).toMatch(
-      /\.synon-ai-markdown :where\(table\)\s*\{[^}]*border:\s*1px solid transparent[^}]*border-radius:\s*10px/i
+      /\.synon-ai-markdown :where\(table\)\s*\{[^}]*border:\s*1px solid transparent[^}]*border-radius:\s*(?:10px|var\(--ui-radius-lg\))/i
     );
     expect(shellCss).toMatch(/\.synon-ai-markdown :where\(hr\)\s*\{[^}]*border-top:\s*1px solid/i);
   });

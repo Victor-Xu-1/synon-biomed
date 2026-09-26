@@ -426,6 +426,9 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
           effort,
         },
         compute_providers: sessionComputeProviders,
+        // A newly created task stays staged: the conversation composer shows
+        // the request for review and the user starts it with an explicit send.
+        draft_only: true,
       };
       sessionStorage.setItem(`acp_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
 

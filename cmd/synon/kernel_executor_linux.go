@@ -72,7 +72,7 @@ func runKernelExecutorCLI(args []string) error {
 	if err != nil {
 		return executor.RecordStartupFailure("runtime_discovery", errors.New("claimed kernel executor session metadata is invalid"))
 	}
-	manager, err := kernelruntime.DiscoverManagerWithPaths(strings.TrimSpace(*condaHome), strings.TrimSpace(*condaEnvsPath), spec.UpstreamProxy)
+	manager, err := kernelruntime.DiscoverManagerWithPathsAndProxy(strings.TrimSpace(*condaHome), strings.TrimSpace(*condaEnvsPath), spec.UpstreamProxy)
 	if err != nil {
 		return executor.RecordStartupFailure("runtime_discovery", fmt.Errorf("discover kernel executor runtime: %w", err))
 	}

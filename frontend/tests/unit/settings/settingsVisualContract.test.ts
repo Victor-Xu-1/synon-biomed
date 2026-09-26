@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync as readFileRaw } from 'node:fs';
+import { resolveDesignTokens } from '../_helpers/designTokens';
 import { describe, expect, it } from 'vitest';
 import {
   SETTINGS_DESKTOP_VIEWPORT,
@@ -16,6 +17,12 @@ import {
   SETTINGS_GENERATED_ICON_SRC,
   SETTINGS_GENERATED_NAV_SRC,
 } from '@/renderer/pages/settings/components/SettingsGeneratedAsset';
+
+/** Stylesheets are read with primitives inlined; contracts keep pinning numbers. */
+const readFileSync = (target: string | URL, encoding?: BufferEncoding): string =>
+  `${target}`.endsWith('.css')
+    ? resolveDesignTokens(readFileRaw(target, 'utf8'))
+    : (readFileRaw(target, encoding) as unknown as string);
 
 const layoutCss = readFileSync(
   new URL('../../../packages/desktop/src/renderer/pages/settings/components/settings-layout.css', import.meta.url),
@@ -71,6 +78,13 @@ const modelsCss = readFileSync(
 const routeLayoutsCss = readFileSync(
   new URL(
     '../../../packages/desktop/src/renderer/pages/settings/components/settings-route-layouts.css',
+    import.meta.url
+  ),
+  'utf8'
+);
+const cardDensityCss = readFileSync(
+  new URL(
+    '../../../packages/desktop/src/renderer/pages/settings/components/settings-card-density.css',
     import.meta.url
   ),
   'utf8'
@@ -141,6 +155,34 @@ const lockedCss = [
   )
   .join('\n');
 
+/** The four card components the merged library page renders, one per tab. */
+const mergedLibraryCardSources = {
+  experts: readFileSync(
+    new URL(
+      '../../../packages/desktop/src/renderer/pages/settings/SynonBiomedExpertsSettings/ExpertWorkbench.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  ),
+  skills: readFileSync(
+    new URL('../../../packages/desktop/src/renderer/pages/settings/skills/SkillLibraryCard.tsx', import.meta.url),
+    'utf8'
+  ),
+  connectors: readFileSync(
+    new URL(
+      '../../../packages/desktop/src/renderer/pages/settings/ToolsSettings/McpConnectorCard.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  ),
+  environments: readFileSync(
+    new URL('../../../packages/desktop/src/renderer/pages/settings/environments/EnvironmentCard.tsx', import.meta.url),
+    'utf8'
+  ),
+} as const;
+
+const countOccurrences = (source: string, marker: string): number => source.split(marker).length - 1;
+
 describe('settings image-based visual contract', () => {
   it('loads each visual module once and keeps connector foundations before tools geometry', () => {
     const imports = [...settingsManifestCss.matchAll(/@import\s+'([^']+)'\s*;/g)].map((match) => match[1]);
@@ -182,6 +224,9 @@ describe('settings image-based visual contract', () => {
     expect(cardSurfacesCss).toMatch(/data-settings-route='skills'[\s\S]*?settings-skill-card/);
     expect(cardSurfacesCss).toMatch(/data-settings-route='tools'[\s\S]*?synon-mcp-card/);
     expect(cardSurfacesCss).toMatch(/data-settings-route='experts'[\s\S]*?expert-card/);
+    // The environment tile joins the same surface authority, so all four library
+    // tabs share one hairline border, one radius and one soft two-layer shadow.
+    expect(cardSurfacesCss).toMatch(/data-settings-route='environments'[\s\S]*?environment-card\s*\{[^}]*box-shadow/);
     expect(cardSurfacesCss).toMatch(/settings-summary-strip[\s\S]*?settings-model-profile[\s\S]*?settings-section/);
     expect(cardSurfacesCss).toMatch(/background:\s*var\(--settings-surface\)\s*!important/);
     expect(componentsCss).not.toMatch(/background:\s*#fff(?:fff)?(?:\s*!important)?\s*;/i);
@@ -197,7 +242,9 @@ describe('settings image-based visual contract', () => {
     expect(cardSurfacesCss).not.toMatch(/background:\s*linear-gradient/);
     expect(cardSurfacesCss).toMatch(/box-shadow:[\s\S]*?inset 0 1px 0[\s\S]*?0 8px 22px/);
     expect(cardSurfacesCss).toMatch(/@media \(hover:\s*hover\) and \(pointer:\s*fine\)/);
-    expect(cardSurfacesCss).toMatch(/transform:\s*translate3d\(0, -4px, 0\) scale\(1\.006\)/);
+    expect(cardSurfacesCss).toMatch(/transform:\s*translate3d\(0, -1px, 0\)/);
+    expect(cardSurfacesCss).not.toMatch(/translate3d\(0, -4px, 0\)/);
+    expect(cardSurfacesCss).toMatch(/data-settings-route='environments'[\s\S]*?environment-card:hover/);
     expect(cardSurfacesCss).toMatch(/settings-skill-card:hover[\s\S]*?settings-skill-card__icon/);
     expect(cardSurfacesCss).toMatch(/synon-mcp-card:hover[\s\S]*?synon-mcp-card__icon/);
     expect(cardSurfacesCss).not.toContain('mcp-connector-visual--artwork');
@@ -216,9 +263,74 @@ describe('settings image-based visual contract', () => {
       cardMinHeight: 220,
     });
     expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
-    expect(expertsCss).toMatch(/\.expert-card[\s\S]*?height:\s*220px/);
+    expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?grid-auto-rows:\s*auto/);
+    // The expert wall takes the shared 16px card gap, so its four columns are
+    // exactly as wide as the other three tabs' columns.
+    expect(expertsCss).toMatch(/\.expert-grid[\s\S]*?gap:\s*16px/);
+    // The expert tile no longer pins its own height; the shared merged-library
+    // card anatomy owns it so all four tabs stay exactly equal.
+    expect(expertsCss).not.toMatch(/(?<![-\w])height:\s*232px/);
     expect(expertsCss).not.toMatch(/grid-template-columns:\s*643px/);
     expect(expertsCss).not.toMatch(/settings-list-row/);
+  });
+
+  it('gives all four merged library tabs one card anatomy and one card height', () => {
+    // Same three parts on every card: heading (icon + title), a two-line
+    // description, then a footer holding one metadata line and one 24px pill
+    // control. Every metric is a token, so the tabs cannot drift apart again.
+    // The merged library floor is 232px — 24px roomier than the 232px entity
+    // token the standalone settings pages keep — so the two-line copy and the
+    // status row always fit whole.
+    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*232px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*padding:\s*20px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__heading\s*\{[^}]*min-height:\s*36px/);
+    // The heading owns the title ramp, so the icon slot, the title slot and the
+    // title itself all resolve to 15px/600/22px on every tab.
+    expect(cardDensityCss).toMatch(/\.settings-library-card__heading\s*\{[^}]*font-size:\s*15px/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__heading\s*\{[^}]*font-weight:\s*600/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__heading\s*\{[^}]*line-height:\s*22px/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__icon\s*\{[^}]*width:\s*36px;[^}]*height:\s*36px;/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__title\s*\{[^}]*font-size:\s*15px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__title\s*\{[^}]*font-weight:\s*600\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*font-size:\s*13px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*font-weight:\s*400\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*-webkit-line-clamp:\s*2/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*min-height:\s*calc\(20px \* 2\)/);
+    // The copy zone is pinned at exactly two lines, so no route can grow it
+    // into a third line row and push the status row out of the card.
+    expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*max-height:\s*calc\(20px \* 2\)/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__meta\s*\{[^}]*font-size:\s*12px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__meta\s*\{[^}]*white-space:\s*nowrap/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__meta\s*\{[^}]*min-width:\s*0/);
+    expect(cardDensityCss).toMatch(
+      /\.settings-library-card__meta > \*\s*\{[^}]*min-width:\s*0;[^}]*overflow:\s*hidden;[^}]*white-space:\s*nowrap;[^}]*text-overflow:\s*ellipsis/
+    );
+    expect(cardDensityCss).toMatch(/\.settings-library-card__footer\s*\{[^}]*min-height:\s*33px/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__footer\s*\{[^}]*flex-wrap:\s*nowrap/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__control\s*\{[^}]*height:\s*24px/);
+    // The one control is pinned so the pill/capsule can never be squeezed by
+    // the metadata line beside it.
+    expect(cardDensityCss).toMatch(/\.settings-library-card__control\s*\{[^}]*flex:\s*0 0 auto/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__control\s*\{[^}]*border-radius:\s*999px/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__control\s*\{[^}]*font-size:\s*12px\s*!important/);
+    // The footer owns the 12px metadata ramp, so the bottom row reads the same
+    // on all four tabs even though each route names its own footer class.
+    expect(cardDensityCss).toMatch(/\.settings-library-card__footer\s*\{[^}]*font-size:\s*12px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__footer\s*\{[^}]*line-height:\s*18px\s*!important/);
+    // One rail and one wall inset for all four tabs: the retired per-route rail
+    // and the experts-only 0.72 scale used to give that tab a different card.
+    expect(cardDensityCss).toMatch(/\.settings-library-route[\s\S]*?transform:\s*none\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-route \.expert-grid\s*\{[^}]*padding:/);
+    // Every card component renders the shared anatomy instead of its own.
+    for (const [tab, source] of Object.entries(mergedLibraryCardSources)) {
+      expect(source, tab).toContain('settings-library-card');
+      expect(source, tab).toContain('settings-library-card__heading');
+      expect(source, tab).toContain('settings-library-card__description');
+      expect(source, tab).toContain('settings-library-card__footer');
+      expect(source, tab).toContain('settings-library-card__control');
+    }
+    // Auto rows keep a taller card from stretching its row-mates.
+    expect(countOccurrences(cardDensityCss, 'grid-auto-rows: auto')).toBeGreaterThanOrEqual(3);
   });
 
   it('uses three compact, consistently styled memory rows', () => {
@@ -229,7 +341,7 @@ describe('settings image-based visual contract', () => {
     expect(governanceCss).toMatch(/\.settings-governance-page\s*\{[\s\S]*?width:\s*min\(100%,\s*1080px\)/);
     expect(governanceCss).toMatch(/\.settings-governance-page\s*\{[\s\S]*?margin-inline:\s*auto/);
     expect(governanceCss).toMatch(/\.memory-layer-card[\s\S]*?min-height:\s*140px/);
-    expect(governanceCss).toMatch(/\.memory-layer-tab__label[\s\S]*?font-size:\s*17px/);
+    expect(governanceCss).toMatch(/\.memory-layer-tab__label[\s\S]*?font-size:\s*18px/);
     expect(governanceCss).toMatch(/\.memory-layer-tab__description[\s\S]*?font-size:\s*14px/);
     expect(governanceCss).toMatch(/\.memory-manager__status-control[\s\S]*?border:\s*0/);
     expect(governanceCss).toMatch(/\.memory-manager__workspace[\s\S]*?height:\s*240px/);
@@ -237,7 +349,7 @@ describe('settings image-based visual contract', () => {
   });
 
   it('keeps network content inset and gives large card bodies their own vertical scroll', () => {
-    expect(networkCss).toMatch(/synon-network-settings[\s\S]*?>\s*section[\s\S]*?padding:\s*24px 28px/);
+    expect(networkCss).toMatch(/synon-network-settings[\s\S]*?>\s*section[\s\S]*?padding:\s*20px 20px/);
     expect(networkCss).toMatch(/builtin-network-groups[\s\S]*?overflow-y:\s*auto/);
     expect(networkCss).toMatch(/allowed-domain-list[\s\S]*?overflow-y:\s*auto/);
     expect(networkCss).toMatch(/network-group-row[\s\S]*?min-height:\s*52px/);
@@ -245,8 +357,8 @@ describe('settings image-based visual contract', () => {
   });
 
   it('covers every shipped settings module exactly once', () => {
-    expect(SETTINGS_VISUAL_ROUTE_IDS).toHaveLength(12);
-    expect(new Set(SETTINGS_VISUAL_ROUTE_IDS).size).toBe(12);
+    expect(SETTINGS_VISUAL_ROUTE_IDS).toHaveLength(13);
+    expect(new Set(SETTINGS_VISUAL_ROUTE_IDS).size).toBe(13);
     expect(Object.keys(SETTINGS_VISUAL_CONTRACTS).toSorted()).toEqual([...SETTINGS_VISUAL_ROUTE_IDS].toSorted());
   });
 
@@ -261,7 +373,7 @@ describe('settings image-based visual contract', () => {
       expect(entry.primarySelectors.length).toBeGreaterThan(0);
       expect(entry.interactionSelectors.length).toBeGreaterThan(0);
       expect(entry.dynamicStates.length).toBeGreaterThan(0);
-      if (route === 'credentials' || route === 'experts' || route === 'skills') {
+      if (route === 'credentials' || route === 'experts' || route === 'skills' || route === 'environments') {
         expect(entry.reference.desktop).toBeNull();
       } else {
         expect(entry.reference.desktop).toBe(SETTINGS_LOCKED_DESKTOP_REFERENCE_SRC[route]);
@@ -290,12 +402,15 @@ describe('settings image-based visual contract', () => {
     expect(SETTINGS_VISUAL_CONTRACTS.skills.grid?.cardMinHeight).toBe(236);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.desktopColumns).toBe(4);
     expect(SETTINGS_VISUAL_CONTRACTS.tools.grid?.cardMinHeight).toBe(236);
-    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*256px/);
-    expect(componentsCss).toMatch(/--settings-entity-card-title-size:\s*15px/);
+    expect(componentsCss).toMatch(/--settings-entity-card-height:\s*232px/);
+    expect(componentsCss).toMatch(/--settings-card-title-size:\s*15px/);
     expect(componentsCss).toMatch(/--settings-entity-card-body-size:\s*13px/);
-    expect(skillsCss).toMatch(/\.settings-skill-card\s*\{[^}]*min-height:\s*236px/);
-    expect(skillsCss).toMatch(/\.settings-skill-card__description[\s\S]*?font-size:\s*13px/);
-    expect(skillsCss).toMatch(/\.settings-skill-card__title[\s\S]*?overflow-wrap:\s*anywhere/);
+    // The skill tile takes its height and type ramp from the shared merged-library
+    // anatomy rather than pinning a route-specific min-height of its own.
+    expect(skillsCss).not.toMatch(/\.settings-skill-card\s*\{[^}]*min-height:\s*236px/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card\s*\{[^}]*min-height:\s*232px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*font-size:\s*13px\s*!important/);
+    expect(cardDensityCss).toMatch(/\.settings-library-card__description\s*\{[^}]*overflow-wrap:\s*anywhere/);
     expect(skillsCss).toMatch(/\.settings-skill-library-scroll[\s\S]*?overflow-y:\s*auto/);
     expect(skillsCss).toMatch(/\.settings-skill-library-footer[\s\S]*?flex-shrink:\s*0/);
     expect(skillsCss).not.toContain('settings-skill-card__artwork');
@@ -304,7 +419,12 @@ describe('settings image-based visual contract', () => {
   it('keeps Skills at native size and retains unrelated compact surfaces', () => {
     expect(compactCss).toMatch(/@media \(min-width:\s*1200px\) and \(max-height:\s*900px\)/);
     expect(compactCss).not.toContain("data-settings-route='skills'");
-    expect(skillsCss).toContain('repeat(auto-fill, minmax(min(100%, 260px), 1fr))');
+    // The skills wall takes the shared four-column count instead of restating a
+    // fluid one of its own, so the four tabs cannot disagree about it.
+    expect(skillsCss).not.toMatch(/\.settings-entity-grid\s*\{[^}]*grid-template-columns/);
+    expect(cardDensityCss).toMatch(
+      /\.settings-entity-grid,[\s\S]*?grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)\s*!important/
+    );
     expect(skillsCss).toContain('.settings-skill-library-toolbar');
     expect(skillsCss).toContain('grid-template-columns: minmax(0, 1fr) minmax(180px, 280px) auto');
     expect(skillsCss).toContain('@container (max-width: 600px)');
@@ -331,7 +451,7 @@ describe('settings image-based visual contract', () => {
     expect(toolsCss).toContain('.mcp-library-footer');
     expect(toolsCss).not.toContain('visibility: hidden');
     expect(connectorsCss).toContain('repeat(auto-fill, minmax(min(100%, 260px), 1fr))');
-    expect(toolsCss).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
+    expect(toolsCss).toContain('grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))');
     expect(toolsCss).toContain('grid-template-rows: repeat(3, minmax(min-content, 1fr))');
     expect(connectorsCss).toContain('.synon-mcp-card__footer');
     expect(compactCss).toMatch(/details:not\(\[open\]\)\s*>\s*div[\s\S]*?display:\s*none\s*!important/);
@@ -406,23 +526,25 @@ describe('settings image-based visual contract', () => {
 
   it('shares the entity typography tokens with MCP cards so their geometry stays in sync', () => {
     expect(connectorsCss).toMatch(/\.synon-mcp-card[\s\S]*?height:\s*auto/);
+    expect(connectorsCss).toMatch(/.synon-mcp-card__title-row > span[\s\S]*?font-size:\s*15px/);
+    // The connector tile takes the shared 20px padding and the shared 20px body
+    // line instead of its own 18px padding, 21px line and 236px floor.
+    expect(connectorsCss).toMatch(/\.synon-mcp-card\s*\{[^}]*padding:\s*20px\s*!important/);
+    expect(connectorsCss).not.toMatch(/\.synon-mcp-card\s*\{[^}]*min-height:\s*236px/);
     expect(connectorsCss).toMatch(
-      /\.synon-mcp-card__title-row > span[\s\S]*?font-size:\s*var\(--settings-entity-card-title-size\)/
+      /\.synon-mcp-card__description[\s\S]*?line-height:\s*(?:var\(--settings-entity-card-body-line\)|20px)/
     );
     expect(connectorsCss).toMatch(
-      /\.synon-mcp-card__description[\s\S]*?line-height:\s*(?:var\(--settings-entity-card-body-line\)|21px)/
+      /data-state='connected'[\s\S]*?background:\s*color-mix\(in srgb, var\(--success\) 14%,[\s\S]*?!important[\s\S]*?color:\s*var\(--success\)\s*!important/
     );
     expect(connectorsCss).toMatch(
-      /data-state='connected'[\s\S]*?background:\s*color-mix\(in srgb, #22b85a 14%, var\(--settings-surface\)\)\s*!important[\s\S]*?color:\s*#18783c\s*!important/
-    );
-    expect(connectorsCss).toMatch(
-      /data-state='attention'[\s\S]*?background:\s*color-mix\(in srgb, #ff9800 14%, var\(--settings-surface\)\)\s*!important[\s\S]*?color:\s*#b45b00\s*!important/
+      /data-state='attention'[\s\S]*?background:\s*color-mix\(in srgb, var\(--warning\) 14%,[\s\S]*?!important[\s\S]*?color:\s*var\(--warning\)\s*!important/
     );
   });
 
   it('keeps the locked page title and description in the visual flow', () => {
-    expect(componentsCss).toMatch(/settings-page-header__title[\s\S]*?font-size:\s*28px\s*!important/);
-    expect(componentsCss).toMatch(/settings-page-header__description[\s\S]*?font-size:\s*15px\s*!important/);
+    expect(componentsCss).toMatch(/settings-page-header__title[\s\S]*?font-size:\s*26px\s*!important/);
+    expect(componentsCss).toMatch(/settings-page-header__description[\s\S]*?font-size:\s*14px\s*!important/);
     expect(layoutCss).toMatch(
       /settings-sider__item-label[\s\S]*?font-size:\s*14px\s*!important[\s\S]*?line-height:\s*24px\s*!important/
     );

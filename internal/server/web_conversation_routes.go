@@ -103,6 +103,8 @@ func (s *Server) handleWebConversation(w http.ResponseWriter, r *http.Request) {
 		s.handleWebConversationSlashCommands(w, r, frame)
 	case len(segments) == 2 && segments[1] == "composer-capabilities":
 		s.handleWebConversationComposerCapabilities(w, r, frame)
+	case len(segments) == 2 && segments[1] == "context-usage":
+		s.handleWebContextUsage(w, r, frame)
 	case len(segments) == 2 && segments[1] == "side-question":
 		s.handleWebConversationSideQuestion(w, r, frame)
 	case len(segments) == 2 && segments[1] == "confirmations":

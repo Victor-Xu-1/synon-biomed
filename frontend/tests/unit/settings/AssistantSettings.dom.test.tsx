@@ -115,7 +115,6 @@ describe('SynonBiomedExpertsSettings', () => {
     expect(screen.getByTestId('experts-header')).toHaveTextContent('专家');
     await waitFor(() => expect(screen.getByText('AI 药物研发专家')).toBeInTheDocument());
     expect(screen.getByText(/AI 驱动的药物发现与设计专家/)).toBeInTheDocument();
-    expect(screen.getByText('Skills 1/2 · MCP 1/1')).toBeInTheDocument();
     expect(screen.getByTestId('expert-usage-count-AIDD_EXPERT')).toHaveTextContent('使用 3 次');
     expect(screen.getByTestId('expert-last-used-AIDD_EXPERT')).toHaveTextContent('最近使用');
     const expertCard = screen.getByTestId('expert-card-AIDD_EXPERT');

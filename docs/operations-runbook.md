@@ -1,6 +1,6 @@
-# Synon Biomed v0.1.1 Operations Runbook
+# Synon Biomed Operations Runbook
 
-This runbook targets Synon Biomed v0.1.1. The packaged release contract is
+This runbook targets the current Synon Biomed source and runtime contracts. The packaged release contract is
 [`release-acceptance-contract.md`](release-acceptance-contract.md). A successful
 build or a historical non-Web compatibility report is not sufficient to
 authorize a release.
@@ -8,30 +8,57 @@ authorize a release.
 ## Runtime contract
 
 - A release contains native binaries, compiled `web/` assets, retained Skills/assets, installers, integrity metadata, an SBOM, license evidence, and provenance.
-- The installed core runtime does not require Go, Bun, Node.js, npm, or Python. Node.js/npm are build-time requirements only. Optional kernel and MCP sidecars declare their own runtimes.
+- Go, Bun, Node.js and npm are build-time requirements only. On Linux/WSL amd64,
+  Windows x64, macOS Intel, and macOS Apple Silicon, first service startup
+  provisions the required Python and R scientific runtimes from the verified
+  platform-bound Conda catalog; later tasks reuse those immutable generations.
+  Unsupported operating-system/architecture pairs fail closed before any
+  installer process starts. Optional kernel and MCP sidecars declare their own
+  runtimes.
 - Runtime state is external to the release directory. Set `SYNON_HOME` to a dedicated state directory and preserve it across upgrades.
+- On native Windows, the installer keeps its package cache under the current
+  user's runtime state root (`p` beside `conda` by default) and uses a compact
+  32-hex directory key for the required R generation to reduce extraction and
+  installed-prefix path length. The R marker and externally reported generation
+  remain the full 64-hex SHA-256. It does not require a nondefault short
+  `SYNON_HOME`. Deep paths may still expose upstream installer or filesystem
+  limits; if installation fails, preserve the actual installer error and
+  inspect both the configured state and package-cache paths before retrying.
+  Do not change the package lock or move a live cache.
+- Native Windows/macOS packages include the platform-bound Python/R installer
+  assets, but the current kernel confinement boundary is Linux/WSL-only.
+  Do not treat a successful native Python/R installation or its core-runtime
+  status as evidence that scientific task execution is available on those
+  platforms; use Linux/WSL until a separately verified native confinement
+  implementation is delivered.
+- Advanced deployments may set absolute `SYNON_CONDA_HOME` and
+  `SYNON_CONDA_ENVS_PATH` overrides; otherwise both roots are derived from the
+  current user's `SYNON_HOME`/platform data directory and validated at startup.
 - The default listener is `127.0.0.1:8765`. A non-loopback listener is rejected unless `SYNON_LINK_AUTH_PASSWORD` is configured.
 - The default operator username is `local`. There is no compiled-in password; set a unique deployment password.
 - The production runner uses the active saved workspace model provider. `go_builtin` is a test/development authority only.
 
-## Public community source checkout
+## Public source checkout
 
-### Skills library
+### Scientific Toolkit and skills library
 
-Settings → Skills lists installed built-in, imported, and personal skills together.
-Search and the Research field selector refine the list; expand Filters to narrow
+Settings → Scientific Toolkit combines Experts, Skills, Connectors and Scientific
+environments in four tabs. Existing settings links still select the matching tab.
+The library uses a responsive card grid and page scrolling without pagination.
+
+The Skills tab lists installed built-in, imported, and personal skills together.
+The Research field selector refines the list; expand Filters to narrow
 by source or enabled state. Personal drafts appear under All sources or Personal
 when the enabled-state filter is All. Imported source update/removal controls
 remain available under the Imported source filter.
 
 Add skill is the single entry for the online market, GitHub import, file import,
 and personal skill creation. The online market opens separately and does not
-replace the library or reset its search and filters. Filtering never disables
+replace the library or reset its filters. Filtering never disables
 or deletes a skill.
 
-The catalog scrolls independently; its pagination remains at the bottom of the
-workspace on full, filtered and final pages. Cards wrap full skill names and
-summaries at native text size, and category icons use the declared catalog field
+The catalog scrolls with the page. Cards show names and a two-line summary;
+the detail view retains the complete description. Category icons use the declared catalog field
 rather than name matching. The detail view uses the same localized summary and
 category. Source identifies where a skill was loaded from; it is not an assertion
 of authorship. Original Markdown instructions remain unchanged, and non-Markdown
@@ -39,21 +66,19 @@ files are shown as source text.
 
 ### Connectors
 
-Settings → Connectors manages installed MCP services. Search uses the displayed
-localized descriptions; the filter selects connected, attention-needed or custom
-connectors. Cards preserve full names and descriptions, configuration, permissions
-and enable/disable controls. Pagination stays below the independently scrolling
-library. Wide desktop pages use four columns and three rows (12 connectors),
-with rows sharing the available height. Shorter windows scroll without clipping
-card text or controls; narrow windows keep the responsive layout. Usage and
+Settings → Scientific Toolkit → Connectors manages installed MCP services.
+The domain selector filters the catalog. Cards retain configuration, permissions
+and enable/disable controls; their menus expose maintenance actions. Wide desktop
+pages use four columns and narrower windows use fewer columns. The page scrolls
+through the complete catalog. Usage and
 configuration share one card footer. Connection status is a service health signal, not proof of a completed
 scientific operation.
 
 Add connector opens custom configuration, the optional local catalog or the online
-market. Browsing these catalogs preserves the installed library's search and page.
+market. Browsing these catalogs preserves the installed library's filters.
 Installation, credential authorization and permission changes still require their
 own explicit actions; opening the catalog does not install or authorize anything.
-Sync directory remains available next to the library filters.
+Directory health, Refresh and Sync directory remain available below the tab header.
 
 ### Storage workspace
 
@@ -90,31 +115,66 @@ migration or new storage engine is required by this interface.
 
 ### Local scientific software
 
-The Storage page also exposes the selected local scientific software queue.
+Settings → Scientific Toolkit → Scientific environments is the single
+catalog for local scientific software preparation. It presents the required
+Python/R core runtimes and the registered optional predownload environments as
+categorized cards, including package specifications, observed readiness and
+installation progress.
+Category and status filters also include newly registered catalog entries.
+Storage retains usage accounting and links to this catalog.
 Saving a selection starts preparation in the background through the same managed
 environment controller used by tasks; opening the page or selection dialog does
-not install anything. Unselecting a queued item prevents it from starting, but
-does not uninstall existing software or cancel an installation already running.
-The page distinguishes queued, preparing, ready and failed states, refreshes
-while preparation is active, and offers an explicit retry for selected failed
-items. Progress is shown only when reported by the installer, not estimated
+not install anything. Unselecting a queued item prevents it from starting. A
+preparing card has an explicit pause action that cancels the active preparation;
+ready software has an explicit uninstall action that deactivates its managed
+environment after confirmation. The page distinguishes queued, preparing,
+paused, ready and failed states, refreshes while preparation is active, and
+offers an explicit retry for selected failed items. A card download requires
+confirmation, preserves the current selections, and uses the existing
+preparation queue. Progress is shown only when reported by the installer, not estimated
 from elapsed time. Ready means the managed environment passed its checks, not
 that a scientific task or result has been validated.
 
 Package caches and environment generations use the configured data/conda roots
-shown in Storage. Reopening or restarting the application reuses validated
-environments. A task discovers software through its existing tools and executes
-under the same managed environment authority; task outputs remain in the
-task/project artifact workflow, not in the software installation directory.
+shown in Storage. The default root is resolved per user from `SYNON_HOME` or
+the user's `.synon-go` directory (`%USERPROFILE%\.synon-go` on Windows);
+product code and release assets never embed a developer's absolute path. The
+layout is stable and shared by all tasks:
+`${SYNON_HOME}/conda/envs/<environment>` is the active pointer and
+`${SYNON_HOME}/conda/envs/.generations/<environment>/<generation>` stores the
+immutable generation. Reopening or restarting the application verifies and
+reuses a matching generation instead of downloading it again. A task discovers
+software through its existing tools and executes under the same managed
+environment authority; task outputs remain in the task/project artifact
+workflow, not in the software installation directory.
+On native Windows, the required R generation's final directory component is
+only the first 32 hex characters of its SHA-256; its marker, session identity,
+and generation returned to callers remain the full 64 characters. Reuse checks
+the resolved final path and full marker. A different full generation occupying
+the same short directory key is preserved and rejected, not overwritten.
+An older 64-character R directory is not reused as the new active layout and
+may require a fresh install; inspect and preserve the old directory and any
+user data before deciding on cleanup. For path failures, inspect the actual
+Conda prefix and `${SYNON_HOME}/p` cache path before changing configuration.
+
+The R installer writes directly to its final generation path because R launchers
+can embed that path. A generation is published only after the R smoke test and
+shared-library preparation pass. An unusable or interrupted generation is moved
+aside under the same environment root and preserved for inspection; the product
+does not silently delete that quarantined content. Runtime health rechecks the
+published generation and reports a missing or unusable one instead of treating
+an old success record as current readiness.
 The authenticated `/api/preferences/scientific-runtimes` endpoint provides
 status with GET, saves registered `enabled_ids` with PUT, and retries one selected
-registered environment with POST `{ "id": "..." }`. Mutations require the
-normal authenticated session and CSRF protection.
+optional environment with POST `{ "id": "..." }`; the same POST can retry a
+failed required core runtime, while core runtimes cannot be paused or
+uninstalled. Mutations require the normal authenticated session and CSRF
+protection.
 
 ### Source startup
 
-The public community repository is `Victor-Xu-1/synon-biomed`.
-Source version v0.1.1 does not itself designate a tagged or packaged GitHub
+The public repository is `Victor-Xu-1/synon-biomed`.
+A source checkout does not itself designate a tagged or packaged GitHub
 Release. Do not present a workflow artifact, a source archive, or `make build`
 output as an installable product release. Use an Ubuntu/WSL source checkout
 with Git, Go >=1.26, Node.js >=22.22 and <25, and npm:
@@ -149,15 +209,31 @@ Web password is compiled into the repository.
 
 ### First-run scientific runtime preparation
 
-On Linux/WSL, the gateway starts before optional scientific environments are
-prepared. The onboarding **Local software** tab records one host-level install
-selection and immediately returns control to the workspace; installation stays
-in the service-owned background queue. Every catalog entry is selected
-initially, and a user may clear any selection before continuing. Estimates are
-planning information rather than validation ceilings: a registered environment
-is not rejected or disabled solely because its resolved install grows beyond a
-previous estimate. An upgraded host without a saved selection does not infer
-one or begin downloading these environments.
+On every supported native target (Linux/WSL amd64, Windows x64, macOS Intel,
+and macOS Apple Silicon), the gateway starts its service-owned core supervisor
+before optional scientific environments are prepared. Python and R are required
+core runtimes: they are verified/provisioned once, exposed as ready only after their
+interpreter and package smoke checks pass, and cannot be paused or uninstalled
+from the optional-selection UI. If a core install fails, the status card offers
+an explicit retry. The onboarding **Local software** tab records one host-level
+selection for optional environments and immediately returns control to the
+workspace; optional installation stays in the background queue. Optional
+entries start unselected, so an upgraded host does not infer a large download
+without a saved selection. Estimates are planning information rather than
+validation ceilings: a registered environment is not rejected or disabled
+solely because its resolved install grows beyond a previous estimate.
+
+The required core contract is intentionally small and explicit:
+
+| Required runtime | Baseline contract | Why it is required |
+| --- | --- | --- |
+| `synon-biomed-python` | Python 3.11, RDKit, py3Dmol and the bundled rendering helpers | Default molecular, structure and general scientific task path |
+| `synon-biomed-r` | R 4.5, `data.table`, `ggplot2`, `jsonlite`, and `tidyverse` namespaces | Supported R analysis and shared report/data handling |
+
+Shell, Java, GPU frameworks, docking engines, omics stacks and other large
+specialized tools are not hidden additional prerequisites. They remain
+optional, task-selected runtimes and are installed through the same managed
+environment authority when a workflow requires them.
 
 The catalog includes the following independently versioned environments in
 addition to the common structure, 2D interaction, biomolecular electrostatics,
@@ -178,14 +254,20 @@ catalog is approximately 5.7 GiB when all groups are selected.
 | Medical imaging analysis | 420 MiB | pydicom, NiBabel, SimpleITK, scikit-image |
 | Instrument and analytical data | 260 MiB | Allotropy, Pandas, OpenPyXL, PDFPlumber |
 
-The estimates describe additional immutable environment storage after the
-release-owned managed Python baseline is present; exact downloads vary by
-platform, dependency resolution, and package-cache reuse. There is no fixed
+The estimates describe optional immutable environment storage after the
+required Python/R generations are present; exact downloads vary by platform,
+dependency resolution, and package-cache reuse. The required runtime catalog
+is selected for Linux/WSL amd64, Windows x64, macOS Intel, or macOS Apple
+Silicon and its explicit lock is checked against the host before micromamba
+starts. There is no fixed
 per-environment or aggregate rejection threshold. Sequential preparation,
 bounded timeouts, finite retries, and explicit selection provide the resource
 controls instead. No environment, wheel, or Conda package is written into the
-Git checkout. A fresh host needs network access to the pinned package sources
-once; subsequent starts verify and reuse the active generation.
+Git checkout. A fresh supported host needs network access to its pinned package
+sources once; subsequent starts and tasks verify and reuse the active
+generations. Unsupported operating-system/architecture pairs fail closed with
+`bundled_runtime_platform_unsupported`; a healthy gateway is not evidence that
+the scientific runtimes are ready.
 
 The structure viewer requests this runtime lazily when a protein, pocket, or
 ligand surface is first enabled. PDB2PQR assigns AMBER protein charges after
@@ -227,7 +309,10 @@ runtime's `waiting_for_selection`, `scheduled`, `preparing`, `retrying`,
 failures use a finite retry schedule and do not make the Web gateway unhealthy.
 The same selected runtime is attempted again after a service restart; no
 alternate scientific engine is silently substituted. Native Windows packages
-do not include Micromamba, so local scientific warmups report `disabled` there.
+include the platform-bound Micromamba installer and can prepare the required
+Python/R environments. This does not make local scientific kernel execution
+ready on Windows: until native confinement is separately verified, use
+Linux/WSL for those task execution paths.
 
 `Ctrl+C` or `synon stop` stops only the exact backend/frontend hosts created by
 this invocation; `synon status` reports the verified owner.
@@ -299,14 +384,16 @@ a systemd user manager and host sandbox support. The existing native install
 and upgrade procedures below remain authoritative.
 
 Install [ORAS](https://oras.land/docs/installation) and select an actually
-published version. For example, after `v0.1.1` has been published:
+published version. Set `SYNON_RELEASE_VERSION` to that published tag before
+running the example below:
 
 ```bash
+export SYNON_RELEASE_VERSION=vX.Y.Z
 mkdir -p /tmp/synon-download
-oras pull ghcr.io/victor-xu-1/synon-biomed:v0.1.1 --output /tmp/synon-download
+oras pull "ghcr.io/victor-xu-1/synon-biomed:${SYNON_RELEASE_VERSION}" --output /tmp/synon-download
 cd /tmp/synon-download
-sha256sum --check synon-biomed-v0.1.1-linux-amd64.tar.gz.sha256
-sha256sum --check synon-biomed-v0.1.1-windows-amd64.tar.gz.sha256
+sha256sum --check "synon-biomed-${SYNON_RELEASE_VERSION#v}-linux-amd64.tar.gz.sha256"
+sha256sum --check "synon-biomed-${SYNON_RELEASE_VERSION#v}-windows-amd64.tar.gz.sha256"
 ```
 
 For automated deployment, pin `ghcr.io/victor-xu-1/synon-biomed@sha256:DIGEST`
@@ -342,14 +429,16 @@ The provenance is an in-toto/SLSA statement with SHA-256 source and binary subje
 ## Linux or WSL installation
 
 ```bash
-./scripts/install-release.sh ./synon-biomed-v0.1.1-linux-amd64.tar.gz "$HOME/.local/opt/synon-biomed-v0.1.1"
-"$HOME/.local/opt/synon-biomed-v0.1.1/synon-go" --health-json
+export SYNON_RELEASE_VERSION="${SYNON_RELEASE_VERSION:-vX.Y.Z}"
+export SYNON_RELEASE_DIR="$HOME/.local/opt/synon-biomed"
+./scripts/install-release.sh ./synon-biomed-${SYNON_RELEASE_VERSION#v}-linux-amd64.tar.gz "$SYNON_RELEASE_DIR"
+"$SYNON_RELEASE_DIR/synon-go" --health-json
 ```
 
 Install a hardened systemd user service:
 
 ```bash
-"$HOME/.local/opt/synon-biomed-v0.1.1/scripts/install-systemd-user.sh" "$HOME/.local/opt/synon-biomed-v0.1.1" "$HOME/.local/state/synon-go"
+"$SYNON_RELEASE_DIR/scripts/install-systemd-user.sh" "$SYNON_RELEASE_DIR" "$HOME/.local/state/synon-go"
 ```
 
 The installer creates:
@@ -451,7 +540,7 @@ Only run `synon-go model-smoke --target runner --run --require-all --json` with 
 
 ## Message channels
 
-Set `SYNON_ENABLED_ADAPTERS` and the matching credentials for Feishu or WeChat. Telegram and DingTalk are not supported by the v0.1.1 runtime. An enabled channel fails startup when its inbound/outbound credential set is incomplete.
+Set `SYNON_ENABLED_ADAPTERS` and the matching credentials for Feishu or WeChat. Telegram and DingTalk are not supported by the current runtime. An enabled channel fails startup when its inbound/outbound credential set is incomplete.
 
 Inbound users must be paired before a task/session is created. Each accepted chat binds to `im:<platform>:<chat-id>`. Outbound route metadata and terminal delivery checkpoints are durable. WeChat context tokens are stored only in the encrypted secret vault and are hidden from public secret APIs.
 
@@ -481,8 +570,8 @@ audit path:
 ```bash
 python3 -B scripts/p9_external_acceptance.py \
   --mode plan \
-  --synon-binary "$HOME/.local/opt/synon-biomed-v0.1.1/synon-go" \
-  --live-im-binary "$HOME/.local/opt/synon-biomed-v0.1.1/synon-go-live-im-smoke" \
+  --synon-binary "$SYNON_RELEASE_DIR/synon-go" \
+  --live-im-binary "$SYNON_RELEASE_DIR/synon-go-live-im-smoke" \
   --runtime-url http://127.0.0.1:8765 \
   --output "$HOME/.local/state/synon-go/p9-external-plan.json"
 ```
@@ -501,8 +590,8 @@ exact one-shot authorization phrase:
 export SYNON_EXTERNAL_TEST_AUTHORIZED=I_ACCEPT_NETWORK_COST_AND_MESSAGES
 python3 -B scripts/p9_external_acceptance.py \
   --mode run \
-  --synon-binary "$HOME/.local/opt/synon-biomed-v0.1.1/synon-go" \
-  --live-im-binary "$HOME/.local/opt/synon-biomed-v0.1.1/synon-go-live-im-smoke" \
+  --synon-binary "$SYNON_RELEASE_DIR/synon-go" \
+  --live-im-binary "$SYNON_RELEASE_DIR/synon-go-live-im-smoke" \
   --runtime-url http://127.0.0.1:8765 \
   --timeout-seconds 30 \
   --max-attempts 1 \
@@ -526,9 +615,9 @@ to require only the two Go binaries.
 
 ```bash
 systemctl --user stop synon-go.service
-./scripts/backup-release.sh "$HOME/.local/opt/synon-biomed-v0.1.1" /secure/backup/synon-biomed-release
+./scripts/backup-release.sh "$SYNON_RELEASE_DIR" /secure/backup/synon-biomed-release
 tar --xattrs --acls -C "$HOME/.local/state" -czf /secure/backup/synon-go-state.tar.gz synon-go
-./scripts/install-release.sh ./new-release.tar.gz "$HOME/.local/opt/synon-biomed-v0.1.1"
+./scripts/install-release.sh ./new-release.tar.gz "$SYNON_RELEASE_DIR"
 systemctl --user start synon-go.service
 curl --noproxy '*' --fail --silent http://127.0.0.1:8765/api/health
 ```
@@ -539,7 +628,7 @@ Do not store state inside the release directory. Release rollback does not impli
 
 ```bash
 systemctl --user stop synon-go.service
-./scripts/rollback-release.sh "$HOME/.local/opt/synon-biomed-v0.1.1" /secure/backup/synon-biomed-release
+./scripts/rollback-release.sh "$SYNON_RELEASE_DIR" /secure/backup/synon-biomed-release
 systemctl --user start synon-go.service
 ```
 
@@ -548,8 +637,8 @@ Restore a state backup only when the target binary cannot read the upgraded sche
 Remove the service before the release:
 
 ```bash
-"$HOME/.local/opt/synon-biomed-v0.1.1/scripts/uninstall-systemd-user.sh"
-./scripts/uninstall-release.sh "$HOME/.local/opt/synon-biomed-v0.1.1"
+"$SYNON_RELEASE_DIR/scripts/uninstall-systemd-user.sh"
+./scripts/uninstall-release.sh "$SYNON_RELEASE_DIR"
 ```
 
 The service environment and `SYNON_HOME` are intentionally preserved. Delete them only after a separate retention decision and verified backup.
@@ -557,12 +646,14 @@ The service environment and `SYNON_HOME` are intentionally preserved. Delete the
 ## Windows installation
 
 ```powershell
+$env:SYNON_RELEASE_VERSION = if ($env:SYNON_RELEASE_VERSION) { $env:SYNON_RELEASE_VERSION } else { 'vX.Y.Z' }
+$env:SYNON_RELEASE_DIR = if ($env:SYNON_RELEASE_DIR) { $env:SYNON_RELEASE_DIR } else { 'C:\Tools\SynonBiomed' }
 powershell -ExecutionPolicy Bypass -File .\scripts\install-release.ps1 `
-  -Archive .\synon-biomed-v0.1.1-windows-amd64.tar.gz `
-  -InstallDir C:\Tools\synon-biomed-v0.1.1
-C:\Tools\synon-biomed-v0.1.1\synon-go.exe --health-json
-C:\Tools\synon-biomed-v0.1.1\synon-go.exe release-manifest verify `
-  --root C:\Tools\synon-biomed-v0.1.1
+  -Archive ".\synon-biomed-$($env:SYNON_RELEASE_VERSION.TrimStart('v'))-windows-amd64.tar.gz" `
+  -InstallDir $env:SYNON_RELEASE_DIR
+$env:SYNON_RELEASE_DIR\synon-go.exe --health-json
+$env:SYNON_RELEASE_DIR\synon-go.exe release-manifest verify `
+  --root $env:SYNON_RELEASE_DIR
 ```
 
 Use `scripts/manage-release.ps1` for backup, rollback, and uninstall. The package does not automatically install a Windows service; run interactively or register it with an operator-managed service account and an ACL-protected environment.
@@ -950,6 +1041,7 @@ Never paste the secret vault, environment file, channel tokens, model keys, or u
 | Service cannot write a workspace | systemd `ReadWritePaths` and `SYNON_HOME` | Add only the required absolute path through a unit override |
 | Release install rejected | Manifest, provenance, archive traversal, binary health | Do not bypass validation; obtain a clean archive |
 | Optional kernel/MCP unavailable | Optional asset manifest and declared runtime | Install that sidecar runtime separately; core remains native |
+| Native Windows R install reports a path or generation collision | Resolved state root, `conda/envs/.generations/synon-biomed-r` directory, marker's full generation, and `p` package cache | Preserve the failed prefix and installer error; do not rename/delete an active cache or old generation. Use a separate state root only after assessing existing data and path length. |
 
 ### File-tool feedback and structured source inspection
 

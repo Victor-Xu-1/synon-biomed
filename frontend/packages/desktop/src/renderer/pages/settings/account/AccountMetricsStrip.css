@@ -5,18 +5,18 @@
 .account-footprint > h2 {
   margin: 0 0 4px;
   color: var(--account-text);
-  font-size: 20px;
-  font-weight: 650;
+  font-size: var(--ui-font-display);
+  font-weight: var(--ui-weight-semibold);
   line-height: 28px;
 }
 
 .account-metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   overflow: hidden;
   border: 1px solid var(--account-border);
   min-height: 96px;
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--account-panel);
   box-shadow: none;
 }
@@ -48,7 +48,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: transparent;
 }
 
@@ -92,17 +92,17 @@
 .account-metric__value {
   min-height: 22px;
   color: var(--account-text);
-  font-size: 22px;
+  font-size: var(--ui-font-hero);
   font-variant-numeric: tabular-nums;
-  font-weight: 650;
+  font-weight: var(--ui-weight-semibold);
   line-height: 28px;
 }
 
 .account-metric__value span {
   margin-left: 3px;
   color: var(--account-text-secondary);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--settings-meta-size);
+  font-weight: var(--ui-weight-medium);
 }
 
 .account-metric__value--loading {
@@ -113,7 +113,7 @@
   overflow: hidden;
   margin-top: 1px;
   color: var(--account-text-tertiary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 19px;
   text-overflow: ellipsis;
   white-space: nowrap;

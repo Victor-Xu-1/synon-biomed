@@ -2,6 +2,8 @@ import { BackendHttpError } from '@/common/adapter/httpBridge';
 
 export type ScientificRuntimeOption = {
   id: string;
+  kind: 'core' | 'optional';
+  required: boolean;
   estimatedInstallBytes: number;
   estimatedInstallMB: number;
   defaultEnabled: boolean;
@@ -14,6 +16,7 @@ export type ScientificRuntimeOption = {
   phasePercent?: number;
   attempt?: number;
   updatedAt?: string;
+  packages?: { manager: string; spec: string }[];
 };
 export type ScientificRuntimeSettings = { configured: boolean; options: ScientificRuntimeOption[] };
 export type ScientificRuntimeRequestOptions = { fetchImpl?: typeof fetch; signal?: AbortSignal };
@@ -54,8 +57,8 @@ export async function loadScientificRuntimeSettings(
       !item ||
       !id ||
       !status ||
-      !bytes ||
-      !mb ||
+      bytes == null ||
+      mb == null ||
       !Number.isSafeInteger(bytes) ||
       !Number.isSafeInteger(mb) ||
       typeof item.default_enabled !== 'boolean' ||
@@ -67,6 +70,8 @@ export async function loadScientificRuntimeSettings(
     const percent = nonnegative(runtime?.phase_percent);
     return {
       id,
+      kind: item.kind === 'core' ? 'core' : 'optional',
+      required: item.required === true,
       status,
       estimatedInstallBytes: bytes,
       estimatedInstallMB: mb,
@@ -79,6 +84,14 @@ export async function loadScientificRuntimeSettings(
       phasePercent: percent != null && percent <= 100 ? percent : undefined,
       attempt: nonnegative(runtime?.attempt),
       updatedAt: text(runtime?.updated_at),
+      packages: Array.isArray(item.packages)
+        ? item.packages.flatMap((rawPackage) => {
+            const entry = record(rawPackage);
+            const manager = text(entry?.manager);
+            const spec = text(entry?.spec);
+            return manager && spec ? [{ manager, spec }] : [];
+          })
+        : [],
     };
   });
   return { configured: payload.configured === true, options: entries };
@@ -97,4 +110,15 @@ export async function saveScientificRuntimeSelection(
 
 export async function retryScientificRuntime(id: string, options: ScientificRuntimeRequestOptions = {}): Promise<void> {
   await request(options, 'POST', { id });
+}
+
+export async function pauseScientificRuntime(id: string, options: ScientificRuntimeRequestOptions = {}): Promise<void> {
+  await request(options, 'POST', { id, action: 'pause' });
+}
+
+export async function uninstallScientificRuntime(
+  id: string,
+  options: ScientificRuntimeRequestOptions = {}
+): Promise<void> {
+  await request(options, 'POST', { id, action: 'uninstall' });
 }

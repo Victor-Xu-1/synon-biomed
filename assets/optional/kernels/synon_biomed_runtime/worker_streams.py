@@ -29,7 +29,10 @@ class StreamCapture:
         self.done = threading.Event()
         self.saved = os.dup(descriptor)
         self.reader, writer = os.pipe()
-        os.set_blocking(self.reader, False)
+        # Windows pipes do not expose os.set_blocking or select readiness.
+        # The dedicated reader thread can block until the writer closes.
+        if os.name != "nt":
+            os.set_blocking(self.reader, False)
         os.dup2(writer, descriptor)
         os.close(writer)
         self.text = io.TextIOWrapper(
@@ -85,7 +88,7 @@ class StreamCapture:
                 # this thread is descheduled after an empty poll. Shutdown is
                 # complete only after a subsequent nonblocking read is empty.
                 finishing = self.done.is_set()
-                if not finishing:
+                if os.name != "nt" and not finishing:
                     ready, _, _ = select.select([self.reader], [], [], 0.05)
                     if not ready:
                         continue

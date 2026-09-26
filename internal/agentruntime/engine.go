@@ -30,16 +30,28 @@ const (
 const ToolMediaContextNotice = "Visual content returned by file inspection tools."
 
 type Message struct {
-	Role             string        `json:"role"`
-	Content          string        `json:"content,omitempty"`
-	Parts            []ContentPart `json:"parts,omitempty"`
-	ReasoningContent string        `json:"-"`
-	ToolCallID       string        `json:"tool_call_id,omitempty"`
-	ToolCalls        []ToolCall    `json:"tool_calls,omitempty"`
-	pending          []ContentPart
-	terminal         bool
-	noProgress       bool
+	Role               string             `json:"role"`
+	Content            string             `json:"content,omitempty"`
+	Parts              []ContentPart      `json:"parts,omitempty"`
+	ContextUsageSource ContextUsageSource `json:"-"`
+	ReasoningContent   string             `json:"-"`
+	ToolCallID         string             `json:"tool_call_id,omitempty"`
+	ToolCalls          []ToolCall         `json:"tool_calls,omitempty"`
+	pending            []ContentPart
+	terminal           bool
+	noProgress         bool
 }
+
+// ContextUsageSource is request-local provenance for usage attribution. It is
+// never part of provider payloads or durable conversation history.
+type ContextUsageSource string
+
+const (
+	ContextUsageSystemPrompt ContextUsageSource = "systemPrompt"
+	ContextUsageMessages     ContextUsageSource = "messages"
+	ContextUsageMCP          ContextUsageSource = "mcp"
+	ContextUsageSkills       ContextUsageSource = "skills"
+)
 
 type ToolCall struct {
 	ID        string          `json:"id"`

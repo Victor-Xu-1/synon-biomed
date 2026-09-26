@@ -42,7 +42,6 @@ describe('SiderFooter account menu', () => {
     const onPlansUsageClick = vi.fn();
     const onSettingsClick = vi.fn();
     const onSettingsIntent = vi.fn();
-    const onThemeToggle = vi.fn();
     const onLogoutClick = vi.fn();
 
     await renderWithI18n(
@@ -50,14 +49,12 @@ describe('SiderFooter account menu', () => {
         isMobile={false}
         isSettings={false}
         collapsed={false}
-        theme='light'
         username='victor'
         siderTooltipProps={tooltipProps}
         onAccountClick={onAccountClick}
         onPlansUsageClick={onPlansUsageClick}
         onSettingsClick={onSettingsClick}
         onSettingsIntent={onSettingsIntent}
-        onThemeToggle={onThemeToggle}
         showLogout
         onLogoutClick={onLogoutClick}
       />,
@@ -74,6 +71,13 @@ describe('SiderFooter account menu', () => {
     expect(screen.getByRole('menu', { name: 'Account and settings' })).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: /Help and feedback/i })).not.toBeInTheDocument();
 
+    const menuItems = screen.getAllByRole('menuitem');
+    expect(menuItems).toHaveLength(5);
+    for (const menuItem of menuItems.slice(1)) {
+      expect(menuItem.querySelector('.sider-account-menu-icon-slot')).toBeInTheDocument();
+      expect(menuItem.querySelector('.sider-account-menu-icon-slot > .i-icon')).toBeInTheDocument();
+    }
+
     fireEvent.click(screen.getByTestId('synon-account-profile'));
     expect(onAccountClick).toHaveBeenCalledTimes(1);
 
@@ -87,10 +91,6 @@ describe('SiderFooter account menu', () => {
     expect(onSettingsClick).toHaveBeenCalledTimes(1);
 
     fireEvent.click(account);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Dark' }));
-    expect(onThemeToggle).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(account);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Logout' }));
     expect(onLogoutClick).toHaveBeenCalledTimes(1);
   });
@@ -101,13 +101,11 @@ describe('SiderFooter account menu', () => {
         isMobile={false}
         isSettings={false}
         collapsed={false}
-        theme='light'
         username='victor'
         siderTooltipProps={tooltipProps}
         onAccountClick={vi.fn()}
         onPlansUsageClick={vi.fn()}
         onSettingsClick={vi.fn()}
-        onThemeToggle={vi.fn()}
       />,
       'en-US'
     );
@@ -123,13 +121,11 @@ describe('SiderFooter account menu', () => {
         isMobile={false}
         isSettings={false}
         collapsed={false}
-        theme='light'
         username='victor'
         siderTooltipProps={tooltipProps}
         onAccountClick={vi.fn()}
         onPlansUsageClick={vi.fn()}
         onSettingsClick={vi.fn()}
-        onThemeToggle={vi.fn()}
       />,
       'en-US'
     );
@@ -148,14 +144,12 @@ describe('SiderFooter account menu', () => {
         isMobile={false}
         isSettings={false}
         collapsed={false}
-        theme='light'
         username='Victor'
         avatarDataUrl='data:image/png;base64,iVBORw0KGgo='
         siderTooltipProps={tooltipProps}
         onAccountClick={vi.fn()}
         onPlansUsageClick={vi.fn()}
         onSettingsClick={vi.fn()}
-        onThemeToggle={vi.fn()}
       />,
       'en-US'
     );
@@ -172,13 +166,11 @@ describe('SiderFooter account menu', () => {
         isMobile={false}
         isSettings={false}
         collapsed={false}
-        theme='light'
         username='victor'
         siderTooltipProps={tooltipProps}
         onAccountClick={vi.fn()}
         onPlansUsageClick={vi.fn()}
         onSettingsClick={vi.fn()}
-        onThemeToggle={vi.fn()}
       />,
       'en-US'
     );
@@ -191,5 +183,26 @@ describe('SiderFooter account menu', () => {
     fireEvent.click(account);
     fireEvent.mouseDown(document.body);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('does not offer a theme toggle because settings owns theme selection', async () => {
+    await renderWithI18n(
+      <SiderFooter
+        isMobile={false}
+        isSettings={false}
+        collapsed={false}
+        username='victor'
+        siderTooltipProps={tooltipProps}
+        onAccountClick={vi.fn()}
+        onPlansUsageClick={vi.fn()}
+        onSettingsClick={vi.fn()}
+      />,
+      'en-US'
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open account and settings' }));
+
+    expect(screen.queryByRole('menuitem', { name: /Dark|Light/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('menuitem')).toHaveLength(4);
   });
 });

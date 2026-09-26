@@ -63,16 +63,7 @@ for (const viewport of [
       await expect(storage.getByText('已统计分类合计')).toBeVisible();
       await expect(storage.locator('.storage-cloud-empty')).toBeVisible();
       await expect(storage.locator('.storage-usage-summary time')).toHaveAttribute('datetime', /T/);
-      const runtimePanel = storage.locator('.storage-runtime-panel');
-      await expect(runtimePanel.getByRole('heading', { name: '科研软件' })).toBeVisible();
-      await expect(runtimePanel.getByRole('button', { name: '选择软件' })).toBeEnabled();
-      await runtimePanel.locator('.storage-runtime-disclosure summary').click();
-      await expect(runtimePanel.locator('.storage-runtime-row')).toHaveCount(13);
-      await runtimePanel.getByRole('button', { name: '选择软件' }).click();
-      const softwareDialog = page.getByRole('dialog');
-      await expect(softwareDialog.getByText('保存后会后台下载所选工具。', { exact: false })).toBeVisible();
-      await expect(softwareDialog.getByRole('checkbox')).toHaveCount(13);
-      await page.locator('.arco-modal-close-icon').click();
+      await expect(storage.locator('.storage-runtime-panel')).toHaveCount(0);
       await storage.getByRole('heading', { name: '存储', exact: true }).scrollIntoViewIfNeeded();
       await page.screenshot({ path: info.outputPath('storage-overview.png'), fullPage: true });
       const layout = await storage.evaluate((element) => {

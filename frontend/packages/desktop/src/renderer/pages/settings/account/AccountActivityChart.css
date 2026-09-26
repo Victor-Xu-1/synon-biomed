@@ -19,7 +19,7 @@
   max-width: 680px;
   margin: 4px 0 0;
   color: var(--account-text-tertiary);
-  font-size: 12px;
+  font-size: var(--ui-font-meta);
   line-height: 18px;
 }
 
@@ -27,10 +27,10 @@
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 2px;
+  gap: var(--ui-space-1);
   padding: 3px;
   border: 1px solid color-mix(in srgb, var(--account-activity-blue) 13%, var(--account-border));
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: color-mix(in srgb, var(--account-activity-blue) 4%, var(--account-panel));
 }
 
@@ -38,10 +38,10 @@
   min-height: 32px;
   padding: 0 12px;
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--ui-radius-md);
   background: transparent;
   color: var(--account-text-tertiary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
   cursor: pointer;
 }
@@ -50,7 +50,7 @@
   background: var(--account-panel);
   box-shadow: 0 1px 2px color-mix(in srgb, var(--account-text) 10%, transparent);
   color: var(--account-activity-blue-strong);
-  font-weight: 620;
+  font-weight: var(--ui-weight-semibold);
 }
 
 .account-activity-chart {
@@ -61,14 +61,14 @@
   margin: 12px 0 0;
   padding: 24px 20px 36px;
   border: 1px solid color-mix(in srgb, var(--account-activity-blue) 22%, var(--account-border));
-  border-radius: 14px;
+  border-radius: var(--ui-radius-xl);
   background: color-mix(in srgb, var(--account-activity-blue) 2%, var(--account-panel));
   box-shadow: 0 10px 28px color-mix(in srgb, var(--account-activity-blue) 6%, transparent);
 }
 
 .account-activity-chart svg {
   position: relative;
-  z-index: 1;
+  z-index: var(--ui-z-raise);
   width: 100%;
   height: 100%;
   display: block;
@@ -85,7 +85,7 @@
   display: grid;
   place-items: center;
   color: var(--account-text-tertiary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
   text-align: center;
 }
@@ -104,16 +104,16 @@
 
 .account-activity-chart__y-axis {
   position: absolute;
-  z-index: 2;
+  z-index: var(--ui-z-layer);
   top: 0;
   bottom: 0;
   left: 0;
   width: 48px;
   pointer-events: none;
   color: var(--account-text-tertiary);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   font-variant-numeric: tabular-nums;
-  line-height: 14px;
+  line-height: var(--settings-meta-line);
 }
 
 .account-activity-chart__y-axis small {
@@ -121,9 +121,9 @@
   top: 0;
   left: 0;
   color: var(--account-activity-blue-strong);
-  font-size: 11px;
-  font-weight: 620;
-  line-height: 14px;
+  font-size: var(--ui-font-micro);
+  font-weight: var(--ui-weight-semibold);
+  line-height: var(--settings-meta-line);
 }
 
 .account-activity-chart__y-axis span {
@@ -158,12 +158,12 @@
 
 .account-activity-chart__marker {
   position: absolute;
-  z-index: 2;
+  z-index: var(--ui-z-layer);
   width: 8px;
   height: 8px;
   box-sizing: border-box;
   border: 2px solid var(--account-panel);
-  border-radius: 50%;
+  border-radius: var(--ui-radius-circle);
   background: var(--account-activity-blue);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--account-activity-blue) 20%, transparent);
   pointer-events: none;
@@ -186,19 +186,19 @@
 
 .account-activity-chart__tooltip {
   position: absolute;
-  z-index: 3;
+  z-index: var(--ui-z-layer-top);
   min-width: 128px;
   max-width: 190px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ui-space-1);
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--account-activity-blue) 42%, transparent);
-  border-radius: 9px;
+  border-radius: var(--ui-radius-lg);
   background: var(--account-text);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--account-text) 18%, transparent);
   color: var(--account-panel);
-  font-size: 11px;
+  font-size: var(--ui-font-micro);
   line-height: 16px;
   pointer-events: none;
   transform: translate(-50%, calc(-100% - 10px));
@@ -216,7 +216,7 @@
 }
 
 .account-activity-chart__tooltip strong {
-  font-weight: 620;
+  font-weight: var(--ui-weight-semibold);
 }
 
 .account-activity-chart__tooltip span {

@@ -720,10 +720,11 @@ type sessionRunnerTaskContract struct {
 }
 
 type chatCompletionMessage struct {
-	Role       string                   `json:"role"`
-	Content    string                   `json:"content,omitempty"`
-	ToolCallID string                   `json:"tool_call_id,omitempty"`
-	ToolCalls  []chatCompletionToolCall `json:"tool_calls,omitempty"`
+	Role               string                          `json:"role"`
+	Content            string                          `json:"content,omitempty"`
+	ToolCallID         string                          `json:"tool_call_id,omitempty"`
+	ToolCalls          []chatCompletionToolCall        `json:"tool_calls,omitempty"`
+	ContextUsageSource agentruntime.ContextUsageSource `json:"-"`
 }
 
 type chatCompletionRequest struct {

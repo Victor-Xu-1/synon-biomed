@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "source": "mamba-org/micromamba-releases@2.9.0-0",
+  "version": "2.9.0",
+  "sourceUrl": "https://github.com/mamba-org/micromamba-releases/releases/tag/2.9.0-0",
+  "license": "BSD-3-Clause",
+  "licenseFile": "LICENSE",
+  "entrypoint": "micromamba",
+  "runtime": {
+    "minimumVersion": "2.9",
+    "optional": false,
+    "kind": "native"
+  },
+  "files": [
+    {
+      "path": "micromamba",
+      "sha256": "ec2a072f028e1a7cf20f3e2e74d5a8127cf5a5f27636375b5359811565f4e5be",
+      "bytes": 14596096
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "17404f97415839e32fc61ab467f4c0c2536e02c71dd0f854eb48fae96a9d3eda",
+      "bytes": 1498
+    }
+  ]
+}

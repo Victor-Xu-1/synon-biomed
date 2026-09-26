@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"synon-go/internal/agentruntime"
 	eventjournal "synon-go/internal/persistence/journal"
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
@@ -21,16 +22,16 @@ func sessionEntriesToProviderMessages(
 	messages := []chatCompletionMessage{{Role: "system", Content: systemPrompt}}
 	compactSummary, compactEventID, hasCompact := latestCompactModelContext(entries)
 	if hasCompact {
-		messages = append(messages, chatCompletionMessage{Role: "system", Content: "Synon compact handoff context:\n" + compactSummary})
+		messages = append(messages, chatCompletionMessage{Role: "system", Content: "Synon compact handoff context:\n" + compactSummary, ContextUsageSource: agentruntime.ContextUsageMessages})
 	}
 	if correctionContext := recoveredRunnerCorrectionContext(entries); correctionContext != "" {
 		messages = append(messages, chatCompletionMessage{Role: "system", Content: correctionContext})
 	}
 	if toolContext := recoveredToolTranscriptContext(entries, compactEventID); toolContext != "" {
-		messages = append(messages, chatCompletionMessage{Role: "system", Content: toolContext})
+		messages = append(messages, chatCompletionMessage{Role: "system", Content: toolContext, ContextUsageSource: agentruntime.ContextUsageMessages})
 	}
 	if repairContext := recoveredToolFailureContext(entries, compactEventID); repairContext != "" {
-		messages = append(messages, chatCompletionMessage{Role: "system", Content: repairContext})
+		messages = append(messages, chatCompletionMessage{Role: "system", Content: repairContext, ContextUsageSource: agentruntime.ContextUsageMessages})
 	}
 	// Compaction may summarize the scientific work, but an answered AskUser
 	// choice is an exact user-owned execution decision rather than summarizable

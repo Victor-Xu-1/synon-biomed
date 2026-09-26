@@ -80,6 +80,7 @@ export const SETTINGS_GENERATED_NAV_SRC = {
   compute: generatedAssetSrc('icons/nav-compute.png'),
   governance: generatedAssetSrc('icons/nav-governance.png'),
   network: generatedAssetSrc('icons/nav-network.png'),
+  environments: generatedAssetSrc('icons/connector-molecule.png'),
   credentials: generatedAssetSrc('icons/nav-credentials.png'),
   storage: generatedAssetSrc('icons/nav-storage.png'),
   general: generatedAssetSrc('icons/nav-general.png'),

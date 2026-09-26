@@ -100,9 +100,9 @@ func (m *Manager) runManagedEnvironmentProcessWithEnv(ctx context.Context, execu
 
 func (m *Manager) managedEnvironmentInstallerEnv() ([]string, error) {
 	threadLimit := strconv.Itoa(managedEnvironmentInstallerThreadLimit())
-	return managedEnvironmentInstallerNetworkEnv(kernelEnvironment(map[string]string{
+	installerOverrides := map[string]string{
 		"HOME": m.config.CondaHome, "MAMBA_ROOT_PREFIX": m.config.CondaHome,
-		"CONDA_PKGS_DIRS": filepath.Join(m.config.CondaHome, "pkgs"),
+		"CONDA_PKGS_DIRS": managedInstallerPackageCacheRoot(m.config),
 		"PATH":            managedExecutableSearchPath(filepath.Dir(m.config.Micromamba)), "PYTHONNOUSERSITE": "1",
 		"MAMBA_DOWNLOAD_THREADS": threadLimit, "MAMBA_EXTRACT_THREADS": threadLimit,
 		"CMAKE_BUILD_PARALLEL_LEVEL": threadLimit, "MAX_JOBS": threadLimit,
@@ -115,7 +115,22 @@ func (m *Manager) managedEnvironmentInstallerEnv() ([]string, error) {
 		// runtime boundary instead of making every task guess library-specific
 		// repair variables after a crash.
 		"KMP_AFFINITY": "disabled", "OMP_PROC_BIND": "false",
-	}), m.config.UpstreamProxy)
+	}
+	if runtime.GOOS == "windows" {
+		installerOverrides["USERPROFILE"] = m.config.CondaHome
+	}
+	return managedEnvironmentInstallerNetworkEnv(kernelEnvironment(installerOverrides), m.config.UpstreamProxy)
+}
+
+func managedInstallerPackageCacheRoot(config Config) string {
+	if runtime.GOOS == "windows" && strings.EqualFold(filepath.Base(config.CondaHome), "conda") {
+		// Several verified Windows scientific distributions contain deep
+		// compiler or stub paths. Keeping the package cache directly under the
+		// same user state root avoids MAX_PATH extraction failures without
+		// moving any package bytes outside SYNON_HOME.
+		return filepath.Join(filepath.Dir(config.CondaHome), "p")
+	}
+	return filepath.Join(config.CondaHome, "pkgs")
 }
 
 func managedEnvironmentInstallerThreadLimit() int {
@@ -145,7 +160,10 @@ func smokeManagedEnvironment(ctx context.Context, language, prefix string) error
 		}
 		arguments = []string{"-I", "-c", "import json,sys;print(json.dumps({'ok':True,'version':list(sys.version_info[:3])},sort_keys=True))"}
 	case "r":
-		executable = filepath.Join(prefix, "bin", executableName("Rscript"))
+		executable, err = managedRExecutableAtPrefix(prefix)
+		if err != nil {
+			return err
+		}
 		arguments = []string{"--no-init-file", "--no-environ", "--no-site-file", "-e", `cat('{\"ok\":true}')`}
 	default:
 		return errors.New("managed environment language is invalid")
@@ -175,7 +193,7 @@ func managedEnvironmentRuntimeEnv(prefix string) []string {
 	threadLimit := strconv.Itoa(managedEnvironmentRuntimeThreadLimit())
 	return kernelEnvironment(map[string]string{
 		"CONDA_PREFIX":           prefix,
-		"PATH":                   managedExecutableSearchPath(filepath.Join(prefix, "bin")),
+		"PATH":                   managedExecutableSearchPath(managedRuntimePath(prefix)),
 		"PYTHONNOUSERSITE":       "1",
 		"PIP_CONFIG_FILE":        os.DevNull,
 		"R_LIBS_USER":            os.DevNull,
@@ -215,7 +233,7 @@ func (m *Manager) managedEnvironmentInstallerRuntimeEnv(prefix string) ([]string
 // selected environment. Preserve the service's executable search contract,
 // excluding relative/current-directory entries; never inherit all variables.
 func managedExecutableSearchPath(preferred string) string {
-	paths := append([]string{preferred}, filepath.SplitList(os.Getenv("PATH"))...)
+	paths := append(filepath.SplitList(preferred), filepath.SplitList(os.Getenv("PATH"))...)
 	result := make([]string, 0, len(paths))
 	seen := map[string]bool{}
 	for _, entry := range paths {
@@ -255,7 +273,10 @@ func validateManagedEnvironmentImports(ctx context.Context, language, prefix str
 		}
 		arguments = []string{"-I", "-c", script, string(raw)}
 	case "r":
-		executable = filepath.Join(prefix, "bin", executableName("Rscript"))
+		executable, err = managedRExecutableAtPrefix(prefix)
+		if err != nil {
+			return err
+		}
 		// Conda distribution names are lowercase; resolve the exact runtime
 		// namespace from R's installed metadata rather than guessing its case.
 		script = `requested <- commandArgs(TRUE)

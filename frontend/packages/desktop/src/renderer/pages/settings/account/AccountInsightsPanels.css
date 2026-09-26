@@ -9,10 +9,10 @@
   box-sizing: border-box;
   height: 262px;
   min-width: 0;
-  min-height: 262px;
+  min-height: var(--settings-entity-card-height);
   padding: 20px;
   border: 1px solid var(--account-border);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--account-panel);
   box-shadow: none;
 }
@@ -26,15 +26,15 @@
 .account-insight-panel__title h2 {
   margin: 0;
   color: var(--account-text);
-  font-size: 17px;
-  font-weight: 650;
+  font-size: var(--ui-font-lead);
+  font-weight: var(--ui-weight-semibold);
   line-height: 24px;
 }
 
 .account-insight-panel__title p {
   margin: 3px 0 0;
   color: var(--account-text-tertiary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 19px;
 }
 
@@ -46,7 +46,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 11px;
+  border-radius: var(--ui-radius-lg);
   background: transparent;
 }
 
@@ -66,7 +66,7 @@
 .account-completion {
   margin-top: 20px;
   padding: 14px;
-  border-radius: 11px;
+  border-radius: var(--ui-radius-lg);
   background: var(--account-panel-subtle);
 }
 
@@ -74,17 +74,17 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--ui-space-6);
   color: var(--account-text-secondary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 19px;
 }
 
 .account-completion strong {
   color: var(--account-accent-strong);
-  font-size: 16px;
+  font-size: var(--ui-font-section);
   font-variant-numeric: tabular-nums;
-  font-weight: 660;
+  font-weight: var(--ui-weight-semibold);
 }
 
 .account-completion progress {
@@ -94,22 +94,22 @@
   overflow: hidden;
   margin-top: 9px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   appearance: none;
 }
 
 .account-completion progress::-webkit-progress-bar {
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, var(--account-accent) 10%, var(--account-panel));
 }
 
 .account-completion progress::-webkit-progress-value {
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--account-accent);
 }
 
 .account-completion progress::-moz-progress-bar {
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--account-accent);
 }
 
@@ -121,10 +121,10 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
-  gap: 16px;
+  gap: var(--ui-space-6);
   padding: 6px 1px;
   border-bottom: 1px solid color-mix(in srgb, var(--account-border) 60%, transparent);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 19px;
 }
 
@@ -140,7 +140,7 @@
   margin: 0;
   color: var(--account-text);
   font-variant-numeric: tabular-nums;
-  font-weight: 590;
+  font-weight: var(--ui-weight-semibold);
 }
 
 .account-skill-list {
@@ -160,9 +160,9 @@
   gap: 9px;
   min-height: 36px;
   padding: 3px 4px;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
   color: var(--account-text-secondary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 19px;
 }
 
@@ -176,11 +176,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 7px;
+  border-radius: var(--ui-radius-md);
   background: color-mix(in srgb, #8061ca 8%, var(--account-panel));
   color: #6f50b8;
-  font-size: 11px;
-  font-weight: 620;
+  font-size: var(--settings-meta-size);
+  font-weight: var(--ui-weight-semibold);
 }
 
 .account-skill-list__name {
@@ -198,7 +198,7 @@
 .account-insight-empty {
   margin: 22px 0 0;
   color: var(--account-text-tertiary);
-  font-size: 11px;
+  font-size: var(--settings-meta-size);
   line-height: 18px;
 }
 

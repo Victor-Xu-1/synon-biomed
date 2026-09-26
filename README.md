@@ -74,9 +74,9 @@ See [installation, package downloads and upgrade guidance](docs/operations-runbo
 
 ## Run from source / 从源码运行
 
-The community source is publicly available. Use Ubuntu or WSL with Git,
+The source repository is publicly available. Use Ubuntu or WSL with Git,
 Go >=1.26, Node.js >=22.22 and <25, and npm installed.
-社区源码可直接公开获取。请在 Ubuntu 或 WSL 中安装 Git、Go >=1.26、
+源码仓库可直接获取。请在 Ubuntu 或 WSL 中安装 Git、Go >=1.26、
 Node.js >=22.22 且 <25，以及 npm。
 
 ```bash
@@ -92,21 +92,29 @@ Wait for `READY_URL=http://127.0.0.1:8765/#/login`, then open that URL in your b
 首次运行可能进入 onboarding 引导；系统没有默认 Web 密码。
 There is no default Web password.
 
-The first-run capability settings show optional local scientific runtimes and
-their estimated additional storage. Every listed group is selected initially;
-users can clear any selection before continuing. The catalog covers common
-structure tools, APBS/PDB2PQR biomolecular electrostatics, AutoDock Vina, drug
-chemistry, QSAR/ADMET, clinical statistics, omics, genomics, simulation, imaging,
-and instrument data. Storage figures are
-estimates rather than installer ceilings, so a valid registered selection is
-not disabled as the catalog grows. The Web workspace remains available while
-preparation runs. See the operations runbook for status and recovery.
+On Linux/WSL amd64, Windows x64, macOS Intel, and macOS Apple Silicon, the
+service provisions the required Python and R scientific runtimes once at
+startup. Their immutable generations live under the user-resolved managed
+state root (`SYNON_HOME`, or `.synon-go` under the user home) and are reused
+by later tasks; no checkout or machine-specific absolute path is embedded in
+the product. Each native package carries a platform-bound micromamba binary
+and Conda lock catalog; an asset or lock for another platform is rejected
+before installation. First-run settings list these required runtimes
+separately from optional local scientific runtimes.
+Optional groups start unselected and are prepared only after an explicit
+choice. Native Windows and macOS packages can prepare these Python/R assets,
+but scientific kernel execution still requires Linux/WSL confinement; an
+installed-runtime status alone does not establish task execution readiness.
+See the operations runbook for the storage layout, reuse contract, status and
+recovery guidance.
 
-首次设置会显示可选本地科学运行时及预计新增占用。目录内的常用结构工具、
-APBS/PDB2PQR 生物分子电性、AutoDock Vina、药物化学、QSAR/ADMET、临床统计、组学、基因组、模拟、影像和仪器
-数据环境首次全部默认勾选，用户可在继续前取消任意组；当前各组估算值均低于 1 GiB，
-全部选择预计约 5.7 GiB。容量数字仅用于提示，不作为安装上限；后续目录增长不会使有效
-选择被禁用。准备期间不阻塞进入工作台，状态与恢复方式见运维手册。
+在 Linux/WSL amd64、Windows x64、macOS Intel 和 macOS Apple Silicon 上，服务启动时会一次性准备必需的
+Python 和 R 科研环境。不可变环境生成保存在系统根据当前用户解析出的统一状态目录
+（`SYNON_HOME`，未设置时使用用户主目录下的 `.synon-go`）下，后续任务直接复用，不写入代码仓库，也不包含
+任何机器专属绝对路径。每个原生平台包都带有绑定平台的 micromamba 二进制和 Conda 锁目录；
+跨平台资产或锁在安装前会被拒绝。首次设置会把必需环境与可选科研环境分开显示；可选环境默认不勾选，
+只有用户明确选择后才会准备。原生 Windows/macOS 包可准备 Python/R 资产，但科研 kernel
+执行仍需要 Linux/WSL 的进程隔离；环境安装完成不等于任务可执行。存储布局、复用规则、状态和恢复方式见运维手册。
 
 ## Learn more / 了解更多
 
@@ -120,10 +128,10 @@ APBS/PDB2PQR 生物分子电性、AutoDock Vina、药物化学、QSAR/ADMET、�
 
 ## Project status / 项目状态
 
-Synon Biomed v0.1.1 is an actively developed source edition. Capabilities, integrations,
+Synon Biomed is an actively developed source edition. Capabilities, integrations,
 and release packaging continue to evolve through verified, reviewable updates.
 
-Synon Biomed v0.1.1 是持续演进中的源码版。能力、集成和发布包装会通过
+Synon Biomed 是持续演进中的源码版。能力、集成和发布包装会通过
 可验证、可审阅的更新持续完善。
 
 ## Licensing / 许可

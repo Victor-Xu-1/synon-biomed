@@ -309,7 +309,7 @@ func (client *sessionRunnerResponseLanguageModelClient) translateCandidate(
 		Temperature:   &zero,
 		ReasoningMode: agentruntime.ReasoningModeDisabled,
 	}
-	translated, err := client.delegate.Complete(ctx, translationRequest)
+	translated, err := client.delegate.Complete(withAuxiliaryContextUsage(ctx), translationRequest)
 	if ctx.Err() != nil {
 		return agentruntime.ModelResponse{}, ctx.Err()
 	}

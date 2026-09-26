@@ -54,7 +54,7 @@ ALLOWED_ADAPTATIONS = {
     "packages/desktop/src/renderer/pages/conversation/Preview/components/viewers/SynonBiomedStructureViewer.tsx": "Unify PDB, mmCIF, SDF, and related molecular formats on one Molstar preview with composition-aware controls, collapsed auxiliary panels, and source-fenced 2D interaction refresh.",
     "packages/desktop/src/renderer/index.html": "Project the root Synon Biomed product identity and load the CSP-compatible pre-render theme bootstrap without creating a second version authority.",
     "packages/desktop/src/renderer/pages/conversation/platforms/acp/AcpE2EStreamInjector.tsx": "Expose a session-gated E2E assistant-message injector so browser preview tests do not require a paid live model.",
-    "packages/desktop/src/renderer/pages/onboarding/OnboardingFlow.tsx": "Add explicit first-run scientific-runtime selection with informational storage estimates while preserving authenticated drafts, capability allowlists, and one recoverable launch.",
+    "packages/desktop/src/renderer/pages/onboarding/OnboardingFlow.tsx": "Keep bundled Python and R required while preserving optional first-run scientific-runtime choices, informational storage estimates, authenticated drafts, capability allowlists, and one recoverable launch.",
     "packages/desktop/src/renderer/pages/onboarding/OnboardingElicitCard.tsx": "Give the custom onboarding task input an explicit accessible label while preserving the task-selection contract.",
     "packages/desktop/src/renderer/pages/onboarding/onboardingModel.ts": "Derive initial connector and Skill state from the server allowlist without duplicating the immutable selection model.",
     "packages/desktop/src/renderer/pages/onboarding/onboarding.module.css": "Keep the three capability tabs and long scientific-runtime list readable and vertically scrollable without horizontal overflow on short or narrow viewports.",
@@ -78,12 +78,12 @@ ALLOWED_ADAPTATIONS = {
     "packages/desktop/src/renderer/pages/settings/components/settings.css": "Stabilize responsive settings dimensions and shared visual tokens across desktop and narrow layouts.",
     "packages/desktop/src/renderer/services/SpeechToTextService.ts": "Attach the Go double-submit CSRF token to same-origin batch speech uploads without leaking it cross-origin.",
     "packages/desktop/src/renderer/services/authSession.ts": "Monitor session expiry and decorate unsafe same-origin browser requests with the Go CSRF token.",
-    "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts": "Regenerate typed locale keys for the unified structure controls and first-run scientific-runtime catalog.",
-    "packages/desktop/src/renderer/services/i18n/locales/en-US/guid.json": "Describe adjustable first-run scientific runtimes and informational storage estimates in the complete English onboarding locale.",
+    "packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts": "Regenerate typed locale keys for required Python/R core runtimes and the optional first-run scientific-runtime catalog.",
+    "packages/desktop/src/renderer/services/i18n/locales/en-US/guid.json": "Describe required Python/R core runtimes, optional first-run scientific runtimes, and informational storage estimates in the complete English onboarding locale.",
     "packages/desktop/src/renderer/services/i18n/locales/en-US/preview.json": "Add English labels for unified structure composition, collapsed 2D panels, and format-neutral interaction controls.",
-    "packages/desktop/src/renderer/services/i18n/locales/zh-CN/guid.json": "Describe adjustable first-run scientific runtimes and informational storage estimates in the complete Simplified Chinese onboarding locale.",
+    "packages/desktop/src/renderer/services/i18n/locales/zh-CN/guid.json": "Describe required Python/R core runtimes, optional first-run scientific runtimes, and informational storage estimates in the complete Simplified Chinese onboarding locale.",
     "packages/desktop/src/renderer/services/i18n/locales/zh-CN/preview.json": "Add Simplified Chinese labels for unified structure composition, collapsed 2D panels, and format-neutral interaction controls.",
-    "packages/desktop/src/renderer/services/i18n/locales/zh-CN/settings.json": "Replace obsolete bun start deployment guidance with Synon Go service guidance.",
+    "packages/desktop/src/renderer/services/i18n/locales/zh-CN/settings.json": "Explain required scientific runtimes, unified user-managed storage, and Synon Go service guidance.",
     "packages/desktop/src/renderer/services/i18n/locales/zh-TW/settings.json": "Replace obsolete bun start deployment guidance with Synon Go service guidance.",
     "packages/desktop/src/renderer/services/onboardingService.ts": "Validate and persist the server-owned scientific-runtime selection without imposing client storage ceilings, while preserving exact Artifact and launch authority.",
     "packages/desktop/src/renderer/services/synonBiomedArtifactPreview.ts": "Route supported protein, complex, and ligand formats through the single composition-aware molecular preview authority.",
@@ -120,12 +120,13 @@ ALLOWED_ADAPTATIONS = {
 }
 
 ALLOWED_ADDITIONS = {
+    "packages/desktop/src/common/chat/largeToolResultReference.ts": "Validate immutable same-origin large-result references once for transcript summaries and lazy detail loading; previews never replace source evidence.",
+    "packages/desktop/src/renderer/styles/tokens.css": "Own the single canonical visual-primitive scale (space, radius, elevation, type, weight, stacking) that every renderer module references instead of restating literals.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryCard.tsx": "Render installed and draft skills with complete readable copy, declared-category icons and isolated keyboard actions.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillFilePreview.tsx": "Render original Markdown and source files through distinct safe read-only previews.",
     "packages/desktop/src/renderer/pages/settings/skills/skillSourceLabel.ts": "Share truthful localized source labels between library cards and detail views without claiming authorship.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillLibraryToolbar.tsx": "Provide one responsive search and research-field toolbar with accessible source/status refinement controls.",
     "packages/desktop/src/renderer/pages/settings/skills/SkillMarketModal.tsx": "Reuse the existing pinned-import market in a bounded dialog without resetting the installed library search or filters.",
-    "packages/desktop/src/common/chat/largeToolResultReference.ts": "Validate canonical immutable large-result descriptors for the existing lazy detail and source-count presentation without accepting arbitrary content URLs.",
     "packages/desktop/src/renderer/pages/settings/AppearanceSettings/presets/warm.css": "Keep the warm palette under its visual family name while retaining the original import record.",
     "packages/desktop/src/renderer/pages/settings/AppearanceSettings/presets/cool.css": "Keep the cool palette under its visual family name while retaining the original import record.",
     "packages/desktop/src/renderer/styles/workspace-theme.css": "Provide the shared visual shell under a product-neutral filename and CSS custom-property namespace.",
@@ -289,6 +290,7 @@ ALLOWED_ADDITION_RULES = (
 )
 
 ALLOWED_REMOVALS = {
+    "packages/desktop/src/renderer/components/synonBiomed/runtime/ContextUsageIndicator.tsx": "Retire the unused ACP-derived usage ring after the authenticated request-usage card became the single composer authority.",
     "packages/desktop/src/renderer/styles/codex-theme.css": "Rename the shared visual shell to workspace-theme.css while preserving its original import provenance.",
     "packages/desktop/src/renderer/pages/conversation/Messages/acp/MessageAcpToolCall.tsx": "Consolidate tool rendering into the receipt-bound ToolOperationDetail and tool timeline.",
     "packages/desktop/src/renderer/pages/conversation/Messages/components/MessagePlan.tsx": "Consolidate plan rendering into the shared SynonBiomedPlanTree.",
@@ -501,9 +503,9 @@ ALLOWED_ADAPTATION_RULES = (
     ),
 )
 
-APPROVED_ADAPTATION_FINGERPRINT = "78c91e40843babc8df09d428a55f6d60bec085a1508c79ee4e5372a0a93308a5"
-APPROVED_REMOVAL_FINGERPRINT = "5fef3be0a5509d2fb15cb2771a2752a473b003888a8250f68dd500c451f451d4"
-APPROVED_ADDITION_FINGERPRINT = "0a7675de0f8ee524a4509904f0f23b5a533fc68bf3e7b1f49bc83e97e4082f93"
+APPROVED_ADAPTATION_FINGERPRINT = "b4fc2906a5c5e8aef39974aaaa69a02ca105834b5436d61c26ec8572a3debc59"
+APPROVED_REMOVAL_FINGERPRINT = "70a676732efea3030080147fc7100096248f3fc0ce13b80256726d97fef98b5c"
+APPROVED_ADDITION_FINGERPRINT = "2be117d21972cdb19833e19f18835c0984334d11a39bbd59ebbb41fae5b739d4"
 
 MANUAL_LICENSES = {
     "@nightingale-elements/nightingale-msa": {

@@ -239,6 +239,8 @@ type Server struct {
 	backgroundServicesStarted             bool
 	scientificRuntimeWarmupMu             sync.RWMutex
 	scientificRuntimeWarmups              map[string]scientificRuntimeWarmupStatus
+	scientificRuntimeWarmupCancels        map[string]context.CancelFunc
+	scientificRuntimeWarmupCancelled      map[string]bool
 	scientificRuntimeWarmupWake           chan string
 	runtimeStartedAt                      time.Time
 	mcpDiscoverySlots                     chan struct{}
@@ -505,7 +507,7 @@ func New(options Options) *Server {
 	kernelManager := options.KernelManager
 	var kernelDiscoveryErr error
 	if kernelManager == nil && options.StartBackgroundServices {
-		kernelManager, kernelDiscoveryErr = kernelruntime.DiscoverManagerWithPaths(options.CondaHome, options.CondaEnvsPath, options.ConfigNetworkProxy)
+		kernelManager, kernelDiscoveryErr = kernelruntime.DiscoverManagerWithPathsAndProxy(options.CondaHome, options.CondaEnvsPath, options.ConfigNetworkProxy)
 	}
 	if providerOperationRunner == nil && kernelManager != nil {
 		providerOperationRunner = kernelManager
@@ -613,6 +615,8 @@ func New(options Options) *Server {
 		mcpApps:                               newMCPAppBroker(),
 		backgroundServicesStarted:             options.StartBackgroundServices,
 		scientificRuntimeWarmups:              map[string]scientificRuntimeWarmupStatus{},
+		scientificRuntimeWarmupCancels:        map[string]context.CancelFunc{},
+		scientificRuntimeWarmupCancelled:      map[string]bool{},
 		scientificRuntimeWarmupWake:           make(chan string, len(scientificRuntimeWarmupDefinitions())),
 		runtimeStartedAt:                      time.Now().UTC(),
 		mcpDiscoverySlots:                     processMCPDiscoverySlots,
@@ -936,6 +940,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/llm/providers", s.handleLLMProviders)
 	mux.HandleFunc("/api/llm/providers/", s.handleLLMProvider)
 	mux.HandleFunc("/api/llm/test", s.handleLLMProviderTest)
+	mux.HandleFunc("/api/llm/optimize-prompt", s.handleLLMPromptOptimize)
 	mux.HandleFunc("/api/mcp-servers", s.handleMCPServerCompatibility)
 	mux.HandleFunc("/api/mcp-servers/", s.handleMCPServerCompatibility)
 	mux.HandleFunc("/api/mcp-servers/connectors", s.handleMCPDirectory)

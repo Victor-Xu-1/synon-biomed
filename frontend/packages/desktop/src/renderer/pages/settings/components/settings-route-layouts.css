@@ -3,7 +3,7 @@
   height: 121px;
   min-height: 121px;
   padding: 16px 20px !important;
-  margin-bottom: 12px;
+  margin-bottom: var(--ui-space-5);
   border: 1px solid var(--settings-border) !important;
 }
 
@@ -26,14 +26,14 @@
   display: block;
   width: 58px;
   height: 58px;
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   object-fit: contain;
   user-select: none;
 }
 
 .settings-page-wrapper[data-settings-route='credentials'] .settings-section__body,
 .settings-page-wrapper[data-settings-route='storage'] .settings-section__body {
-  padding-top: 16px;
+  padding-top: var(--ui-space-6);
 }
 
 .settings-page-wrapper[data-settings-route='credentials'] [data-testid^='credential-provider-'],
@@ -46,7 +46,7 @@
 .settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > section,
 .settings-page-wrapper[data-settings-route='network'] [data-testid='synon-network-settings'] > details {
   margin-top: 0 !important;
-  padding: 24px !important;
+  padding: var(--settings-section-padding) !important;
   border: 1px solid var(--settings-border) !important;
   border-radius: var(--settings-card-radius) !important;
   background: var(--settings-surface) !important;
@@ -71,14 +71,14 @@
 
 .settings-page-wrapper[data-settings-route='network'] .network-section--allowed > :not(.network-section__artwork) {
   position: relative;
-  z-index: 1;
+  z-index: var(--ui-z-raise);
 }
 
 .settings-page-wrapper[data-settings-route='network'] .network-section__artwork {
   position: absolute;
   right: 18px;
   top: 58px;
-  z-index: 0;
+  z-index: var(--ui-z-base);
   width: min(280px, 38%);
   height: 190px;
   object-fit: contain;
@@ -147,7 +147,7 @@
   > .compute-section
   .settings-section__header {
   flex-direction: column;
-  gap: 12px;
+  gap: var(--ui-space-5);
 }
 
 .settings-page-wrapper[data-settings-route='compute']
@@ -161,7 +161,7 @@
   .compute-overview-grid
   > .compute-section
   .settings-section__title {
-  font-size: 18px !important;
+  font-size: var(--ui-font-lead) !important;
   line-height: 25px !important;
 }
 
@@ -169,7 +169,7 @@
   .compute-overview-grid
   > .compute-section
   .settings-section__description {
-  font-size: 13px !important;
+  font-size: var(--ui-font-body) !important;
   line-height: 20px !important;
 }
 
@@ -200,7 +200,7 @@
 
 .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section .settings-section__header {
   min-height: 48px;
-  padding: 20px 24px 0;
+  padding: var(--settings-section-padding) var(--settings-section-padding) 0;
 }
 
 .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section .settings-section__icon,
@@ -235,13 +235,13 @@
 }
 
 .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section--rates .settings-section__body {
-  padding-top: 8px;
-  padding-bottom: 12px;
+  padding-top: var(--ui-space-4);
+  padding-bottom: var(--ui-space-5);
 }
 
 .settings-page-wrapper[data-settings-route='plans-usage'] .plans-usage-section--billing .settings-section__body {
-  padding-top: 8px;
-  padding-bottom: 12px;
+  padding-top: var(--ui-space-4);
+  padding-bottom: var(--ui-space-5);
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3']
@@ -256,7 +256,7 @@
   grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
   align-items: center;
   gap: 18px 24px;
-  padding-top: 8px;
+  padding-top: var(--ui-space-4);
   padding-bottom: 0;
 }
 
@@ -264,7 +264,7 @@
   grid-row: 1 / span 2;
   align-self: stretch;
   min-height: 96px;
-  padding-right: 24px;
+  padding-right: var(--ui-space-7);
   border-right: 1px solid var(--settings-border);
 }
 
@@ -298,15 +298,15 @@
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-rates-grid {
-  padding-top: 4px;
-  padding-bottom: 8px;
+  padding-top: var(--ui-space-2);
+  padding-bottom: var(--ui-space-4);
   gap: 14px;
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-rates-grid > article {
   min-height: 132px;
   border: 1px solid var(--settings-border);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--settings-surface);
 }
 
@@ -314,7 +314,7 @@
   margin-inline: 0;
   margin-bottom: 0;
   border: 1px solid var(--settings-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: var(--settings-surface);
 }
 
@@ -322,15 +322,15 @@
   .plans-usage-section--billing
   .settings-section__body
   > div {
-  padding-top: 4px;
+  padding-top: var(--ui-space-2);
   padding-bottom: 0;
-  gap: 16px;
+  gap: var(--ui-space-6);
 }
 
 .settings-page-wrapper[data-settings-visual-system='scientific-connectors-v3'] .plans-usage-section--billing article {
   min-height: 150px;
   border: 1px solid var(--settings-border);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--settings-surface);
 }
 

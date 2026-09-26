@@ -49,7 +49,7 @@ vi.mock('@/renderer/services/synonBiomedWorkspaceSettings', () => ({
 import {
   classifyOnboardingLaunchFailure,
   createOnboardingProfileFile,
-  launchOnboardingTask,
+  stageOnboardingTask,
   loadOnboardingSnapshot,
   markOnboardingComplete,
   prepareOnboardingSuggestionArtifacts,
@@ -60,12 +60,35 @@ import {
 } from '@/renderer/services/onboardingService';
 import { BackendHttpError } from '@/common/adapter/httpBridge';
 
+// The staging contract writes the unsent first task into sessionStorage, which
+// does not exist in the node test project. Provide the minimal surface the
+// service and these assertions rely on.
+if (typeof globalThis.sessionStorage === 'undefined') {
+  const store = new Map<string, string>();
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    value: {
+      getItem: (key: string) => (store.has(key) ? (store.get(key) as string) : null),
+      setItem: (key: string, value: string) => {
+        store.set(key, String(value));
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+      clear: () => {
+        store.clear();
+      },
+    },
+    configurable: true,
+  });
+}
+
 const jsonResponse = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } });
 
 describe('onboarding service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     mocks.loadNetwork.mockResolvedValue({ groups: [], disabledGroups: [] });
     mocks.loadConnectors.mockResolvedValue([]);
     mocks.loadSkills.mockResolvedValue([]);
@@ -561,12 +584,12 @@ describe('onboarding service', () => {
       ],
     ]);
 
-    const result = await launchOnboardingTask(
+    const result = await stageOnboardingTask(
       {
         projectId: 'project-1',
+        projectName: 'Getting started',
         assistantId: 'synonbiomed:operon',
         assistantName: 'OPERON',
-        loadingId: 'onboarding-launch-1',
         task,
         profile: { summary: 'Cancer genomics researcher' },
         files: [file],
@@ -614,10 +637,16 @@ describe('onboarding service', () => {
         extra: expect.objectContaining({ backend: 'synonbiomed', project_id: 'project-1' }),
       })
     );
-    expect(mocks.sendMessage).toHaveBeenCalledWith({
+    // The first task is staged, never sent: the payload waits in sessionStorage
+    // for the conversation composer, and no message submission happens here.
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+    const draftPayload = JSON.parse(sessionStorage.getItem('acp_initial_message_conversation-1') ?? 'null') as Record<
+      string,
+      unknown
+    >;
+    expect(draftPayload).toMatchObject({
       input: task,
-      conversation_id: 'conversation-1',
-      files: [],
+      draft_only: true,
       artifact_refs: [
         {
           artifact_id: 'artifact-profile',
@@ -638,16 +667,12 @@ describe('onboarding service', () => {
           checksum: 'a'.repeat(64),
         },
       ],
-      message_context: 'onboarding_first_task',
-      loading_id: 'onboarding-launch-1',
-      session_options: {
-        ultra_mode: false,
-        verifier_mode: 'off',
-        memory_mode: 'off',
-        target_agent: 'OPERON',
-      },
+      session_options: { ultra_mode: false, verifier_mode: 'off', memory_mode: 'off', target_agent: 'OPERON' },
     });
-    expect(result).toEqual({ projectId: 'project-1', conversationId: 'conversation-1', turnId: 'turn-1' });
+    expect(
+      fetchImpl.mock.calls.some(([path]) => String(path) === '/api/preferences/first-run-onboarding/complete')
+    ).toBe(true);
+    expect(result).toEqual({ projectId: 'project-1', conversationId: 'conversation-1' });
     expect(fetchImpl.mock.calls.some(([path]) => String(path).includes('/api/artifacts/upload/'))).toBe(false);
   });
 
@@ -693,12 +718,11 @@ describe('onboarding service', () => {
     });
     mocks.updateProject.mockRejectedValueOnce(new Error('temporary project write failure')).mockResolvedValueOnce({});
     mocks.createConversation.mockResolvedValue({ id: 'conversation-retry' });
-    mocks.sendMessage.mockResolvedValue({ turn_id: 'turn-retry' });
     const input = {
       projectId: 'project-1',
+      projectName: 'Getting started',
       assistantId: 'synonbiomed:operon',
       assistantName: 'OPERON',
-      loadingId: 'onboarding-retry-1',
       task: 'Analyze the uploaded cohort',
       profile: { summary: '' },
       files: [file],
@@ -716,8 +740,8 @@ describe('onboarding service', () => {
       onArtifactUploaded: (uploadedFile: File, entry: OnboardingArtifactCacheEntry) => ledger.set(uploadedFile, entry),
     };
 
-    await expect(launchOnboardingTask(input, options)).rejects.toThrow('temporary project write failure');
-    await expect(launchOnboardingTask(input, options)).resolves.toMatchObject({ conversationId: 'conversation-retry' });
+    await expect(stageOnboardingTask(input, options)).rejects.toThrow('temporary project write failure');
+    await expect(stageOnboardingTask(input, options)).resolves.toMatchObject({ conversationId: 'conversation-retry' });
 
     expect(fetchImpl.mock.calls.filter(([path]) => String(path) === '/api/artifacts/upload/init')).toHaveLength(2);
     expect(fetchImpl.mock.calls.filter(([path]) => String(path) === '/api/artifacts/upload/chunk')).toHaveLength(2);
@@ -731,7 +755,7 @@ describe('onboarding service', () => {
     ).toHaveLength(1);
   });
 
-  it('reuses the created conversation and stable message identity after a lost send response', async () => {
+  it('reuses the created conversation after a lost completion response', async () => {
     const profileFile = new File(['# Onboarding profile\n'], 'onboarding-profile.md', { type: 'text/markdown' });
     const uploadedArtifacts = new Map<File, OnboardingArtifactCacheEntry>([
       [
@@ -750,9 +774,9 @@ describe('onboarding service', () => {
     ]);
     const input = {
       projectId: 'project-1',
+      projectName: 'Getting started',
       assistantId: 'synonbiomed:operon',
       assistantName: 'OPERON',
-      loadingId: 'onboarding-stable-send',
       task: 'Start the exact first task',
       profile: { summary: '' },
       files: [],
@@ -764,37 +788,40 @@ describe('onboarding service', () => {
         scientificRuntimeEnabled: {},
       },
     };
-    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse({ complete: true })));
     mocks.updateProject.mockResolvedValue({});
     mocks.createConversation.mockResolvedValue({ id: 'conversation-stable' });
-    mocks.sendMessage
-      .mockRejectedValueOnce(new TypeError('connection closed after commit'))
-      .mockResolvedValueOnce({ turn_id: 'turn-stable' });
+    // The lost response happens after conversation creation: only the
+    // completion call fails, so the retry must restage without recreating it.
+    const failingFetch = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      if (String(input) === '/api/preferences/first-run-onboarding/complete') {
+        return Promise.reject(new TypeError('connection closed after commit'));
+      }
+      return Promise.resolve(jsonResponse({ complete: true }));
+    });
+    const retryFetch = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse({ complete: true })));
     let conversationId = '';
 
     await expect(
-      launchOnboardingTask(input, {
-        fetchImpl,
+      stageOnboardingTask(input, {
+        fetchImpl: failingFetch,
         uploadedArtifacts,
         onConversationCreated: (id) => {
           conversationId = id;
         },
       })
     ).rejects.toThrow('connection closed after commit');
-    await expect(launchOnboardingTask(input, { fetchImpl, uploadedArtifacts, conversationId })).resolves.toMatchObject({
-      conversationId: 'conversation-stable',
-      turnId: 'turn-stable',
-    });
+    expect(conversationId).toBe('conversation-stable');
+    await expect(
+      stageOnboardingTask(input, { fetchImpl: retryFetch, uploadedArtifacts, conversationId })
+    ).resolves.toMatchObject({ conversationId: 'conversation-stable' });
 
     expect(mocks.createConversation).toHaveBeenCalledTimes(1);
-    expect(mocks.sendMessage).toHaveBeenCalledTimes(2);
-    for (const call of mocks.sendMessage.mock.calls) {
-      expect(call[0]).toMatchObject({
-        conversation_id: 'conversation-stable',
-        loading_id: 'onboarding-stable-send',
-        message_context: 'onboarding_first_task',
-      });
-    }
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+    // Both attempts restage the same unsent draft for the stable conversation.
+    const draftPayload = JSON.parse(
+      sessionStorage.getItem('acp_initial_message_conversation-stable') ?? 'null'
+    ) as Record<string, unknown>;
+    expect(draftPayload).toMatchObject({ input: 'Start the exact first task', draft_only: true });
   });
 
   it('marks first-run onboarding complete through the WebHost contract', async () => {

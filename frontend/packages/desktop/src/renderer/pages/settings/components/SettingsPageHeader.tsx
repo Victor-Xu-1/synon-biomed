@@ -12,9 +12,9 @@
  *   2. Tabs (optional): underline tabs with an optional count badge and a
  *      route-owned action slot on the same baseline.
  *
- * The v3 visual system intentionally collapses the repeated title/description
- * block while retaining the heading in the accessibility tree. Route-specific
- * actions and tabs remain in the visual flow.
+ * The v3 visual system keeps the title and description readable alongside
+ * route-specific actions and tabs. The account page uses its profile hero
+ * instead of this shared header.
  *
  * Pages own everything below the header (their list/content). This keeps the
  * title sizing, description, action placement, tab styling and responsive

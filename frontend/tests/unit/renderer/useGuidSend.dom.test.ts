@@ -391,6 +391,7 @@ describe('useGuidSend', () => {
         effort: 'high',
       },
       compute_providers: ['local', 'ssh:hpc-a'],
+      draft_only: true,
     });
   });
 

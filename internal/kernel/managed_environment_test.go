@@ -1388,14 +1388,16 @@ func TestManagedCondaUninstallDoesNotReceiveChannelArguments(t *testing.T) {
 }
 
 func TestManagedEnvironmentInstallerUsesConfiguredProxyWithoutLeakingItToRuntime(t *testing.T) {
-	t.Setenv("PATH", "/usr/bin:/bin:relative:/usr/bin")
+	hostBin := filepath.Join(t.TempDir(), "host-bin")
+	hostBinTwo := filepath.Join(t.TempDir(), "host-bin-two")
+	t.Setenv("PATH", strings.Join([]string{hostBin, hostBinTwo, "relative", hostBin}, string(os.PathListSeparator)))
 	t.Setenv("HTTPS_PROXY", "http://unselected.example.test:8080")
 	t.Setenv("NO_PROXY", "127.0.0.1,localhost")
 	t.Setenv("ALL_PROXY", strings.Repeat("x", 4097))
 	manager := NewManager(Config{
 		UpstreamProxy: "http://proxy.example.test:8080",
-		Micromamba:    "/opt/synon/micromamba", CondaHome: "/tmp/synon-conda",
-		CondaEnvsPath: "/tmp/synon-conda/envs",
+		Micromamba:    "/opt/synon/micromamba", CondaHome: filepath.Join(t.TempDir(), "synon-conda"),
+		CondaEnvsPath: filepath.Join(t.TempDir(), "synon-conda", "envs"),
 	})
 	installerEnv, err := manager.managedEnvironmentInstallerEnv()
 	if err != nil {
@@ -1421,16 +1423,17 @@ func TestManagedEnvironmentInstallerUsesConfiguredProxyWithoutLeakingItToRuntime
 	if !strings.Contains(installer, "KMP_AFFINITY=disabled") || !strings.Contains(installer, "OMP_PROC_BIND=false") {
 		t.Fatalf("installer did not disable unsupported CPU affinity: %q", installer)
 	}
-	runtimeEnvironment := strings.Join(managedEnvironmentRuntimeEnv("/tmp/env"), "\n")
+	prefix := filepath.Join(t.TempDir(), "env")
+	runtimeEnvironment := strings.Join(managedEnvironmentRuntimeEnv(prefix), "\n")
 	if strings.Contains(runtimeEnvironment, "HTTPS_PROXY=") || strings.Contains(runtimeEnvironment, "NO_PROXY=") {
 		t.Fatalf("runtime inherited installer proxy authority: %q", runtimeEnvironment)
 	}
-	installerRuntimeEnv, err := manager.managedEnvironmentInstallerRuntimeEnv("/tmp/env")
+	installerRuntimeEnv, err := manager.managedEnvironmentInstallerRuntimeEnv(prefix)
 	if err != nil {
 		t.Fatal(err)
 	}
 	installerRuntime := strings.Join(installerRuntimeEnv, "\n")
-	wantBuildPath := "PATH=/tmp/env/bin:/usr/bin:/bin"
+	wantBuildPath := "PATH=" + managedRuntimePath(prefix) + string(os.PathListSeparator) + hostBin + string(os.PathListSeparator) + hostBinTwo
 	if !strings.Contains(installerRuntime, wantBuildPath) {
 		t.Fatalf("installer build PATH=%q want %q", installerRuntime, wantBuildPath)
 	}

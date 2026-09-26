@@ -65,6 +65,7 @@ type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
 const PROVIDERS_PATH = '/api/llm/providers';
 const TEST_PATH = '/api/llm/test';
+const OPTIMIZE_PROMPT_PATH = '/api/llm/optimize-prompt';
 const MODELS_PATH = '/v1/models';
 
 const MODEL_EXAMPLES: Record<string, string[]> = {
@@ -249,6 +250,38 @@ export async function testSynonBiomedLlmProfile(
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ profileId }),
+    },
+    fetchImpl
+  );
+  const result = isRecord(payload.result) ? payload.result : {};
+  return {
+    text: stringValue(result.text),
+    model: stringValue(result.model),
+  };
+}
+
+export type SynonBiomedPromptOptimizeResult = {
+  text: string;
+  model: string;
+};
+
+export type SynonBiomedPromptOptimizeInput = {
+  text: string;
+  conversationId: string;
+  signal?: AbortSignal;
+};
+
+export async function optimizeSynonBiomedPrompt(
+  input: SynonBiomedPromptOptimizeInput,
+  fetchImpl: FetchLike = fetch
+): Promise<SynonBiomedPromptOptimizeResult> {
+  const payload = await requestJson<{ result?: unknown }>(
+    OPTIMIZE_PROMPT_PATH,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: input.text, conversationId: input.conversationId }),
+      signal: input.signal,
     },
     fetchImpl
   );

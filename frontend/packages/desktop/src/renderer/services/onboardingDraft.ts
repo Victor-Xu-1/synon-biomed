@@ -114,7 +114,7 @@ function boundedString(value: unknown): string | null {
 }
 
 function isStep(value: unknown): value is OnboardingStep {
-  return Number.isInteger(value) && typeof value === 'number' && value >= 0 && value <= 4;
+  return Number.isInteger(value) && typeof value === 'number' && value >= 0 && value <= 5;
 }
 
 function draftKey(ownerId: string): string | null {

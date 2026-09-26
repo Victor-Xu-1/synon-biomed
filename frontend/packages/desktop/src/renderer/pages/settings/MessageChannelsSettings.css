@@ -2,28 +2,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: var(--ui-space-5);
+  margin-bottom: var(--ui-space-5);
   padding: 10px 12px;
   border: 1px solid var(--workspace-border, var(--color-border-2));
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--workspace-subtle, var(--color-fill-1));
   color: var(--workspace-text-secondary, var(--color-text-2));
-  font-size: 12px;
+  font-size: var(--settings-meta-size);
   line-height: 18px;
 }
 
 .message-channels-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--ui-space-5);
 }
 
 .message-channel-card {
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--workspace-border, var(--color-border-2));
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--workspace-overlay-surface, var(--workspace-canvas, var(--color-fill-1)));
   box-shadow: none;
 }
@@ -45,7 +45,7 @@
   height: 38px;
   overflow: hidden;
   border: 1px solid var(--workspace-border, var(--color-border-2));
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: var(--workspace-subtle, var(--color-fill-2));
 }
 
@@ -63,15 +63,15 @@
 .message-channel-card__title {
   margin: 0;
   color: var(--workspace-text, var(--color-text-1));
-  font-size: 15px !important;
-  font-weight: 650;
+  font-size: var(--ui-font-title) !important;
+  font-weight: var(--ui-weight-semibold);
   line-height: 22px !important;
 }
 
 .message-channel-card__description {
   margin: 3px 0 0;
   color: var(--workspace-text-tertiary, var(--color-text-3));
-  font-size: 12px;
+  font-size: var(--settings-meta-size);
   line-height: 18px;
 }
 
@@ -83,17 +83,17 @@
   min-height: 24px;
   padding: 0 8px;
   border: 1px solid var(--workspace-border, var(--color-border-2));
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--workspace-text-tertiary, var(--color-text-3));
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--settings-meta-size);
+  line-height: var(--settings-meta-line);
   white-space: nowrap;
 }
 
 .message-channel-card__status::before {
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--workspace-text-tertiary, var(--color-text-3));
   content: '';
 }
@@ -138,7 +138,7 @@
   height: 176px;
   padding: 10px;
   border: 1px solid var(--workspace-border, #cbdfe5);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: #fff;
   box-shadow: none;
 }
@@ -157,7 +157,7 @@
   align-items: center;
   justify-content: center;
   color: var(--workspace-text-tertiary, var(--color-text-3));
-  font-size: 12px;
+  font-size: var(--settings-meta-size);
   line-height: 18px;
 }
 
@@ -168,10 +168,10 @@
   width: 44px;
   height: 44px;
   border: 1px solid color-mix(in srgb, #4d9c81 42%, var(--workspace-border, #cbdfe5));
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, #4d9c81 12%, transparent);
   color: #32765f;
-  font-size: 24px;
+  font-size: var(--ui-font-hero);
   line-height: 1;
 }
 
@@ -179,14 +179,14 @@
   min-height: 36px;
   max-width: 300px;
   color: var(--workspace-text-secondary, var(--color-text-2));
-  font-size: 12px;
+  font-size: var(--settings-meta-size);
   line-height: 18px;
 }
 
 .message-channel-card__error {
   max-width: 300px;
   color: var(--workspace-text, var(--color-text-1));
-  font-size: 12px;
+  font-size: var(--settings-meta-size);
   line-height: 18px;
 }
 
@@ -194,7 +194,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
   width: 100%;
 }
 
@@ -202,10 +202,10 @@
   min-height: 34px;
   padding: 0 13px;
   border: 1px solid var(--workspace-accent, #a9d7e5);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: var(--workspace-accent, #a9d7e5);
   color: var(--workspace-accent-contrast, #173b48);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
 }
 
@@ -213,10 +213,10 @@
   min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--workspace-border, var(--color-border-2));
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: var(--workspace-canvas, var(--color-fill-1));
   color: var(--workspace-text, var(--color-text-1));
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
 }
 
@@ -224,10 +224,10 @@
   min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--workspace-border, var(--color-border-2));
-  border-radius: 10px;
+  border-radius: var(--ui-radius-lg);
   background: var(--workspace-canvas, var(--color-fill-1));
   color: var(--workspace-text, var(--color-text-1));
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
 }
 
@@ -267,21 +267,30 @@ html body .settings-page-wrapper[data-settings-route='general'] .message-channel
   position: relative;
   height: 185px !important;
   min-height: 185px !important;
-  border-radius: 12px !important;
+  border-radius: var(--ui-radius-xl) !important;
 }
 
+/* The card is split in two halves, and the halves are stacked rather than laid
+   out side by side: this header is an absolutely positioned overlay covering
+   the full height of the left half, while the body is an absolutely positioned
+   layer underneath it. The action footer (scan, cancel, unpair) is positioned
+   inside that same left half, so the higher header would otherwise swallow
+   every pointer event aimed at those buttons — they stayed visible but were
+   impossible to click. Nothing inside the header is interactive, so it must be
+   removed from hit testing. */
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__header {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
-  z-index: 2;
+  z-index: var(--ui-z-layer);
   width: 50%;
   box-sizing: border-box;
   min-height: 0 !important;
   padding: 24px !important;
   border-right: 1px solid var(--settings-border, #dfe7ef);
   border-bottom: 0 !important;
+  pointer-events: none;
 }
 
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__logo {
@@ -298,7 +307,7 @@ html body .settings-page-wrapper[data-settings-route='general'] .message-channel
 }
 
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__title {
-  font-size: 18px !important;
+  font-size: var(--ui-font-lead) !important;
   line-height: 24px !important;
 }
 
@@ -314,14 +323,14 @@ html body .settings-page-wrapper[data-settings-route='general'] .message-channel
   border: 0 !important;
   background: transparent !important;
   padding: 0 !important;
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 20px;
 }
 
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__body {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: var(--ui-z-raise);
   min-height: 0 !important;
   height: auto !important;
   box-sizing: border-box;
@@ -341,13 +350,13 @@ html body .settings-page-wrapper[data-settings-route='general'] .message-channel
 
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__qr-frame {
   padding: 6px !important;
-  border-radius: 9px !important;
+  border-radius: var(--ui-radius-lg) !important;
 }
 
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__placeholder {
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: var(--ui-space-2);
   box-sizing: border-box;
   text-align: center;
 }
@@ -356,7 +365,7 @@ html body .settings-page-wrapper[data-settings-route='general'] .message-channel
 html body .settings-page-wrapper[data-settings-route='general'] .message-channel-card__error {
   max-width: 230px !important;
   min-height: 18px !important;
-  font-size: 12px !important;
+  font-size: var(--settings-meta-size) !important;
   line-height: 18px !important;
 }
 

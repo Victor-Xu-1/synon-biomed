@@ -3,6 +3,33 @@ import { expect, test } from './officialChromeTest';
 
 test.use({ viewport: { width: 1600, height: 775 } });
 
+test('can leave first-use onboarding and switch accounts', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/#\/login/);
+
+  const accountIdentity = randomUUID().replaceAll('-', '').slice(0, 12);
+  const accountEmail = `switch-${accountIdentity}@example.test`;
+  const accountPassword = `Switch-${accountIdentity}-A9!`;
+  await page.getByRole('button', { name: /Create new account|创建新账户/ }).click();
+  await page.locator('input[name="username"]').fill(`Switch ${accountIdentity}`);
+  await page.locator('input[name="email"]').fill(accountEmail);
+  await page.locator('input[name="password"]').fill(accountPassword);
+  await page.locator('button[type="submit"]').click();
+
+  await expect(page).toHaveURL(/#\/onboarding/);
+  await expect(page.getByTestId('onboarding-welcome')).toBeVisible();
+  await expect(page.getByTestId('onboarding-switch-account')).toBeEnabled();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await expect(page.getByTestId('onboarding-switch-account')).toBeInViewport();
+  await page.getByTestId('onboarding-switch-account').click();
+
+  await expect(page).toHaveURL(/#\/login/);
+  await expect(page.getByRole('textbox', { name: /Username|用户名/ })).toBeVisible();
+  const currentUser = await page.request.get('/api/auth/user');
+  expect(currentUser.status()).toBe(401);
+});
+
 test('fresh authenticated user completes accessible onboarding and enters a recoverable workspace', async ({
   page,
 }) => {
@@ -190,6 +217,10 @@ test('fresh authenticated user completes accessible onboarding and enters a reco
   await continueButton.click();
   const task = 'Summarize the uploaded cohort design without external model calls';
   await page.getByTestId('onboarding-task-custom').fill(task);
+  // The task step no longer launches: Continue moves to the optional model
+  // setup step, and finishing there stages the task as an unsent draft.
+  await continueButton.click();
+  await expect(page.getByTestId('onboarding-model')).toBeVisible();
   const launchOutcomePromise = Promise.race([
     page
       .waitForResponse((response) => {
@@ -205,7 +236,7 @@ test('fresh authenticated user completes accessible onboarding and enters a reco
         text: await page.getByTestId('onboarding-launch-error').innerText(),
       })),
   ]);
-  await page.getByTestId('onboarding-start').click();
+  await page.getByTestId('onboarding-finish').click();
 
   const launchOutcome = await launchOutcomePromise;
   if (launchOutcome.kind === 'launch-error') {
@@ -230,6 +261,15 @@ test('fresh authenticated user completes accessible onboarding and enters a reco
   expect(page.url()).toContain(`/conversation/${encodeURIComponent(conversationId)}`);
   const composer = page.getByRole('textbox', { name: /Send a message|发消息|输入你的问题/ });
   await expect(composer).toBeVisible();
+  // The staged task sits in the composer; the user starts it explicitly.
+  await expect(composer).toHaveValue(task);
+  const sendAccepted = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().includes(`/api/conversations/${encodeURIComponent(conversationId)}/messages`)
+  );
+  await page.getByTestId('sendbox-send-btn').click();
+  expect((await sendAccepted).status()).toBe(202);
 
   const persistedState = async () =>
     page.evaluate(

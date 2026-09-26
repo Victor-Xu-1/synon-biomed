@@ -8,7 +8,12 @@ import {
 import { User } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { BUILTIN_TAB_IDS } from './SettingsSider';
-import { navigateSettingsRoute, readSettingsRoute, subscribeToSettingsRoute } from '../settingsNavigation';
+import {
+  navigateSettingsRoute,
+  readSettingsRoute,
+  resolveSiderEntryId,
+  subscribeToSettingsRoute,
+} from '../settingsNavigation';
 import type { SettingsRouteId } from '../settingsRouteLoaders';
 import { getSettingsVisualContract, SETTINGS_VISUAL_SYSTEM_ID } from './settingsVisualContract';
 import { SettingsGeneratedNavIcon } from './SettingsGeneratedAsset';
@@ -30,23 +35,13 @@ type TranslateFn = (key: string) => string;
 
 export function getBuiltinSettingsNavItems(_isDesktop: boolean, t: TranslateFn): NavItem[] {
   const builtinMap: Record<(typeof BUILTIN_TAB_IDS)[number], NavItem> = {
+    // The four merged library routes (experts, skills, tools, environments)
+    // share one row, exactly like the desktop sider.
     experts: {
       id: 'experts',
-      label: t('settings.synonBiomedExperts'),
-      icon: <SettingsGeneratedNavIcon id='experts' />,
-      path: 'experts',
-    },
-    skills: {
-      id: 'skills',
-      label: t('settings.skills'),
-      icon: <SettingsGeneratedNavIcon id='skills' />,
-      path: 'skills',
-    },
-    tools: {
-      id: 'tools',
-      label: t('settings.tools'),
+      label: t('settings.scientificToolkit'),
       icon: <SettingsGeneratedNavIcon id='tools' />,
-      path: 'tools',
+      path: 'experts',
     },
     models: {
       id: 'models',
@@ -136,7 +131,7 @@ const SettingsPageWrapper: React.FC<SettingsPageWrapperProps> = ({ children, cla
             <div className='settings-mobile-nav-row'>
               <div className='settings-mobile-top-nav'>
                 {menuItems.map((item) => {
-                  const active = activeRoute === item.id;
+                  const active = resolveSiderEntryId(activeRoute) === item.id;
                   return (
                     <a
                       key={item.path}

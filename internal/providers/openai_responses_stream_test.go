@@ -111,4 +111,7 @@ func TestRuntimeModelClientOpenAIResponsesStreamsTextToolsAndUsage(t *testing.T)
 		audit.CacheReadTokens != 6 || audit.TotalTokens != 19 || audit.Error != "" {
 		t.Fatalf("audit = %#v", audit)
 	}
+	if response.Usage.InputTokens != 14 || response.Usage.OutputTokens != 5 || response.Usage.TotalTokens != 19 || response.Usage.CacheReadTokens != 6 {
+		t.Fatalf("stream response dropped request usage: %+v", response.Usage)
+	}
 }

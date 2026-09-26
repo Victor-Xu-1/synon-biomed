@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { ArrowCircleLeft, ArrowLeft, ArrowRight, ExpandLeft, ExpandRight, Search } from '@icon-park/react';
+import { ArrowCircleLeft, ArrowLeft, ArrowRight, ExpandLeft, ExpandRight, Search, Star } from '@icon-park/react';
+import { Tooltip } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -16,7 +17,7 @@ import {
 import type { WorkspaceStateDetail } from '@renderer/utils/workspace/workspaceEvents';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useNavigationHistory } from '@/renderer/hooks/context/NavigationHistoryContext';
-import { isElectronDesktop, isMacOS, isWindows } from '@/renderer/utils/platform';
+import { isElectronDesktop, isMacOS, isWindows, openExternalUrl } from '@/renderer/utils/platform';
 import { resolveWorkspaceToggleOwner } from '@/renderer/utils/workspace/workspaceToggleOwnership';
 import './titlebar.css';
 import ProjectCommandPalette from './ProjectCommandPalette';
@@ -54,6 +55,35 @@ const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size =
     <line x1='18' y1='10' x2='18' y2='38' />
   </svg>
 );
+
+const GITHUB_REPO_URL = 'https://github.com/Victor-Xu-1/synon-biomed';
+
+/**
+ * Star shortcut rendered right after the history-forward arrow: hovering
+ * explains the action and clicking sends the user to the GitHub repository
+ * where they can star it. (Starring on the user's behalf would require their
+ * GitHub credentials, which the app intentionally never touches, so we jump
+ * instead.) It uses the same @icon-park icon set, size and stroke width as
+ * the adjacent navigation arrows so the whole row stays optically uniform.
+ */
+const GitHubStarButton: React.FC<{ iconSize: number; iconStroke?: number }> = ({ iconSize, iconStroke }) => {
+  const { t } = useTranslation();
+  return (
+    <Tooltip content={t('common.starOnGitHub')} position='bottom'>
+      <button
+        type='button'
+        className='app-titlebar__button app-titlebar__button--nav synon-biomed-github-star'
+        data-testid='github-star-button'
+        aria-label={t('common.starOnGitHub')}
+        onClick={() => {
+          void openExternalUrl(GITHUB_REPO_URL);
+        }}
+      >
+        <Star theme='outline' size={iconSize} fill='currentColor' strokeWidth={iconStroke} />
+      </button>
+    </Tooltip>
+  );
+};
 
 const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const { t } = useTranslation();
@@ -317,6 +347,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
               >
                 <ArrowRight theme='outline' size={iconSize} fill='currentColor' strokeWidth={desktopIconStroke} />
               </button>
+              <GitHubStarButton iconSize={iconSize} iconStroke={desktopIconStroke} />
             </>
           )}
         </div>

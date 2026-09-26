@@ -565,7 +565,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		return "", fmt.Errorf("prepare selected skill runtime context: %w", err)
 	}
 	if executionPriority := runtimeSkillExecutionPriorityContext(selectedSkills); executionPriority != "" {
-		messages = appendRuntimeAgentPolicyContextMessage(messages, executionPriority)
+		messages = appendRuntimeAgentPolicyContextMessageWithSource(messages, executionPriority, agentruntime.ContextUsageSkills)
 	}
 	// Candidate discovery is prompt guidance, not evidence that a scientific
 	// operation was requested or executed. Bind a capability before provider
@@ -675,7 +675,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	}
 	skillDecisionConstraints := runtimeSkillCriticalConstraintsContext(selectedSkills)
 	if skillDecisionConstraints != "" {
-		messages = appendRuntimeTerminalPolicyContextMessage(messages, skillDecisionConstraints)
+		messages = appendRuntimeTerminalPolicyContextMessageWithSource(messages, skillDecisionConstraints, agentruntime.ContextUsageSkills)
 	}
 	if implementationAuthority := selectedImplementationAuthorityContext(run); implementationAuthority != "" {
 		messages = appendRuntimeTerminalPolicyContextMessage(messages, implementationAuthority)
@@ -735,7 +735,8 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	engine.Model = &sessionRunnerDynamicModelClient{
 		server: s, sessionID: session.ID, session: session, fallback: engine.Model,
 		fallbackModel: options.Model, role: "agent", audit: options.ModelAudit,
-		initial: initialModel, initialReady: initialReady,
+		contextUsage: newSessionContextUsageRecorder(s, session.ID, sessionRunnerAttempt(run), options),
+		initial:      initialModel, initialReady: initialReady,
 		initialSelection: options.modelSelection, initialRevision: options.modelSelectionRevision,
 		resolutionInput: providers.ResolutionInput{
 			Context:   ctx,

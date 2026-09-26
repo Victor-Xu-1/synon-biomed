@@ -6,7 +6,7 @@
   overflow: hidden;
   margin-top: 0;
   border: 1px solid color-mix(in srgb, var(--account-accent) 20%, var(--account-border));
-  border-radius: 12px;
+  border-radius: var(--ui-radius-xl);
   background: var(--account-panel);
   box-shadow: none;
 }
@@ -15,21 +15,21 @@
   content: '';
   position: absolute;
   inset: 0 auto 0 0;
-  z-index: -1;
+  z-index: var(--ui-z-below);
   width: 3px;
   background: var(--account-accent);
 }
 
 .account-profile-hero__identity {
   position: relative;
-  z-index: 2;
+  z-index: var(--ui-z-layer);
   box-sizing: border-box;
   width: 60%;
   min-height: 164px;
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 22px 24px 22px 22px;
+  gap: var(--ui-space-7);
+  padding: var(--settings-section-padding);
 }
 
 .account-profile-avatar-wrap {
@@ -47,12 +47,12 @@
   overflow: hidden;
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--account-accent) 28%, transparent);
-  border-radius: 50%;
+  border-radius: var(--ui-radius-circle);
   background: var(--account-accent);
   box-shadow: 0 0 0 4px var(--account-panel);
-  color: white;
-  font-size: 31px;
-  font-weight: 620;
+  color: var(--account-panel);
+  font-size: var(--ui-font-headline);
+  font-weight: var(--ui-weight-semibold);
   line-height: 1;
   cursor: pointer;
 }
@@ -90,9 +90,9 @@
   align-items: center;
   justify-content: center;
   border: 3px solid var(--account-panel);
-  border-radius: 50%;
+  border-radius: var(--ui-radius-circle);
   background: var(--account-accent-strong);
-  color: white;
+  color: var(--account-panel);
 }
 
 .account-profile-hero__copy {
@@ -103,8 +103,8 @@
   overflow: hidden;
   margin: 0;
   color: var(--account-text);
-  font-size: 23px;
-  font-weight: 650;
+  font-size: var(--ui-font-hero);
+  font-weight: var(--ui-weight-semibold);
   line-height: 31px;
   letter-spacing: -0.025em;
   text-overflow: ellipsis;
@@ -118,7 +118,7 @@
   gap: 7px;
   margin-top: 5px;
   color: var(--account-text-secondary);
-  font-size: 14px;
+  font-size: var(--ui-font-subtitle);
   line-height: 20px;
 }
 
@@ -129,22 +129,22 @@
 .account-local-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--ui-space-2);
   padding: 2px 7px;
   border: 1px solid color-mix(in srgb, var(--account-accent) 22%, var(--account-border));
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, var(--account-accent) 7%, var(--account-panel));
   color: var(--account-accent-strong);
-  font-size: 11px;
-  font-weight: 560;
-  line-height: 15px;
+  font-size: var(--settings-meta-size);
+  font-weight: var(--ui-weight-medium);
+  line-height: var(--settings-meta-line);
 }
 
 .account-profile-hero__privacy-copy {
   max-width: 360px;
   margin: 9px 0 0;
   color: var(--account-text-tertiary);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   line-height: 19px;
 }
 
@@ -152,7 +152,7 @@
   position: absolute;
   top: 50%;
   right: 166px;
-  z-index: 0;
+  z-index: var(--ui-z-base);
   width: min(42%, 430px);
   height: 136px;
   transform: translateY(-50%);
@@ -167,24 +167,24 @@
   position: absolute;
   top: 20px;
   right: 20px;
-  z-index: 3;
+  z-index: var(--ui-z-layer-top);
   width: 146px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .account-profile-action {
   min-height: 36px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
   padding: 0 10px;
   border: 1px solid var(--account-border);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
   background: var(--account-panel);
   color: var(--account-text-secondary);
-  font-size: 12px;
+  font-size: var(--settings-meta-size);
   line-height: 18px;
   text-align: left;
   cursor: pointer;
@@ -202,7 +202,7 @@
 }
 
 .account-profile-action--privacy {
-  margin-top: 4px;
+  margin-top: var(--ui-space-2);
   border-top-color: color-mix(in srgb, var(--account-border) 68%, transparent);
 }
 
@@ -212,7 +212,7 @@
 
 .account-profile-editor .arco-input-wrapper {
   width: min(300px, 100%);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-md);
 }
 
 .account-profile-editor__buttons {
@@ -225,7 +225,7 @@
 .account-profile-editor p {
   margin: 8px 0 0;
   color: var(--account-text-tertiary);
-  font-size: 11px;
+  font-size: var(--settings-meta-size);
   line-height: 16px;
 }
 
@@ -237,7 +237,7 @@
   .account-profile-hero__identity {
     width: 100%;
     min-height: 225px;
-    padding-right: 32px;
+    padding-right: var(--ui-space-8);
     padding-bottom: 76px;
   }
 

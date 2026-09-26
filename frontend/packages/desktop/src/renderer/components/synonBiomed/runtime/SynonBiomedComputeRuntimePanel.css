@@ -6,7 +6,7 @@
 .synon-compute-header-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  gap: var(--ui-space-5);
 }
 
 .synon-compute-header-metric {
@@ -22,14 +22,14 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  column-gap: 8px;
+  column-gap: var(--ui-space-4);
 }
 
 .synon-compute-meter {
   height: 4px;
   width: 100%;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--color-fill-3);
 }
 
@@ -46,7 +46,7 @@
 }
 
 .synon-compute-meter__kernel {
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: #4f75cf;
 }
 
@@ -59,19 +59,19 @@
   display: grid;
   grid-template-columns: 12px 7px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-4);
 }
 
 .synon-compute-running-dots {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--ui-space-1);
 }
 
 .synon-compute-running-dots span {
   width: 3px;
   height: 3px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: currentcolor;
 }
 
@@ -88,7 +88,7 @@
   height: 7px;
   flex-shrink: 0;
   border: 1px solid var(--color-text-3);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
 }
 
 .synon-compute-kernel-row {
@@ -103,7 +103,7 @@
   width: 92px;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: var(--ui-space-1);
 }
 
 .synon-compute-sparkline {
@@ -133,7 +133,7 @@
   overflow: hidden;
   animation: synon-compute-drawer-in 180ms ease-out both;
   border-top: 1px solid color-mix(in srgb, var(--color-border-2) 35%, transparent);
-  padding: 12px;
+  padding: var(--ui-space-5);
 }
 
 .synon-compute-session-stop-drawer {

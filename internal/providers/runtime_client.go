@@ -387,15 +387,8 @@ func (c *runtimeModelClient) completeJSON(ctx context.Context, attempt int, endp
 		c.emitAudit(record)
 		return agentruntime.ModelResponse{}, false, err
 	}
-	decoded.RequestID = record.RequestID
-	decoded.Model = firstNonEmpty(decoded.Model, c.profile.Model)
-	decoded.Usage = agentruntime.ModelUsage{
-		InputTokens: usage.PromptTokens, OutputTokens: usage.CompletionTokens,
-		CacheReadTokens: usage.CacheReadTokens, CacheWriteTokens: usage.CacheWriteTokens,
-		TotalTokens: usage.TotalTokens,
-	}
 	c.emitAudit(record)
-	return decoded, false, nil
+	return c.responseWithUsage(decoded, record), false, nil
 }
 
 func (c *runtimeModelClient) applyHeaders(request *http.Request, headers map[string]string) {

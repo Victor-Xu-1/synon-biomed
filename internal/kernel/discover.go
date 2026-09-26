@@ -80,8 +80,20 @@ func discoveryFailure(stage DiscoveryStage, err error) error {
 	return &DiscoveryError{Stage: stage, Err: err}
 }
 
-func DiscoverManagerWithPaths(condaHome, condaEnvsPath, upstreamProxy string) (*Manager, error) {
-	upstreamProxy, err := networktls.NormalizeProxyURL(upstreamProxy)
+func DiscoverManager() (*Manager, error) {
+	return DiscoverManagerWithPathsAndProxy(
+		os.Getenv("SYNON_CONDA_HOME"), os.Getenv("SYNON_CONDA_ENVS_PATH"), os.Getenv("SYNON_NETWORK_PROXY"),
+	)
+}
+
+func DiscoverManagerWithPaths(condaHome, condaEnvsPath string) (*Manager, error) {
+	return DiscoverManagerWithPathsAndProxy(condaHome, condaEnvsPath, "")
+}
+
+// DiscoverManagerWithPathsAndProxy keeps the normalized product proxy scoped
+// to installer processes while preserving the legacy two-path entrypoint.
+func DiscoverManagerWithPathsAndProxy(condaHome, condaEnvsPath, installerProxy string) (*Manager, error) {
+	installerProxy, err := networktls.NormalizeProxyURL(installerProxy)
 	if err != nil {
 		return nil, fmt.Errorf("kernel installer network route: %w", err)
 	}
@@ -90,27 +102,28 @@ func DiscoverManagerWithPaths(condaHome, condaEnvsPath, upstreamProxy string) (*
 		return nil, discoveryFailure(DiscoveryStageAssetRoot, err)
 	}
 	python := strings.TrimSpace(os.Getenv("SYNON_KERNEL_PYTHON"))
-	if python == "" {
-		for _, candidate := range []string{"python3", "python"} {
-			if path, lookupErr := exec.LookPath(candidate); lookupErr == nil {
-				python = path
-				break
-			}
-		}
-	}
 	if python != "" {
 		python, err = absoluteExecutable(python)
 		if err != nil {
 			return nil, discoveryFailure(DiscoveryStagePython, fmt.Errorf("resolve kernel Python: %w", err))
 		}
+	} else {
+		// System Python is optional when the verified managed runtime owns the
+		// scientific interpreter. On Windows, app-execution aliases may appear
+		// on PATH but are not launchable regular files; skip them without
+		// preventing bundled Python/R discovery.
+		for _, candidate := range []string{"python3", "python"} {
+			if path, lookupErr := exec.LookPath(candidate); lookupErr == nil {
+				if verified, verifyErr := absoluteExecutable(path); verifyErr == nil {
+					python = verified
+					break
+				}
+			}
+		}
 	}
 	condaHome = strings.TrimSpace(condaHome)
 	if condaHome == "" {
-		if home := strings.TrimSpace(os.Getenv("SYNON_HOME")); home != "" {
-			condaHome = filepath.Join(home, "conda")
-		} else if home, homeErr := os.UserHomeDir(); homeErr == nil {
-			condaHome = filepath.Join(home, ".synon-go", "conda")
-		}
+		condaHome = filepath.Join(managedRuntimeStateHome(), "conda")
 	}
 	if condaHome != "" {
 		condaHome, err = filepath.Abs(condaHome)
@@ -132,17 +145,25 @@ func DiscoverManagerWithPaths(condaHome, condaEnvsPath, upstreamProxy string) (*
 	if err != nil {
 		return nil, discoveryFailure(DiscoveryStageMicromamba, err)
 	}
+	runtimeCatalog, err := discoverRuntimeCatalog(assetRoot)
+	if err != nil {
+		return nil, discoveryFailure(DiscoveryStageAssets, err)
+	}
+	sharedRPackages := []string(nil)
+	if runtime.GOOS == "linux" {
+		sharedRPackages = []string{"tidyverse", "jsonlite", "ggplot2"}
+	}
 	manager := NewManager(Config{
-		UpstreamProxy: upstreamProxy,
-		Python:        python, Micromamba: micromamba, CondaHome: condaHome, CondaEnvsPath: condaEnvsPath,
-		AssetRoot: assetRoot, ManifestPath: filepath.Join(assetRoot, "kernel-compute.manifest.json"),
+		Python: python, Micromamba: micromamba, CondaHome: condaHome, CondaEnvsPath: condaEnvsPath,
+		UpstreamProxy: installerProxy,
+		AssetRoot:     assetRoot, ManifestPath: filepath.Join(assetRoot, "kernel-compute.manifest.json"),
 		WorkerPath:               filepath.Join(assetRoot, "kernels", "kernel_worker.py"),
-		CondaRuntimeCatalog:      filepath.Join(assetRoot, "conda-runtimes", "manifest.json"),
+		CondaRuntimeCatalog:      runtimeCatalog,
 		ManagedPythonEnvironment: defaultManagedPythonEnvironment,
 		PythonHelperPath:         filepath.Join(assetRoot, "kernels", "cheminfo_render_helpers.py"),
 		SDFValidatorPath:         filepath.Join(assetRoot, "kernels", "sdf_artifact_validator.py"),
-		RWorkerPath:              filepath.Join(assetRoot, "kernels", "kernel_worker.R"), DefaultREnv: "r",
-		RSharedPackages: []string{"tidyverse", "jsonlite", "ggplot2"},
+		RWorkerPath:              filepath.Join(assetRoot, "kernels", "kernel_worker.R"), DefaultREnv: defaultManagedREnvironment,
+		RSharedPackages: sharedRPackages,
 	})
 	if err := manager.Verify(); err != nil {
 		return nil, discoveryFailure(DiscoveryStageAssets, err)
@@ -158,21 +179,34 @@ func discoverMicromamba(assetRoot string) (string, error) {
 		}
 		return path, nil
 	}
-	platform := runtime.GOOS + "-" + runtime.GOARCH
-	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
-		platform = "linux-x86_64"
+	platform, err := managedRuntimePlatformForCurrentHost()
+	if err != nil {
+		return "", err
 	}
 	bundledRoot := filepath.Join(assetRoot, "micromamba")
-	bundled := filepath.Join(bundledRoot, platform, executableName("micromamba"))
+	platformRoot := filepath.Join(bundledRoot, platform.ID)
+	bundled := filepath.Join(platformRoot, executableName("micromamba"))
 	if info, err := os.Stat(bundled); err == nil && info.Mode().IsRegular() {
-		manifest, loadErr := assets.Load(filepath.Join(bundledRoot, "manifest.json"))
+		manifestPath := filepath.Join(platformRoot, "manifest.json")
+		verifyRoot := platformRoot
+		if _, manifestErr := os.Stat(manifestPath); errors.Is(manifestErr, os.ErrNotExist) && platform.ID == "linux-x86_64" {
+			// Preserve the v0.1.2 Linux bundle layout while newer platform
+			// bundles keep their manifest next to the native executable.
+			manifestPath = filepath.Join(bundledRoot, "manifest.json")
+			verifyRoot = bundledRoot
+		}
+		manifest, loadErr := assets.Load(manifestPath)
 		if loadErr != nil {
 			return "", fmt.Errorf("load bundled micromamba manifest: %w", loadErr)
 		}
-		if manifest.Entrypoint != filepath.ToSlash(filepath.Join(platform, executableName("micromamba"))) {
+		expectedEntrypoint := filepath.ToSlash(filepath.Join(platform.ID, executableName("micromamba")))
+		if verifyRoot == platformRoot {
+			expectedEntrypoint = executableName("micromamba")
+		}
+		if manifest.Entrypoint != expectedEntrypoint {
 			return "", errors.New("bundled micromamba manifest does not match this platform")
 		}
-		if _, verifyErr := assets.Verify(bundledRoot, manifest); verifyErr != nil {
+		if _, verifyErr := assets.Verify(verifyRoot, manifest); verifyErr != nil {
 			return "", fmt.Errorf("verify bundled micromamba: %w", verifyErr)
 		}
 		return absoluteExecutable(bundled)
@@ -181,6 +215,30 @@ func discoverMicromamba(assetRoot string) (string, error) {
 		return absoluteExecutable(path)
 	}
 	return "", nil
+}
+
+func discoverRuntimeCatalog(assetRoot string) (string, error) {
+	if configured := strings.TrimSpace(os.Getenv("SYNON_CONDA_RUNTIME_CATALOG")); configured != "" {
+		resolved, err := filepath.Abs(configured)
+		if err != nil {
+			return "", fmt.Errorf("resolve configured runtime catalog: %w", err)
+		}
+		return resolved, nil
+	}
+	platform, err := managedRuntimePlatformForCurrentHost()
+	if err != nil {
+		return "", err
+	}
+	root := filepath.Join(assetRoot, "conda-runtimes")
+	platformCatalog := filepath.Join(root, platform.ID, "manifest.json")
+	if info, statErr := os.Stat(platformCatalog); statErr == nil && info.Mode().IsRegular() {
+		return platformCatalog, nil
+	}
+	legacyCatalog := filepath.Join(root, "manifest.json")
+	if info, statErr := os.Stat(legacyCatalog); statErr == nil && info.Mode().IsRegular() {
+		return legacyCatalog, nil
+	}
+	return platformCatalog, nil
 }
 
 func absoluteExecutable(value string) (string, error) {

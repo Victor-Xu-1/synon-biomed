@@ -31,17 +31,8 @@
   padding-left: clamp(24px, 3.1vw, 46px);
   background: var(--settings-canvas);
   color: var(--settings-text);
-  font-family:
-    Inter,
-    'SF Pro Text',
-    'PingFang SC',
-    'Microsoft YaHei',
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
-  font-size: 14px;
+  font-family: var(--conversation-font-sans);
+  font-size: var(--ui-font-subtitle);
   line-height: 1.5;
   scrollbar-gutter: stable;
   -webkit-font-smoothing: antialiased;
@@ -99,7 +90,7 @@ html body .settings-page-wrapper[data-settings-visual-system='scientific-connect
 /* The existing, resizable product sider remains authoritative. These rules
    only align its settings navigation with the approved visual language. */
 .settings-sider {
-  gap: 2px;
+  gap: var(--ui-space-1);
   padding: 10px 8px 18px;
   scrollbar-width: thin;
 }
@@ -109,15 +100,15 @@ html body .settings-sider__group-header {
   margin-top: 10px !important;
   padding-inline: 10px !important;
   color: var(--workspace-text-tertiary, var(--color-text-3));
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  font-size: var(--settings-meta-size) !important;
+  font-weight: var(--ui-weight-semibold) !important;
   line-height: 18px !important;
   letter-spacing: 0.01em;
 }
 
 html body .settings-sider__item {
   min-height: 40px;
-  border-radius: 8px !important;
+  border-radius: var(--ui-radius-md) !important;
   color: var(--workspace-text-secondary, var(--color-text-2));
 }
 
@@ -137,20 +128,20 @@ html body .settings-sider__item[aria-current='page']::before {
   bottom: 8px;
   left: 0;
   width: 2px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--settings-accent);
   content: '';
 }
 
 html body .settings-sider__item-label {
-  font-size: 14px !important;
+  font-size: var(--ui-font-subtitle) !important;
   line-height: 24px !important;
-  font-weight: 500 !important;
+  font-weight: var(--ui-weight-medium) !important;
 }
 
 html body .settings-sider__item[aria-current='page'] .settings-sider__item-label {
   color: var(--settings-text);
-  font-weight: 600 !important;
+  font-weight: var(--ui-weight-semibold) !important;
 }
 
 .settings-sider__item-icon {
@@ -252,7 +243,7 @@ html body .settings-sider__item[aria-current='page'] .settings-sider__item-label
   }
 
   .settings-page-content {
-    padding-top: 32px;
+    padding-top: var(--ui-space-8);
   }
 }
 
@@ -268,15 +259,15 @@ html body .settings-sider__item[aria-current='page'] .settings-sider__item-label
   .settings-mobile-nav-row {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: var(--ui-space-4);
+    margin-bottom: var(--ui-space-5);
   }
 
   .settings-mobile-top-nav {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
-    gap: 8px;
+    gap: var(--ui-space-4);
     overflow-x: auto;
     overflow-y: hidden;
     padding-bottom: 10px;
@@ -292,14 +283,14 @@ html body .settings-sider__item[aria-current='page'] .settings-sider__item-label
     display: inline-flex;
     flex: 0 0 auto;
     align-items: center;
-    gap: 6px;
+    gap: var(--ui-space-3);
     height: 36px;
     padding: 0 12px;
     border: 1px solid var(--settings-border);
-    border-radius: 999px;
+    border-radius: var(--ui-radius-pill);
     background: var(--settings-surface);
     color: var(--settings-text-secondary);
-    font-size: 13px;
+    font-size: var(--ui-font-body);
     line-height: 20px;
   }
 
@@ -328,7 +319,7 @@ html body .settings-sider__item[aria-current='page'] .settings-sider__item-label
 
   .settings-mobile-top-nav__label {
     white-space: nowrap;
-    font-weight: 550;
+    font-weight: var(--ui-weight-medium);
   }
 
   .settings-mobile-account-button {
@@ -336,7 +327,7 @@ html body .settings-sider__item[aria-current='page'] .settings-sider__item-label
     height: 36px;
     flex: 0 0 36px;
     border: 1px solid var(--settings-border);
-    border-radius: 50%;
+    border-radius: var(--ui-radius-circle);
     background: var(--settings-surface);
     color: var(--settings-text);
   }

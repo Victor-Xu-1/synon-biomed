@@ -1,8 +1,8 @@
 import type { OnboardingSnapshot } from '@/renderer/services/onboardingService';
 
-export const ONBOARDING_STEP_COUNT = 5;
+export const ONBOARDING_STEP_COUNT = 6;
 
-export type OnboardingStep = 0 | 1 | 2 | 3 | 4;
+export type OnboardingStep = 0 | 1 | 2 | 3 | 4 | 5;
 
 export function nextOnboardingStep(step: OnboardingStep): OnboardingStep {
   return Math.min(step + 1, ONBOARDING_STEP_COUNT - 1) as OnboardingStep;

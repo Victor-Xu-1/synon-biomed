@@ -26,6 +26,12 @@
         "assets/optional/micromamba/collect-build-notices.py",
         "assets/optional/micromamba/link-script-exit.patch",
         "assets/optional/micromamba/linux-x86_64/micromamba",
+        "assets/optional/micromamba/windows-x86_64/micromamba.exe",
+        "assets/optional/micromamba/windows-x86_64/manifest.json",
+        "assets/optional/micromamba/darwin-x86_64/micromamba",
+        "assets/optional/micromamba/darwin-x86_64/manifest.json",
+        "assets/optional/micromamba/darwin-arm64/micromamba",
+        "assets/optional/micromamba/darwin-arm64/manifest.json",
         "assets/optional/micromamba/manifest.json"
       ],
       "packages": [

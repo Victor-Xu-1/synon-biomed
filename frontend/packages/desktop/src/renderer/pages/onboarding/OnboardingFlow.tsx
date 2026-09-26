@@ -2,7 +2,7 @@ import {
   classifyOnboardingLaunchFailure,
   createOnboardingProfileFile,
   ensureOnboardingProject,
-  launchOnboardingTask,
+  stageOnboardingTask,
   loadOnboardingSnapshot,
   prepareOnboardingSuggestionArtifacts,
   saveOnboardingCapabilities,
@@ -26,13 +26,14 @@ import { confirmOnboardingCompletion } from '@/renderer/services/onboardingCompl
 import { useAuth } from '@/renderer/hooks/context/AuthContext';
 import { rememberCurrentAuthRoute } from '@/renderer/services/authSession';
 import { Alert, Button, Input, Spin, Switch } from '@arco-design/web-react';
-import { ArrowLeft, ArrowRight, Brain, Check, Link, NetworkTree, Tool } from '@icon-park/react';
+import { ArrowLeft, ArrowRight, Brain, Check, Config, Link, NetworkTree, Tool } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { uuid } from '@/common/utils/utils';
 import OnboardingDropZone from './OnboardingDropZone';
 import OnboardingElicitCard from './OnboardingElicitCard';
+import OnboardingModelSetup from './OnboardingModelSetup';
 import {
   disabledNetworkGroupIds,
   initialEnabledState,
@@ -51,7 +52,7 @@ type CapabilityTab = 'connectors' | 'skills' | 'runtimes';
 const OnboardingFlow: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, refresh, clearAuthCache } = useAuth();
+  const { user, refresh, clearAuthCache, logout } = useAuth();
   const fallbackTaskOptions = useMemo<OnboardingTaskSuggestion[]>(
     () => [
       {
@@ -86,6 +87,7 @@ const OnboardingFlow: React.FC = () => {
   const [suggestionView, setSuggestionView] = useState<'fallback' | 'loading' | 'agent'>('fallback');
   const [suggestionRetryGeneration, setSuggestionRetryGeneration] = useState(0);
   const [launching, setLaunching] = useState(false);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const [launchError, setLaunchError] = useState<ReturnType<typeof classifyOnboardingLaunchFailure> | null>(null);
   const [activeCapabilityTab, setActiveCapabilityTab] = useState<CapabilityTab>('connectors');
   const [capabilityQuery, setCapabilityQuery] = useState('');
@@ -107,7 +109,7 @@ const OnboardingFlow: React.FC = () => {
   const launchArtifacts = useRef(new Map<File, OnboardingArtifactCacheEntry>());
   const pendingUploads = useRef(new Map<File, OnboardingPendingUpload>());
   const profileDocument = useRef<{ signature: string; file: File } | null>(null);
-  const launchIdentity = useRef<{ signature: string; loadingId: string; conversationId: string | null } | null>(null);
+  const launchIdentity = useRef<{ signature: string; conversationId: string | null } | null>(null);
   const currentOwner = useRef<string | null>(null);
   const loadedDraftOwner = useRef<string | null>(null);
   const capabilityStep = useRef<HTMLDivElement | null>(null);
@@ -169,14 +171,18 @@ const OnboardingFlow: React.FC = () => {
           (skill) => allowedSkills.has(skill.name) && skill.enabled
         );
         const defaultScientificRuntimes = Object.fromEntries(
-          next.scientificRuntimes.map((runtime) => [runtime.id, runtime.selected])
+          next.scientificRuntimes.map((runtime) => [runtime.id, runtime.required || runtime.selected])
         );
         const draft = ownerId ? loadOnboardingDraft(ownerId) : null;
         setSnapshot(next);
         setNetworkEnabled(mergeSelection(defaultNetwork, draft?.networkEnabled));
         setConnectorEnabled(mergeSelection(defaultConnectors, draft?.connectorEnabled, allowedConnectors));
         setSkillEnabled(mergeSelection(defaultSkills, draft?.skillEnabled, allowedSkills));
-        setScientificRuntimeEnabled(mergeSelection(defaultScientificRuntimes, draft?.scientificRuntimeEnabled));
+        const restoredScientificRuntimes = mergeSelection(defaultScientificRuntimes, draft?.scientificRuntimeEnabled);
+        for (const runtime of next.scientificRuntimes) {
+          if (runtime.required) restoredScientificRuntimes[runtime.id] = true;
+        }
+        setScientificRuntimeEnabled(restoredScientificRuntimes);
         setStep(draft?.step ?? 0);
         setProfileSummary(draft?.profileSummary ?? '');
         setSelectedTask(draft?.selectedTask ?? '');
@@ -513,6 +519,7 @@ const OnboardingFlow: React.FC = () => {
       'guid.onboarding.capabilities.title',
       'guid.onboarding.profile.title',
       'guid.onboarding.task.title',
+      'guid.onboarding.model.title',
     ][step]
   );
 
@@ -527,13 +534,54 @@ const OnboardingFlow: React.FC = () => {
     window.history.back();
   };
 
+  const switchAccount = useCallback(async () => {
+    if (switchingAccount) return;
+
+    loadGeneration.current += 1;
+    launchGeneration.current += 1;
+    launchAbort.current?.abort('onboarding_account_switch');
+    launchAbort.current = null;
+    suggestionGeneration.current += 1;
+    suggestionAbort.current?.abort('onboarding_account_switch');
+    suggestionAbort.current = null;
+    const retiredSuggestionFrame = suggestionFrameId.current;
+    suggestionFrameId.current = null;
+    suggestionSession.current = null;
+    suggestionSignature.current = null;
+    suggestionAutoDispatched.current = false;
+    suggestionViewRef.current = 'fallback';
+    suggestionTaskStepActive.current = false;
+    if (retiredSuggestionFrame) {
+      void cancelOnboardingSuggestionFrame(retiredSuggestionFrame).catch(() =>
+        console.error('[OnboardingFlow] onboarding_suggestion_cleanup_failed')
+      );
+    }
+    launchArtifacts.current.clear();
+    pendingUploads.current.clear();
+    profileDocument.current = null;
+    launchIdentity.current = null;
+    setLaunchError(null);
+    setLaunching(false);
+    setSwitchingAccount(true);
+    try {
+      await logout();
+      void navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('[OnboardingFlow] account_switch_failed', error);
+      setSwitchingAccount(false);
+    }
+  }, [logout, navigate, switchingAccount]);
+
   if (loadError) {
     return (
       <main className={styles.root} data-testid='onboarding-load-error'>
-        <Alert type='error' title={t('guid.onboarding.error.loadTitle')} content={loadError} />
-        <Button type='primary' onClick={load}>
-          {t('common.retry')}
-        </Button>
+        <OnboardingHeader user={user} switchingAccount={switchingAccount} onSwitchAccount={switchAccount} t={t} />
+        <div className={styles.state}>
+          <Alert type='error' title={t('guid.onboarding.error.loadTitle')} content={loadError} />
+          <Button type='primary' onClick={load}>
+            {t('common.retry')}
+          </Button>
+        </div>
       </main>
     );
   }
@@ -541,7 +589,10 @@ const OnboardingFlow: React.FC = () => {
   if (!snapshot) {
     return (
       <main className={styles.root} data-testid='onboarding-loading' aria-busy='true'>
-        <Spin size={28} />
+        <OnboardingHeader user={user} switchingAccount={switchingAccount} onSwitchAccount={switchAccount} t={t} />
+        <div className={styles.state}>
+          <Spin size={28} />
+        </div>
       </main>
     );
   }
@@ -553,9 +604,9 @@ const OnboardingFlow: React.FC = () => {
     scientificRuntimeEnabled,
   };
 
-  const launch = async () => {
+  const finish = async () => {
     const ownerId = currentOwner.current;
-    if (!finalTask || !ownerId || launching) return;
+    if (!ownerId || launching) return;
     const generation = launchGeneration.current + 1;
     launchGeneration.current = generation;
     launchAbort.current?.abort();
@@ -575,7 +626,7 @@ const OnboardingFlow: React.FC = () => {
     try {
       const activeSuggestion = suggestionSession.current;
       const activeSuggestionFrame = suggestionFrameId.current;
-      if (activeSuggestion && suggestionViewRef.current === 'agent' && selectedTask === finalTask) {
+      if (finalTask && activeSuggestion && suggestionViewRef.current === 'agent' && selectedTask === finalTask) {
         await resolveOnboardingTaskSuggestion(activeSuggestion, finalTask, { fetchImpl, signal: controller.signal });
       } else if (activeSuggestionFrame) {
         await cancelOnboardingSuggestionFrame(activeSuggestionFrame, { fetchImpl, signal: controller.signal });
@@ -610,7 +661,6 @@ const OnboardingFlow: React.FC = () => {
         ownerId,
         projectId: project.projectId,
         assistantId: snapshot.assistantId,
-        assistantName: snapshot.assistantName,
         task: finalTask,
         profileSignature,
         files: files.map((file) => ({
@@ -621,14 +671,14 @@ const OnboardingFlow: React.FC = () => {
         })),
       });
       if (launchIdentity.current?.signature !== launchSignature) {
-        launchIdentity.current = { signature: launchSignature, loadingId: uuid(36), conversationId: null };
+        launchIdentity.current = { signature: launchSignature, conversationId: null };
       }
-      const result = await launchOnboardingTask(
+      const result = await stageOnboardingTask(
         {
           projectId: project.projectId,
+          projectName: project.name,
           assistantId: snapshot.assistantId ?? '',
           assistantName: snapshot.assistantName ?? '',
-          loadingId: launchIdentity.current.loadingId,
           task: finalTask,
           profile: { summary: profileSummary },
           files,
@@ -661,7 +711,11 @@ const OnboardingFlow: React.FC = () => {
       pendingUploads.current.clear();
       profileDocument.current = null;
       launchIdentity.current = null;
-      void navigate(`/conversation/${encodeURIComponent(result.conversationId)}`, { replace: true });
+      if (result.conversationId) {
+        void navigate(`/conversation/${encodeURIComponent(result.conversationId)}`, { replace: true });
+      } else {
+        void navigate('/guid', { replace: true });
+      }
     } catch (error) {
       if (!authorityCurrent()) return;
       const failure = classifyOnboardingLaunchFailure(error);
@@ -686,10 +740,7 @@ const OnboardingFlow: React.FC = () => {
 
   return (
     <main className={styles.root} data-testid='onboarding-flow'>
-      <header className={styles.header}>
-        <img src={PRODUCT_ICON} alt='' aria-hidden='true' className={styles.brandMark} />
-        <span>{t('guid.onboarding.brand')}</span>
-      </header>
+      <OnboardingHeader user={user} switchingAccount={switchingAccount} onSwitchAccount={switchAccount} t={t} />
       <section className={styles.flow} aria-live='polite'>
         <div
           className={styles.progress}
@@ -933,17 +984,29 @@ const OnboardingFlow: React.FC = () => {
                 setCustomTask(value);
               }}
             />
-            {launchError && (
-              <div className={styles.launchError}>
-                <Alert
-                  type='error'
-                  content={t(`guid.onboarding.error.${launchError}`)}
-                  data-testid='onboarding-launch-error'
-                />
-                {launchError === 'permissionDenied' && (
-                  <Button onClick={() => moveToStep(2)}>{t('guid.onboarding.actions.reviewCapabilities')}</Button>
-                )}
-              </div>
+            <p className={styles.suggestionStatus} data-testid='onboarding-task-draft-hint'>
+              {t('guid.onboarding.task.draftHint')}
+            </p>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className={styles.step} data-testid='onboarding-model'>
+            <StepHeading icon={<Config size={28} />} title={t('guid.onboarding.model.title')} />
+            <p>{t('guid.onboarding.model.subtitle')}</p>
+            <OnboardingModelSetup />
+          </div>
+        )}
+
+        {launchError && (
+          <div className={styles.launchError}>
+            <Alert
+              type='error'
+              content={t(`guid.onboarding.error.${launchError}`)}
+              data-testid='onboarding-launch-error'
+            />
+            {launchError === 'permissionDenied' && (
+              <Button onClick={() => moveToStep(2)}>{t('guid.onboarding.actions.reviewCapabilities')}</Button>
             )}
           </div>
         )}
@@ -956,7 +1019,7 @@ const OnboardingFlow: React.FC = () => {
           ) : (
             <span />
           )}
-          {step < 4 ? (
+          {step < ONBOARDING_STEP_COUNT - 1 ? (
             <Button type='primary' icon={<ArrowRight />} onClick={() => moveToStep(nextOnboardingStep(step))}>
               {t('guid.onboarding.actions.continue')}
             </Button>
@@ -965,11 +1028,11 @@ const OnboardingFlow: React.FC = () => {
               type='primary'
               icon={<Check />}
               loading={launching}
-              disabled={!finalTask || launching}
-              data-testid='onboarding-start'
-              onClick={() => void launch()}
+              disabled={launching}
+              data-testid='onboarding-finish'
+              onClick={() => void finish()}
             >
-              {t('guid.onboarding.actions.start')}
+              {t('guid.onboarding.actions.finish')}
             </Button>
           )}
         </footer>
@@ -985,6 +1048,39 @@ const StepHeading: React.FC<{ icon: React.ReactNode; title: string }> = ({ icon,
       {title}
     </h1>
   </div>
+);
+
+type OnboardingHeaderProps = {
+  user: { username?: string } | null;
+  switchingAccount: boolean;
+  onSwitchAccount: () => void;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+const OnboardingHeader: React.FC<OnboardingHeaderProps> = ({ user, switchingAccount, onSwitchAccount, t }) => (
+  <header className={styles.header}>
+    <div className={styles.brand}>
+      <img src={PRODUCT_ICON} alt='' aria-hidden='true' className={styles.brandMark} />
+      <span>{t('guid.onboarding.brand')}</span>
+    </div>
+    <div className={styles.accountActions}>
+      {user?.username && (
+        <span className={styles.accountIdentity} title={user.username}>
+          {t('guid.onboarding.account.current', { username: user.username })}
+        </span>
+      )}
+      <button
+        type='button'
+        className={styles.accountSwitch}
+        data-testid='onboarding-switch-account'
+        disabled={switchingAccount}
+        aria-busy={switchingAccount}
+        onClick={onSwitchAccount}
+      >
+        {t(switchingAccount ? 'guid.onboarding.account.switching' : 'guid.onboarding.account.switch')}
+      </button>
+    </div>
+  </header>
 );
 
 type CapabilityListProps = {
@@ -1113,7 +1209,9 @@ const ScientificRuntimeList: React.FC<{
                 <strong>{presentation.title}</strong>
                 <small>{presentation.description}</small>
                 <small className={styles.runtimeMeta}>
-                  {t('guid.onboarding.capabilities.runtimeSize', { size: item.estimatedInstallMB })}
+                  {item.required
+                    ? t('settings.environments.included')
+                    : t('guid.onboarding.capabilities.runtimeSize', { size: item.estimatedInstallMB })}
                   {stateText ? ` · ${stateText}` : ''}
                 </small>
                 {!item.available && (
@@ -1122,6 +1220,7 @@ const ScientificRuntimeList: React.FC<{
               </span>
               <Switch
                 checked={checked}
+                disabled={item.required}
                 aria-label={presentation.title}
                 onChange={(nextChecked) => onChange(item.id, nextChecked)}
               />

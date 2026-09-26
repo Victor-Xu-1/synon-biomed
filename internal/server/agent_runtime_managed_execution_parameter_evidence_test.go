@@ -176,8 +176,8 @@ func TestExplicitTaskEvidenceBindsUniqueRegisteredResolver(t *testing.T) {
 		t.Fatalf("a standalone resolver mention selected an unrequested parent: %v", got)
 	}
 	selectedRun := &sessionRunnerChatRun{
-		TaskIntent: "Predict binding pockets with the selected method.",
-		ExecutedSkillNames: []string{"pocket-skill"},
+		TaskIntent:              "Predict binding pockets with the selected method.",
+		ExecutedSkillNames:      []string{"pocket-skill"},
 		SelectedImplementations: []string{"P2Rank"},
 	}
 	selectedGateway := serverAgentRuntimeToolGateway{server: gateway.server, taskRun: selectedRun, kernel: gateway.kernel}

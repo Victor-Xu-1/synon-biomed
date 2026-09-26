@@ -226,10 +226,10 @@ func TestOutboxWakePublishesCommittedDueTimeAndPartitionUnlock(t *testing.T) {
 	store := openOutboxTestStore(t)
 	ctx := context.Background()
 	wake := store.OutboxWake()
-	before := time.Now().UTC()
+	const availableAfter = time.Hour
 	event, err := store.EnqueueOutbox(ctx, EnqueueOutboxInput{
 		IdempotencyKey: "wake-due-1", Topic: "wake.events", PartitionKey: "wake-partition",
-		Type: "wake.changed", Payload: json.RawMessage(`{"value":1}`), AvailableAfter: 40 * time.Millisecond,
+		Type: "wake.changed", Payload: json.RawMessage(`{"value":1}`), AvailableAfter: availableAfter,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -240,15 +240,24 @@ func TestOutboxWakePublishesCommittedDueTimeAndPartitionUnlock(t *testing.T) {
 		t.Fatal("committed enqueue did not publish outbox wake")
 	}
 	wakeAt, found, err := store.NextOutboxWakeAt(ctx, []string{"wake.events"})
-	if err != nil || !found || wakeAt.Before(before.Add(25*time.Millisecond)) || wakeAt.After(before.Add(time.Second)) {
-		t.Fatalf("wakeAt=%s found=%t err=%v", wakeAt, found, err)
+	if err != nil || !found || !wakeAt.Equal(event.AvailableAt) || event.AvailableAt.Sub(event.OccurredAt) != availableAfter {
+		t.Fatalf("wakeAt=%s event=%+v found=%t err=%v", wakeAt, event, found, err)
 	}
 	if early, err := store.ClaimOutbox(ctx, ClaimOutboxInput{
 		WorkerID: "wake-early", Topics: []string{"wake.events"}, Limit: 1, Lease: time.Second,
 	}); err != nil || len(early) != 0 {
 		t.Fatalf("early claim=%#v err=%v", early, err)
 	}
-	time.Sleep(time.Until(wakeAt) + 10*time.Millisecond)
+	// Advance the real SQLite fixture into the due phase without racing a
+	// wall-clock delay against commit, query and scheduler latency.
+	updated, err := store.db.ExecContext(ctx, `UPDATE workspace_outbox
+		SET available_at_ms=`+sqliteNowMillis+` WHERE event_id=? AND status='pending'`, event.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count, err := updated.RowsAffected(); err != nil || count != 1 {
+		t.Fatalf("advance due event: updated=%d err=%v", count, err)
+	}
 	claimed, err := store.ClaimOutbox(ctx, ClaimOutboxInput{
 		WorkerID: "wake-ready", Topics: []string{"wake.events"}, Limit: 1, Lease: time.Second,
 	})

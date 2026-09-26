@@ -246,7 +246,8 @@ func (s *Server) reuseCachedAgentPublicScientificFileDownload(
 		workspace.WriteArtifactVersionInput{
 			ArtifactID: artifactID, ProjectID: stream.ProjectID, Name: request.Filename,
 			ContentType: cached.artifact.Kind, Content: cached.content, MaxBytes: request.maximumBytes(),
-			CreatedBy: claim.RunnerID, RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
+			ParentVersionID: request.RecoveryParentVersionID,
+			CreatedBy:       claim.RunnerID, RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
 			ProvenanceSourceID: cached.version.ID, ReadSourceProjectID: cached.artifact.ProjectID,
 			TranscriptAssociation: &workspace.ArtifactTranscriptAssociation{
 				StreamUID: stream.UID, RunnerID: claim.RunnerID, ClaimToken: claim.ClaimToken,

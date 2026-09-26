@@ -906,6 +906,14 @@ Temporary content is removed after success or failure. Directory enumeration
 and input reads stay anchored to the owner-authorized root after path
 validation, including when an intermediate path is replaced by a symlink.
 
+A completed public-download receipt with unavailable historical bytes is not
+an authorization failure. Its owner, artifact identity, size and digest must
+validate before recovery. An exact task-local copy can be staged and published
+as a new verified child version; if absent, a newly authorized download call
+may reacquire the source under the historical digest. Metadata conflicts,
+changed local files and changed upstream bytes remain failures. The missing
+historical version retains its identity and unavailable state.
+
 ## Product identity
 
 Runtime prompts, model-visible Skills, UI, logs, health output, and generated

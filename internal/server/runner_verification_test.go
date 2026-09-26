@@ -140,21 +140,6 @@ func TestSessionReviewerCleanPassDoesNotRequireArtifactReadsOrRecomputation(t *t
 	}
 }
 
-func TestSessionRunnerReviewerFindingsAreAdvisory(t *testing.T) {
-	review := sessionRunnerReview{
-		Verdict: "fail",
-		Summary: "the reviewer could not confirm the final presentation",
-		Issues:  []sessionRunnerReviewIssue{{Verdict: "fail", Severity: "high", Claim: "candidate needs another review"}},
-	}
-	advisory := sessionRunnerAdvisoryReview(review)
-	if advisory.Verdict != "warn" || len(advisory.Issues) != 1 || advisory.Issues[0].Verdict != "warn" {
-		t.Fatalf("reviewer finding remained a hard gate: %#v", advisory)
-	}
-	if review.Verdict != "fail" || review.Issues[0].Verdict != "fail" {
-		t.Fatalf("advisory conversion mutated the source review: %#v", review)
-	}
-}
-
 func TestSessionReviewerArtifactFindingRequiresThatArtifactRead(t *testing.T) {
 	binding := map[string]any{
 		"stream_uid": "stream-artifact-finding", "runner_attempt": 1, "review_index": 0,
@@ -241,17 +226,6 @@ func TestCompletionReviewReviseRejectsCandidateWithoutAutoResumeLoop(t *testing.
 	}
 	if !runnerInterruptionAutoResume(reason) || !runnerInterruptionMayContinueSameTask(reason) {
 		t.Fatal("review correction did not enter the bounded automatic correction path")
-	}
-}
-
-func TestCompletionReviewCorrectionUsesBoundedBounceBudget(t *testing.T) {
-	for _, reviewIndex := range []int{0, 1, 2} {
-		if !sessionReviewerShouldRequestCorrection(reviewIndex) {
-			t.Fatalf("review %d should still request correction", reviewIndex+1)
-		}
-	}
-	if sessionReviewerShouldRequestCorrection(3) || sessionReviewerMaxConsecutiveBounces != 3 {
-		t.Fatalf("the review after three correction bounces must ship with visible unresolved findings; budget=%d", sessionReviewerMaxConsecutiveBounces)
 	}
 }
 

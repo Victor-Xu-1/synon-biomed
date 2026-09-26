@@ -354,8 +354,10 @@ func (s *Server) handleHostBrowse(w http.ResponseWriter, r *http.Request) {
 		writeWorkspaceJSON(w, http.StatusForbidden, map[string]any{"ok": false, "error": "path is outside granted host directories"})
 		return
 	}
-	// target is an existing, symlink-resolved directory inside a persisted host grant.
-	items, err := os.ReadDir(target) // lgtm[go/path-injection]
+	// target is an existing, symlink-resolved directory inside a persisted host
+	// grant; hostPathWithin performed the authorization check above.
+	// codeql[go/path-injection]
+	items, err := os.ReadDir(target)
 	if err != nil {
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
@@ -389,8 +391,10 @@ func canonicalHostDirectory(value string) (string, error) {
 	if err != nil {
 		return "", errors.New("host directory does not exist")
 	}
-	// evaluated is an absolute path whose symlink chain has already been resolved.
-	info, err := os.Stat(evaluated) // lgtm[go/path-injection]
+	// evaluated is an absolute path whose symlink chain has already been
+	// resolved by canonicalHostDirectory.
+	// codeql[go/path-injection]
+	info, err := os.Stat(evaluated)
 	if err != nil || !info.IsDir() {
 		return "", errors.New("host path must be an existing directory")
 	}

@@ -74,8 +74,10 @@ func remoteHTTPRPCOnce(ctx context.Context, root string, config ServerConfig, se
 		req.Header.Set("Mcp-Session-Id", *sessionID)
 	}
 	secrets := remoteMCPSecretValues(config, req.Header)
-	// requestURL is the exact destination validated and DNS-pinned by secureRemoteHTTPClient above.
-	resp, err := client.Do(req) // lgtm[go/request-forgery]
+	// requestURL is the exact destination validated and DNS-pinned by
+	// secureRemoteHTTPClient above; redirects and proxies are disabled.
+	// codeql[go/request-forgery]
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, &remoteMCPTransportError{message: fmt.Sprintf("remote MCP %s request failed: %s", method, redactMCPErrorText(err.Error(), secrets)), cause: err}
 	}

@@ -307,7 +307,10 @@ func strictPositiveAgentWorkspaceInteger(raw any) (int, bool) {
 	case int64:
 		value = typed
 	case float64:
-		if math.IsNaN(typed) || math.IsInf(typed, 0) || math.Trunc(typed) != typed || typed > math.MaxInt64 {
+		// float64(math.MaxInt64) rounds to 2^63. Rejecting values at that
+		// boundary avoids converting an out-of-range float to int64 before the
+		// platform-sized integer check below.
+		if math.IsNaN(typed) || math.IsInf(typed, 0) || math.Trunc(typed) != typed || typed >= float64(math.MaxInt64) {
 			return 0, false
 		}
 		value = int64(typed)
@@ -320,8 +323,14 @@ func strictPositiveAgentWorkspaceInteger(raw any) (int, bool) {
 	default:
 		return 0, false
 	}
-	if value <= 0 || value > int64(^uint(0)>>1) {
+	if value <= 0 {
 		return 0, false
 	}
-	return int(value), true
+	// Atoi performs the final platform-sized range check and returns an int
+	// directly, so an int64-to-int narrowing conversion cannot bypass it.
+	converted, err := strconv.Atoi(strconv.FormatInt(value, 10))
+	if err != nil || converted <= 0 {
+		return 0, false
+	}
+	return converted, true
 }

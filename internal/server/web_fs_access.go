@@ -186,6 +186,9 @@ func resolveWebFSTarget(root, requested string, mustExist bool) (string, error) 
 	if !webFSPathWithin(root, target) {
 		return "", errWebFSForbidden
 	}
+	// target is already confined to root and the existing-path branch rejects
+	// symlinks before resolving the final canonical path.
+	// codeql[go/path-injection]
 	info, statErr := os.Lstat(target)
 	if statErr == nil {
 		if info.Mode()&os.ModeSymlink != 0 {
@@ -208,6 +211,9 @@ func resolveWebFSTarget(root, requested string, mustExist bool) (string, error) 
 	}
 	ancestor := filepath.Dir(target)
 	for {
+		// Every ancestor is derived from the confined target and is checked for a
+		// real directory before its canonical path is accepted.
+		// codeql[go/path-injection]
 		info, err := os.Lstat(ancestor)
 		if err == nil {
 			if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {

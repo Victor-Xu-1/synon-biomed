@@ -347,6 +347,9 @@ func (s *Server) listCompatibilityHostDirectory(userID, requestedPath string) ([
 	if !allowed {
 		return nil, errors.New("Directory is not under $HOME or a granted root.")
 	}
+	// target is symlink-resolved and is admitted only under the canonical home
+	// directory or a persisted grant owned by userID.
+	// codeql[go/path-injection]
 	items, err := os.ReadDir(target)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read %s: %w", target, err)

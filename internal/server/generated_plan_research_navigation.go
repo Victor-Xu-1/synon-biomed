@@ -22,7 +22,10 @@ func (s *Server) generatedPlanResearchHandoffContext(
 		navigation = nil
 	}
 	actionable := generatedPlanActionableInvestigations(navigation["current_investigations"])
-	focuses := make([]string, 0, len(actionable)*4)
+	// The investigation count is model-controlled. Avoid multiplying it for a
+	// capacity hint: a very large decoded list must not overflow into a negative
+	// allocation before the bounded source-material path can reject it.
+	focuses := make([]string, 0)
 	for _, investigation := range actionable {
 		for _, field := range []string{"research_question", "output_module", "description", "title"} {
 			if value := strings.TrimSpace(stringValue(investigation[field])); value != "" {

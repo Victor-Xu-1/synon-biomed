@@ -9,6 +9,7 @@ import { Camera, Down, Left, Lightning, MoreOne, PreviewOpen, Right, Up } from '
 import { Color } from 'molstar/lib/mol-util/color/index';
 import { createPortal } from 'react-dom';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
 import {
   logScientificPreviewError,
@@ -222,7 +223,31 @@ const resolveCandidateSmilesCompanionUrl = (companionArtifactUrls?: Readonly<Rec
   )?.[1] ?? null;
 
 export const prepareLigandDepictionSvg = (svg: string, background: CanvasBackground): string => {
-  const transparent = svg.replace(
+  // RDKit is the expected producer, but the SVG still crosses an artifact and
+  // worker boundary. Keep only inert SVG markup before mounting it in the
+  // application DOM; active elements and external URL references are not part
+  // of a ligand depiction contract.
+  const sanitized = DOMPurify.sanitize(svg, {
+    USE_PROFILES: { svg: true, svgFilters: false },
+    ALLOW_DATA_ATTR: false,
+    FORBID_TAGS: [
+      'script',
+      'foreignObject',
+      'iframe',
+      'object',
+      'embed',
+      'image',
+      'a',
+      'use',
+      'animate',
+      'set',
+      'animateMotion',
+      'animateTransform',
+      'mpath',
+    ],
+    FORBID_ATTR: ['href', 'xlink:href', 'src'],
+  });
+  const transparent = sanitized.replace(
     /<rect\b[^>]*(?:fill\s*:\s*#(?:fff|ffffff)|fill=["']#(?:fff|ffffff)["'])[^>]*\/?>(?:<\/rect>)?/gi,
     ''
   );

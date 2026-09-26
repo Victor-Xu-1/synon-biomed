@@ -343,36 +343,29 @@ func (s *Server) handleHostBrowse(w http.ResponseWriter, r *http.Request) {
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
-	allowed := false
+	grantedRoot := ""
 	for _, grant := range grants {
 		if hostPathWithin(grant.Path, target) {
-			allowed = true
+			grantedRoot = grant.Path
 			break
 		}
 	}
-	if !allowed {
+	if grantedRoot == "" {
 		writeWorkspaceJSON(w, http.StatusForbidden, map[string]any{"ok": false, "error": "path is outside granted host directories"})
 		return
 	}
-	// target is an existing, symlink-resolved directory inside a persisted host
-	// grant; hostPathWithin performed the authorization check above.
-	// codeql[go/path-injection]
-	items, err := os.ReadDir(target)
+	items, err := readAuthorizedHostDirectory(grantedRoot, target)
 	if err != nil {
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
 	entries := make([]map[string]any, 0, len(items))
 	for _, item := range items {
-		info, err := item.Info()
-		if err != nil {
-			continue
-		}
 		entries = append(entries, map[string]any{
 			"name": item.Name(), "path": filepath.Join(target, item.Name()),
-			"isDirectory": item.IsDir(), "isSymlink": item.Type()&os.ModeSymlink != 0,
-			"size": info.Size(), "mode": info.Mode().Perm().String(),
-			"modifiedAt": info.ModTime().UTC(),
+			"isDirectory": item.IsDir(), "isSymlink": item.Mode()&os.ModeSymlink != 0,
+			"size": item.Size(), "mode": item.Mode().Perm().String(),
+			"modifiedAt": item.ModTime().UTC(),
 		})
 	}
 	writeWorkspaceJSON(w, http.StatusOK, map[string]any{"ok": true, "path": target, "entries": entries})
@@ -391,12 +384,14 @@ func canonicalHostDirectory(value string) (string, error) {
 	if err != nil {
 		return "", errors.New("host directory does not exist")
 	}
-	// evaluated is an absolute path whose symlink chain has already been
-	// resolved by canonicalHostDirectory.
-	// codeql[go/path-injection]
-	info, err := os.Stat(evaluated)
-	if err != nil || !info.IsDir() {
+	// This is admission metadata, not permission to read contents. Callers
+	// authorize the directory separately and perform I/O through a held root.
+	directory, err := os.OpenRoot(evaluated)
+	if err != nil {
 		return "", errors.New("host path must be an existing directory")
+	}
+	if err := directory.Close(); err != nil {
+		return "", err
 	}
 	return filepath.Clean(evaluated), nil
 }

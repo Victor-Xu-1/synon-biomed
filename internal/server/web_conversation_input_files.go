@@ -2,11 +2,8 @@ package server
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -55,10 +52,19 @@ func (s *Server) materializeWebConversationInputFiles(
 	if err != nil {
 		return nil, transcriptWebStorageError(err)
 	}
-	inputRoot, err := canonicalOrCreateAgentWorkspaceDirectory(filepath.Join(taskRoot, "inputs"), 0o700)
+	taskDirectory, err := os.OpenRoot(taskRoot)
 	if err != nil {
 		return nil, transcriptWebStorageError(err)
 	}
+	defer taskDirectory.Close()
+	if err := taskDirectory.Mkdir("inputs", 0o700); err != nil && !errors.Is(err, os.ErrExist) {
+		return nil, transcriptWebStorageError(err)
+	}
+	inputRoot, err := taskDirectory.OpenRoot("inputs")
+	if err != nil {
+		return nil, invalidWebConversationInputFile()
+	}
+	defer inputRoot.Close()
 
 	materialized := make([]string, 0, len(files))
 	seen := make(map[string]struct{}, len(files))
@@ -82,27 +88,35 @@ func (s *Server) materializeWebConversationInputFiles(
 		if err != nil {
 			return nil, invalidWebConversationInputFile()
 		}
-		source := sourceAccess.Target
-		// source is returned by resolveWebFSPath only after canonical root,
-		// grant, symlink and read-permission validation.
-		// codeql[go/path-injection]
-		info, err := os.Stat(source)
-		if err != nil || !info.Mode().IsRegular() || info.Size() < 0 || info.Size() > maxWebConversationInputFileBytes {
+		sourceFile, err := openWebFSRegularFile(sourceAccess)
+		if err != nil {
 			return nil, invalidWebConversationInputFile()
 		}
-		total += info.Size()
-		if total > maxWebConversationInputTotalBytes {
+		info, err := sourceFile.Stat()
+		if err != nil || !info.Mode().IsRegular() || info.Size() < 0 || info.Size() > maxWebConversationInputFileBytes {
+			_ = sourceFile.Close()
+			return nil, invalidWebConversationInputFile()
+		}
+		if info.Size() > maxWebConversationInputTotalBytes-total {
+			_ = sourceFile.Close()
 			return nil, &webConversationRequestError{Status: http.StatusRequestEntityTooLarge, Detail: "selected files exceed the task input limit"}
 		}
-		if relative, inside := relativePathWithin(taskRoot, source); inside {
+		if relative, inside := relativePathWithin(taskRoot, sourceAccess.Target); inside {
+			if err := sourceFile.Close(); err != nil {
+				return nil, invalidWebConversationInputFile()
+			}
+			total += info.Size()
 			materialized = appendUniqueWebConversationFile(materialized, seen, relative)
 			continue
 		}
 
-		relative, err := copyWebConversationInputFile(source, inputRoot)
+		limit := min(maxWebConversationInputFileBytes, maxWebConversationInputTotalBytes-total)
+		relative, size, copyErr := copyWebConversationInputFile(ctx, sourceFile, filepath.Base(sourceAccess.Target), inputRoot, limit)
+		err = errors.Join(copyErr, sourceFile.Close())
 		if err != nil {
 			return nil, invalidWebConversationInputFile()
 		}
+		total += size
 		materialized = appendUniqueWebConversationFile(materialized, seen, relative)
 	}
 	return materialized, nil
@@ -141,84 +155,43 @@ func rewriteWebConversationAttachedFilePaths(content string, original, materiali
 
 func relativePathWithin(root, target string) (string, bool) {
 	relative, err := filepath.Rel(root, target)
-	if err != nil || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+	if err != nil || filepath.IsAbs(relative) || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 		return "", false
 	}
 	return filepath.ToSlash(relative), true
 }
 
-func copyWebConversationInputFile(source, inputRoot string) (string, error) {
-	name := filepath.Base(source)
-	if name == "." || name == string(filepath.Separator) || strings.TrimSpace(name) == "" {
-		return "", errors.New("invalid input filename")
+func copyWebConversationInputFile(ctx context.Context, source *os.File, name string, inputRoot *os.Root, maxBytes int64) (relative string, size int64, err error) {
+	if name != filepath.Base(name) || name == "." || name == ".." || strings.TrimSpace(name) == "" {
+		return "", 0, errors.New("invalid input filename")
 	}
-	// source is a canonical path returned by the same grant-checked resolver.
-	// codeql[go/path-injection]
-	sourceFile, err := os.Open(source)
+	before, err := source.Stat()
+	if err != nil || !before.Mode().IsRegular() || before.Size() > maxBytes {
+		return "", 0, invalidWebConversationInputFile()
+	}
+	stage, err := stageWorkspaceFile(ctx, inputRoot, source, maxBytes)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	defer sourceFile.Close()
-
-	temporary, err := os.CreateTemp(inputRoot, ".incoming-*")
-	if err != nil {
-		return "", err
+	defer func() { err = errors.Join(err, stage.close()) }()
+	after, err := source.Stat()
+	if err != nil || before.Size() != stage.size || after.Size() != stage.size || !before.ModTime().Equal(after.ModTime()) {
+		return "", 0, errWorkspaceFileConflict
 	}
-	temporaryPath := temporary.Name()
-	committed := false
-	defer func() {
-		_ = temporary.Close()
-		if !committed {
-			_ = os.Remove(temporaryPath)
-		}
-	}()
-	hash := sha256.New()
-	if _, err := io.Copy(io.MultiWriter(temporary, hash), sourceFile); err != nil {
-		return "", err
-	}
-	if err := temporary.Sync(); err != nil {
-		return "", err
-	}
-	if err := temporary.Close(); err != nil {
-		return "", err
-	}
-	if err := os.Chmod(temporaryPath, 0o600); err != nil {
-		return "", err
-	}
-	sum := hex.EncodeToString(hash.Sum(nil))
-	destination := filepath.Join(inputRoot, name)
-	if existing, err := fileSHA256(destination); err == nil {
-		if existing == sum {
-			return filepath.ToSlash(filepath.Join("inputs", name)), nil
+	err = stage.publish(ctx, name)
+	if errors.Is(err, errWorkspaceFileConflict) {
+		// A conflicting regular basename gets a deterministic alternative, but
+		// neither that alternative nor a symlink may be replaced or followed.
+		info, statErr := inputRoot.Lstat(name)
+		if statErr != nil || !info.Mode().IsRegular() {
+			return "", 0, err
 		}
 		extension := filepath.Ext(name)
-		stem := strings.TrimSuffix(name, extension)
-		destination = filepath.Join(inputRoot, fmt.Sprintf("%s-%s%s", stem, sum[:12], extension))
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return "", err
+		name = fmt.Sprintf("%s-%s%s", strings.TrimSuffix(name, extension), stage.digest[:12], extension)
+		err = stage.publish(ctx, name)
 	}
-	// destination is constructed from the validated task input root and a
-	// basename, and the temporary file was created inside that root.
-	// codeql[go/path-injection]
-	if err := os.Rename(temporaryPath, destination); err != nil {
-		return "", err
-	}
-	committed = true
-	return filepath.ToSlash(filepath.Join("inputs", filepath.Base(destination))), nil
-}
-
-func fileSHA256(path string) (string, error) {
-	// path is an internal content-addressed destination produced by the
-	// materialization helper above, never a raw request path.
-	// codeql[go/path-injection]
-	file, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	defer file.Close()
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
+	return filepath.ToSlash(filepath.Join("inputs", name)), stage.size, nil
 }

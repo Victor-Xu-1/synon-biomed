@@ -331,26 +331,26 @@ func (s *Server) listCompatibilityHostDirectory(userID, requestedPath string) ([
 	if evaluated, evaluateErr := filepath.EvalSymlinks(home); evaluateErr == nil {
 		home = evaluated
 	}
-	allowed := hostPathWithin(filepath.Clean(home), target)
-	if !allowed {
+	grantedRoot := ""
+	if hostPathWithin(filepath.Clean(home), target) {
+		grantedRoot = filepath.Clean(home)
+	}
+	if grantedRoot == "" {
 		grants, loadErr := s.loadHostGrants(userID)
 		if loadErr != nil {
 			return nil, loadErr
 		}
 		for _, grant := range grants {
 			if hostPathWithin(grant.Path, target) {
-				allowed = true
+				grantedRoot = grant.Path
 				break
 			}
 		}
 	}
-	if !allowed {
+	if grantedRoot == "" {
 		return nil, errors.New("Directory is not under $HOME or a granted root.")
 	}
-	// target is symlink-resolved and is admitted only under the canonical home
-	// directory or a persisted grant owned by userID.
-	// codeql[go/path-injection]
-	items, err := os.ReadDir(target)
+	items, err := readAuthorizedHostDirectory(grantedRoot, target)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read %s: %w", target, err)
 	}

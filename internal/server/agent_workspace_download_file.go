@@ -2,14 +2,10 @@ package server
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -28,6 +24,9 @@ func ensureAgentWorkspaceDownloadTarget(
 	expectedSHA string,
 	maxBytes int64,
 ) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	rootPath, err := canonicalHostDirectory(workspaceDir)
 	if err != nil || filepath.Base(filename) != filename || maxBytes <= 0 {
 		return errAgentWorkspaceDownloadAuthority
@@ -53,7 +52,7 @@ func ensureAgentWorkspaceDownloadTarget(
 		// exact immutable object; publication never overwrites it.
 		return nil
 	}
-	size, digest, err := hashAgentWorkspaceDownloadRootFile(ctx, root, filename, maxBytes)
+	size, digest, err := hashWorkspaceRootFile(ctx, root, filename, maxBytes)
 	if err != nil || size != expectedSize || digest != expectedSHA {
 		return errAgentWorkspaceDownloadConflict
 	}
@@ -70,7 +69,10 @@ func publishAgentWorkspaceDownloadFile(
 	expectedSize int64,
 	expectedSHA string,
 	maxBytes int64,
-) error {
+) (err error) {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	rootPath, err := canonicalHostDirectory(workspaceDir)
 	if err != nil || filepath.Base(filename) != filename || expectedSize <= 0 ||
 		expectedSize > maxBytes || expectedSHA == "" || maxBytes <= 0 {
@@ -85,7 +87,7 @@ func publishAgentWorkspaceDownloadFile(
 		if !info.Mode().IsRegular() {
 			return errAgentWorkspaceDownloadConflict
 		}
-		size, digest, hashErr := hashAgentWorkspaceDownloadRootFile(ctx, root, filename, maxBytes)
+		size, digest, hashErr := hashWorkspaceRootFile(ctx, root, filename, maxBytes)
 		if hashErr == nil && size == expectedSize && digest == expectedSHA {
 			return nil
 		}
@@ -96,55 +98,18 @@ func publishAgentWorkspaceDownloadFile(
 	if _, err := content.Seek(0, io.SeekStart); err != nil {
 		return errAgentWorkspaceDownloadAuthority
 	}
-	temporary := ".synon-download-" + uuid.NewString() + ".tmp"
-	file, err := root.OpenFile(temporary, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	stage, err := stageWorkspaceFile(ctx, root, content, maxBytes)
 	if err != nil {
-		return errAgentWorkspaceDownloadAuthority
+		return errors.Join(errAgentWorkspaceDownloadConflict, err)
 	}
-	defer func() { _ = root.Remove(temporary) }()
-	hasher := sha256.New()
-	written, copyErr := io.Copy(
-		io.MultiWriter(file, hasher),
-		io.LimitReader(&contextReader{ctx: ctx, reader: content}, maxBytes+1),
-	)
-	syncErr := file.Sync()
-	closeErr := file.Close()
-	if copyErr != nil || syncErr != nil || closeErr != nil || written != expectedSize ||
-		hex.EncodeToString(hasher.Sum(nil)) != expectedSHA {
+	defer func() { err = errors.Join(err, stage.close()) }()
+	if stage.size != expectedSize || stage.digest != expectedSHA {
 		return errAgentWorkspaceDownloadConflict
 	}
-	if err := root.Link(temporary, filename); err != nil {
-		if info, statErr := root.Lstat(filename); statErr == nil && info.Mode().IsRegular() {
-			size, digest, hashErr := hashAgentWorkspaceDownloadRootFile(ctx, root, filename, maxBytes)
-			if hashErr == nil && size == expectedSize && digest == expectedSHA {
-				return nil
-			}
-		}
-		return errAgentWorkspaceDownloadConflict
+	if err := stage.publish(ctx, filename); err != nil {
+		return errors.Join(errAgentWorkspaceDownloadConflict, err)
 	}
 	return nil
-}
-
-func hashAgentWorkspaceDownloadRootFile(
-	ctx context.Context,
-	root *os.Root,
-	filename string,
-	maxBytes int64,
-) (int64, string, error) {
-	if root == nil || maxBytes <= 0 {
-		return 0, "", errAgentWorkspaceDownloadAuthority
-	}
-	file, err := root.Open(filename)
-	if err != nil {
-		return 0, "", err
-	}
-	defer file.Close()
-	hasher := sha256.New()
-	sizeBytes, err := io.Copy(hasher, io.LimitReader(&contextReader{ctx: ctx, reader: file}, maxBytes+1))
-	if err != nil || sizeBytes > maxBytes {
-		return 0, "", errAgentWorkspaceDownloadConflict
-	}
-	return sizeBytes, hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 type contextReader struct {

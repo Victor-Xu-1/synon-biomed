@@ -15,6 +15,10 @@ const detachedKernelInfrastructureGrace = 2 * time.Minute
 type detachedKernelLifecycleContext struct {
 	context.Context
 	lifecycle context.Context
+	// values stays on the request-side context. The registered task lifetime
+	// is intentionally a different parent used for cancellation, but it does
+	// not own runner, reviewer, or approval values attached by the live turn.
+	values context.Context
 }
 
 func (c detachedKernelLifecycleContext) Err() error {
@@ -25,7 +29,19 @@ func (c detachedKernelLifecycleContext) Err() error {
 }
 
 func (c detachedKernelLifecycleContext) Value(key any) any {
-	return c.lifecycle.Value(key)
+	// Keep the lifecycle parent's internal cancellation values authoritative so
+	// context.Cause still reports the task stop reason. Request-side values are
+	// only a fallback for runner/reviewer/approval objects attached after the
+	// lifetime context was registered.
+	if c.lifecycle != nil {
+		if value := c.lifecycle.Value(key); value != nil {
+			return value
+		}
+	}
+	if c.values != nil && c.values != c.lifecycle {
+		return c.values.Value(key)
+	}
+	return nil
 }
 
 // detachedKernelSetupContext preserves a request handoff without severing the
@@ -58,7 +74,7 @@ func detachedKernelSetupContext(ctx context.Context, executionTimeout time.Durat
 	if executionTimeout > 0 {
 		result, cancelDeadline = context.WithTimeout(setup, executionTimeout+detachedKernelInfrastructureGrace)
 	}
-	result = detachedKernelLifecycleContext{Context: result, lifecycle: lifecycle}
+	result = detachedKernelLifecycleContext{Context: result, lifecycle: lifecycle, values: ctx}
 	return result, func() {
 		stopRequest()
 		stopTask()

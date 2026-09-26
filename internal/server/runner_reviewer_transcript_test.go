@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -262,6 +263,46 @@ func TestSessionReviewerFrameFailureTerminalsUseTranscriptAuthority(t *testing.T
 		if err != nil || !found || stored.Status != status {
 			t.Fatalf("status=%s frame=%#v found=%t err=%v", status, stored, found, err)
 		}
+	}
+}
+
+func TestSessionReviewerFrameReplacesTerminalRetryWithoutHotLoop(t *testing.T) {
+	store, repo, _ := newTranscriptWebFixture(t)
+	seedTranscriptWebFrame(t, store, "owner", "review-retry-project", "review-retry-root")
+	server := New(Options{Workspace: store, Transcript: repo, FileRoot: t.TempDir()})
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		_ = server.Close(ctx)
+	})
+
+	base, err := server.beginSessionReviewerFrame(
+		context.Background(), sessionstore.Session{ID: "review-retry-root"}, "review-model", 4, 2,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := server.finishSessionReviewerFrame(base.ID, "cancelled", "automatic review superseded", 2); err != nil {
+		t.Fatal(err)
+	}
+	retry, err := server.beginSessionReviewerFrame(
+		context.Background(), sessionstore.Session{ID: "review-retry-root"}, "review-model", 4, 2,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if retry.ID == base.ID || !strings.Contains(retry.Name, "retry 1") {
+		t.Fatalf("terminal reviewer frame was reused: base=%#v retry=%#v", base, retry)
+	}
+	if stored, found, getErr := store.GetFrame(retry.ID); getErr != nil || !found || stored.Status != "processing" {
+		t.Fatalf("retry reviewer frame=%#v found=%t err=%v", stored, found, getErr)
+	}
+
+	reused, err := server.beginSessionReviewerFrame(
+		context.Background(), sessionstore.Session{ID: "review-retry-root"}, "review-model", 4, 2,
+	)
+	if err == nil || !strings.Contains(err.Error(), "already active") {
+		t.Fatalf("active reviewer frame was re-entered instead of being fenced: frame=%#v err=%v", reused, err)
 	}
 }
 

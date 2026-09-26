@@ -30,10 +30,11 @@ type askUserQuestionOption struct {
 }
 
 type askUserQuestion struct {
-	Question    string                  `json:"question"`
-	Header      string                  `json:"header"`
-	Options     []askUserQuestionOption `json:"options"`
-	MultiSelect bool                    `json:"multiSelect"`
+	Question      string                      `json:"question"`
+	Header        string                      `json:"header"`
+	Options       []askUserQuestionOption     `json:"options"`
+	MultiSelect   bool                        `json:"multiSelect"`
+	StageProgress *generatedPlanStageProgress `json:"stage_progress,omitempty"`
 }
 
 type askUserResourceProfile struct {

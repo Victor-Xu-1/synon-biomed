@@ -97,6 +97,31 @@ func TestManagedEnvironmentProcessStreamsObservedProgress(t *testing.T) {
 	}
 }
 
+func TestManagedEnvironmentProcessStreamsPipRawBytes(t *testing.T) {
+	var updates []toolprogress.Update
+	ctx := toolprogress.WithReporter(context.Background(), func(update toolprogress.Update) {
+		updates = append(updates, update)
+	})
+	err := (&Manager{}).runManagedEnvironmentProcessWithEnv(
+		ctx, "/bin/sh", os.Environ(), "-c",
+		"printf 'Progress 0 of 0\\n'; sleep 0.02; printf 'Progress 65536 of 0\\n'",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, update := range updates {
+		if update.Phase == "downloading_packages" && update.BytesCompleted != nil &&
+			*update.BytesCompleted == 65536 && update.BytesTotal == nil &&
+			update.BytesPerSecond != nil && *update.BytesPerSecond > 0 {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("process output did not reach the progress reporter: %#v", updates)
+	}
+}
+
 func TestManagedEnvironmentProcessKeepsSlowObservableWorkAlive(t *testing.T) {
 	manager := NewManager(Config{ManagedEnvironmentInstallerInactivityTimeout: 400 * time.Millisecond})
 	started := time.Now()
@@ -163,6 +188,47 @@ func TestManagedEnvironmentProgressObserverTracksPipProcessAndTransfer(t *testin
 	}
 }
 
+func TestManagedEnvironmentProgressObserverTracksPipRawTransfer(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		total     string
+		wantTotal int64
+	}{
+		{name: "known-size", total: "1000000", wantTotal: 1000000},
+		{name: "unknown-size", total: "0"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var updates []toolprogress.Update
+			ctx := toolprogress.WithReporter(context.Background(), func(update toolprogress.Update) {
+				updates = append(updates, update)
+			})
+			observer := newManagedEnvironmentProgressObserver(ctx, "/opt/env/bin/python", []string{"-m", "pip", "install", "fixture"})
+			current := time.Unix(100, 0)
+			observer.clock = func() time.Time { return current }
+			_, _ = observer.Write([]byte("Prog"))
+			_, _ = observer.Write([]byte("ress 0 of " + tc.total + "\n"))
+			current = current.Add(2 * time.Second)
+			_, _ = observer.Write([]byte("Progress 250000 of " + tc.total + "\n"))
+			found := false
+			for _, update := range updates {
+				if update.Phase != "downloading_packages" || update.BytesCompleted == nil ||
+					*update.BytesCompleted != 250000 || update.BytesPerSecond == nil ||
+					*update.BytesPerSecond != 125000 {
+					continue
+				}
+				if tc.wantTotal == 0 {
+					found = update.BytesTotal == nil && update.Indeterminate
+				} else {
+					found = update.BytesTotal != nil && *update.BytesTotal == tc.wantTotal && !update.Indeterminate
+				}
+			}
+			if !found {
+				t.Fatalf("pip raw progress not measured: %#v", updates)
+			}
+		})
+	}
+}
+
 func TestManagedEnvironmentProgressObserverReportsPackageCountMilestone(t *testing.T) {
 	var updates []toolprogress.Update
 	ctx := toolprogress.WithReporter(context.Background(), func(update toolprogress.Update) {
@@ -183,7 +249,7 @@ func TestManagedEnvironmentProgressObserverReportsPackageCountMilestone(t *testi
 	}
 }
 
-func TestManagedEnvironmentProgressObserverReportsPlannedTotalAndCompletion(t *testing.T) {
+func TestManagedEnvironmentProgressObserverDoesNotInventDownloadedBytes(t *testing.T) {
 	var updates []toolprogress.Update
 	ctx := toolprogress.WithReporter(context.Background(), func(update toolprogress.Update) {
 		updates = append(updates, update)
@@ -191,18 +257,13 @@ func TestManagedEnvironmentProgressObserverReportsPlannedTotalAndCompletion(t *t
 	observer := newManagedEnvironmentProgressObserver(ctx, "/opt/micromamba", []string{"create", "-p", "/tmp/env"})
 	_, _ = observer.Write([]byte("Total download: 41MB\nTransaction starting\nExtracting package\nTransaction finished\n"))
 	observer.Complete()
-	total := int64(41000000)
-	var sawPlanned, sawDone bool
 	for _, update := range updates {
-		if update.BytesTotal != nil && *update.BytesTotal == total && update.BytesCompleted != nil && *update.BytesCompleted == 0 {
-			sawPlanned = true
-		}
-		if update.BytesTotal != nil && *update.BytesTotal == total && update.BytesCompleted != nil && *update.BytesCompleted == total {
-			sawDone = true
+		if update.BytesTotal != nil || update.BytesCompleted != nil || update.BytesPerSecond != nil {
+			t.Fatalf("unmeasured transfer published as downloaded bytes: %#v", update)
 		}
 	}
-	if !sawPlanned || !sawDone {
-		t.Fatalf("planned=%v done=%v updates=%#v", sawPlanned, sawDone, updates)
+	if len(updates) == 0 {
+		t.Fatal("expected phase observations")
 	}
 }
 

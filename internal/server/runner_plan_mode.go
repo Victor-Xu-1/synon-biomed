@@ -156,6 +156,15 @@ func sessionRunnerPlanMatchesTask(data map[string]any, run *sessionRunnerChatRun
 	return run.TaskIntent == "" || strings.TrimSpace(stringValue(data["_plan_task_intent_sha256"])) == generatedPlanTaskIntentSHA(run.TaskIntent)
 }
 
+func generatedPlanHasTaskBinding(data map[string]any) bool {
+	for _, field := range []string{"_plan_task_intent_id", "_plan_task_intent_revision", "_plan_task_intent_sha256"} {
+		if _, present := data[field]; present {
+			return true
+		}
+	}
+	return false
+}
+
 func sessionRunnerPlanModeDenialCount(entries []eventjournal.Entry) int {
 	latest := 0
 	for _, entry := range entries {

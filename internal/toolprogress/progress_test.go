@@ -64,3 +64,25 @@ func TestNormalizeMarksByteRangeAsDeterminate(t *testing.T) {
 		t.Fatalf("update=%#v", update)
 	}
 }
+
+func TestMergeClearsPriorTransferFactsWhenPipStartsAnotherDownload(t *testing.T) {
+	priorDone, priorTotal := int64(500000), int64(1000000)
+	priorPercent, priorRate := float64(50), float64(250000)
+	current := Update{
+		Phase: "downloading_packages", PhasePercent: &priorPercent,
+		BytesCompleted: &priorDone, BytesTotal: &priorTotal, BytesPerSecond: &priorRate,
+	}
+	zero := int64(0)
+	unknown := Merge(current, Update{Phase: "downloading_packages", BytesCompleted: &zero, Indeterminate: true})
+	if unknown.BytesCompleted == nil || *unknown.BytesCompleted != 0 || unknown.BytesTotal != nil ||
+		unknown.BytesPerSecond != nil || unknown.PhasePercent != nil || !unknown.Indeterminate {
+		t.Fatalf("new unknown-size download inherited stale facts: %#v", unknown)
+	}
+	nextTotal := int64(2000000)
+	known := Merge(current, Update{Phase: "downloading_packages", BytesCompleted: &zero, BytesTotal: &nextTotal})
+	if known.BytesCompleted == nil || *known.BytesCompleted != 0 || known.BytesTotal == nil ||
+		*known.BytesTotal != nextTotal || known.BytesPerSecond != nil || known.PhasePercent != nil ||
+		known.Indeterminate {
+		t.Fatalf("new known-size download inherited stale facts: %#v", known)
+	}
+}

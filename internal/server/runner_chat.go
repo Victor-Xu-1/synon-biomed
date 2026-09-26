@@ -66,7 +66,7 @@ const sessionRunnerProviderContinuationContractVersion = 1
 // improves. Retry budgets are scoped to this revision so failures produced by
 // an older repair contract cannot permanently quarantine a task after an
 // upgrade, while repeated failures under the current strategy stay bounded.
-const sessionRunnerRecoveryContractRevision = 25
+const sessionRunnerRecoveryContractRevision = 30
 
 const sessionRunnerConsecutiveIdenticalToolRoundBudget = 3
 const sessionRunnerToolRoundNoProgressReasonCode = "runner_tool_round_no_progress"

@@ -16,12 +16,14 @@ func TestCorrectionToolChoicePersistsUntilSuccessfulExecutedAction(t *testing.T)
 	}
 	boundary := agentruntime.Message{Role: "system", Content: sessionRunnerDurableCorrectionContextMarker + ". Obtain source authority."}
 	preflight := agentruntime.Message{Role: "tool", ToolCallID: "ask-1", Content: `{"ok":false,"executed":false,"status":"agent_owned_decision"}`}
+	decision := agentruntime.Message{Role: "tool", ToolCallID: "choice-1", Content: `{"ok":true,"executed":false,"decision_required":true,"status":"implementation_selection_required"}`}
 	failed := agentruntime.Message{Role: "tool", ToolCallID: "fetch-1", Content: `{"ok":false,"error":"network failure"}`}
 	succeeded := agentruntime.Message{Role: "tool", ToolCallID: "fetch-2", Content: `{"ok":true,"status":"completed","body":"authoritative content"}`}
 
 	for name, messages := range map[string][]agentruntime.Message{
 		"no action":        {boundary},
 		"preflight only":   {boundary, preflight},
+		"decision only":    {boundary, decision},
 		"failed action":    {boundary, failed},
 		"unrelated before": {{Role: "tool", Content: `{"ok":true}`}, boundary},
 	} {

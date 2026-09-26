@@ -89,13 +89,7 @@ func (s *Server) managedExecutionOutputAuthorities(
 					if err := publishManagedExecutionOutputSnapshot(ctx, workspaceRoot, authority); err != nil {
 						return nil, err
 					}
-					if resolvedRoot, managed, resolveErr := managedExecutionSnapshotRoot(
-						workspaceRoot, authority.Root, authority.PackID, authority.ExecutionID,
-					); resolveErr != nil || !managed {
-						return nil, errors.New("managed execution output snapshot did not become readable")
-					} else {
-						authority.ResolvedRoot = resolvedRoot
-					}
+					authority.ResolvedRoot = managedExecutionSnapshotDirectory(workspaceRoot, authority)
 					authorities = append(authorities, authority)
 				}
 			}
@@ -139,27 +133,24 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 	if !managedExecutionPathWithinRoot(workspaceRoot, outputRoot) || outputRoot == workspaceRoot {
 		return managedExecutionOutputAuthority{}, errors.New("managed execution output escaped the task workspace")
 	}
-	info, err := os.Lstat(outputRoot)
-	recoveredSnapshot := false
+	// After publication the receipt-bound snapshot is authoritative. The old
+	// workspace path is only a recoverable view; replacing it cannot invalidate
+	// immutable evidence or prevent unrelated kernel operations from starting.
+	candidate := managedExecutionSnapshotDirectory(workspaceRoot, managedExecutionOutputAuthority{
+		Root: outputRoot, PackID: packID, ExecutionID: executionID,
+	})
+	recoveredSnapshot, err := managedExecutionSnapshotManifestAt(candidate, packID, executionID)
+	if err != nil {
+		return managedExecutionOutputAuthority{}, err
+	}
 	resolved := outputRoot
-	if errors.Is(err, os.ErrNotExist) {
-		candidate := filepath.Join(workspaceRoot, ".synon-artifacts", ".managed", managedExecutionSnapshotID(managedExecutionOutputAuthority{
-			Root: outputRoot, PackID: packID, ExecutionID: executionID,
-		}))
-		valid, snapshotErr := managedExecutionSnapshotManifestAt(candidate, packID, executionID)
-		if snapshotErr != nil || !valid {
+	if recoveredSnapshot {
+		resolved = candidate
+	} else {
+		info, statErr := os.Lstat(outputRoot)
+		if statErr != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 			return managedExecutionOutputAuthority{}, errors.New("managed execution output directory is unavailable or unsafe")
 		}
-		resolved, recoveredSnapshot = candidate, true
-	} else if err != nil || !info.IsDir() && info.Mode()&os.ModeSymlink == 0 {
-		return managedExecutionOutputAuthority{}, errors.New("managed execution output directory is unavailable or unsafe")
-	} else if info.Mode()&os.ModeSymlink != 0 {
-		var managed bool
-		resolved, managed, err = managedExecutionSnapshotRoot(workspaceRoot, outputRoot, packID, executionID)
-		if err != nil || !managed {
-			return managedExecutionOutputAuthority{}, errors.New("managed execution output directory changed through an untrusted symbolic link")
-		}
-	} else {
 		resolved, err = filepath.EvalSymlinks(outputRoot)
 		if err != nil || filepath.Clean(resolved) != filepath.Clean(outputRoot) {
 			return managedExecutionOutputAuthority{}, errors.New("managed execution output directory changed through a symbolic link")

@@ -488,7 +488,6 @@ const SynonBiomedTaskStatus: React.FC<SynonBiomedTaskStatusProps> = ({
             escToClose
             containerScrollToClose
             updateOnScroll
-            autoFitPosition={false}
             autoFixPosition
             popupAlign={{ top: 8 }}
             duration={120}

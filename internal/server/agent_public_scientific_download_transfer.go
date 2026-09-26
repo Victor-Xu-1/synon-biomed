@@ -207,7 +207,8 @@ func (s *Server) agentPublicScientificTransferPolicy(request agentPublicScientif
 	}
 	return securefetch.Policy{
 		AllowedHosts: agentPublicScientificAllowedHosts(request), AllowedPorts: []string{"443"},
-		AcceptedMediaTypes: request.AcceptedTypes, MaxRedirects: 3, AllowMissingContentType: true, IdentityEncoding: true,
+		AllowPublicRedirects: request.AllowPublicRedirects,
+		AcceptedMediaTypes:   request.AcceptedTypes, MaxRedirects: 3, AllowMissingContentType: true, IdentityEncoding: true,
 		MaxBytes: request.maximumBytes(), Timeout: headerTimeout, LongLivedTransfer: true, TransferIdleTimeout: idleTimeout,
 		UserAgent: "Synon-Biomed-scientific-data/1.0",
 	}

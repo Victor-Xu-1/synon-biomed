@@ -868,6 +868,8 @@
     },
     "askUser": {
       "responseRequired": "Your response is required",
+      "stageRecorded": "Plan steps recorded complete: {{count}}",
+      "stageRemaining": "Plan steps still open: {{count}}",
       "decideForMe": "Let Synon Biomed decide",
       "decideForMeDescription": "Choose the best option using the current task context.",
       "customSelections": "Custom selections",

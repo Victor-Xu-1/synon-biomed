@@ -248,6 +248,8 @@ type Server struct {
 	publicScientificResponseHeaderTimeout time.Duration
 	publicScientificTransferIdleTimeout   time.Duration
 	publicScientificDownloadSlots         chan struct{}
+	publicScientificDownloadCacheMu       sync.Mutex
+	publicScientificDownloadCacheFlights  map[string]*agentPublicScientificDownloadFlight
 	mcpAppResourceTickets                 *mcpAppResourceTicketStore
 	workspaceEvents                       *workspaceEventHub
 	compatEvents                          *compatEventHub

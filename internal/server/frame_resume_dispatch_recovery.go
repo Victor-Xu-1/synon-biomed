@@ -116,6 +116,10 @@ func (s *Server) autoResumeInterruptedFrames(ctx context.Context) {
 	if s == nil || s.transcriptStore == nil || s.workspaceStore == nil {
 		return
 	}
+	if err := s.wakeChangedFrameRecoveryWaits(ctx); err != nil {
+		log.Printf("runner_recovery_condition_scan_failed err_type=%T error=%v", err, err)
+		return
+	}
 	candidates, err := collectFrameResumeRecoveryPages(
 		ctx, autoResumeCandidateLimit, s.transcriptStore.ListAllAutoResumeCandidatesPage,
 	)

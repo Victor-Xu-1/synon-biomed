@@ -84,6 +84,12 @@ type Policy struct {
 	AllowedHosts       []string
 	AllowedPorts       []string
 	AcceptedMediaTypes []string
+	// AllowPublicRedirects permits an already-authorized HTTPS source to hand
+	// off to another public HTTPS host. The initial URL must still match
+	// AllowedHosts, every redirect remains bounded by MaxRedirects and
+	// AllowedPorts, and the redirect host must resolve exclusively to public
+	// addresses before a proxied or direct request is allowed.
+	AllowPublicRedirects bool
 	// AllowMissingContentType is intentionally opt-in. A caller enabling it
 	// must validate streamed bytes before publishing the response.
 	AllowMissingContentType bool
@@ -126,6 +132,7 @@ type Response struct {
 
 type Client struct {
 	transport *http.Transport
+	resolver  AddressResolver
 	configErr error
 }
 
@@ -169,7 +176,7 @@ func New(options Options) *Client {
 		}
 		transport.DialContext = originalDial
 	}
-	return &Client{transport: transport, configErr: configErr}
+	return &Client{transport: transport, resolver: options.Resolver, configErr: configErr}
 }
 
 func hardenedTransport() *http.Transport {
@@ -211,8 +218,13 @@ func (c *Client) Fetch(ctx context.Context, rawURL string, policy Policy) (*Resp
 	}
 	client := http.Client{Transport: c.transport, Timeout: clientTimeout}
 	client.CheckRedirect = func(request *http.Request, via []*http.Request) error {
-		if len(via) > compiled.maxRedirects || request == nil || !compiled.allowsURL(request.URL) {
+		if len(via) > compiled.maxRedirects || request == nil || !compiled.allowsRedirectURL(request.URL) {
 			return fetchError(CodeRedirect)
+		}
+		if !compiled.allowsHost(request.URL.Hostname()) {
+			if _, err := resolvePublicAddresses(request.Context(), c.resolver, request.URL.Hostname()); err != nil {
+				return fetchErrorWithCause(CodeRedirect, err)
+			}
 		}
 		return nil
 	}
@@ -337,6 +349,7 @@ type compiledPolicy struct {
 	ports                   map[string]struct{}
 	mediaTypes              []string
 	mediaTypeSet            map[string]struct{}
+	allowPublicRedirects    bool
 	allowMissingContentType bool
 	maxRedirects            int
 	maxBytes                int64
@@ -416,6 +429,7 @@ func compilePolicy(policy Policy) (compiledPolicy, error) {
 	sort.Strings(mediaTypes)
 	return compiledPolicy{
 		hosts: hosts, ports: ports, mediaTypes: mediaTypes, mediaTypeSet: mediaTypeSet,
+		allowPublicRedirects:    policy.AllowPublicRedirects,
 		allowMissingContentType: policy.AllowMissingContentType,
 		maxRedirects:            policy.MaxRedirects, maxBytes: policy.MaxBytes, timeout: policy.Timeout,
 		userAgent: strings.TrimSpace(policy.UserAgent), identityEncoding: policy.IdentityEncoding,
@@ -496,10 +510,23 @@ func validHTTPDate(value string) string {
 }
 
 func (p compiledPolicy) allowsURL(target *url.URL) bool {
-	if target == nil || target.Scheme != "https" || target.Hostname() == "" || target.User != nil || target.Fragment != "" {
+	if !p.allowsURLShape(target) || !p.allowsHost(target.Hostname()) {
 		return false
 	}
-	if _, allowed := p.hosts[canonicalHost(target.Hostname())]; !allowed {
+	return true
+}
+
+func (p compiledPolicy) allowsRedirectURL(target *url.URL) bool {
+	return p.allowsURL(target) || (p.allowPublicRedirects && p.allowsURLShape(target))
+}
+
+func (p compiledPolicy) allowsHost(host string) bool {
+	_, allowed := p.hosts[canonicalHost(host)]
+	return allowed
+}
+
+func (p compiledPolicy) allowsURLShape(target *url.URL) bool {
+	if target == nil || target.Scheme != "https" || target.Hostname() == "" || target.User != nil || target.Fragment != "" {
 		return false
 	}
 	port := target.Port()

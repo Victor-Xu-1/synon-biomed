@@ -41,6 +41,17 @@ func ClassifyToolResult(value any) ToolResultOutcome {
 	return classifyToolResultMap(result, 0)
 }
 
+// ToolResultDidNotExecute is the execution-provenance boundary for a typed
+// result. A successful admission or decision receipt is not evidence that the
+// requested action ran when its own envelope explicitly says otherwise.
+func ToolResultDidNotExecute(value any) bool {
+	if provider, ok := value.(interface{ ToolResultEnvelope() map[string]any }); ok {
+		value = provider.ToolResultEnvelope()
+	}
+	result, ok := value.(map[string]any)
+	return ok && result["executed"] == false
+}
+
 // IsNonExecutingPreflight identifies a fail-closed admission result that
 // prevented user code or an external operation from starting. The result must
 // still classify as failed for evidence and model correction, but its tool

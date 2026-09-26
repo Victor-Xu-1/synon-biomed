@@ -94,7 +94,7 @@ func sessionRunnerExplicitPostWriteReadGaps(targets []string, messages []agentru
 		var result any
 		if json.Unmarshal([]byte(message.Content), &result) != nil ||
 			agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded ||
-			agentruntime.IsNonExecutingPreflight(result) {
+			agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		callTargets := append([]string(nil), call.targets...)

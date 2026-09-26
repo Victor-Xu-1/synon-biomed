@@ -17,6 +17,36 @@ import (
 	workspace "synon-go/internal/persistence/workspace"
 )
 
+func TestAskUserRecoveryDoesNotParkAnUnsourcedOperationalChoice(t *testing.T) {
+	fixture := newAgentSaveArtifactsFixture(t)
+	run := &sessionRunnerChatRun{
+		SessionID:        fixture.stream.SessionID,
+		CorrectionReason: sessionRunnerToolRoundNoProgressReasonCode,
+		Transcript:       &transcriptRunnerAuthority{Stream: fixture.stream, Claim: fixture.claim},
+	}
+	first := managedExecutionSafeAskUserOptionFields(
+		"Create another environment", "Create a new execution environment.",
+		"Keeps dependencies separate.", "Requires time and storage.",
+	)
+	first["recommended"] = true
+	second := managedExecutionSafeAskUserOptionFields(
+		"Retry the existing environment", "Retry installation in the current environment.",
+		"Reuses the environment.", "May fail again.",
+	)
+	second["recommended"] = false
+	result, err := fixture.server.executeAgentAskUserQuestion(
+		withTranscriptRunnerChatRun(context.Background(), run), run.SessionID,
+		"unsourced-recovery-choice", "ask_user", map[string]any{
+			"question": "Which environment should be used after the failed tool call?",
+			"header":   "Environment choice", "options": []any{first, second},
+		},
+	)
+	if err != nil || stringValue(mapValue(result)["code"]) != "agent_owned_decision" ||
+		mapValue(result)["executed"] != false {
+		t.Fatalf("unsourced recovery reached the user: result=%#v err=%v", result, err)
+	}
+}
+
 func TestAgentRuntimeGatewayCanonicalizesAskUserBeforePolicyAndAudit(t *testing.T) {
 	srv := New(Options{FileRoot: t.TempDir()})
 	if _, err := srv.settingsStore.Set(approvalDefaultsSettingKey, map[string]any{"mode": "allow"}); err != nil {

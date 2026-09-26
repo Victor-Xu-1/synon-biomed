@@ -186,7 +186,7 @@ func runnerCheckpointHasMaterialProgress(message eventjournal.Message) bool {
 	// An unavailable source is recoverable, but acquired no new evidence. It
 	// must not clear the same durable route quarantine on live and replay paths.
 	// Partial results may still carry useful work alongside unavailable sources.
-	if len(result) == 0 || agentruntime.IsNonExecutingPreflight(result) ||
+	if len(result) == 0 || agentruntime.ToolResultDidNotExecute(result) ||
 		outcome.HardFailed() || outcome == agentruntime.ToolResultUnavailable ||
 		boolValue(result["reused"], false) || boolValue(result["idempotent"], false) ||
 		runnerCorrectionResultUnchanged(result) {

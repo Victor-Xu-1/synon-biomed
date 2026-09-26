@@ -25,7 +25,8 @@ const (
 	// CompatibilityFrameResumeDispatchWaitModelSelection parks one durable
 	// dispatch until an explicit model selection or continue action wakes it.
 	// It is not a timer and therefore cannot expire a long-running task.
-	CompatibilityFrameResumeDispatchWaitModelSelection = "model_selection"
+	CompatibilityFrameResumeDispatchWaitModelSelection    = "model_selection"
+	CompatibilityFrameResumeDispatchWaitRecoveryCondition = "recovery_condition"
 )
 
 type CompatibilityFrameResumeDispatch struct {
@@ -67,14 +68,15 @@ type CompleteCompatibilityFrameResumeDispatchInput struct {
 }
 
 type RequeueCompatibilityFrameResumeDispatchInput struct {
-	ResumeEventID     string
-	ExpectedAttempt   int
-	ClaimToken        string
-	ReasonCode        string
-	RunnerAttempt     int
-	CheckpointEventID int64
-	NotBefore         time.Time
-	WaitingFor        string
+	ResumeEventID            string
+	ExpectedAttempt          int
+	ClaimToken               string
+	ReasonCode               string
+	RunnerAttempt            int
+	CheckpointEventID        int64
+	NotBefore                time.Time
+	WaitingFor               string
+	RecoveryContractRevision int
 }
 
 // ConvergeCompatibilityFrameResumeDispatchInput retires a resume dispatch
@@ -457,8 +459,11 @@ func (s *Store) RequeueCompatibilityFrameResumeDispatch(input RequeueCompatibili
 	if input.ResumeEventID == "" || input.ExpectedAttempt <= 0 || input.ClaimToken == "" || input.ReasonCode == "" {
 		return FrameEvent{}, false, errors.New("resume event id, positive expected attempt, claim token, and interruption reason are required")
 	}
-	if input.WaitingFor != "" && input.WaitingFor != CompatibilityFrameResumeDispatchWaitModelSelection {
+	if input.WaitingFor != "" && input.WaitingFor != CompatibilityFrameResumeDispatchWaitModelSelection && input.WaitingFor != CompatibilityFrameResumeDispatchWaitRecoveryCondition {
 		return FrameEvent{}, false, errors.New("resume dispatch waiting condition is invalid")
+	}
+	if input.WaitingFor == CompatibilityFrameResumeDispatchWaitRecoveryCondition && input.RecoveryContractRevision <= 0 {
+		return FrameEvent{}, false, errors.New("recovery condition wait requires its runtime contract revision")
 	}
 
 	ctx := context.Background()
@@ -526,8 +531,12 @@ func (s *Store) RequeueCompatibilityFrameResumeDispatch(input RequeueCompatibili
 	}
 	if input.WaitingFor != "" {
 		dispatchPayload["waitingFor"] = input.WaitingFor
+		if input.WaitingFor == CompatibilityFrameResumeDispatchWaitRecoveryCondition {
+			dispatchPayload["recoveryContractRevision"] = input.RecoveryContractRevision
+		}
 	} else {
 		delete(dispatchPayload, "waitingFor")
+		delete(dispatchPayload, "recoveryContractRevision")
 	}
 	delete(dispatchPayload, "claimOwner")
 	delete(dispatchPayload, "claimToken")
@@ -739,6 +748,7 @@ func wakeCompatibilityFrameResumeDispatchTx(ctx context.Context, tx workspaceTra
 	}
 	delete(dispatchPayload, "notBefore")
 	delete(dispatchPayload, "waitingFor")
+	delete(dispatchPayload, "recoveryContractRevision")
 	delete(dispatchPayload, "blockedAt")
 	delete(dispatchPayload, "error")
 	delete(dispatchPayload, "errorCode")

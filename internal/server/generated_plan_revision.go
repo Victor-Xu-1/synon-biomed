@@ -34,12 +34,12 @@ func reconcileGeneratedPlanRevision(current map[string]any, next generatedPlanDo
 	if bytes.Equal(oldShapeJSON, newShapeJSON) {
 		return previous, current, oldRaw, true, nil
 	}
-	type key struct{ Phase, Track, Agent, Title, Description, Kind, Module, Question, Depth, Queries string }
+	type key struct{ Phase, Track, Agent, Title, Description, Kind, ExecutionTool, Module, Question, Depth, Queries string }
 	stepKey := func(phase generatedPlanPhase, track generatedPlanDelegation, step generatedPlanStep) key {
 		queries, _ := json.Marshal(step.DiscoveryQueries)
 		return key{
 			Phase: phase.Name, Track: track.Name, Agent: track.AgentName, Title: step.Title,
-			Description: step.Description, Kind: step.Kind, Module: step.OutputModule,
+			Description: step.Description, Kind: step.Kind, ExecutionTool: step.ExecutionTool, Module: step.OutputModule,
 			Question: step.ResearchQuestion, Depth: step.ResearchDepth, Queries: string(queries),
 		}
 	}

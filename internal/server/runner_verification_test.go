@@ -140,6 +140,21 @@ func TestSessionReviewerCleanPassDoesNotRequireArtifactReadsOrRecomputation(t *t
 	}
 }
 
+func TestSessionRunnerReviewerFindingsAreAdvisory(t *testing.T) {
+	review := sessionRunnerReview{
+		Verdict: "fail",
+		Summary: "the reviewer could not confirm the final presentation",
+		Issues:  []sessionRunnerReviewIssue{{Verdict: "fail", Severity: "high", Claim: "candidate needs another review"}},
+	}
+	advisory := sessionRunnerAdvisoryReview(review)
+	if advisory.Verdict != "warn" || len(advisory.Issues) != 1 || advisory.Issues[0].Verdict != "warn" {
+		t.Fatalf("reviewer finding remained a hard gate: %#v", advisory)
+	}
+	if review.Verdict != "fail" || review.Issues[0].Verdict != "fail" {
+		t.Fatalf("advisory conversion mutated the source review: %#v", review)
+	}
+}
+
 func TestSessionReviewerArtifactFindingRequiresThatArtifactRead(t *testing.T) {
 	binding := map[string]any{
 		"stream_uid": "stream-artifact-finding", "runner_attempt": 1, "review_index": 0,

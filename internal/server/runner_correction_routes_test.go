@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"synon-go/internal/agentruntime"
+	eventjournal "synon-go/internal/persistence/journal"
 	sessionstore "synon-go/internal/persistence/sessions"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
@@ -171,6 +172,84 @@ func TestCorrectionRoutesIgnoreUnrelatedProgressButAcceptChangedMaterial(t *test
 	entries, err := fixture.server.loadTranscriptRunnerReplay(context.Background(), fixture.run.Transcript, 1, 1)
 	if err != nil || runnerRepeatedCorrectionInterruptionCount(entries, failure.runnerCorrection()) != 1 {
 		t.Fatal("tool progress falsely discharged the correction")
+	}
+}
+
+func TestCorrectionRoutesDoNotCloseAnUnexecutedDecision(t *testing.T) {
+	fixture := newCorrectionRouteFixture(t)
+	call := correctionEditCall("decision-preflight", "candidate.txt", "candidate")
+	var input map[string]any
+	if err := json.Unmarshal(call.Arguments, &input); err != nil {
+		t.Fatal(err)
+	}
+	checkpoint := map[string]any{
+		"type": "runner_checkpoint", "status": "completed", "toolPhase": "completed",
+		"toolName": call.Name, "toolInput": input,
+		"toolResult": map[string]any{
+			"ok": true, "executed": false, "decision_required": true,
+			"status": "implementation_selection_required",
+		},
+	}
+	if runnerCheckpointHasMaterialProgress(eventjournal.Message(checkpoint)) {
+		t.Fatal("a non-executing decision was reported as material progress")
+	}
+	appendRunnerToolCheckpoint(t, fixture.repo, fixture.run.Transcript.Claim, "unexecuted-decision", checkpoint)
+	appendRunnerToolCheckpoint(t, fixture.repo, fixture.run.Transcript.Claim, "legacy-derived-closure", map[string]any{
+		"type": "runner_checkpoint", "status": "failed", "toolPhase": prestartToolFailurePhase,
+		"toolName": call.Name, "toolInput": input, "rejectedBeforeExecution": true,
+		"toolResult": map[string]any{"ok": false, "executed": false, "code": "correction_route_closed"},
+	})
+	fixture.reject(t, sessionRunnerCompletionReviewCorrection{Summary: "Continue the current task."})
+	fixture.resume(t)
+	call.ID = "retry-after-decision"
+	diagnostics, err := fixture.gateway().correctionRoutePreflight(context.Background(), []agentruntime.ToolCall{call})
+	if err != nil || diagnostics[0] != "" {
+		t.Fatalf("unexecuted decision closed the route: diagnostics=%v err=%v", diagnostics, err)
+	}
+}
+
+func TestDerivedClosureExemptionRequiresHostPrestartProvenance(t *testing.T) {
+	entry := eventjournal.Entry{SourceEventType: "runner_checkpoint", Message: eventjournal.Message{
+		"type": "runner_checkpoint", "status": "failed", "toolPhase": "failed",
+		"toolName": "managed_tool", "rejectedBeforeExecution": false,
+		"toolResult": map[string]any{"ok": false, "executed": false, "code": "correction_route_closed"},
+	}}
+	if !runnerCorrectionRouteReceipt(entry) {
+		t.Fatal("tool-authored closed-route code erased an actual failure receipt")
+	}
+}
+
+func TestCorrectionRouteQuarantineUsesRecoveryContractRevision(t *testing.T) {
+	for _, revision := range []int{sessionRunnerRecoveryContractRevision - 1, sessionRunnerRecoveryContractRevision} {
+		t.Run(fmt.Sprint(revision), func(t *testing.T) {
+			f := newCorrectionRouteFixture(t)
+			call := correctionEditCall("rejected-edit", "candidate.txt", "candidate")
+			var input map[string]any
+			if err := json.Unmarshal(call.Arguments, &input); err != nil {
+				t.Fatal(err)
+			}
+			appendRunnerToolCheckpoint(t, f.repo, f.claim, "rejected-route", map[string]any{
+				"status": "failed", "toolPhase": prestartToolFailurePhase, "toolName": call.Name,
+				"toolInput": input, "rejectedBeforeExecution": true,
+				"toolResult": map[string]any{"ok": false, "executed": false, "code": "invalid_tool_arguments"},
+			})
+			cause := sessionRunnerPlanStepsIncomplete{condition: transcriptstore.RunnerPlanCondition{
+				ArtifactID: "plan", VersionID: "version", Steps: []transcriptstore.RunnerPlanConditionStep{{ID: "work", Title: "Analyze"}},
+			}}.runnerCorrection()
+			payload, err := transcriptstore.RunnerInterruptionCausePayload(cause)
+			if err != nil {
+				t.Fatal(err)
+			}
+			appendRunnerToolCheckpoint(t, f.repo, f.claim, "rejected-condition", map[string]any{
+				"status": "interrupted", "reason_code": cause.ReasonCode, "resume_detail": cause.Detail,
+				"recovery_contract_revision": revision, transcriptstore.RunnerInterruptionCauseField: payload,
+			})
+			f.run.CorrectionReason, f.run.CorrectionDetail, f.run.CorrectionCondition = cause.ReasonCode, cause.Detail, cause.Condition
+			diagnostics, err := f.gateway().correctionRoutePreflight(context.Background(), []agentruntime.ToolCall{call})
+			if err != nil || (diagnostics[0] != "") != (revision == sessionRunnerRecoveryContractRevision) {
+				t.Fatalf("quarantine did not honor its admission contract revision: %#v %v", diagnostics, err)
+			}
+		})
 	}
 }
 

@@ -115,6 +115,26 @@ func TestProgressCannotPublishUnverifiedOperationCompletion(t *testing.T) {
 	}
 }
 
+func TestNonExecutingDecisionCannotPublishExecutionEvidence(t *testing.T) {
+	result := `{"ok":true,"executed":false,"decision_required":true,"status":"implementation_selection_required","artifacts":[{"artifact_id":"unexecuted"}]}`
+	if _, accepted := sessionRunnerSuccessfulToolResult(result); accepted {
+		t.Fatal("non-executing decision became a successful execution receipt")
+	}
+	if artifacts := sessionRunnerSavedArtifactsFromToolContent(result); len(artifacts) != 0 {
+		t.Fatalf("non-executing decision published artifacts: %#v", artifacts)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal([]byte(result), &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if generatedPlanSuccessfulExecutionValue(decoded) {
+		t.Fatal("non-executing decision completed a plan step")
+	}
+	if status := agentRuntimeApprovalStatus("partial", decoded); status != "failed" {
+		t.Fatalf("non-executing partial approval settled as %q", status)
+	}
+}
+
 type semanticInvalidEditModel struct{ calls int }
 
 func (model *semanticInvalidEditModel) Complete(context.Context, agentruntime.ModelRequest) (agentruntime.ModelResponse, error) {

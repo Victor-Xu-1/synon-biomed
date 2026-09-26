@@ -33,6 +33,7 @@ import {
 } from './molstarStructureEngine';
 import { ELECTROSTATIC_COLOR_STOPS } from './molstarElectrostaticTheme';
 import { loadStructureContent, resolveStructureFormat } from './structureSource';
+import { loadStructureSceneSources } from './structureScene';
 import { annotateMolstarControls } from './molstarControlsHelp';
 import {
   createAnimationFrameCoalescer,
@@ -342,6 +343,9 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
   const [expandedDockingColorIndex, setExpandedDockingColorIndex] = useState<number | null>(null);
   const [dockingProteinVisible, setDockingProteinVisible] = useState(true);
   const [structureComposition, setStructureComposition] = useState<MolstarStructureComposition | null>(null);
+  const [structureSceneSummary, setStructureSceneSummary] = useState<{ sceneId: string; layerCount: number } | null>(
+    null
+  );
   const [structureObjectVisibility, setStructureObjectVisibility] = useState<Record<StructureObjectKind, boolean>>({
     protein: true,
     ligand: true,
@@ -414,6 +418,7 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
 
   useEffect(() => {
     setRightPanelExpanded(false);
+    setStructureSceneSummary(null);
   }, [content, contentUrl, filename]);
 
   useEffect(() => {
@@ -1993,6 +1998,7 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
       });
       if (!active) return;
 
+      const sceneSources = await loadStructureSceneSources(companionArtifactUrls, controller.signal);
       const ensemble = format === 'pdb' && typeof source === 'string' ? parseDockingEnsemble(source) : null;
       const initialDockingIndex = ensemble
         ? Math.max(
@@ -2020,6 +2026,42 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
       }
       const composition = !ensemble ? await engine.load(displayedSource, filename, format) : null;
       if (!active) return;
+      if (!ensemble && sceneSources) {
+        const primaryName = filename.toLocaleLowerCase();
+        const sceneLayersToAdd = sceneSources.sources.filter(
+          (sceneSource) => sceneSource.name.toLocaleLowerCase() !== primaryName && sceneSource.url !== contentUrl
+        );
+        let loadedSceneLayerCount = 0;
+        for (const sceneSource of sceneLayersToAdd) {
+          try {
+            // Mol* mutates one shared scene; preserve deterministic layer order.
+            // eslint-disable-next-line no-await-in-loop
+            const companionSource = await loadStructureContent({
+              contentUrl: sceneSource.url,
+              filename: sceneSource.name,
+              format: resolveStructureFormat(sceneSource.name),
+              signal: controller.signal,
+            });
+            // eslint-disable-next-line no-await-in-loop
+            await engine.add(companionSource, sceneSource.name, resolveStructureFormat(sceneSource.name));
+            loadedSceneLayerCount += 1;
+          } catch (reason) {
+            console.warn('[SynonBiomedStructureViewer] Failed to load structure scene layer', {
+              filename: sceneSource.name,
+              reasonName: reason instanceof Error ? reason.name : typeof reason,
+            });
+          }
+        }
+        if (loadedSceneLayerCount === sceneLayersToAdd.length && loadedSceneLayerCount > 0) {
+          engine.resetCamera();
+          setStructureSceneSummary({
+            sceneId: sceneSources.sceneId,
+            layerCount: loadedSceneLayerCount + 1,
+          });
+          host.dataset.synonStructureScene = sceneSources.sceneId;
+          host.dataset.synonStructureSceneLayers = String(loadedSceneLayerCount + 1);
+        }
+      }
       const initialStructurePocketSummary =
         composition?.hasProtein && composition.hasLigand
           ? await engine.applyPocketFocus({
@@ -2083,7 +2125,7 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
       if (engineRef.current === null) sourceRef.current = null;
       engine?.dispose();
     };
-  }, [content, contentUrl, filename, format]);
+  }, [companionArtifactUrls, content, contentUrl, filename, format]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -2950,6 +2992,17 @@ const SynonBiomedStructureViewer: React.FC<SynonBiomedStructureViewerProps> = ({
           }}
         >
           <div ref={hostRef} data-testid='synon-biomed-structure-canvas' className='synon-biomed-molstar__host' />
+          {structureSceneSummary && (
+            <div
+              className='synon-biomed-molstar__quick-status'
+              data-testid='synon-biomed-structure-scene'
+              data-scene-id={structureSceneSummary.sceneId}
+              role='status'
+              aria-label='母结构与派生结构叠加场景'
+            >
+              母结构 + 派生结构叠加 · {structureSceneSummary.layerCount} 层
+            </div>
+          )}
           {renderElectrostaticLegend()}
           {interactionDiagramOpen && !interactionDiagramExpanded ? renderInteractionDiagramPanel() : null}
           {renderLigandDepiction()}

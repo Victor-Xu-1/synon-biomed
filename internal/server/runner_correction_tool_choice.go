@@ -81,7 +81,8 @@ func sessionRunnerCorrectionStillRequiresAction(run *sessionRunnerChatRun, messa
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil ||
+			agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		if agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
@@ -127,7 +128,8 @@ func sessionRunnerCorrectionReadyForRevalidation(
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) ||
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) ||
+			agentruntime.ToolResultDidNotExecute(result) ||
 			agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded {
 			continue
 		}
@@ -828,7 +830,7 @@ func runnerCorrectionHasReturnedSourceURL(messages []agentruntime.Message) bool 
 		}
 		var result any
 		if json.Unmarshal([]byte(message.Content), &result) != nil ||
-			agentruntime.IsNonExecutingPreflight(result) {
+			agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		if runnerCorrectionValueHasSourceURL(result, 0, new(int)) {
@@ -927,7 +929,7 @@ func runnerCorrectionPreviouslyExhaustedSourceTools(
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		normalized := normalizeAgentToolName(call.Name)
@@ -1005,9 +1007,9 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 		}
 		normalized := normalizeAgentToolName(call.Name)
 		resultObject := runnerCorrectionResultObject(result)
-		nonExecutingPreflight := agentruntime.IsNonExecutingPreflight(result) ||
-			(resultObject != nil && agentruntime.IsNonExecutingPreflight(resultObject))
-		if normalized == "skill" && !nonExecutingPreflight &&
+		nonExecutingResult := agentruntime.ToolResultDidNotExecute(result) ||
+			(resultObject != nil && agentruntime.ToolResultDidNotExecute(resultObject))
+		if normalized == "skill" && !nonExecutingResult &&
 			agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
 			// A newly materialized Skill is a real contract revision. It may expose
 			// the exact connector schema that the previous REPL call lacked, so one
@@ -1015,7 +1017,7 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 			delete(exhausted, normalizeAgentToolName("repl"))
 			continue
 		}
-		if normalized == "repl" && nonExecutingPreflight {
+		if normalized == "repl" && nonExecutingResult {
 			// Any pre-execution rejection proves that this transport cannot run
 			// under the current loaded contract. It is not an execution attempt or
 			// evidence, but selecting it again without a Skill revision creates the
@@ -1028,7 +1030,7 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 			exhausted[normalized] = true
 			continue
 		}
-		if normalized == "repl" && !nonExecutingPreflight &&
+		if normalized == "repl" && !nonExecutingResult &&
 			agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded {
 			// The connector transport actually ran and ended without a usable
 			// record. Preserve that execution outcome, then move to another source
@@ -1037,7 +1039,7 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 			exhausted[normalized] = true
 			continue
 		}
-		if normalized == "repl" && !nonExecutingPreflight &&
+		if normalized == "repl" && !nonExecutingResult &&
 			agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
 			// REPL is exposed here solely as the transport for the connector record
 			// named by the current repair. A successful arbitrary calculation or
@@ -1057,7 +1059,7 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 		if normalized == "websearch" && agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
 			exhausted[normalized] = true
 		}
-		if normalized == "webresearch" && !agentruntime.IsNonExecutingPreflight(result) {
+		if normalized == "webresearch" && !agentruntime.ToolResultDidNotExecute(result) {
 			// One bounded research call may inspect many ranked pages. Repeating
 			// the identical transport inside the same validator correction adds
 			// no authoritative state and can loop indefinitely when the remaining
@@ -1132,7 +1134,7 @@ func runnerSourceRepairMutationState(messages []agentruntime.Message) (edited, s
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) ||
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) ||
 			agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded {
 			continue
 		}
@@ -1172,7 +1174,7 @@ func runnerUnsupportedSourceRemovalSavedSinceCorrection(messages []agentruntime.
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		call, found := calls[message.ToolCallID]
@@ -1315,7 +1317,7 @@ func runnerCorrectionSourceAttemptExhausted(call agentruntime.ToolCall, result a
 		// Bounded research may externalize an unavailable or partial outcome. Once
 		// execution occurred, recovery should move to another route or remove the
 		// unsupported claim instead of replaying the same research call.
-		return !agentruntime.IsNonExecutingPreflight(result)
+		return !agentruntime.ToolResultDidNotExecute(result)
 	case "fetcharticlefulltext":
 		_, recorded := object["available"].(bool)
 		return recorded
@@ -1452,7 +1454,7 @@ func runnerSuccessfulToolNamesSinceCorrection(messages []agentruntime.Message) m
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		call := calls[message.ToolCallID]

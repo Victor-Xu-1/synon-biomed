@@ -15,6 +15,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	kernelruntime "synon-go/internal/kernel"
 )
 
 const hostGrantsSettingKey = "hostAccess.grants"
@@ -76,6 +78,10 @@ func (s *Server) handleHostGrants(w http.ResponseWriter, r *http.Request) {
 		}
 		grant, err := s.upsertHostGrant(userID, path, mode)
 		if err != nil {
+			if errors.Is(err, kernelruntime.ErrProtectedHostMount) {
+				writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": err.Error()})
+				return
+			}
 			writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 			return
 		}
@@ -187,6 +193,10 @@ func (s *Server) handleHostGrantPicker(w http.ResponseWriter, r *http.Request) {
 	}
 	grant, err := s.upsertHostGrant(userID, selected, mode)
 	if err != nil {
+		if errors.Is(err, kernelruntime.ErrProtectedHostMount) {
+			writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": err.Error()})
+			return
+		}
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
@@ -518,6 +528,9 @@ func (s *Server) rollbackHostGrantMutation(receipt hostGrantMutationReceipt) err
 func (s *Server) validateHostGrantProtectedPaths(path string) (string, error) {
 	path, err := canonicalHostDirectory(path)
 	if err != nil {
+		return "", err
+	}
+	if err := kernelruntime.ValidateHostMountPath(path); err != nil {
 		return "", err
 	}
 	protectedPaths, err := s.agentKernelProtectedPaths()

@@ -148,6 +148,30 @@ func wrapSessionRunnerReviewStageError(err error) error {
 	return &sessionRunnerReviewStageError{Cause: err}
 }
 
+func sessionRunnerReviewCandidateUsable(result agentruntime.RunResult) bool {
+	return strings.TrimSpace(sessionRunnerLatestFinalCandidateContent(
+		result.Messages, result.FinalMessage.Content,
+	)) != ""
+}
+
+// The independent reviewer is an evidence-reduction layer. Its own transport,
+// lease, or child-frame failure must not turn an otherwise durable candidate
+// into a failed user task. Hard completion obligations are checked before this
+// layer and remain authoritative.
+func sessionRunnerAdvisoryReview(review sessionRunnerReview) sessionRunnerReview {
+	if strings.EqualFold(strings.TrimSpace(review.Verdict), "pass") {
+		return review
+	}
+	review.Issues = append([]sessionRunnerReviewIssue(nil), review.Issues...)
+	review.Verdict = "warn"
+	for index := range review.Issues {
+		if strings.EqualFold(strings.TrimSpace(review.Issues[index].Verdict), "fail") {
+			review.Issues[index].Verdict = "warn"
+		}
+	}
+	return review
+}
+
 type sessionReviewerArtifactEvidence struct {
 	ArtifactID    string `json:"artifactId"`
 	Name          string `json:"name"`
@@ -284,6 +308,10 @@ func (s *Server) runVerifiedSessionAgentStrict(
 	// stage only consumes those machine-readable contracts.
 	reviewRequired, policyErr := sessionRunnerEvidenceReviewRequired(session, run)
 	if policyErr != nil {
+		if sessionRunnerReviewCandidateUsable(result) {
+			log.Printf("completion reviewer policy unavailable; delivering candidate with advisory review state: %v", policyErr)
+			return result, nil
+		}
 		return result, wrapSessionRunnerReviewStageError(policyErr)
 	}
 	if !reviewRequired {
@@ -293,6 +321,10 @@ func (s *Server) runVerifiedSessionAgentStrict(
 		// Preserve the last streamed candidate on terminal review failure. It is
 		// visibly marked failed by runner_finished and remains useful diagnostic
 		// evidence. Empty resets below still precede a real replacement attempt.
+		if sessionRunnerReviewCandidateUsable(result) {
+			log.Printf("completion reviewer unavailable; delivering candidate with advisory review state: %v", cause)
+			return nil
+		}
 		return cause
 	}
 	reviewerOptions, err := s.resolveSessionReviewerOptions(ctx, session, options, sessionRunnerAttempt(run))
@@ -450,9 +482,10 @@ func (s *Server) runVerifiedSessionAgentStrict(
 		return result, wrapSessionRunnerReviewStageError(rejectCandidate(errors.New(message)))
 	}
 	reviewerModel := sessionReviewerModelFromVerifiedBinding(verifiedReviewBinding, reviewerOptions.Model)
+	persistedReview := sessionRunnerAdvisoryReview(review)
 	checkIDs, persistErr := s.persistSessionRunnerReview(
 		rootFrameID, session.ID, reviewerFrame.ID, reviewerModel,
-		result.FinalMessage.Content, review, reviewIndex, verifiedReviewBinding,
+		result.FinalMessage.Content, persistedReview, reviewIndex, verifiedReviewBinding,
 	)
 	if persistErr != nil {
 		finishErr := s.finishSessionReviewerFrame(reviewerFrame.ID, "failed", persistErr.Error(), reviewIndex)
@@ -478,15 +511,12 @@ func (s *Server) runVerifiedSessionAgentStrict(
 		}
 		return result, nil
 	}
-	if err := s.checkpointSessionReview(options, run, reviewIndex, "completed", firstNonEmpty(review.Summary, "completion review requested correction"), map[string]any{
-		"verdict": "revise", "checkIds": checkIDs, "sourceRef": verifiedReviewBinding,
+	if err := s.checkpointSessionReview(options, run, reviewIndex, "completed", firstNonEmpty(review.Summary, "completion review recorded as advisory"), map[string]any{
+		"verdict": "warn", "checkIds": checkIDs, "sourceRef": verifiedReviewBinding,
 	}); err != nil {
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(err))
+		return result, rejectCandidate(err)
 	}
-	if !sessionReviewerShouldRequestCorrection(reviewIndex) {
-		return result, nil
-	}
-	return result, sessionRunnerCompletionReviewCorrection{Summary: review.Summary, Issues: review.Issues}
+	return result, nil
 }
 
 func sessionReviewerShouldRequestCorrection(reviewIndex int) bool {

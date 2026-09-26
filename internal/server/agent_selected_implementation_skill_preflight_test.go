@@ -1,11 +1,14 @@
 package server
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"synon-go/internal/agentruntime"
 	"synon-go/internal/skills"
 )
 
@@ -198,6 +201,17 @@ func TestSubstantialImplementationExecutionRequiresCurrentChoiceAndDedicatedSkil
 	if stringValue(result["status"]) != "implementation_skill_required" ||
 		stringValue(result["required_skill"]) != "engine-a-skill" || boolValue(result["executed"], true) {
 		t.Fatalf("selected implementation bypassed its dedicated Skill: %#v", result)
+	}
+	gateway.allowedTools = []string{"bash"}
+	feedback := gateway.toolCallPreflightDiagnostic(context.Background(), agentruntime.ToolCall{
+		ID: "selected-engine", Name: "bash", Arguments: mustMarshalRawMessage(engineCall),
+	})
+	var diagnostic map[string]any
+	if err := json.Unmarshal([]byte(feedback), &diagnostic); err != nil {
+		t.Fatalf("invalid model-facing preflight: %v: %s", err, feedback)
+	}
+	if diagnostic["required_skill"] != "engine-a-skill" {
+		t.Fatalf("model-facing preflight discarded the exact required Skill: %#v", diagnostic)
 	}
 	run.addExecutedSkillNames("engine-a-skill")
 	if result := gateway.agentRuntimeImplementationExecutionChoicePreflight("bash", engineCall); result != nil {

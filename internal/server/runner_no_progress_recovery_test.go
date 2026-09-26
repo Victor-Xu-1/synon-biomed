@@ -12,6 +12,24 @@ import (
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
 
+func TestNoProgressRecoveryDoesNotRestoreSupersededQuarantine(t *testing.T) {
+	call := agentruntime.ToolCall{Name: "web_fetch", Arguments: json.RawMessage(`{"url":"https://example.org/input"}`)}
+	scope := runnerRecoveryObligationFingerprint(nil, transcriptstore.RunnerInterruptionCause{})
+	old := newSessionRunnerNoProgressRecovery(scope)
+	old.recordNoProgress([]agentruntime.ToolCall{call})
+	for _, revision := range []int{sessionRunnerRecoveryContractRevision - 1, sessionRunnerRecoveryContractRevision} {
+		state := newSessionRunnerNoProgressRecovery(scope)
+		state.observeEntry(eventjournal.Entry{SourceEventType: "runner_checkpoint", Message: eventjournal.Message{
+			"type": "runner_checkpoint", "status": "interrupted", "reason_code": sessionRunnerToolRoundNoProgressReasonCode,
+			"resume_detail": old.resumeDetail("Choose another route."), "recovery_contract_revision": revision,
+		}}, nil)
+		if (state.Consecutive > 0) != (revision == sessionRunnerRecoveryContractRevision) ||
+			(len(state.ClosedActions) > 0) != (revision == sessionRunnerRecoveryContractRevision) {
+			t.Fatalf("revision %d quarantine=%#v", revision, state)
+		}
+	}
+}
+
 func TestRepeatedCompletionCorrectionIsBoundedByItsDurableFingerprint(t *testing.T) {
 	detail := "runner completion reference integrity failed (missing_required_deliverables=1)"
 	entries := []eventjournal.Entry{

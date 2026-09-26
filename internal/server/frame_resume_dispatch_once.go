@@ -353,20 +353,24 @@ func (s *Server) RunFrameResumeDispatchOnce(ctx context.Context, options FrameRe
 		if reasonCode == "" {
 			reasonCode = "runner_interrupted"
 		}
-		if runnerResult.AwaitingModelSelection {
-			// Model configuration is a recoverable user-owned prerequisite, not a
-			// failed scientific task. Keep the exact dispatch and resumable runner
-			// checkpoint parked until a model selection or explicit continue wakes
-			// it; no timer may turn this wait into a task failure or hot retry loop.
+		if runnerResult.AwaitingModelSelection || runnerResult.AwaitingRecoveryCondition {
+			// A missing prerequisite or unchanged recovery condition is not a
+			// failed task. Preserve the exact dispatch and checkpoint until a
+			// meaningful state change or explicit continue wakes it, never a timer.
+			waitingFor := workspace.CompatibilityFrameResumeDispatchWaitModelSelection
+			if runnerResult.AwaitingRecoveryCondition {
+				waitingFor = workspace.CompatibilityFrameResumeDispatchWaitRecoveryCondition
+			}
 			pausedEvent, _, requeueErr := s.workspaceStore.RequeueCompatibilityFrameResumeDispatch(
 				workspace.RequeueCompatibilityFrameResumeDispatchInput{
-					ResumeEventID:     dispatch.ResumeEvent.ID,
-					ExpectedAttempt:   dispatch.Attempt,
-					ClaimToken:        dispatch.ClaimToken,
-					ReasonCode:        reasonCode,
-					RunnerAttempt:     runnerResult.Attempt,
-					CheckpointEventID: runnerResult.CheckpointEventID,
-					WaitingFor:        workspace.CompatibilityFrameResumeDispatchWaitModelSelection,
+					ResumeEventID:            dispatch.ResumeEvent.ID,
+					ExpectedAttempt:          dispatch.Attempt,
+					ClaimToken:               dispatch.ClaimToken,
+					ReasonCode:               reasonCode,
+					RunnerAttempt:            runnerResult.Attempt,
+					CheckpointEventID:        runnerResult.CheckpointEventID,
+					WaitingFor:               waitingFor,
+					RecoveryContractRevision: sessionRunnerRecoveryContractRevision,
 				},
 			)
 			if requeueErr != nil {

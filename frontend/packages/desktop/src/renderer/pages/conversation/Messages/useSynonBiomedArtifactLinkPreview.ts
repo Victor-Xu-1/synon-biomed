@@ -21,6 +21,7 @@ import {
   SYNON_BIOMED_TEXT_ACCEPT_HEADER,
 } from '@/renderer/services/synonBiomedArtifactPreview';
 import {
+  createSynonBiomedCompanionArtifactUrls,
   getSynonBiomedArtifactImageFilename,
   getSynonBiomedArtifactReferenceId,
   getSynonBiomedRelativeArtifactFilename,
@@ -108,6 +109,10 @@ export function useSynonBiomedArtifactResolver({
   const artifactIndex = useConversationArtifactIndex();
   const resolveWindowReferences = useResolveConversationArtifactWindow();
   const exactReferences = useMemo(() => availableArtifactReferences(artifactReferences), [artifactReferences]);
+  const companionArtifactUrls = useMemo(
+    () => createSynonBiomedCompanionArtifactUrls([...artifactIndex.byVersionId.values()]),
+    [artifactIndex]
+  );
 
   const resolveFile = useCallback(
     async (referenceId: string | null, filename: string | null): Promise<ISynonBiomedScientificFile | null> => {
@@ -197,6 +202,7 @@ export function useSynonBiomedArtifactResolver({
           workspace,
           language: plan.language,
           editable: isSynonBiomedArtifactPreviewEditable(plan),
+          companionArtifactUrls,
         };
         openPreview(content, plan.type, metadata, { presentation: 'board' });
       } catch (error) {
@@ -205,7 +211,7 @@ export function useSynonBiomedArtifactResolver({
       }
       return true;
     },
-    [conversationId, openPreview, resolveFile, t, workspace]
+    [companionArtifactUrls, conversationId, openPreview, resolveFile, t, workspace]
   );
 
   return { handleLink, resolveImage, resolveLinkHref };

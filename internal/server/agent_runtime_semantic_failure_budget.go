@@ -49,7 +49,7 @@ func durableSemanticFailureStateForTarget(
 		if !ok || code == "execution_path_exhausted" || code == "semantic_failure_retry_exhausted" {
 			continue
 		}
-		if agentruntime.IsNonExecutingPreflight(result) ||
+		if agentruntime.ToolResultDidNotExecute(result) ||
 			(phase != "failed" && status != "failed") {
 			continue
 		}
@@ -148,7 +148,7 @@ func (s *Server) recordAgentRuntimeSemanticFailure(
 	capabilitySets ...[]string,
 ) {
 	if s == nil || s.runtimeStore == nil || strings.TrimSpace(sessionID) == "" ||
-		!agentruntime.ClassifyToolResult(value).HardFailed() || agentruntime.IsNonExecutingPreflight(value) {
+		!agentruntime.ClassifyToolResult(value).HardFailed() || agentruntime.ToolResultDidNotExecute(value) {
 		return
 	}
 	capabilities := []string(nil)

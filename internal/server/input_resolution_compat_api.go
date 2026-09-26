@@ -479,6 +479,9 @@ func (s *Server) resolveCompatibilityInputItem(
 			return content, "", false, nil, nil, err
 		}
 		content, continuation, result, err := compatibilityAskInputResult(item, response)
+		if err == nil && result != nil && string(result.Status) == "answered" {
+			continuation, err = s.reconcileAnsweredAskUserSelection(item, result.Answers, continuation)
+		}
 		return content, continuation, false, result, nil, err
 	}
 	if kind == agentToolApprovalKind {

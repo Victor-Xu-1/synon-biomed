@@ -165,6 +165,52 @@ func TestArtifactBlobRecoveryRemovesCrashOrphansAndKeepsReferences(t *testing.T)
 	}
 }
 
+func TestArtifactBlobRecoveryMarksMissingReferencesUnavailable(t *testing.T) {
+	root := t.TempDir()
+	database := filepath.Join(root, "workspace.db")
+	store, err := Open(database)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.CreateProject(CreateProjectInput{ID: "project-1", Name: "Project"}); err != nil {
+		t.Fatal(err)
+	}
+	_, version, err := store.SaveArtifactVersionFromReader(context.Background(), SaveArtifactVersionReaderInput{
+		ArtifactID: "artifact-1", ProjectID: "project-1", Name: "missing.bin",
+		Kind: "application/octet-stream", Content: strings.NewReader("recoverable metadata"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	blob, err := store.blobAbsolute(version.StoragePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(blob); err != nil {
+		t.Fatal(err)
+	}
+
+	reopened, err := Open(database)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	available, found, err := reopened.ArtifactVersionContentAvailable(version.ID)
+	if err != nil || !found || available {
+		t.Fatalf("missing blob availability=%t found=%t err=%v", available, found, err)
+	}
+	_, metadata, found, err := reopened.GetArtifactVersionMetadata(version.ID)
+	if err != nil || !found || metadata.ContentSHA256 != version.ContentSHA256 || metadata.SizeBytes != version.SizeBytes || metadata.StoragePath != version.StoragePath {
+		t.Fatalf("missing blob metadata was not preserved: found=%t metadata=%+v err=%v", found, metadata, err)
+	}
+	if _, _, _, found, err := reopened.OpenArtifactVersionContent(version.ID); !errors.Is(err, ErrArtifactContentPruned) || found {
+		t.Fatalf("missing blob did not fail closed: found=%t err=%v", found, err)
+	}
+}
+
 func TestDeleteProjectCleansExternalArtifactBlobs(t *testing.T) {
 	store, err := Open(filepath.Join(t.TempDir(), "workspace.db"))
 	if err != nil {

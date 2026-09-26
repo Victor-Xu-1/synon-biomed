@@ -28,14 +28,19 @@ func managedExecutionPackParameterEvidencePreflight(
 	userEvidence []managedExecutionUserEvidence,
 	responseLanguage string,
 	selectedResolvers []sciencecapability.ExecutionEvidenceResolver,
+	directImplementations ...string,
 ) map[string]any {
 	argumentValues := managedExecutionArgumentValues(content)
+	directImplementation := ""
+	if len(directImplementations) > 0 {
+		directImplementation = strings.TrimSpace(directImplementations[0])
+	}
 	for _, parameter := range pack.Parameters {
 		if parameter.Evidence != "selected-evidence-resolver" {
 			continue
 		}
 		value, present := argumentValues[parameter.Argument]
-		selected, found := selectedEvidenceResolverParameterValue(pack, selectedResolvers)
+		selected, found := selectedExecutionPackParameterValue(pack, selectedResolvers, directImplementation)
 		if present && found && taskImplementationMatchesRegistered(value, selected) {
 			continue
 		}
@@ -128,6 +133,21 @@ func selectedEvidenceResolverParameterValue(
 	}
 	values = uniqueSortedFolded(values)
 	return firstString(values), len(values) == 1
+}
+
+// An execution pack may be the current task's primary implementation or an
+// auxiliary evidence resolver for another pack. Both roles must resolve from
+// the task's registered selection; merely naming a Skill cannot select it.
+func selectedExecutionPackParameterValue(
+	pack sciencecapability.ExecutionPack,
+	selected []sciencecapability.ExecutionEvidenceResolver,
+	directImplementation string,
+) (string, bool) {
+	if resolver, found := selectedEvidenceResolverParameterValue(pack, selected); found {
+		return resolver, true
+	}
+	directImplementation = strings.TrimSpace(directImplementation)
+	return directImplementation, directImplementation != ""
 }
 
 func managedExecutionArgumentValues(content string) map[string]string {

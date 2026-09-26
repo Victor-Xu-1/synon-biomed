@@ -233,7 +233,8 @@ func (s *Server) handleSessionRunnerChatInterruption(
 		resumeDetail := "the agent repeated tool rounds without producing new evidence; resume must reuse completed receipts and choose a materially different action or finish"
 		if noProgressCount >= sessionRunnerConsecutiveIdenticalToolRoundBudget {
 			reasonCode = sessionRunnerToolRoundNoProgressExhaustedReasonCode
-			resumeDetail = "the agent repeatedly cycled across completed tool routes without semantic progress; preserve completed receipts, quarantine the repeated route, and continue automatically with a materially different action"
+			result.AwaitingRecoveryCondition = true
+			resumeDetail = "the current recovery obligation exhausted unchanged tool routes without material progress; preserve the goal and completed receipts, and resume this same checkpoint after relevant state, model selection, runtime contract, or user input changes"
 		}
 		if noProgressState.Schema == sessionRunnerNoProgressRecoverySchema {
 			resumeDetail = noProgressState.resumeDetail(resumeDetail)
@@ -309,6 +310,13 @@ func (s *Server) handleSessionRunnerChatInterruption(
 		// rejections is observability, not a lifetime for the logical task.
 		if !runnerInterruptionMayContinueSameTask(reasonCode) {
 			return false, nil
+		}
+		if transcriptAuthority != nil {
+			projection, err := s.loadSessionRunnerRecoveryProjection(ctx, transcriptAuthority)
+			if err != nil {
+				return true, err
+			}
+			result.AwaitingRecoveryCondition = projection.CorrectionRepetition.waitsForChangedCondition(cause)
 		}
 		if chatRun.AssistantSegmentHasContent {
 			// Published assistant segments are immutable. A correction continues

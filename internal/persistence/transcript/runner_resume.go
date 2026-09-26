@@ -30,6 +30,7 @@ type RunnerInterruption struct {
 	EventID            int64
 	ReasonCode         string
 	ResumeDetail       string
+	AutoResume         bool
 	CreatedAt          time.Time
 }
 
@@ -103,6 +104,9 @@ func (r *Repository) LatestRunnerInterruption(
 		return RunnerInterruption{}, false, nil
 	}
 	interruption.ResumeDetail = strings.TrimSpace(stringValueFromAny(payload["resume_detail"]))
+	// Match the scheduler's eligibility contract, including historical records
+	// without an explicit flag and the retired correction-budget policy.
+	interruption.AutoResume = payload["auto_resume"] != false || interruption.ReasonCode == RetiredCorrectionBudgetReason
 	if interruption.ResumeDetail == "" {
 		interruption.ResumeDetail = strings.TrimSpace(stringValueFromAny(payload["resumeDetail"]))
 	}

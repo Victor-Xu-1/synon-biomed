@@ -2,6 +2,7 @@ import {
   chooseSynonBiomedRecoveryModel,
   doesSynonBiomedRuntimeSnapshotNeedActiveRefresh,
   isSynonBiomedAgentChoiceOption,
+  normalizeSynonBiomedAskUserQuestions,
   normalizeSynonBiomedExecutionLog,
   normalizeSynonBiomedPlanDocument,
   normalizeSynonBiomedRuntimeSnapshot,
@@ -11,6 +12,27 @@ import {
 import { describe, expect, it } from 'vitest';
 
 describe('Synon Biomed runtime operations model', () => {
+  it('retains only valid server-derived stage progress in a decision question', () => {
+    const stage_progress = {
+      schema: 'synon.plan_stage_progress.v1',
+      plan_version_id: 'version-1',
+      completed_count: 1,
+      remaining_count: 2,
+      completed_steps: [{ id: 'step-1', title: 'Inspect structure', status: 'completed' }],
+      remaining_steps: [{ id: 'step-2', title: 'Run pocket analysis', status: 'blocked' }],
+    };
+    const question = { question: 'Which route next?', header: 'Decision', options: [], stage_progress };
+    const [valid] = normalizeSynonBiomedAskUserQuestions([question]);
+    expect(valid.stageProgress?.remainingCount).toBe(2);
+    expect(valid.stageProgress?.remainingSteps[0].title).toBe('Run pocket analysis');
+    const [invalid] = normalizeSynonBiomedAskUserQuestions([
+      {
+        ...question,
+        stage_progress: { ...stage_progress, remaining_count: 0 },
+      },
+    ]);
+    expect(invalid.stageProgress).toBeNull();
+  });
   it('recognizes v1.1 agent-choice aliases without hiding scientific options', () => {
     expect(isSynonBiomedAgentChoiceOption('You decide for me')).toBe(true);
     expect(isSynonBiomedAgentChoiceOption('Skip this question')).toBe(true);

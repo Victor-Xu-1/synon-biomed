@@ -68,10 +68,27 @@ func init() {
 	runtime.LockOSThread()
 	exitCode, err := runConfinedWorkerHelper(phase)
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "kernel confinement helper failed")
+		_, _ = fmt.Fprintln(os.Stderr, confinementFailureDiagnostic(phase, err))
 		os.Exit(125)
 	}
 	os.Exit(exitCode)
+}
+
+// The helper cannot use the host logger. Emit only a bounded stage/code pair;
+// raw errors may contain paths, environment data or execution arguments.
+func confinementFailureDiagnostic(phase string, err error) string {
+	code := "setup_failed"
+	if errors.Is(err, ErrProtectedHostMount) {
+		code = "protected_path_overlap"
+	}
+	var errno syscall.Errno
+	if errors.As(err, &errno) {
+		code = "system_error_" + strconv.Itoa(int(errno))
+	}
+	if phase != kernelConfinementOuter && phase != kernelConfinementTarget {
+		phase = "unknown"
+	}
+	return "kernel confinement helper failed (phase=" + phase + ", code=" + code + ")"
 }
 
 func newConfinedWorkerCommand(workspaceDir, executable string, arguments, environment []string, mounts []WorkerMount, protected []string) (*exec.Cmd, error) {
@@ -573,7 +590,7 @@ func kernelBubblewrapArguments(request confinedWorkerRequest, helper string, hos
 			return nil, errors.New("kernel confinement mount is invalid")
 		}
 		if !mount.Trusted && kernelMountOverlapsProtectedPath(mount.Path, request, helper) {
-			return nil, errors.New("kernel confinement mount overlaps a protected path")
+			return nil, ErrProtectedHostMount
 		}
 		if pathContains(request.WorkspaceDir, mount.Path) {
 			if mount.Path == request.WorkspaceDir || mount.Writable {
@@ -744,6 +761,10 @@ func kernelSocketFile(file *os.File) bool {
 func kernelSocketFD(fd int) bool {
 	var stat unix.Stat_t
 	return fd >= 3 && unix.Fstat(fd, &stat) == nil && stat.Mode&unix.S_IFMT == unix.S_IFSOCK
+}
+
+func platformHostMountPathProtected(path string) bool {
+	return kernelMountOverlapsProtectedPath(path, confinedWorkerRequest{}, "")
 }
 
 func kernelMountOverlapsProtectedPath(mount string, request confinedWorkerRequest, helper string) bool {

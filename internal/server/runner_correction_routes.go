@@ -85,6 +85,15 @@ func (g serverAgentRuntimeToolGateway) correctionRoutePreflight(ctx context.Cont
 	expected := runnerCorrectionFingerprint(run.correctionCause())
 	activeCondition := ""
 	err = g.server.scanSessionRunnerRecoveryEntries(ctx, run.Transcript, func(entry eventjournal.Entry) error {
+		if runnerRecoveryCheckpointSuperseded(entry) {
+			// Admission decisions belong to the runtime contract that made them.
+			// Preserve receipts and material identities, but reevaluate a repaired
+			// contract instead of carrying an obsolete quarantine across upgrades.
+			for _, route := range routes {
+				route.pending, route.closed = false, false
+			}
+			return nil
+		}
 		if runnerEntryStartsNewLogicalTask(entry) {
 			activeCondition = ""
 		}
@@ -147,7 +156,7 @@ func (g serverAgentRuntimeToolGateway) correctionRoutePreflight(ctx context.Cont
 	diagnostics := make(map[int]string)
 	for index, route := range routes {
 		if route.closed {
-			diagnostics[index] = runnerCorrectionClosedRouteDiagnostic
+			diagnostics[index] = g.closedRouteDiagnostic(calls[index], runnerCorrectionClosedRouteDiagnostic)
 		}
 	}
 	return diagnostics, nil
@@ -176,8 +185,30 @@ func runnerCorrectionRouteReceipt(entry eventjournal.Entry) bool {
 	if entry.SourceEventType != "runner_checkpoint" || m["type"] != "runner_checkpoint" || strings.TrimSpace(stringValue(m["toolName"])) == "" {
 		return false
 	}
-	return m["status"] == "completed" && m["toolPhase"] == "completed" ||
-		m["status"] == "failed" && (m["toolPhase"] == "failed" || m["toolPhase"] == prestartToolFailurePhase)
+	if m["status"] == "failed" && m["toolPhase"] == prestartToolFailurePhase &&
+		boolValue(m["rejectedBeforeExecution"], false) && runnerDerivedClosedRouteResult(mapValue(m["toolResult"])) {
+		return false
+	}
+	if m["status"] == "completed" && m["toolPhase"] == "completed" {
+		return !agentruntime.ToolResultDidNotExecute(m["toolResult"])
+	}
+	return m["status"] == "failed" && (m["toolPhase"] == "failed" || m["toolPhase"] == prestartToolFailurePhase)
+}
+
+// A guard's own "route closed" reply is a projection of earlier evidence,
+// not another attempted action. Replaying it as a fresh rejection makes old
+// tasks permanently unable to revisit a route after its original cause is
+// repaired or reclassified.
+func runnerDerivedClosedRouteResult(result map[string]any) bool {
+	if result["executed"] != false {
+		return false
+	}
+	switch strings.TrimSpace(stringValue(result["code"])) {
+	case "correction_route_closed", "durable_no_progress_route_closed":
+		return true
+	default:
+		return false
+	}
 }
 
 // Only explicit resource fields are dependencies. Prose, code comments, tool

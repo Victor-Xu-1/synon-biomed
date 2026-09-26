@@ -253,6 +253,15 @@ func TestManagedEnvironmentFastInventorySkipsPerEnvironmentHealthProbe(t *testin
 		len(filteredWithoutPackages[0].Packages) != 0 {
 		t.Fatalf("dependency-only projection=%#v err=%v", filteredWithoutPackages, err)
 	}
+	targeted, err := manager.ListManagedEnvironments(context.Background(), ManagedEnvironmentQuery{
+		Name: name, Language: "python", Dependencies: []string{"python"}, IncludePackages: true, SkipHealth: true,
+	})
+	if err != nil || len(targeted) != 1 || targeted[0].Name != name || targeted[0].Generation != generation {
+		t.Fatalf("targeted inventory=%#v err=%v", targeted, err)
+	}
+	if _, err := manager.ListManagedEnvironments(context.Background(), ManagedEnvironmentQuery{Name: "../outside"}); err == nil {
+		t.Fatal("managed environment query accepted a path-like name")
+	}
 
 	strict, err := manager.ListManagedEnvironments(context.Background(), ManagedEnvironmentQuery{
 		Language: "python", Dependencies: []string{"python"}, IncludePackages: true,

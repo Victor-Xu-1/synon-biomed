@@ -45,13 +45,14 @@ type SessionRunnerCycleResult struct {
 	// AwaitingModelSelection distinguishes a pre-provider configuration gap
 	// from a provider request that actually ran and failed. The resume dispatcher
 	// uses it to park the same task until a model is configured.
-	AwaitingModelSelection bool   `json:"-"`
-	KernelOperationID      string `json:"-"`
-	Attempt                int    `json:"attempt,omitempty"`
-	CheckpointEventID      int64  `json:"checkpointEventId,omitempty"`
-	AssistantEventID       int64  `json:"assistantEventId,omitempty"`
-	FinishEventID          int64  `json:"finishEventId,omitempty"`
-	AutoAdvanced           bool   `json:"autoAdvanced,omitempty"`
+	AwaitingModelSelection    bool   `json:"-"`
+	AwaitingRecoveryCondition bool   `json:"-"`
+	KernelOperationID         string `json:"-"`
+	Attempt                   int    `json:"attempt,omitempty"`
+	CheckpointEventID         int64  `json:"checkpointEventId,omitempty"`
+	AssistantEventID          int64  `json:"assistantEventId,omitempty"`
+	FinishEventID             int64  `json:"finishEventId,omitempty"`
+	AutoAdvanced              bool   `json:"autoAdvanced,omitempty"`
 }
 
 type sessionRunnerCommandInput struct {

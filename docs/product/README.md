@@ -206,6 +206,13 @@ with the project and the material it depends on.
 
 ## Review before relying on a result / 使用结果前的复核
 
+*Product explainer / 产品解释图：复核时需要结合的材料，不代表来源信息自动完整记录。*
+
+![Evidence-review relationship: inspect an artifact and its version together with sources, inputs and execution records, then apply domain review](../assets/evidence-review-diagram.svg)
+
+从产物出发，回看来源、输入与实际执行；缺少哪一类信息，就保留相应的不确定性。
+图中的连接表达复核关系，不表示系统已为任意文件自动收集全部证据。
+
 1. **Sources / 来源：** distinguish a search hit from a source that was actually
    read. Check study type, publication date, conflicting evidence and unavailable material.
 2. **Inputs / 输入：** confirm file identity and version, molecular objects,

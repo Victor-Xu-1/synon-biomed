@@ -70,12 +70,17 @@ the next question.
 
 ## The pieces work together / 将研究环节连接起来
 
-| In the workspace | Role in your work |
-| --- | --- |
-| **Projects & conversations** | Organize questions, files and follow-up work around a research context. |
-| **Scientific Toolkit** | Discover and configure Experts, Skills, Connectors and scientific environments. |
-| **Task execution** | Follow work through its model, tool and compute boundaries. |
-| **Artifacts & sources** | Inspect outputs, supported previews, versions and recorded evidence. |
+*Product explainer / 产品解释图，不是运行截图或完整系统架构。*
+
+![Product capability map: research material enters a project workspace, which connects configured models, scientific tools and environments to reviewable artifacts](docs/assets/workspace-capability-map.svg)
+
+Read the map from top to bottom: bring research material into a project, use
+configured capabilities to work on it, then inspect the artifacts. Projects keep
+the context together; Models and Scientific Toolkit configure capabilities;
+execution feedback shows progress; artifacts preserve the files to review.
+
+从上到下读：带入研究材料 → 在项目中组织讨论并使用已配置能力 → 检查实际产物。
+这张图说明各部分的用途，不表示每个任务都必须经过完全相同的步骤。
 
 Scientific previews include supported molecular coordinate files, sequences,
 alignments, notebooks and tabular data. Model profiles have their own **Models**

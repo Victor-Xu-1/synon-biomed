@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1060" viewBox="0 0 960 1060" role="img" aria-labelledby="title desc">
+  <title id="title">Synon Biomed 产品能力地图</title>
+  <desc id="desc">研究材料进入项目工作台。项目组织问题、对话和文件，按任务连接已配置的模型、科学工具集与计算环境，形成供检查和继续研究的产物。这是产品解释图，不是运行截图或完整系统架构；可用能力取决于配置与权限。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1 7 4.5 1 8" fill="none" stroke="#167b73" stroke-width="2"/></marker>
+  </defs>
+  <style>
+    text{font-family:Inter,"Segoe UI","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#17323d}
+    .eyebrow{font-size:22px;font-weight:650;letter-spacing:2px;fill:#167b73}
+    .title{font-size:46px;font-weight:700;letter-spacing:-1px}
+    .label{font-size:38px;font-weight:650}
+    .body{font-size:28px;fill:#405b62}
+    .small{font-size:24px;fill:#50666b}
+    .line{fill:none;stroke:#167b73;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <rect width="960" height="1060" rx="24" fill="#ffffff"/>
+  <path d="M56 32h848" stroke="#167b73" stroke-width="5"/>
+  <text x="56" y="77" class="eyebrow">WORKSPACE / 产品解释图</text>
+  <text x="56" y="139" class="title">把研究的各个环节连接起来</text>
+  <text x="56" y="183" class="body">一个项目，承载问题、讨论与相关材料。</text>
+
+  <rect x="56" y="224" width="848" height="138" rx="22" fill="#f5f8f7"/>
+  <g class="line" transform="translate(91 251)">
+    <path d="M0 7h39l15 15v58H0zM39 7v16h15M11 39h31M11 53h31M11 67h19"/>
+    <path d="M66 48c8-22 31-24 40-8s-7 43-29 39M67 47l38-7M78 78l-3-27"/>
+    <circle cx="67" cy="47" r="5" fill="#fff"/><circle cx="105" cy="40" r="5" fill="#fff"/><circle cx="78" cy="78" r="5" fill="#fff"/>
+  </g>
+  <text x="239" y="279" class="label">研究材料</text>
+  <text x="239" y="326" class="body">文献 · 结构 · 序列 · 数据</text>
+  <path d="M480 364v45" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="56" y="423" width="848" height="341" rx="28" fill="#edf6f3" stroke="#bedad2" stroke-width="1.5"/>
+  <circle cx="120" cy="479" r="23" fill="#167b73"/>
+  <path d="M110 479h20M120 469v20" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="163" y="493" class="label">项目工作台</text>
+  <text x="91" y="548" class="body">组织问题与对话 · 保留相关文件</text>
+  <path d="M91 579h778" stroke="#c1d7d0" stroke-width="1.5"/>
+  <text x="91" y="622" class="small">按任务连接已配置的能力</text>
+
+  <g>
+    <rect x="91" y="646" width="198" height="74" rx="37" fill="#fff"/>
+    <circle cx="118" cy="683" r="5" fill="#b79b62"/>
+    <text x="188" y="697" text-anchor="middle" class="label">模型</text>
+    <rect x="311" y="646" width="302" height="74" rx="37" fill="#fff"/>
+    <circle cx="338" cy="683" r="5" fill="#b79b62"/>
+    <text x="474" y="697" text-anchor="middle" class="label">科学工具集</text>
+    <rect x="635" y="646" width="234" height="74" rx="37" fill="#fff"/>
+    <circle cx="662" cy="683" r="5" fill="#b79b62"/>
+    <text x="766" y="697" text-anchor="middle" class="label">计算环境</text>
+  </g>
+
+  <path d="M480 766v45" class="line" marker-end="url(#arrow)"/>
+  <rect x="56" y="825" width="848" height="133" rx="22" fill="#17323d"/>
+  <g transform="translate(94 853)" fill="none" stroke="#b7d8ce" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 6h34l13 13v57H0zM34 6v14h13M11 37h23M11 50h18"/>
+    <path d="M69 20h39M69 38h30M69 56h39M69 74h22"/>
+  </g>
+  <text x="239" y="880" class="label" style="fill:#fff">可检查、可继续的产物</text>
+  <text x="239" y="927" class="body" style="fill:#c7ddd5">报告 · 表格 · 脚本 · 支持的文件</text>
+  <text x="56" y="1004" class="small">可用能力取决于配置与权限；产物仍需领域复核。</text>
+  <text x="56" y="1039" class="small">非运行截图 · 非完整系统架构 · 不代表科学结果</text>
+</svg>

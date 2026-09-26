@@ -107,22 +107,6 @@ with the project and the material it depends on.
 
 </details>
 
-## Actual application capture / 真实页面截图
-
-<details>
-<summary>Open the real login-page capture / 展开真实登录页</summary>
-
-![Actual Synon Biomed login screen](../assets/login-screen.png)
-
-Captured on 2026-09-26 from source revision `8e18c838` in a fresh unauthenticated
-browser context. The default username was cleared through the form;
-no login or task was submitted. The image is unmodified.
-
-这张图只展示真实登录入口。没有采集到的任务界面和运行结果，不用生成图补位。
-[Image provenance](../assets/README.md)
-
-</details>
-
 ## Explore the implementation / 探索实现
 
 [Workbench](../modules/workbench.md) · [Runtime](../modules/runtime.md) ·

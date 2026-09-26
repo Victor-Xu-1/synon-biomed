@@ -13,7 +13,7 @@ its source-backed reference.
 | Understand a research workflow and its prerequisites | [Product guide](product/README.md) |
 | Install, start, configure models or recover an instance | [Operations runbook](operations-runbook.md) |
 | Understand versioned packages and upgrades | [Versioning](governance/versioning.md) |
-| Understand illustrations and real screenshots | [Visual asset provenance](assets/README.md) |
+| Understand concept illustrations and image provenance | [Visual asset provenance](assets/README.md) |
 
 ## Change the code / 开发与维护
 

@@ -20,23 +20,6 @@ Both compositions use a pearl-white field, teal/graphite accents, a small amount
 of gold, soft daylight and restrained paper/glass-like forms. No text, UI,
 charts, numerical claims, task status or experiment outputs were requested.
 
-## Real application capture / 真实页面截图
-
-`login-screen.png` is an unmodified browser screenshot of the running login page.
-
-- Capture time: 2026-09-26 10:40:23 UTC.
-- Source revision: `8e18c83850d6a463ccf2a887ec1f9cd6c285a35e`.
-- Route: `/#/login`; fresh unauthenticated context.
-- Browser: Google Chrome 153.0.8010.53; viewport: 1440 × 900.
-- The source-default username was cleared through the form; no credentials
-  were entered, no login was submitted, and no task was executed.
-- The served frontend index matched the deployment build receipt:
-  `c1d08e36b09bb9de2c15fbb7d1be7c17e506fa283c29716119221166d843e3b9`.
-- Image SHA-256: `36156b6b25f709332ff0e6dfa9402233f9b912930467da65c465c39980b0e251`.
-
-This capture demonstrates only the visible login page. It does not establish
-authenticated workflows, scientific runtime readiness or result correctness.
-
 ## Image rules / 图片规范
 
 - Put a visible concept label beside generated artwork, not only in alt text.

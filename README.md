@@ -108,20 +108,6 @@ Installation, configuration and recovery:
 
 </details>
 
-## See the actual application / 查看真实页面
-
-<details>
-<summary>Real login-page capture / 真实登录页截图</summary>
-
-![Real Synon Biomed login page captured from the running application](docs/assets/login-screen.png)
-
-Real browser capture, 2026-09-26; source revision `8e18c838`.
-The default username was cleared in the form; no login or task was submitted.
-This shows the login entry, not a research-result demonstration.
-[Capture provenance](docs/assets/README.md#real-application-capture--真实页面截图)
-
-</details>
-
 ## Go deeper / 深入了解
 
 - **For researchers / 研究用户：** [Product guide](docs/product/README.md)

@@ -10,8 +10,10 @@ its source-backed reference.
 
 | Need / 目的 | Guide / 文档 |
 | --- | --- |
-| Understand a research workflow and its prerequisites | [Product guide](product/README.md) |
-| Install, start, configure models or recover an instance | [Operations runbook](operations-runbook.md) |
+| Understand the product, its strengths and suitable research work | [Product overview](product/README.md) |
+| Install from source and complete the first setup | [Installation guide / 安装指南](getting-started.md) |
+| Configure a model, start a task and inspect its outputs | [User guide / 使用手册](user-guide.md) |
+| Operate, secure, diagnose or recover an instance | [Operations runbook](operations-runbook.md) |
 | Understand versioned packages and upgrades | [Versioning](governance/versioning.md) |
 | Understand concept illustrations and image provenance | [Visual asset provenance](assets/README.md) |
 
@@ -41,9 +43,11 @@ its source-backed reference.
 
 ## Documentation ownership / 文档职责
 
-- Product guide: user intent, prerequisites and review questions.
+- Product overview: value, feature explanations, research scenarios and selection questions.
+- Installation guide: a new user's source setup and readiness checkpoints.
+- User guide: everyday operations, a first useful task and output review.
 - Module pages: concrete source entry points, boundaries and focused checks.
-- Operations runbook: install/configuration/recovery procedures.
+- Operations runbook: advanced configuration, packaged deployment and recovery reference.
 - Engineering and machine-readable governance files: exact implementation contracts.
 - Asset notes: concept-versus-capture labels and image provenance.
 

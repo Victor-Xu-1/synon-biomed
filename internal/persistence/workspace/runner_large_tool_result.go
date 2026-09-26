@@ -22,8 +22,13 @@ const (
 )
 
 var (
-	ErrRunnerLargeToolResultConflict = errors.New("runner large tool result conflicts with its immutable evidence")
-	errRunnerLargeToolResultInvalid  = errors.New("runner large tool result evidence is invalid")
+	// ErrRunnerLargeToolResultUnavailable means the immutable metadata remains,
+	// but its externalized content has been pruned or is no longer present.
+	// Callers may treat this as an unreadable historical result; metadata,
+	// identity, size, and digest conflicts remain hard failures.
+	ErrRunnerLargeToolResultUnavailable = errors.New("runner large tool result content is unavailable")
+	ErrRunnerLargeToolResultConflict    = errors.New("runner large tool result conflicts with its immutable evidence")
+	errRunnerLargeToolResultInvalid     = errors.New("runner large tool result evidence is invalid")
 )
 
 // RunnerLargeToolResult is immutable internal runtime evidence produced when a
@@ -355,6 +360,9 @@ func (s *Store) openRunnerLargeToolResultBlob(record RunnerLargeToolResult) (Art
 	}
 	file, err := openRegularFile(absolute)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errors.Join(ErrRunnerLargeToolResultUnavailable, fmt.Errorf("open runner large tool result blob: %w", err))
+		}
 		return nil, fmt.Errorf("open runner large tool result blob: %w", err)
 	}
 	info, err := file.Stat()

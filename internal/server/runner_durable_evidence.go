@@ -159,6 +159,12 @@ func (s *Server) sessionRunnerDurableToolMessagesPage(
 			}
 			result, err = s.restoreDurableEvidencePayload(ctx, authority.Stream, checkpoint, projected.Event.EventID, result)
 			if err != nil {
+				if errors.Is(err, errRunnerLargeToolResultUnavailable) {
+					// Historical externalized evidence may have been pruned. Keep
+					// the immutable checkpoint, but do not synthesize a tool result
+					// from its preview; later execution can reacquire the source.
+					continue
+				}
 				return nil, err
 			}
 			call := agentruntime.ToolCall{

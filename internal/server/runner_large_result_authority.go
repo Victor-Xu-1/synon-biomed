@@ -19,8 +19,9 @@ import (
 )
 
 var (
-	errRunnerLargeToolResultAuthority = errors.New("runner large tool result authority is unavailable")
-	errRunnerLargeToolResultConflict  = errors.New("runner large tool result conflicts with its immutable artifact")
+	errRunnerLargeToolResultAuthority   = errors.New("runner large tool result authority is unavailable")
+	errRunnerLargeToolResultUnavailable = errors.New("runner large tool result content is unavailable")
+	errRunnerLargeToolResultConflict    = errors.New("runner large tool result conflicts with its immutable artifact")
 )
 
 const (

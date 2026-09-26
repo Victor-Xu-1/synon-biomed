@@ -220,16 +220,11 @@ func (s *Server) sessionRunnerResearchMaterials(
 				// investigation set, just as we restore externalized evidence.
 				result, valid := sessionRunnerDurableToolResult(checkpoint.ToolResult)
 				if !valid {
-					if normalizeAgentToolName(checkpoint.ToolName) == normalizeAgentToolName(updateStepStatusToolName) {
-						continue
-					}
 					resultUnreadable = true
 				} else if restored, restoreErr := s.restoreDurableEvidencePayload(
 					ctx, authority.Stream, checkpoint, projected.Event.EventID, result,
 				); restoreErr != nil {
-					if normalizeAgentToolName(checkpoint.ToolName) == normalizeAgentToolName(updateStepStatusToolName) ||
-						(!errors.Is(restoreErr, errRunnerLargeToolResultAuthority) &&
-							!errors.Is(restoreErr, errRunnerLargeToolResultConflict)) {
+					if !errors.Is(restoreErr, errRunnerLargeToolResultUnavailable) {
 						return sessionRunnerResearchMaterialSet{}, restoreErr
 					}
 					// The terminal call remains an immutable process fact even if
@@ -356,6 +351,13 @@ func researchMaterialsFromCheckpoints(
 		}
 		if strings.EqualFold(strings.TrimSpace(checkpoint.ToolName), updateStepStatusToolName) {
 			if !strings.EqualFold(strings.TrimSpace(checkpoint.ToolPhase), "completed") {
+				continue
+			}
+			if event.ResultUnreadable {
+				// The applied transition is unknown. Neither the request nor a
+				// formerly active investigation can authorize later source routing.
+				// A subsequent verified progress receipt can establish it again.
+				clear(active)
 				continue
 			}
 			input := decodeResearchCheckpointObject(executedInput)

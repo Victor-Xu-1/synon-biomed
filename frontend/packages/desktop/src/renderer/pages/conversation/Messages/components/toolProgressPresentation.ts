@@ -3,11 +3,8 @@ import { toolPublicDetailText, type ToolPublicDetailTextKey } from '@/renderer/s
 
 export type ToolProgressPublicPresentation = {
   phaseLabel: string;
-  overallPercent: number | null;
-  phasePercent: number | null;
   elapsedLabel: string | null;
   compactDetail: string;
-  compactResult: string | null;
   rows: Array<{ label: string; value: string }>;
 };
 
@@ -50,9 +47,6 @@ const PHASE_LABEL_KEYS: Record<string, ToolPublicDetailTextKey> = {
   publishing_download: 'progressPublishingDownload',
   download_ready: 'progressDownloadReady',
 };
-
-const roundedPercent = (value: number | undefined): number | null =>
-  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100 ? Math.round(value) : null;
 
 const elapsedLabel = (elapsedMs: number | undefined): string | null => {
   if (typeof elapsedMs !== 'number' || !Number.isFinite(elapsedMs) || elapsedMs < 0) return null;
@@ -110,21 +104,7 @@ export function buildToolProgressPublicPresentation(
     ? PHASE_LABEL_KEYS[progress.phase]
     : 'progressProcessing';
   const phaseLabel = toolPublicDetailText(chinese, phaseKey);
-  const phasePercent = roundedPercent(progress.phasePercent);
-  const milestonePercent =
-    typeof progress.completedItems === 'number' &&
-    typeof progress.totalItems === 'number' &&
-    progress.totalItems > 0 &&
-    progress.completedItems <= progress.totalItems
-      ? Math.round((progress.completedItems / progress.totalItems) * 100)
-      : null;
-  const hasByteProgress =
-    typeof progress.bytesCompleted === 'number' &&
-    typeof progress.bytesTotal === 'number' &&
-    progress.bytesTotal > 0 &&
-    progress.bytesCompleted <= progress.bytesTotal;
-  const bytePercent = hasByteProgress ? Math.round((progress.bytesCompleted! / progress.bytesTotal!) * 100) : null;
-  const overallPercent = milestonePercent;
+  const hasByteProgress = hasDeterminateByteTransfer(progress) && progress.bytesCompleted! <= progress.bytesTotal!;
   const elapsed = elapsedLabel(progress.elapsedMs);
   const transferRate = transferRateLabel(progress.bytesPerSecond);
   const transferred = hasByteProgress
@@ -138,16 +118,6 @@ export function buildToolProgressPublicPresentation(
   const processLabel = typeof progress.process === 'string' && progress.process ? progress.process : null;
   const detailParts = [phaseLabel];
   if (processLabel) detailParts.push(processLabel);
-  if (phasePercent !== null)
-    detailParts.push(
-      toolPublicDetailText(
-        chinese,
-        hasByteProgress ? 'progressDownloadPercentCompact' : 'progressPhasePercentCompact',
-        {
-          percent: phasePercent,
-        }
-      )
-    );
   if (transferred) detailParts.push(transferred);
   if (transferRate) detailParts.push(transferRate);
   if (remaining) detailParts.push(toolPublicDetailText(chinese, 'progressRemainingCompact', { remaining }));
@@ -165,19 +135,6 @@ export function buildToolProgressPublicPresentation(
       value: processLabel,
     });
   }
-  if (overallPercent !== null) {
-    rows.push({
-      label: toolPublicDetailText(chinese, 'progressOverall'),
-      value: `${overallPercent}%`,
-    });
-  }
-  const detailedPhasePercent = bytePercent ?? phasePercent;
-  if (detailedPhasePercent !== null) {
-    rows.push({
-      label: toolPublicDetailText(chinese, hasByteProgress ? 'progressDownload' : 'progressPhase'),
-      value: `${detailedPhasePercent}%`,
-    });
-  }
   if (transferred) {
     rows.push({
       label: toolPublicDetailText(chinese, 'progressTransferred'),
@@ -190,40 +147,16 @@ export function buildToolProgressPublicPresentation(
   if (remaining) {
     rows.push({ label: toolPublicDetailText(chinese, 'progressRemaining'), value: remaining });
   }
-  if (
-    typeof progress.completedItems === 'number' &&
-    typeof progress.totalItems === 'number' &&
-    progress.totalItems > 0
-  ) {
-    rows.push({
-      label: toolPublicDetailText(chinese, 'progressMilestones'),
-      value: `${Math.trunc(progress.completedItems)} / ${Math.trunc(progress.totalItems)}`,
-    });
-  }
   if (elapsed)
     rows.push({
       label: toolPublicDetailText(chinese, 'progressElapsed'),
       value: elapsed,
     });
 
-  const compactPercent = bytePercent ?? phasePercent;
   return {
     phaseLabel,
-    overallPercent,
-    phasePercent,
     elapsedLabel: elapsed,
     compactDetail: detailParts.join(' · '),
-    compactResult:
-      milestonePercent !== null
-        ? toolPublicDetailText(chinese, 'progressStepsCompact', {
-            completed: Math.trunc(progress.completedItems!),
-            total: Math.trunc(progress.totalItems!),
-          })
-        : compactPercent === null
-          ? null
-          : toolPublicDetailText(chinese, bytePercent !== null ? 'progressDownloadResult' : 'progressPhaseResult', {
-              percent: compactPercent,
-            }),
     rows,
   };
 }

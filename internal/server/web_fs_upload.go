@@ -1,8 +1,7 @@
 package server
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -84,7 +83,7 @@ func (s *Server) handleWebFSUpload(w http.ResponseWriter, r *http.Request) {
 		writeWebFSError(w, err)
 		return
 	}
-	path, err := storeWebFSUpload(root, fileName, source)
+	path, err := storeWebFSUpload(r.Context(), root, fileName, source)
 	if err != nil {
 		writeWebFSError(w, err)
 		return
@@ -137,65 +136,33 @@ func validWebFSUploadFilename(headerName, override string) (string, error) {
 	return name, nil
 }
 
-func storeWebFSUpload(root, fileName string, source io.Reader) (string, error) {
-	temporary, err := os.CreateTemp(root, ".incoming-upload-*")
+func storeWebFSUpload(ctx context.Context, root, fileName string, source io.Reader) (path string, err error) {
+	if _, err := validWebFSUploadFilename(fileName, ""); err != nil {
+		return "", err
+	}
+	directory, err := os.OpenRoot(root)
 	if err != nil {
 		return "", err
 	}
-	temporaryPath := temporary.Name()
-	committed := false
-	defer func() {
-		_ = temporary.Close()
-		if !committed {
-			_ = os.Remove(temporaryPath)
-		}
-	}()
-
-	hash := sha256.New()
-	written, err := io.Copy(io.MultiWriter(temporary, hash), io.LimitReader(source, maxWebFSUploadFileBytes+1))
-	if err != nil {
-		return "", err
-	}
-	if written > maxWebFSUploadFileBytes {
+	defer directory.Close()
+	stage, err := stageWorkspaceFile(ctx, directory, source, maxWebFSUploadFileBytes)
+	if errors.Is(err, errWorkspaceFileTooLarge) {
 		return "", errWebFSTooLarge
 	}
-	if err := temporary.Sync(); err != nil {
+	if err != nil {
 		return "", err
 	}
-	if err := temporary.Close(); err != nil {
-		return "", err
-	}
-	if err := os.Chmod(temporaryPath, 0o600); err != nil {
-		return "", err
-	}
-
-	sum := hex.EncodeToString(hash.Sum(nil))
-	contentRoot := filepath.Join(root, "uploads", sum)
-	if err := os.MkdirAll(contentRoot, 0o700); err != nil {
-		return "", err
-	}
-	if err := os.Chmod(contentRoot, 0o700); err != nil {
+	defer func() { err = errors.Join(err, stage.close()) }()
+	contentRoot := filepath.Join("uploads", stage.digest)
+	if err := directory.MkdirAll(contentRoot, 0o700); err != nil {
 		return "", err
 	}
 	destination := filepath.Join(contentRoot, fileName)
-	if info, statErr := os.Lstat(destination); statErr == nil {
-		if !info.Mode().IsRegular() {
+	if err := stage.publish(ctx, destination); err != nil {
+		if errors.Is(err, errWorkspaceFileConflict) {
 			return "", errWebFSConflict
 		}
-		existing, hashErr := fileSHA256(destination)
-		if hashErr != nil {
-			return "", hashErr
-		}
-		if existing != sum {
-			return "", errWebFSConflict
-		}
-		return filepath.Clean(destination), nil
-	} else if !errors.Is(statErr, os.ErrNotExist) {
-		return "", statErr
-	}
-	if err := os.Rename(temporaryPath, destination); err != nil {
 		return "", err
 	}
-	committed = true
-	return filepath.Clean(destination), nil
+	return filepath.Join(root, destination), nil
 }

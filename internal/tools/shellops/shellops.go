@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"synon-go/internal/executionprep"
 )
 
 const (
@@ -201,9 +203,9 @@ func ExecuteShellCommandWithInput(ctx context.Context, root string, shellName st
 
 func ExecuteShellCommandWithInputEnv(ctx context.Context, root string, shellName string, command string, workdir string, timeoutMillis int64, stdin string, env map[string]string) (Result, error) {
 	timeout := timeoutFromMilliseconds(timeoutMillis)
-	executable, args, err := shellExecutor(shellName, command)
+	executable, args, err := shellExecutionCommand(ctx, shellName, command)
 	if err != nil {
-		if shellName == "PowerShell" {
+		if shellName == "PowerShell" && executionprep.ObservationFromContext(ctx) == nil {
 			if result, compatErr := executePowerShellCompatWithTimeout(ctx, root, command, workdir, timeout, stdin, env); compatErr == nil {
 				return result, nil
 			}
@@ -218,7 +220,7 @@ func StartShellCommand(ctx context.Context, root string, shellName string, comma
 }
 
 func StartShellCommandWithEnv(ctx context.Context, root string, shellName string, command string, workdir string, env map[string]string) (*RunningCommand, error) {
-	executable, args, err := shellExecutor(shellName, command)
+	executable, args, err := shellExecutionCommand(ctx, shellName, command)
 	if err != nil {
 		return nil, err
 	}

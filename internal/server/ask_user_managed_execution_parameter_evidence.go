@@ -9,6 +9,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	transcriptstore "synon-go/internal/persistence/transcript"
 	"synon-go/internal/sciencecapability"
 	"synon-go/internal/skills"
 )
@@ -529,8 +530,12 @@ func managedExecutionEvidenceResolversForSelectedImplementations(
 ) map[string][]sciencecapability.ExecutionEvidenceResolver {
 	resolvers := map[string][]sciencecapability.ExecutionEvidenceResolver{}
 	seen := map[string]bool{}
-	skillNames := run.executedSkillNamesSnapshot()
-	for _, implementation := range run.selectedImplementationsSnapshot() {
+	selected := run.selectedImplementationsSnapshot()
+	var skillNames []string
+	if len(selected) == 0 {
+		skillNames = run.executedSkillNamesSnapshot()
+	}
+	for _, implementation := range selected {
 		skill, found := dedicatedSkillForImplementation(skillCatalog, implementation)
 		if !found {
 			continue
@@ -539,8 +544,10 @@ func managedExecutionEvidenceResolversForSelectedImplementations(
 	}
 	// Completed Skill identities are pinned durable execution authority even
 	// after the older implementation-selection receipt leaves the bounded
-	// provider replay window. Resolver admission still requires an exact
-	// declaration on that Skill's current local execution pack.
+	// provider replay window. Once a primary selection is present, it supersedes
+	// that discovery history: a retired Skill cannot add auxiliary authority to
+	// the current implementation. Admission still requires an exact declaration
+	// on the current local execution pack.
 	for _, skillName := range uniqueSortedFolded(skillNames) {
 		skill, found := findCatalogSkill(skillCatalog, skillName)
 		if !found {
@@ -581,6 +588,16 @@ func validatedSelectedAskUserEvidenceResolvers(
 	if len(candidates) == 0 {
 		return nil, true
 	}
+	scope := make([]transcriptstore.AskUserEvidenceResolverSelection, 0, len(candidates))
+	for _, candidate := range candidates {
+		scope = append(scope, transcriptstore.AskUserEvidenceResolverSelection{
+			EvidenceGroup: candidate.EvidenceGroup, Skill: candidate.Skill, Implementation: candidate.Implementation,
+		})
+	}
+	if transcriptstore.ValidateAskUserEvidenceResolverScope(scope) != nil {
+		return nil, false
+	}
+	selected := run.selectedImplementationsSnapshot()
 	allowedByGroup := managedExecutionEvidenceResolversForSelectedImplementations(
 		skillCatalog, capabilityCatalog, run,
 	)
@@ -599,13 +616,16 @@ func validatedSelectedAskUserEvidenceResolvers(
 				break
 			}
 		}
-		if !matched {
+		if len(selected) == 0 {
 			// An answered AskUser continuation is a server-constructed,
 			// user-owned receipt. Its parent implementation checkpoint may age
 			// out of a bounded provider window, so accept the exact resolver only
 			// when the current catalog assigns that tuple to one and only one
 			// local parent execution pack. Ambiguous or removed relationships
-			// remain fail-closed.
+			// remain fail-closed. This is needed even when a loaded Skill already
+			// supplied the resolver: restoring only the auxiliary state leaves its
+			// primary missing on the next step. Conversely, catalog-wide discovery
+			// must never override a current primary selection.
 			primary, unique := uniqueRegisteredEvidenceResolver(
 				skillCatalog, capabilityCatalog, sciencecapability.ExecutionEvidenceResolver{
 					EvidenceGroup: group, Skill: skill, Implementation: implementation,

@@ -85,6 +85,26 @@ func TestNonExecutingPreflightIsDistinctFromExecutionFailure(t *testing.T) {
 	}
 }
 
+func TestToolResultDidNotExecuteUsesExplicitBooleanEvidence(t *testing.T) {
+	for _, value := range []any{
+		map[string]any{"ok": true, "executed": false, "decision_required": true},
+		map[string]any{"ok": false, "executed": false, "code": "admission_rejected"},
+	} {
+		if !ToolResultDidNotExecute(value) {
+			t.Fatalf("non-executing result was treated as an action: %#v", value)
+		}
+	}
+	for _, value := range []any{
+		map[string]any{"ok": true},
+		map[string]any{"ok": false, "executed": true},
+		map[string]any{"ok": true, "executed": "false"},
+	} {
+		if ToolResultDidNotExecute(value) {
+			t.Fatalf("untrusted or executed result was treated as non-executing: %#v", value)
+		}
+	}
+}
+
 func TestToolFailureEventMessageExposesOnlySafeFailureCode(t *testing.T) {
 	tests := []struct {
 		name  string

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"maps"
 	"regexp"
 	"strings"
 )
@@ -32,12 +33,7 @@ func responseLanguageProtectedLiterals(text string) map[string]int {
 func responseLanguageLiteralsPreserved(original, translated string) bool {
 	wanted := responseLanguageProtectedLiterals(original)
 	actual := responseLanguageProtectedLiterals(translated)
-	for value, count := range wanted {
-		if actual[value] < count {
-			return false
-		}
-	}
-	return true
+	return maps.Equal(wanted, actual)
 }
 
 func sessionRunnerClearlyEnglishProgress(text string) bool {

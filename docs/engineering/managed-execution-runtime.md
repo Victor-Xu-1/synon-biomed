@@ -433,9 +433,24 @@ provisions missing dependencies in the unpublished successor, preserving source
 interpreter pins and the additive-resolution check. A stage failure or cancellation
 cannot dispatch the next stage or publish a ready generation.
 
-All pip stages use the target prefix's executable search path and the same
-reviewed source options. Registered forks and clone inventory restoration must
-not lose wheel/index sources or execute build helpers from an unrelated prefix.
+All pip stages use the target prefix's executable search path. A successful
+Conda generation binds ordered pip replay phases, including their package
+sources and build options, to its generation digest. Later immutable mutations
+replay those phases against the recorded package versions before installing the
+new request. This preserves distinct wheel/index sources across successive
+installs; a change to a saved source invalidates the generation receipt.
+Generations created before replay phases were recorded retain their package
+inventory and active pointer. During the first mutation, their pinned pip
+packages are restored with caller-supplied source hints. If a source build
+needs a package already present in that inventory, restoration installs that
+provider first and records the successful phase order in the successor. An
+unavailable source or ambiguous build provider fails without publishing a new
+generation. Registered forks still use their existing separately validated
+installation path.
+Pip uninstall removes the requested distribution from future replay phases and
+verifies its absence in the successor before activation. A retained package
+that pulls the removed distribution back causes the mutation to fail while the
+old active generation remains available.
 Mutation preflight obtains the execution language from the source environment;
 the package manager chosen for a stage does not redefine that language.
 

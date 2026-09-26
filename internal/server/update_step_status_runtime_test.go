@@ -125,8 +125,8 @@ func TestUpdateStepStatusUsesOneApprovedPlanAuthority(t *testing.T) {
 	if err != nil || !found || stringValue(mapValue(mapValue(metadata.ContextData["_step_statuses"])["step-1"])["status"]) != "completed" {
 		t.Fatalf("metadata=%#v found=%t err=%v", metadata, found, err)
 	}
-	remaining, err := srv.incompleteGeneratedPlanStepTitles(frame.ID)
-	if err != nil || len(remaining) != 1 || remaining[0] != "Analyze evidence" {
+	remaining, err := srv.incompleteGeneratedPlanCondition(frame.ID)
+	if err != nil || remaining == nil || len(remaining.condition.Steps) != 1 || remaining.condition.Steps[0].Title != "Analyze evidence" || remaining.condition.Steps[0].ID != "step-2" {
 		t.Fatalf("remaining plan steps=%#v err=%v", remaining, err)
 	}
 	if _, err := srv.executeAgentUpdateStepStatus(context.Background(), frame.ID, "status-4", map[string]any{
@@ -134,9 +134,9 @@ func TestUpdateStepStatusUsesOneApprovedPlanAuthority(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	remaining, err = srv.incompleteGeneratedPlanStepTitles(frame.ID)
-	if err != nil || len(remaining) != 0 {
-		t.Fatalf("terminal plan steps=%#v err=%v", remaining, err)
+	remaining, err = srv.incompleteGeneratedPlanCondition(frame.ID)
+	if err != nil || remaining == nil || len(remaining.condition.Steps) != 1 || remaining.condition.Steps[0].ID != "step-2" {
+		t.Fatalf("skipped work was mistaken for whole-plan completion: %#v err=%v", remaining, err)
 	}
 }
 
@@ -187,9 +187,9 @@ func TestUpdateStepStatusAcceptsAutonomousExecutablePlan(t *testing.T) {
 		stringValue(mapValue(mapValue(metadata.ContextData["_step_statuses"])["step-1"])["status"]) != "completed" {
 		t.Fatalf("autonomous metadata=%#v found=%t err=%v", metadata, found, err)
 	}
-	remaining, err := srv.incompleteGeneratedPlanStepTitles(frame.ID)
-	if err != nil || len(remaining) != 0 {
-		t.Fatalf("autonomous plan must remain non-blocking: remaining=%#v err=%v", remaining, err)
+	remaining, err := srv.incompleteGeneratedPlanCondition(frame.ID)
+	if err != nil || remaining != nil {
+		t.Fatalf("completed autonomous work remained open: remaining=%#v err=%v", remaining, err)
 	}
 }
 

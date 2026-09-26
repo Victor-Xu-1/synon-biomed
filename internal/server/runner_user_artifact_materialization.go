@@ -21,6 +21,9 @@ func (s *Server) prepareRunnerUserArtifactsForProvider(
 ) ([]eventjournal.Entry, error) {
 	hasReferences := false
 	for _, entry := range entries {
+		if !runnerEntryCarriesUserArtifactReferences(entry) {
+			continue
+		}
 		refs, err := decodeUserArtifactReferences(entry.Message["artifactRefs"])
 		if err != nil {
 			return nil, err
@@ -55,6 +58,9 @@ func (s *Server) validateRunnerUserArtifactsForFrame(
 	result := append([]eventjournal.Entry(nil), entries...)
 	verified := map[string]bool{}
 	for index, entry := range entries {
+		if !runnerEntryCarriesUserArtifactReferences(entry) {
+			continue
+		}
 		refs, err := decodeUserArtifactReferences(entry.Message["artifactRefs"])
 		if err != nil {
 			return nil, err
@@ -84,4 +90,21 @@ func (s *Server) validateRunnerUserArtifactsForFrame(
 		result[index].Message = message
 	}
 	return result, nil
+}
+
+// Artifact references on assistant/tool entries describe produced or consumed
+// execution outputs and use a different, intentionally smaller contract. Only
+// explicit user-message references are input attachments that need the
+// filename/type/size/digest validation above.
+func runnerEntryCarriesUserArtifactReferences(entry eventjournal.Entry) bool {
+	role := strings.ToLower(strings.TrimSpace(stringValue(entry.Message["role"])))
+	if role == "user" {
+		return true
+	}
+	switch strings.ToLower(strings.TrimSpace(stringValue(entry.Message["type"]))) {
+	case "user", "user_message", "history_user_message":
+		return true
+	default:
+		return false
+	}
 }

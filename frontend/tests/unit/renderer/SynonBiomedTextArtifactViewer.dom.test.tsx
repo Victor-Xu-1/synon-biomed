@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import SynonBiomedTextArtifactViewer from '@/renderer/pages/artifact/SynonBiomedTextArtifactViewer';
@@ -15,6 +15,46 @@ describe('SynonBiomedTextArtifactViewer', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it('passes a downloaded HTML response through passive srcDoc isolation', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response('<h1>Downloaded source</h1><script>parent.pwned=true</script>', {
+            status: 200,
+            headers: { 'X-Synon-HTML-Preview': 'passive' },
+          })
+      )
+    );
+    const { container } = await renderWithI18n(
+      <SynonBiomedTextArtifactViewer filename='source.html' contentUrl='/api/artifacts/source' kind='html' />,
+      'en-US'
+    );
+    await waitFor(() => expect(container.querySelector('iframe')?.srcdoc).toContain('Downloaded source'));
+    const frame = container.querySelector('iframe');
+    expect(frame).toHaveAttribute('sandbox', 'allow-scripts');
+    expect(frame?.srcdoc).not.toContain('parent.pwned');
+  });
+
+  it('preserves the declared encoding of a passive source preview', async () => {
+    const body = Buffer.from('<h1>完整来源</h1>', 'utf16le');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(body, {
+            status: 200,
+            headers: { 'Content-Type': 'text/html; charset=utf-16le', 'X-Synon-HTML-Preview': 'passive' },
+          })
+      )
+    );
+    const { container } = await renderWithI18n(
+      <SynonBiomedTextArtifactViewer filename='source.html' contentUrl='/api/artifacts/source' kind='html' />,
+      'en-US'
+    );
+    await waitFor(() => expect(container.querySelector('iframe')?.srcdoc).toContain('完整来源'));
   });
 
   it('loads a text artifact and exposes an English accessible content name', async () => {

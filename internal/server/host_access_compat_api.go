@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
+	kernelruntime "synon-go/internal/kernel"
 )
 
 var errCompatibilityHostGrantNotFound = errors.New("compatibility host grant not found")
@@ -76,6 +77,10 @@ func (s *Server) handleCompatibilityHostGrants(w http.ResponseWriter, r *http.Re
 		}
 		grant, err := s.grantCompatibilityHostPath(userID, input.Path, input.Mode)
 		if err != nil {
+			if errors.Is(err, kernelruntime.ErrProtectedHostMount) {
+				writeV11Detail(w, http.StatusBadRequest, err.Error())
+				return
+			}
 			writeV11Detail(w, http.StatusBadRequest, "Directory could not be accessed.")
 			return
 		}
@@ -95,6 +100,10 @@ func (s *Server) handleCompatibilityHostGrants(w http.ResponseWriter, r *http.Re
 		}
 		grant, found, err := s.changeCompatibilityHostGrantMode(userID, input.Path, input.Mode)
 		if err != nil {
+			if errors.Is(err, kernelruntime.ErrProtectedHostMount) {
+				writeV11Detail(w, http.StatusBadRequest, err.Error())
+				return
+			}
 			writeV11StoreError(w, err)
 			return
 		}
@@ -203,6 +212,10 @@ func (s *Server) handleCompatibilityHostGrantPicker(w http.ResponseWriter, r *ht
 	}
 	grant, err := s.grantCompatibilityHostPath(compatAgentUserID(r), selected, input.Mode)
 	if err != nil {
+		if errors.Is(err, kernelruntime.ErrProtectedHostMount) {
+			writeV11Detail(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		writeV11Detail(w, http.StatusBadRequest, "Directory could not be accessed.")
 		return
 	}
@@ -318,23 +331,26 @@ func (s *Server) listCompatibilityHostDirectory(userID, requestedPath string) ([
 	if evaluated, evaluateErr := filepath.EvalSymlinks(home); evaluateErr == nil {
 		home = evaluated
 	}
-	allowed := hostPathWithin(filepath.Clean(home), target)
-	if !allowed {
+	grantedRoot := ""
+	if hostPathWithin(filepath.Clean(home), target) {
+		grantedRoot = filepath.Clean(home)
+	}
+	if grantedRoot == "" {
 		grants, loadErr := s.loadHostGrants(userID)
 		if loadErr != nil {
 			return nil, loadErr
 		}
 		for _, grant := range grants {
 			if hostPathWithin(grant.Path, target) {
-				allowed = true
+				grantedRoot = grant.Path
 				break
 			}
 		}
 	}
-	if !allowed {
+	if grantedRoot == "" {
 		return nil, errors.New("Directory is not under $HOME or a granted root.")
 	}
-	items, err := os.ReadDir(target)
+	items, err := readAuthorizedHostDirectory(grantedRoot, target)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read %s: %w", target, err)
 	}

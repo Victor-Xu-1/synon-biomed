@@ -1,12 +1,15 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"synon-go/internal/runtimecontrol"
 )
 
 var agentSavedArtifactReferencePattern = regexp.MustCompile(
@@ -99,10 +102,14 @@ func (s *Server) resolveAgentSavedArtifactReference(
 }
 
 func (s *Server) normalizeAgentSavedArtifactReferences(
+	ctx context.Context,
 	snapshot *os.File,
 	relativePath string,
 	projectID string,
 ) (bool, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if snapshot == nil {
 		return false, errors.New("artifact snapshot is unavailable")
 	}
@@ -114,13 +121,13 @@ func (s *Server) normalizeAgentSavedArtifactReferences(
 	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
 		return false, err
 	}
-	content, err := io.ReadAll(snapshot)
+	normalized, err := os.CreateTemp(filepath.Dir(snapshot.Name()), "synon-artifact-links-*")
 	if err != nil {
 		return false, err
 	}
-	normalized, changed, err := normalizeAgentSavedArtifactReferenceText(
-		string(content), relativePath, projectID, s.resolveAgentSavedArtifactReference,
-	)
+	defer func() { _ = normalized.Close(); _ = os.Remove(normalized.Name()) }()
+	changed, err := streamAgentSavedArtifactReferences(ctx, snapshot,
+		runtimecontrol.DiskCapacityWriter(ctx, normalized, normalized.Name()), relativePath, projectID, s.resolveAgentSavedArtifactReference)
 	if err != nil {
 		return false, err
 	}
@@ -134,11 +141,61 @@ func (s *Server) normalizeAgentSavedArtifactReferences(
 	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
 		return false, err
 	}
-	if _, err := io.WriteString(snapshot, normalized); err != nil {
+	if _, err := normalized.Seek(0, io.SeekStart); err != nil {
+		return false, err
+	}
+	if _, err := io.Copy(runtimecontrol.DiskCapacityWriter(ctx, snapshot, snapshot.Name()), &contextReader{ctx: ctx, reader: normalized}); err != nil {
 		return false, err
 	}
 	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
 		return false, err
 	}
 	return true, nil
+}
+
+// The reference grammar is finite. Retain exactly enough overlap to avoid
+// splitting any accepted token; arbitrary surrounding text streams unchanged.
+func streamAgentSavedArtifactReferences(ctx context.Context, source io.Reader, destination io.Writer,
+	currentPath, projectID string, resolve func(string) (agentSavedArtifactReferenceResolution, bool, error),
+) (bool, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	const overlap = len("{{artifact:art_00000000-0000-0000-0000-000000000000}}")
+	buffer := make([]byte, 64<<10)
+	reader := &contextReader{ctx: ctx, reader: source}
+	carry, changed := 0, false
+	for {
+		n, readErr := reader.Read(buffer[carry:])
+		length := carry + n
+		cut := length
+		if readErr == nil {
+			cut = max(0, length-overlap)
+			for _, match := range agentSavedArtifactReferencePattern.FindAllIndex(buffer[:length], -1) {
+				if match[0] < cut && match[1] > cut {
+					cut = match[0]
+					break
+				}
+			}
+		}
+		if readErr != nil && !errors.Is(readErr, io.EOF) {
+			return false, readErr
+		}
+		if cut > 0 {
+			part, replaced, err := normalizeAgentSavedArtifactReferenceText(string(buffer[:cut]), currentPath, projectID, resolve)
+			if err != nil {
+				return false, err
+			}
+			if n, err := io.WriteString(destination, part); err != nil {
+				return false, err
+			} else if n != len(part) {
+				return false, io.ErrShortWrite
+			}
+			changed = changed || replaced
+		}
+		if errors.Is(readErr, io.EOF) {
+			return changed, nil
+		}
+		carry = copy(buffer, buffer[cut:length])
+	}
 }

@@ -29,12 +29,12 @@ func (s *Server) reviewSessionRunnerCompletion(
 ) (sessionRunnerReview, map[string]any, error) {
 	spec, err := s.sessionCompletionReviewExecutionSpec()
 	if err != nil {
-		return sessionRunnerReview{}, nil, &sessionRunnerReviewerEvidenceUnavailableError{Detail: err.Error()}
+		return sessionRunnerReview{}, nil, err
 	}
 	targetMessages := sessionReviewerTargetMessages(originalMessages, result.Messages)
 	targetTranscriptSHA256, err := sessionReviewerTargetTranscriptSHA256(targetMessages)
 	if err != nil {
-		return sessionRunnerReview{}, nil, &sessionRunnerReviewerEvidenceUnavailableError{Detail: err.Error()}
+		return sessionRunnerReview{}, nil, err
 	}
 	windows := sessionReviewerTranscriptWindows(targetMessages, sessionReviewerTranscriptChunkBytes)
 	reviews := make([]sessionRunnerReview, 0, len(windows))
@@ -67,7 +67,7 @@ func (s *Server) reviewSessionRunnerCompletion(
 		reviewBinding, verifiedBindings, targetTranscriptSHA256, len(targetMessages),
 	)
 	if err != nil {
-		return sessionRunnerReview{}, nil, &sessionRunnerReviewerEvidenceUnavailableError{Detail: err.Error()}
+		return sessionRunnerReview{}, nil, err
 	}
 	aggregatedBinding["review_verdict"] = aggregatedReview.Verdict
 	return aggregatedReview, aggregatedBinding, nil
@@ -91,7 +91,7 @@ func (s *Server) reviewSessionRunnerWithSpec(
 ) (sessionReviewerSubmission, map[string]any, error) {
 	if strings.TrimSpace(spec.ReviewKind) == "" || strings.TrimSpace(spec.SystemPrompt) == "" ||
 		spec.SubmissionMode != sessionReviewerSubmissionCompletion {
-		return sessionReviewerSubmission{}, nil, &sessionRunnerReviewerEvidenceUnavailableError{Detail: "review execution specification is invalid"}
+		return sessionReviewerSubmission{}, nil, errors.New("review execution specification is invalid")
 	}
 	// Give the fixed-job reviewer the same durable logical-task source authority
 	// used by completion and artifact gates. This server-built handoff survives
@@ -99,9 +99,7 @@ func (s *Server) reviewSessionRunnerWithSpec(
 	// hidden archive API before it can check a governing method.
 	durableEvidence, err := s.sessionRunnerDurableEvidenceMessages(ctx, run)
 	if err != nil {
-		return sessionReviewerSubmission{}, nil, &sessionRunnerReviewerEvidenceUnavailableError{
-			Detail: "load durable logical-task source evidence: " + err.Error(),
-		}
+		return sessionReviewerSubmission{}, nil, fmt.Errorf("load durable logical-task source evidence: %w", err)
 	}
 	userPrompt := buildSessionReviewerPromptWithProjectedTranscript(
 		session, originalMessages, result, plan, sessionRunnerTaskIntent(run),
@@ -130,10 +128,10 @@ func (s *Server) reviewSessionRunnerWithSpec(
 		if err := s.checkpointSessionReviewerProtocolRetry(
 			options, run, reviewIndex, reviewerFrameID, spec, generationAttempt,
 		); err != nil {
-			return sessionReviewerSubmission{}, nil, &sessionRunnerReviewerEvidenceUnavailableError{Detail: err.Error()}
+			return sessionReviewerSubmission{}, nil, wrapSessionRunnerReviewStageError(err)
 		}
 	}
-	return sessionReviewerSubmission{}, nil, &sessionRunnerReviewerEvidenceUnavailableError{Detail: lastErr.Error()}
+	return sessionReviewerSubmission{}, nil, lastErr
 }
 
 func sessionReviewerRetryableGenerationError(err error) bool {
@@ -204,14 +202,14 @@ func (s *Server) runSessionReviewerGeneration(
 	engine.Tools = sessionReviewerToolGateway(engine.Tools, scope)
 	engine.OnEventError = func(event agentruntime.Event) error {
 		if event.Type == agentruntime.EventModelResponse && len(event.ToolCalls) > 0 {
-			return s.checkpointChatModelToolCalls(runtimeOptions, reviewerRun, event.ToolCalls)
+			return wrapSessionRunnerReviewStageError(s.checkpointChatModelToolCalls(runtimeOptions, reviewerRun, event.ToolCalls))
 		}
 		if event.Type != agentruntime.EventToolStarted && event.Type != agentruntime.EventToolCompleted &&
 			event.Type != agentruntime.EventToolFailed && event.Type != agentruntime.EventToolPaused {
 			return nil
 		}
 		if err := s.checkpointSessionRunnerToolEvent(reviewCtx, runtimeOptions, reviewerRun, event); err != nil {
-			return err
+			return wrapSessionRunnerReviewStageError(err)
 		}
 		protocolError := func() error {
 			if event.Type != agentruntime.EventToolFailed || strings.TrimSpace(event.ToolName) != scope.submissionToolName() {
@@ -244,11 +242,11 @@ func (s *Server) runSessionReviewerGeneration(
 				details[key] = value
 			}
 		}
-		checkpointErr := s.checkpointChatTool(
+		checkpointErr := wrapSessionRunnerReviewStageError(s.checkpointChatTool(
 			options, run, status, message,
 			event.ToolCallID, "verification_tool",
 			details,
-		)
+		))
 		if protocolErr := protocolError(); protocolErr != nil {
 			if checkpointErr != nil {
 				combined := errors.Join(protocolErr, checkpointErr)
@@ -288,7 +286,7 @@ func (s *Server) runSessionReviewerGeneration(
 	}
 	verifiedBinding, err := bindSessionReviewerEvidence(reviewBinding, receipts, reviewResult.Messages)
 	if err != nil {
-		return sessionReviewerSubmission{}, nil, &sessionRunnerReviewerEvidenceUnavailableError{Detail: err.Error()}
+		return sessionReviewerSubmission{}, nil, err
 	}
 	verifiedBinding = copyMapAny(verifiedBinding)
 	verifiedBinding["reviewer_model"] = firstNonEmpty(dynamicReviewerModel.LastSuccessfulModel(), options.Model)

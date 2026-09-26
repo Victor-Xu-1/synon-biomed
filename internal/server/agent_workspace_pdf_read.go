@@ -4,18 +4,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"synon-go/internal/agentruntime"
-	"unicode/utf8"
 )
-
-const agentWorkspacePDFTextMaxBytes = agentWorkspaceReadMaxBytes
 
 func readAgentWorkspacePDF(
 	ctx context.Context,
@@ -24,112 +17,79 @@ func readAgentWorkspacePDF(
 	contentType string,
 	size int64,
 	pages []int,
+	input map[string]any,
 ) (any, error) {
-	text, extraction := extractAgentWorkspacePDFText(ctx, reader, size, pages)
-	if _, err := reader.Seek(0, io.SeekStart); err != nil {
-		return nil, errors.New("read_file could not reset the requested PDF")
+	_, hasOffset := input["offset"]
+	_, hasLimit := input["limit"]
+	textOnly := hasOffset || hasLimit
+	rich := agentRuntimeRichToolResponse{value: map[string]any{
+		"filename": filename, "content_type": contentType, "size_bytes": size,
+		"visual_parts": 0, "message": "PDF text window; visual content was not requested. The original remains unchanged.",
+	}}
+	if !textOnly {
+		var result any
+		var err error
+		if len(pages) > 0 {
+			result, err = renderAgentWorkspacePDFPages(ctx, reader, filename, contentType, size, pages)
+		} else {
+			result, err = readAgentWorkspaceInlineVisual(ctx, reader, filename, "application/pdf", size, agentruntime.ContentPartDocument)
+		}
+		if err != nil {
+			return nil, err
+		}
+		var ok bool
+		rich, ok = result.(agentRuntimeRichToolResponse)
+		if !ok {
+			return result, nil
+		}
 	}
-	var result any
-	var err error
-	if len(pages) > 0 {
-		result, err = renderAgentWorkspacePDFPages(ctx, reader, filename, contentType, size, pages)
-	} else {
-		result, err = readAgentWorkspaceInlineVisual(ctx, reader, filename, "application/pdf", size, agentruntime.ContentPartDocument)
-	}
-	if err != nil {
-		return nil, err
-	}
-	rich, ok := result.(agentRuntimeRichToolResponse)
-	if !ok {
-		return result, nil
-	}
-	value, ok := rich.value.(map[string]any)
-	if !ok {
-		return result, nil
-	}
+	value := rich.value.(map[string]any)
 	format, confidence, _ := agentWorkspaceFormatHint(filename, contentType)
-	status := "attached"
-	if text != "" {
-		status = "parsed_and_attached"
-		value["content"] = text
+	status := "parsed_and_attached"
+	if textOnly {
+		status = "parsed"
 	}
-	value["text_extraction"] = extraction
 	value["reader_contract"] = agentWorkspaceFormatMetadata(format, confidence, status, filename)
-	rich.value = value
+	if textOnly {
+		mapValue(value["reader_contract"])["representation"] = "extracted_text_lines"
+	}
+	value["view_format"] = "pdf-extracted-text-lines"
+	// Selected-page visual reads keep their page scope. Their line positions
+	// are not offsets in the whole document, so expose a separate exact read
+	// input instead of an incompatible pages+offset continuation.
+	if len(pages) > 0 {
+		readWith := copyMapAny(input)
+		delete(readWith, "pages")
+		readWith["offset"] = 1
+		readWith["limit"] = agentWorkspaceReadDefaultRows
+		value["text_read_with"] = readWith
+	}
+	view, err := readAgentWorkspacePDFTextWindow(ctx, reader, filename, contentType, size, pages, input, value)
+	if err != nil {
+		if cause := context.Cause(ctx); cause != nil {
+			return nil, cause
+		}
+		if textOnly {
+			return nil, err
+		}
+		value["reader_contract"] = agentWorkspaceFormatMetadata(format, confidence, "attached", filename)
+		delete(value, "view_format")
+		value["text_extraction"] = map[string]any{"status": "unavailable", "method": "pdftotext", "pages": pages, "reason": err.Error()}
+		rich.value = value
+		return rich, nil
+	}
+	if len(pages) > 0 {
+		delete(view, "next_offset")
+		delete(view, "system_hint")
+	}
+	if len(rich.parts) > 0 && mapValue(view["text_extraction"])["status"] == "no_extractable_text" {
+		view["reader_contract"] = agentWorkspaceFormatMetadata(format, confidence, "attached", filename)
+	}
+	if len(rich.parts) == 0 {
+		return view, nil
+	}
+	rich.value = view
 	return rich, nil
-}
-
-func extractAgentWorkspacePDFText(ctx context.Context, reader io.ReadSeeker, size int64, pages []int) (string, map[string]any) {
-	metadata := map[string]any{"status": "unavailable", "method": "pdftotext", "pages": pages}
-	converter, err := exec.LookPath("pdftotext")
-	if err != nil {
-		metadata["reason"] = "governed PDF text extractor is not installed"
-		return "", metadata
-	}
-	path, cleanup, err := stageAgentWorkspacePDFSource(ctx, reader, size)
-	if err != nil {
-		metadata["reason"] = err.Error()
-		return "", metadata
-	}
-	defer cleanup()
-	var output strings.Builder
-	truncated := false
-	selectedPages := pages
-	if len(selectedPages) == 0 {
-		selectedPages = []int{0}
-	}
-	for _, page := range selectedPages {
-		remaining := agentWorkspacePDFTextMaxBytes - output.Len()
-		if remaining <= 0 {
-			truncated = true
-			break
-		}
-		arguments := []string{"-layout", "-nopgbrk"}
-		if page > 0 {
-			arguments = append(arguments, "-f", strconv.Itoa(page), "-l", strconv.Itoa(page))
-		}
-		arguments = append(arguments, path, "-")
-		capture := &agentWorkspaceBoundedCapture{limit: remaining}
-		command := exec.CommandContext(ctx, converter, arguments...)
-		command.Stdout = capture
-		var stderr agentWorkspaceBoundedCapture
-		stderr.limit = 4 << 10
-		command.Stderr = &stderr
-		if runErr := command.Run(); runErr != nil {
-			metadata["reason"] = "PDF text extraction failed"
-			if detail := strings.TrimSpace(stderr.String()); detail != "" {
-				metadata["diagnostic"] = detail
-			}
-			return "", metadata
-		}
-		if capture.truncated {
-			truncated = true
-		}
-		content := strings.TrimSpace(capture.String())
-		if content == "" {
-			continue
-		}
-		if page > 0 && len(pages) > 1 {
-			if output.Len() > 0 {
-				output.WriteString("\n\n")
-			}
-			fmt.Fprintf(&output, "[PDF page %d]\n", page)
-		}
-		output.WriteString(content)
-	}
-	text := strings.TrimSpace(output.String())
-	if !utf8.ValidString(text) {
-		metadata["reason"] = "PDF text extractor returned invalid UTF-8"
-		return "", metadata
-	}
-	if text == "" {
-		metadata["status"] = "no_extractable_text"
-		return "", metadata
-	}
-	metadata["status"] = "parsed"
-	metadata["truncated"] = truncated
-	metadata["size_bytes"] = len(text)
-	return text, metadata
 }
 
 type agentWorkspaceBoundedCapture struct {
@@ -162,14 +122,8 @@ func (capture *agentWorkspaceBoundedCapture) String() string {
 }
 
 func stageAgentWorkspacePDFSource(ctx context.Context, reader io.ReadSeeker, size int64) (string, func(), error) {
-	if named, ok := reader.(interface{ Name() string }); ok {
-		path := strings.TrimSpace(named.Name())
-		if path != "" {
-			if info, err := os.Stat(path); err == nil && info.Mode().IsRegular() && info.Size() == size {
-				return path, func() {}, nil
-			}
-		}
-	}
+	// Stage from the already-authorized handle. Reopening its pathname could
+	// consume a same-sized replacement after the source was verified.
 	if size <= 0 || size == int64(^uint64(0)>>1) {
 		return "", func() {}, errors.New("PDF source size is invalid")
 	}

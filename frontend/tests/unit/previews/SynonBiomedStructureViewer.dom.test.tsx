@@ -332,8 +332,25 @@ describe('SynonBiomedStructureViewer', () => {
     expect(prepareLigandDepictionSvg(source, 'dark')).toContain('stroke:#FFFFFF');
     expect(prepareLigandDepictionSvg(source, 'dark')).toContain('stroke:#FF0000');
     expect(prepareLigandDepictionSvg(source, 'dark')).not.toContain('<rect');
-    expect(prepareLigandDepictionSvg(source, 'dark')).toContain("viewBox='-16.560 -11.340 309.120 211.680'");
+    expect(prepareLigandDepictionSvg(source, 'dark')).toContain('viewBox="-16.560 -11.340 309.120 211.680"');
     expect(prepareLigandDepictionSvg(source, 'white')).toContain('stroke:#000000');
+  });
+
+  it('sanitizes active and external SVG content before inline mounting', () => {
+    const source =
+      '<svg viewBox="0 0 10 10"><script>window.__xss = true</script>' +
+      '<foreignObject><div>unsafe</div></foreignObject>' +
+      '<image href="https://attacker.invalid/pixel" onload="window.__xss = true" />' +
+      '<path style="stroke:#000000" /></svg>';
+
+    const prepared = prepareLigandDepictionSvg(source, 'dark');
+
+    expect(prepared).not.toContain('<script');
+    expect(prepared).not.toContain('foreignObject');
+    expect(prepared).not.toContain('<image');
+    expect(prepared).not.toContain('onload');
+    expect(prepared).not.toContain('attacker.invalid');
+    expect(prepared).toContain('stroke:#FFFFFF');
   });
 
   it('fits the mounted 2D ligand to its real graphical bounds with extra vertical room', () => {

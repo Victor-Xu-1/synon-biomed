@@ -29,7 +29,7 @@ describe('tool step summary model', () => {
     })) {
       const presentation = buildToolProgressPublicPresentation({ phase }, 'zh-CN');
       expect(presentation.phaseLabel).toBe(label);
-      expect(presentation.phasePercent).toBeNull();
+      expect(presentation.rows).toEqual([{ label: '当前阶段', value: label }]);
     }
   });
   it('keeps waiting, blocked, interrupted, and unknown operation states distinct', () => {
@@ -47,11 +47,11 @@ describe('tool step summary model', () => {
       )
     ).toEqual({
       headline: '进行了 2 项分析、执行了 2 次检索、查看了 1 项资料',
-      meta: '5 步 · 1 项未成功',
+      meta: '1 项未成功',
     });
   });
 
-  it('uses the latest running human description for the visible activity while retaining counts', () => {
+  it('uses the latest running human description without a setup-step count', () => {
     const described = {
       ...tool('web_search', 'running'),
       humanDescription: '正在核对最新的人源靶点结构',
@@ -61,7 +61,7 @@ describe('tool step summary model', () => {
     expect(buildToolStepLabel(described, 'zh-CN')).toBe('正在核对最新的人源靶点结构');
     expect(buildToolStepGroupSummary([tool('skill'), described], 'zh-CN')).toEqual({
       headline: '正在核对最新的人源靶点结构',
-      meta: '2 步',
+      meta: '',
     });
     expect(buildToolStepLabel({ ...tool('repl'), description: 'raw command' }, 'en-US')).toBe('Analyze data');
   });
@@ -74,7 +74,7 @@ describe('tool step summary model', () => {
     expect(buildToolStepLabel(englishInChinese, 'zh-CN')).toBe('开展分析');
     expect(buildToolStepGroupSummary([englishInChinese], 'zh-CN')).toEqual({
       headline: '进行了 1 项分析',
-      meta: '1 步',
+      meta: '',
     });
 
     const chineseInEnglish = {
@@ -111,16 +111,16 @@ describe('tool step summary model', () => {
 
     expect(buildToolStepPublicPresentation(running, 'zh-CN')).toMatchObject({
       label: '正在配置分子生成环境',
-      detail: '下载依赖包 · 当前阶段 64% · 224 KB/s · 本步骤 1:30',
-      resultSummary: '1 / 8 步',
+      detail: '下载依赖包 · 224 KB/s · 已用时 1:30',
+      resultSummary: '进行中',
     });
     expect(buildToolStepPublicPresentation({ ...running, humanDescription: undefined }, 'en-US')).toMatchObject({
-      detail: 'Downloading packages · phase 64% · 224 KB/s · Step elapsed 1:30',
-      resultSummary: '1 / 8 steps',
+      detail: 'Downloading packages · 224 KB/s · Elapsed 1:30',
+      resultSummary: 'Running',
     });
   });
 
-  it('shows real resumable-download percentage, transfer rate and elapsed time', () => {
+  it('shows measured download bytes, transfer rate and elapsed time without percentages', () => {
     const running = {
       ...tool('download_public_scientific_file', 'running'),
       humanDescription: '正在下载公开数据文件',
@@ -136,11 +136,11 @@ describe('tool step summary model', () => {
     };
 
     expect(buildToolStepPublicPresentation(running, 'zh-CN')).toMatchObject({
-      detail: '下载文件 · 已下载 50% · 50 MB / 100 MB · 224 KB/s · 剩余 50 MB · 本步骤 1:30',
-      resultSummary: '下载 50%',
+      detail: '下载文件 · 50 MB / 100 MB · 224 KB/s · 剩余 50 MB · 已用时 1:30',
+      resultSummary: '进行中',
     });
     expect(buildToolStepPublicPresentation({ ...running, status: 'completed' }, 'zh-CN')).toMatchObject({
-      detail: '下载文件 · 已下载 50% · 50 MB / 100 MB · 224 KB/s · 剩余 50 MB · 本步骤 1:30',
+      detail: '下载文件 · 50 MB / 100 MB · 224 KB/s · 剩余 50 MB · 已用时 1:30',
       resultSummary: '已完成',
     });
   });
@@ -322,7 +322,7 @@ describe('tool step summary model', () => {
 
     expect(buildToolStepGroupSummary([namespacedSearch], 'en-US')).toEqual({
       headline: 'Ran a search',
-      meta: '1 step',
+      meta: '',
     });
     expect(buildToolStepLabel(namespacedSearch, 'en-US')).toBe('Search sources');
 

@@ -186,7 +186,9 @@ def main() -> int:
             if provenance.returncode:
                 return provenance.returncode
             commands = [
-                ["npm", "ci", "--ignore-scripts"], ["npm", "run", "i18n:types"],
+                ["npm", "ci", "--ignore-scripts"],
+                ["npx", "--no-install", "playwright", "install", "chromium"],
+                ["npm", "run", "i18n:types"],
                 ["npm", "run", "typecheck"], ["npm", "run", "lint"],
                 ["npm", "run", "format:check"], ["npm", "run", "test"], ["npm", "run", "build"],
                 ["npm", "run", "test:packaged"],

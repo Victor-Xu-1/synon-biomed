@@ -12,7 +12,7 @@ func TestAskUserImplementationSelectionRequiresDecisionReadyOptions(t *testing.T
 	incomplete := map[string]any{"questions": []askUserQuestion{{
 		Question: "Which engine?",
 		Options: []askUserQuestionOption{
-			{Label: "Engine A", Metadata: map[string]any{}},
+			{Label: "Engine A", Metadata: map[string]any{"implementation": "Engine A"}},
 			{Label: "Engine B", Metadata: map[string]any{}},
 		},
 	}}}
@@ -42,8 +42,39 @@ func TestAskUserImplementationSelectionRequiresDecisionReadyOptions(t *testing.T
 			{Label: "Engine B", Metadata: map[string]any{"implementation": "Engine B", "resources": resourceProfile(), "decision_evidence": []string{"tool-call:preflight-b"}}},
 		},
 	}}
-	if correction := askUserImplementationSelectionContractCorrection(run, complete); stringValue(correction["status"]) != "implementation_decision_contract_incomplete" {
-		t.Fatalf("two-option first implementation choice was accepted: %#v", correction)
+	if correction := askUserImplementationSelectionContractCorrection(run, complete); correction != nil {
+		t.Fatalf("two verified implementation choices required an invented third option: %#v", correction)
+	}
+}
+
+func TestAskUserPendingImplementationDoesNotBlockUnrelatedDecision(t *testing.T) {
+	run := &sessionRunnerChatRun{ImplementationSelectionRequired: true}
+	run.addRequiredScientificCapabilities("structure-analysis")
+	result := map[string]any{"questions": []askUserQuestion{{
+		Question: "Which input should be analyzed?",
+		Options:  []askUserQuestionOption{{Label: "Input A"}, {Label: "Input B"}},
+	}}}
+	if correction := askUserImplementationSelectionContractCorrection(run, result); correction != nil {
+		t.Fatalf("unrelated input choice inherited the implementation gate: %#v", correction)
+	}
+	if !run.implementationSelectionRequiredSnapshot() || len(run.selectedImplementationsSnapshot()) != 0 {
+		t.Fatal("input decision changed implementation authorization")
+	}
+}
+
+func TestAskUserImplementationValidationIsQuestionScoped(t *testing.T) {
+	run := &sessionRunnerChatRun{ImplementationSelectionRequired: true}
+	result := map[string]any{"questions": []askUserQuestion{
+		{Question: "Which input?", Options: []askUserQuestionOption{{Label: "Input A"}, {Label: "Input B"}}},
+		{Question: "Which engine?", Options: []askUserQuestionOption{
+			{Label: "Engine A", Metadata: map[string]any{"implementation": "Engine A"}},
+			{Label: "Engine B"},
+		}},
+	}}
+	correction := askUserImplementationSelectionContractCorrection(run, result)
+	issues := strings.Join(stringArrayValue(correction["issues"]), "\n")
+	if !strings.Contains(issues, "question 2 option 2 has no exact implementation") || strings.Contains(issues, "question 1") {
+		t.Fatalf("decision scope leaked or incomplete engine option escaped validation: %#v", correction)
 	}
 }
 
@@ -78,7 +109,7 @@ func TestAskUserImplementationCapabilityRejectsScientificallyWeakerFiller(t *tes
 		{Metadata: map[string]any{"implementation": "Pocket Engine"}},
 		{Metadata: map[string]any{"implementation": "Analog Engine"}},
 	}}}}
-	correction := askUserImplementationCapabilityContractCorrection(catalog, run, result)
+	correction := askUserImplementationCapabilityContractCorrection(catalog, nil, run, result)
 	if stringValue(correction["status"]) != "implementation_decision_contract_incomplete" ||
 		!strings.Contains(strings.Join(stringArrayValue(correction["issues"]), " "), "pocket-conditioned-molecule-generation") {
 		t.Fatalf("scientifically weaker filler was accepted: %#v", correction)
@@ -86,7 +117,7 @@ func TestAskUserImplementationCapabilityRejectsScientificallyWeakerFiller(t *tes
 	result["questions"] = []askUserQuestion{{Options: []askUserQuestionOption{
 		{Metadata: map[string]any{"implementation": "Pocket Engine"}},
 	}}}
-	if correction := askUserImplementationCapabilityContractCorrection(catalog, run, result); correction != nil {
+	if correction := askUserImplementationCapabilityContractCorrection(catalog, nil, run, result); correction != nil {
 		t.Fatalf("matching implementation capability was rejected: %#v", correction)
 	}
 }

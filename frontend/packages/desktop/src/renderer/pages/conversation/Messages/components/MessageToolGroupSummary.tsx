@@ -96,7 +96,7 @@ const MessageToolGroupSummary: React.FC<{
           {groupSummary.headline}
           {!expanded && groupSummary.subject ? ` · ${groupSummary.subject}` : ''}
         </span>
-        <span className='tool-group-summary__meta'>{groupSummary.meta}</span>
+        {groupSummary.meta && <span className='tool-group-summary__meta'>{groupSummary.meta}</span>}
       </button>
       <div
         ref={detailsRef}

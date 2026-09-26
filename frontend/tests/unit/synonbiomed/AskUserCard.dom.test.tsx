@@ -52,6 +52,27 @@ async function renderAskUser(
 }
 
 describe('AskUserCard', () => {
+  it('shows recorded stage progress and remaining work beside the decision', async () => {
+    await renderAskUser(
+      <AskUserCard
+        question={{
+          ...question,
+          stageProgress: {
+            planVersionId: 'version-1',
+            completedCount: 1,
+            remainingCount: 2,
+            completedSteps: [{ id: 'source', title: '已完成结构检查', status: 'completed' }],
+            remainingSteps: [{ id: 'pocket', title: '口袋计算待执行', status: 'pending' }],
+          },
+        }}
+        onResolve={vi.fn()}
+      />
+    );
+    const progress = screen.getByTestId('synon-plan-stage-progress');
+    expect(progress).toHaveTextContent('计划中已记录完成 1 项');
+    expect(progress).toHaveTextContent('口袋计算待执行');
+    expect(progress).toHaveTextContent('计划中仍待完成 2 项');
+  });
   it('retains answers and reports a sanitized submission failure before a manual retry', async () => {
     const onResolve = vi
       .fn()

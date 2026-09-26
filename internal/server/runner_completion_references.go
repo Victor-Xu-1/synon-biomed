@@ -239,34 +239,40 @@ func addSessionRunnerCandidateReferences(positive, negative map[string]struct{},
 	addSessionRunnerScientificTableReferences(positive, value)
 	if records, ok := sessionRunnerReferenceCSVRecords(value); ok {
 		for _, record := range records {
-			rowReferences := map[string]struct{}{}
-			for _, field := range record {
-				addSessionRunnerReferences(rowReferences, field)
-			}
-			rowText := strings.Join(record, " ")
-			negativeRowReferences := sessionRunnerExplicitNegativeReferences(rowText)
-			for identifier := range rowReferences {
-				if _, markedNegative := negativeRowReferences[identifier]; markedNegative {
-					negative[identifier] = struct{}{}
-					continue
-				}
-				positive[identifier] = struct{}{}
-			}
+			addSessionRunnerCandidateRecord(positive, negative, record)
 		}
 		return
 	}
 	for _, line := range strings.Split(value, "\n") {
-		lineReferences := map[string]struct{}{}
-		addSessionRunnerReferences(lineReferences, line)
-		negativeLineReferences := sessionRunnerExplicitNegativeReferences(line)
-		for identifier := range lineReferences {
-			if _, markedNegative := negativeLineReferences[identifier]; markedNegative {
-				negative[identifier] = struct{}{}
-				continue
-			}
-			if sessionRunnerCandidateReferenceLabelOnly(line, identifier) {
-				continue
-			}
+		addSessionRunnerCandidateLine(positive, negative, line)
+	}
+}
+
+func addSessionRunnerCandidateRecord(positive, negative map[string]struct{}, record []string) {
+	references := map[string]struct{}{}
+	for _, field := range record {
+		addSessionRunnerReferences(references, field)
+	}
+	absent := sessionRunnerExplicitNegativeReferences(strings.Join(record, " "))
+	for identifier := range references {
+		if _, found := absent[identifier]; found {
+			negative[identifier] = struct{}{}
+		} else {
+			positive[identifier] = struct{}{}
+		}
+	}
+}
+
+func addSessionRunnerCandidateLine(positive, negative map[string]struct{}, line string) {
+	references := map[string]struct{}{}
+	addSessionRunnerReferences(references, line)
+	absent := sessionRunnerExplicitNegativeReferences(line)
+	for identifier := range references {
+		if _, found := absent[identifier]; found {
+			negative[identifier] = struct{}{}
+			continue
+		}
+		if !sessionRunnerCandidateReferenceLabelOnly(line, identifier) {
 			positive[identifier] = struct{}{}
 		}
 	}

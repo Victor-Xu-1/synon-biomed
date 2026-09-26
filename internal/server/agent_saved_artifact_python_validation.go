@@ -10,22 +10,17 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
-const agentSavedPythonStaticValidationTimeout = 10 * time.Second
-
 const agentSavedPythonStaticValidator = `
-import ast
 import builtins
 import json
 import symtable
 import sys
 
 source = sys.stdin.read()
-result = {"ok": False, "code": "invalid_python", "unresolved": []}
+result = {"ok": False, "code": "invalid_python", "unresolved": [], "unresolved_count": 0}
 try:
-    ast.parse(source, filename="artifact.py", mode="exec")
     root = symtable.symtable(source, "artifact.py", "exec")
 except (SyntaxError, ValueError) as exc:
     result["code"] = "syntax_error"
@@ -48,7 +43,8 @@ else:
             visit(child)
 
     visit(root)
-    result["unresolved"] = sorted(unresolved)
+    result["unresolved_count"] = len(unresolved)
+    result["unresolved"] = sorted(unresolved)[:32]
     if unresolved:
         result["code"] = "unresolved_global"
     else:
@@ -58,10 +54,11 @@ print(json.dumps(result, sort_keys=True))
 `
 
 type agentSavedPythonStaticValidation struct {
-	OK         bool     `json:"ok"`
-	Code       string   `json:"code"`
-	Unresolved []string `json:"unresolved"`
-	Detail     string   `json:"detail,omitempty"`
+	OK              bool     `json:"ok"`
+	Code            string   `json:"code"`
+	Unresolved      []string `json:"unresolved"`
+	UnresolvedCount int      `json:"unresolved_count"`
+	Detail          string   `json:"detail,omitempty"`
 }
 
 func (s *Server) validateAgentSavedPythonArtifact(ctx context.Context, relativePath string, snapshot *os.File) error {
@@ -78,26 +75,22 @@ func (s *Server) validateAgentSavedPythonArtifact(ctx context.Context, relativeP
 	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
-	source, err := io.ReadAll(io.LimitReader(snapshot, maxRunnerCrossArtifactScanBytes+1))
-	if err != nil {
-		return err
-	}
+	result, err := validateAgentSavedPythonReader(ctx, python, snapshot)
 	if _, seekErr := snapshot.Seek(0, io.SeekStart); seekErr != nil {
-		return seekErr
+		return errors.Join(err, seekErr)
 	}
-	if len(source) > maxRunnerCrossArtifactScanBytes {
-		return errors.New("saved Python artifact exceeds the static validation bound")
-	}
-	result, err := validateAgentSavedPythonSource(ctx, python, source)
 	if err != nil {
 		return err
 	}
-	if result.OK && result.Code == "valid_python" && len(result.Unresolved) == 0 {
+	if result.OK && result.Code == "valid_python" && result.UnresolvedCount == 0 {
 		return nil
 	}
 	detail := strings.TrimSpace(result.Detail)
 	if len(result.Unresolved) > 0 {
 		detail = "unresolved globals: " + strings.Join(result.Unresolved, ", ")
+		if result.UnresolvedCount > len(result.Unresolved) {
+			detail += fmt.Sprintf(" (and %d more)", result.UnresolvedCount-len(result.Unresolved))
+		}
 	}
 	if detail == "" {
 		detail = result.Code
@@ -105,24 +98,28 @@ func (s *Server) validateAgentSavedPythonArtifact(ctx context.Context, relativeP
 	return fmt.Errorf("%w: %s", errAgentSavedArtifactPythonInvalid, detail)
 }
 
-func validateAgentSavedPythonSource(ctx context.Context, python string, source []byte) (agentSavedPythonStaticValidation, error) {
+func validateAgentSavedPythonReader(ctx context.Context, python string, source io.Reader) (agentSavedPythonStaticValidation, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	validationContext, cancel := context.WithTimeout(ctx, agentSavedPythonStaticValidationTimeout)
-	defer cancel()
-	command := exec.CommandContext(validationContext, python, "-I", "-c", agentSavedPythonStaticValidator)
-	command.Stdin = strings.NewReader(string(source))
+	command := exec.Command(python, "-I", "-c", agentSavedPythonStaticValidator)
+	command.Stdin = &contextReader{ctx: ctx, reader: source}
 	command.Env = []string{"LANG=C.UTF-8", "PYTHONNOUSERSITE=1", "PYTHONUNBUFFERED=1"}
-	output, err := command.Output()
-	if validationContext.Err() != nil {
-		return agentSavedPythonStaticValidation{}, errors.New("saved Python artifact validation timed out")
+	output := &cappedScientificOutput{limit: maxScientificArtifactValidatorOutput}
+	diagnostic := &cappedScientificOutput{limit: maxScientificArtifactValidatorOutput}
+	command.Stdout, command.Stderr = output, diagnostic
+	err := runArtifactValidationCommand(ctx, command, 0)
+	if ctx.Err() != nil {
+		return agentSavedPythonStaticValidation{}, ctx.Err()
 	}
 	if err != nil {
-		return agentSavedPythonStaticValidation{}, errors.New("saved Python artifact validator failed")
+		return agentSavedPythonStaticValidation{}, fmt.Errorf("saved Python artifact validator failed: %w", err)
+	}
+	if output.overflow || diagnostic.overflow {
+		return agentSavedPythonStaticValidation{}, errors.New("saved Python artifact validator result exceeded its diagnostic bound")
 	}
 	var result agentSavedPythonStaticValidation
-	if err := json.Unmarshal(output, &result); err != nil || strings.TrimSpace(result.Code) == "" {
+	if err := json.Unmarshal([]byte(output.String()), &result); err != nil || strings.TrimSpace(result.Code) == "" || result.UnresolvedCount < len(result.Unresolved) || len(result.Unresolved) > 32 {
 		return agentSavedPythonStaticValidation{}, errors.New("saved Python artifact validator returned an invalid result")
 	}
 	return result, nil

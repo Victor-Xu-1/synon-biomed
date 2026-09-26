@@ -1,23 +1,13 @@
 package server
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/url"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 )
 
 const runnerArtifactTableContractSchema = "synon.artifact-table-contract.v1"
-
-type runnerArtifactTableContractDocument struct {
-	Schema string                        `json:"schema"`
-	Tables []runnerArtifactTableContract `json:"tables"`
-}
 
 type runnerArtifactTableContract struct {
 	ID             string                                  `json:"id"`
@@ -36,66 +26,6 @@ type runnerArtifactTableContractProjection struct {
 type runnerArtifactTableContractValidation struct {
 	failures []string
 	covered  map[string]struct{}
-}
-
-// runnerCrossArtifactContractValidation validates only an explicit shared
-// record contract. File names, translated labels and equal row counts never
-// create an implicit identity relationship.
-func runnerCrossArtifactContractValidation(snapshots []runnerCrossArtifactSnapshot) runnerArtifactTableContractValidation {
-	validation := runnerArtifactTableContractValidation{covered: make(map[string]struct{})}
-	tablesByArtifact := make(map[string][]runnerCrossArtifactTable)
-	for _, snapshot := range snapshots {
-		name := strings.ToLower(filepath.Base(strings.TrimSpace(snapshot.name)))
-		if name != "" {
-			tablesByArtifact[name] = runnerCrossArtifactTables(snapshot)
-		}
-	}
-	seenContracts := map[string]struct{}{}
-	for _, snapshot := range snapshots {
-		document, matched, valid := decodeRunnerArtifactTableContract(snapshot.text)
-		if !matched {
-			continue
-		}
-		if !valid {
-			validation.failures = append(validation.failures,
-				"artifact_table_contract_invalid:"+filepath.Base(snapshot.name)+" reason=invalid_schema")
-			continue
-		}
-		for _, contract := range document.Tables {
-			contractID := strings.TrimSpace(contract.ID)
-			if !validRunnerArtifactTableContract(contract) {
-				validation.failures = append(validation.failures,
-					"artifact_table_contract_invalid:"+filepath.Base(snapshot.name)+" reason=invalid_table")
-				continue
-			}
-			if _, duplicate := seenContracts[strings.ToLower(contractID)]; duplicate {
-				validation.failures = append(validation.failures,
-					"artifact_table_contract_invalid:"+filepath.Base(snapshot.name)+" reason=duplicate_id")
-				continue
-			}
-			seenContracts[strings.ToLower(contractID)] = struct{}{}
-			validation.validateTable(contract, tablesByArtifact)
-		}
-	}
-	sort.Strings(validation.failures)
-	return validation
-}
-
-func decodeRunnerArtifactTableContract(content string) (runnerArtifactTableContractDocument, bool, bool) {
-	var probe struct {
-		Schema string `json:"schema"`
-	}
-	if json.Unmarshal([]byte(content), &probe) != nil || probe.Schema != runnerArtifactTableContractSchema {
-		return runnerArtifactTableContractDocument{}, false, false
-	}
-	decoder := json.NewDecoder(bytes.NewReader([]byte(content)))
-	decoder.DisallowUnknownFields()
-	var document runnerArtifactTableContractDocument
-	if decoder.Decode(&document) != nil || decoder.Decode(&struct{}{}) != io.EOF || document.Schema != runnerArtifactTableContractSchema ||
-		len(document.Tables) == 0 || len(document.Tables) > 16 {
-		return runnerArtifactTableContractDocument{}, true, false
-	}
-	return document, true, true
 }
 
 func validRunnerArtifactTableContract(contract runnerArtifactTableContract) bool {
@@ -142,88 +72,6 @@ func validRunnerArtifactTableContract(contract runnerArtifactTableContract) bool
 		}
 	}
 	return true
-}
-
-func (validation *runnerArtifactTableContractValidation) validateTable(contract runnerArtifactTableContract, tablesByArtifact map[string][]runnerCrossArtifactTable) {
-	fields := append(append([]string(nil), contract.IdentityFields...), contract.CompareFields...)
-	records := make(map[string]map[string]string, len(contract.Records))
-	displayKeys := make(map[string]string, len(contract.Records))
-	for _, record := range contract.Records {
-		key, display := runnerArtifactTableContractRecordKey(record, contract.IdentityFields)
-		if key == "" || records[key] != nil {
-			validation.failures = append(validation.failures,
-				"artifact_table_contract_invalid:"+contract.ID+" reason=duplicate_record_identity")
-			return
-		}
-		records[key], displayKeys[key] = record, display
-	}
-	projectionKeys := make([]string, 0, len(contract.Projections))
-	for _, projection := range contract.Projections {
-		artifactKey := strings.ToLower(filepath.Base(projection.Artifact))
-		tables := tablesByArtifact[artifactKey]
-		if projection.TableIndex >= len(tables) {
-			validation.failures = append(validation.failures, fmt.Sprintf(
-				"artifact_table_contract_projection_missing:%s artifact=%s table_index=%d",
-				contract.ID, projection.Artifact, projection.TableIndex))
-			continue
-		}
-		table := tables[projection.TableIndex]
-		projectionKey := runnerCrossArtifactTableIdentity(table)
-		projectionKeys = append(projectionKeys, projectionKey)
-		columns, ok := runnerArtifactTableContractColumns(table, projection.Columns, fields)
-		if !ok {
-			validation.failures = append(validation.failures, fmt.Sprintf(
-				"artifact_table_contract_projection_invalid:%s artifact=%s table_index=%d",
-				contract.ID, projection.Artifact, projection.TableIndex))
-			continue
-		}
-		seenRows := map[string]struct{}{}
-		for _, row := range table.rows {
-			actual := make(map[string]string, len(fields))
-			for _, field := range fields {
-				index := columns[strings.ToLower(field)]
-				if index < len(row) {
-					actual[field] = strings.TrimSpace(row[index])
-				}
-			}
-			key, display := runnerArtifactTableContractRecordKey(actual, contract.IdentityFields)
-			if _, duplicate := seenRows[key]; duplicate || key == "" {
-				validation.failures = append(validation.failures, fmt.Sprintf(
-					"artifact_table_contract_projection_invalid:%s artifact=%s reason=duplicate_or_empty_identity",
-					contract.ID, projection.Artifact))
-				continue
-			}
-			seenRows[key] = struct{}{}
-			expected := records[key]
-			if expected == nil {
-				validation.failures = append(validation.failures, fmt.Sprintf(
-					"artifact_table_contract_row_unexpected:%s artifact=%s row=%s", contract.ID, projection.Artifact, display))
-				continue
-			}
-			for _, field := range contract.CompareFields {
-				expectedValue, _ := runnerContractMapValue(expected, field)
-				actualValue, _ := runnerContractMapValue(actual, field)
-				if runnerArtifactTableContractValuesEqual(expectedValue, actualValue, field) {
-					continue
-				}
-				validation.failures = append(validation.failures, fmt.Sprintf(
-					"artifact_table_contract_value_mismatch:%s artifact=%s row=%s field=%s values=%s|%s",
-					contract.ID, projection.Artifact, displayKeys[key], field,
-					truncateServerString(expectedValue, 160), truncateServerString(actualValue, 160)))
-			}
-		}
-		for key, display := range displayKeys {
-			if _, found := seenRows[key]; !found {
-				validation.failures = append(validation.failures, fmt.Sprintf(
-					"artifact_table_contract_row_missing:%s artifact=%s row=%s", contract.ID, projection.Artifact, display))
-			}
-		}
-	}
-	for left := 0; left < len(projectionKeys); left++ {
-		for right := left + 1; right < len(projectionKeys); right++ {
-			validation.covered[runnerCrossArtifactTablePairKey(projectionKeys[left], projectionKeys[right])] = struct{}{}
-		}
-	}
 }
 
 func runnerArtifactTableContractColumns(table runnerCrossArtifactTable, declared map[string]string, fields []string) (map[string]int, bool) {

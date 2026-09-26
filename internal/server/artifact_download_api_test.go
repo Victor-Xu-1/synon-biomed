@@ -11,9 +11,32 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	workspace "synon-go/internal/persistence/workspace"
 )
+
+func TestArtifactHTMLDeliveryAlwaysUsesPassiveOriginSandbox(t *testing.T) {
+	const payload = `<html><script>parent.document.body.textContent="unsafe"</script><form action="/api/action"></form></html>`
+	for _, media := range []string{"text/html", "text/html; charset=utf-8", "application/xhtml+xml"} {
+		for _, disposition := range []string{"inline", "attachment"} {
+			t.Run(media+"/"+disposition, func(t *testing.T) {
+				response := httptest.NewRecorder()
+				request := httptest.NewRequest(http.MethodGet, "/api/artifacts/source", nil)
+				serveArtifactVersion(response, request, workspace.Artifact{ID: "source", Name: "page.html"}, workspace.ArtifactVersion{ID: "version", CreatedAt: time.Now()}, "page.html", media, disposition, strings.NewReader(payload))
+				policy := response.Header().Get("Content-Security-Policy")
+				for _, required := range []string{"sandbox;", "default-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'"} {
+					if !strings.Contains(policy, required) {
+						t.Fatalf("missing %q in CSP %q", required, policy)
+					}
+				}
+				if strings.Contains(policy, "allow-scripts") || strings.Contains(policy, "allow-same-origin") || response.Header().Get("X-Content-Type-Options") != "nosniff" || response.Body.String() != payload {
+					t.Fatalf("HTML integrity or passive boundary changed: %v", response.Header())
+				}
+			})
+		}
+	}
+}
 
 func TestBaselineArtifactAndVersionDownloads(t *testing.T) {
 	app, _, artifactID, firstVersionID, _ := exportFixture(t)

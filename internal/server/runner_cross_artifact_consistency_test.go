@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 
 	transcriptstore "synon-go/internal/persistence/transcript"
@@ -258,7 +259,11 @@ func TestRunnerEvidenceProvenanceIgnoresImmutableComputationManifest(t *testing.
 			"reference_ligand,A1J8Z,0,0,Z,REF,1,,,,,,,A1J8Z:A:303\n" +
 			"docked_ligand,93597066,1,1,Z,D01,101,-6.831,-6.831,1,1,3.18,0.05,pose-0001-run-01.pdbqt\n",
 	}
-	if _, _, recognized := runnerEvidenceLedgerRecords(snapshot); recognized {
+	headers := make(map[string]int)
+	for index, header := range strings.Split(strings.SplitN(snapshot.text, "\n", 2)[0], ",") {
+		headers[normalizeRunnerTableToken(header)] = index
+	}
+	if runnerEvidenceLedgerHeaderShape(headers) {
 		t.Fatal("quantitative execution manifest was classified as an evidence ledger")
 	}
 	if failures := runnerEvidenceProvenanceFailures(snapshot); len(failures) != 0 {

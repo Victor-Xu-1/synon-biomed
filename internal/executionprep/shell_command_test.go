@@ -5,6 +5,22 @@ import (
 	"testing"
 )
 
+func TestShellCommandInDirectoryKeepsLiteralWorkingDirectory(t *testing.T) {
+	directory, args, ok := ShellCommandInDirectory("cd 'engine files' && ./launcher --input '../data file.pdb'")
+	if !ok || directory != "engine files" || len(args) != 3 || args[0] != "./launcher" || args[2] != "../data file.pdb" {
+		t.Fatalf("directory=%q args=%#v ok=%t", directory, args, ok)
+	}
+	for _, source := range []string{
+		"cd engine || ./launcher", "cd $(select_path) && ./launcher",
+		"cd engine && ./launcher > result", "cd engine && ./launcher &",
+		"cd engine && ./launcher; ./second", "cd - && ./launcher",
+	} {
+		if _, _, ok := ShellCommandInDirectory(source); ok {
+			t.Fatalf("dynamic or compound operation was mistaken for one static invocation: %s", source)
+		}
+	}
+}
+
 func TestSingleShellCommandPreservesLiteralArgv(t *testing.T) {
 	for _, source := range []string{
 		"python 'my script.py' --name 'a$b'\n",

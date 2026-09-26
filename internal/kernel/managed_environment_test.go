@@ -253,6 +253,15 @@ func TestManagedEnvironmentFastInventorySkipsPerEnvironmentHealthProbe(t *testin
 		len(filteredWithoutPackages[0].Packages) != 0 {
 		t.Fatalf("dependency-only projection=%#v err=%v", filteredWithoutPackages, err)
 	}
+	targeted, err := manager.ListManagedEnvironments(context.Background(), ManagedEnvironmentQuery{
+		Name: name, Language: "python", Dependencies: []string{"python"}, IncludePackages: true, SkipHealth: true,
+	})
+	if err != nil || len(targeted) != 1 || targeted[0].Name != name || targeted[0].Generation != generation {
+		t.Fatalf("targeted inventory=%#v err=%v", targeted, err)
+	}
+	if _, err := manager.ListManagedEnvironments(context.Background(), ManagedEnvironmentQuery{Name: "../outside"}); err == nil {
+		t.Fatal("managed environment query accepted a path-like name")
+	}
 
 	strict, err := manager.ListManagedEnvironments(context.Background(), ManagedEnvironmentQuery{
 		Language: "python", Dependencies: []string{"python"}, IncludePackages: true,
@@ -1378,21 +1387,25 @@ func TestManagedCondaUninstallDoesNotReceiveChannelArguments(t *testing.T) {
 	}
 }
 
-func TestManagedEnvironmentInstallerInheritsProxyWithoutLeakingItToRuntime(t *testing.T) {
+func TestManagedEnvironmentInstallerUsesConfiguredProxyWithoutLeakingItToRuntime(t *testing.T) {
 	hostBin := filepath.Join(t.TempDir(), "host-bin")
 	hostBinTwo := filepath.Join(t.TempDir(), "host-bin-two")
 	t.Setenv("PATH", strings.Join([]string{hostBin, hostBinTwo, "relative", hostBin}, string(os.PathListSeparator)))
-	t.Setenv("HTTPS_PROXY", "http://proxy.example.test:8080")
+	t.Setenv("HTTPS_PROXY", "http://unselected.example.test:8080")
 	t.Setenv("NO_PROXY", "127.0.0.1,localhost")
 	t.Setenv("ALL_PROXY", strings.Repeat("x", 4097))
 	manager := NewManager(Config{
-		Micromamba: "/opt/synon/micromamba", CondaHome: filepath.Join(t.TempDir(), "synon-conda"),
-		CondaEnvsPath: filepath.Join(t.TempDir(), "synon-conda", "envs"), InstallerProxy: "http://configured-proxy.example.test:8081",
+		UpstreamProxy: "http://proxy.example.test:8080",
+		Micromamba:    "/opt/synon/micromamba", CondaHome: filepath.Join(t.TempDir(), "synon-conda"),
+		CondaEnvsPath: filepath.Join(t.TempDir(), "synon-conda", "envs"),
 	})
-	installer := strings.Join(manager.managedEnvironmentInstallerEnv(), "\n")
-	if !strings.Contains(installer, "HTTPS_PROXY=http://configured-proxy.example.test:8081") ||
-		!strings.Contains(installer, "ALL_PROXY=http://configured-proxy.example.test:8081") ||
-		!strings.Contains(installer, "NO_PROXY=127.0.0.1,localhost") {
+	installerEnv, err := manager.managedEnvironmentInstallerEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	installer := strings.Join(installerEnv, "\n")
+	if !strings.Contains(installer, "HTTPS_PROXY=http://proxy.example.test:8080") ||
+		strings.Contains(installer, "NO_PROXY=") || strings.Contains(installer, "ALL_PROXY=") || strings.Contains(installer, "unselected.example") {
 		t.Fatalf("installer proxy environment=%q", installer)
 	}
 	threadLimit := managedEnvironmentInstallerThreadLimit()
@@ -1415,8 +1428,12 @@ func TestManagedEnvironmentInstallerInheritsProxyWithoutLeakingItToRuntime(t *te
 	if strings.Contains(runtimeEnvironment, "HTTPS_PROXY=") || strings.Contains(runtimeEnvironment, "NO_PROXY=") {
 		t.Fatalf("runtime inherited installer proxy authority: %q", runtimeEnvironment)
 	}
-	installerRuntime := strings.Join(managedEnvironmentInstallerRuntimeEnv(prefix, manager.config.InstallerProxy), "\n")
-	wantBuildPath := "PATH=" + filepath.Join(prefix, "bin") + string(os.PathListSeparator) + hostBin + string(os.PathListSeparator) + hostBinTwo
+	installerRuntimeEnv, err := manager.managedEnvironmentInstallerRuntimeEnv(prefix)
+	if err != nil {
+		t.Fatal(err)
+	}
+	installerRuntime := strings.Join(installerRuntimeEnv, "\n")
+	wantBuildPath := "PATH=" + managedRuntimePath(prefix) + string(os.PathListSeparator) + hostBin + string(os.PathListSeparator) + hostBinTwo
 	if !strings.Contains(installerRuntime, wantBuildPath) {
 		t.Fatalf("installer build PATH=%q want %q", installerRuntime, wantBuildPath)
 	}

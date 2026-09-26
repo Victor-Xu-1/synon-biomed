@@ -16,7 +16,7 @@ type executionSourcePreparer interface {
 // Both admission and execution consume the same preparation authority. The
 // second check re-reads script contents; an earlier successful read must not
 // authorize a later, different file body.
-func agentExecutionPreparationPreflight(publicName string, input map[string]any, identity *agentKernelContext, preparer executionSourcePreparer) map[string]any {
+func agentExecutionPreparationPreflight(parent context.Context, publicName string, input map[string]any, identity *agentKernelContext, preparer executionSourcePreparer) map[string]any {
 	language := strings.ToLower(strings.TrimSpace(publicName))
 	if language == "repl" {
 		language = "python"
@@ -39,7 +39,7 @@ func agentExecutionPreparationPreflight(publicName string, input map[string]any,
 			}
 		}
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	ctx, cancel := context.WithTimeout(parent, 8*time.Second)
 	defer cancel()
 	var result executionprep.Result
 	var err error

@@ -104,12 +104,13 @@
       "paths": [
         "scripts/quality/test_kernel_worker_streams.py",
         "scripts/quality/test_kernel_worker_protocol.py",
+        "scripts/quality/test_kernel_worker_effects.py",
         "scripts/quality/kernel_manifest.py",
         "scripts/quality/test_kernel_manifest.py"
       ],
       "frontend": false,
       "checks": [
-        ["python3", "-B", "-m", "unittest", "scripts.quality.test_kernel_worker_streams", "scripts.quality.test_kernel_worker_protocol"],
+        ["python3", "-B", "-m", "unittest", "scripts.quality.test_kernel_worker_streams", "scripts.quality.test_kernel_worker_protocol", "scripts.quality.test_kernel_worker_effects"],
         ["python3", "-B", "scripts/quality/test_kernel_manifest.py"],
         ["python3", "-B", "scripts/quality/kernel_manifest.py"]
       ]

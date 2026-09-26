@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Validate SDF and SMILES files with managed RDKit.
+"""Stream strict managed-RDKit validation and return a v2 count summary.
 
-The host sends bounded molecular-structure bytes on stdin and receives one compact JSON
-object on stdout. Exit status 0 means the artifact is valid, 2 means RDKit ran
-and rejected the artifact, and 3 means the trusted parser runtime is
-unavailable or failed. The script deliberately has no host-Python fallback.
+Every molecule is checked. Memory scales with the current molecule/line, not
+the complete library. Exit 0 is valid, 2 invalid data, and 3 parser failure.
 """
 
 from __future__ import annotations
@@ -14,248 +12,178 @@ import io
 import json
 import re
 import sys
-from typing import Any
+from typing import Any, BinaryIO
 
 
-SCHEMA_VERSION = 1
-MAX_INPUT_BYTES = 50 * 1024 * 1024
-
-
-def _result(
-    format_name: str = "sdf",
-    *,
-    ok: bool = False,
-    code: str = "validator_failed",
-    delimiter_count: int = 0,
-    supplier_record_count: int = 0,
-    parsed_count: int = 0,
-    invalid_record_indexes: list[int] | None = None,
-    atom_counts: list[int] | None = None,
-    terminal_delimiter: bool = False,
-    rdkit_version: str | None = None,
-    error: str | None = None,
-) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "schemaVersion": SCHEMA_VERSION,
-        "format": format_name,
-        "ok": ok,
-        "code": code,
-        "delimiterCount": delimiter_count,
-        "supplierRecordCount": supplier_record_count,
-        "parsedCount": parsed_count,
-        "invalidRecordIndexes": invalid_record_indexes or [],
-        "atomCounts": atom_counts or [],
-        "terminalDelimiter": terminal_delimiter,
+def _result(format_name: str, **values: Any) -> dict[str, Any]:
+    result = {
+        "schemaVersion": 2, "format": format_name, "ok": False,
+        "code": "validator_failed", "delimiterCount": 0,
+        "supplierRecordCount": 0, "parsedCount": 0,
+        "invalidRecordCount": 0, "atomCountRecords": 0,
+        "terminalDelimiter": format_name == "smi",
     }
-    if rdkit_version is not None:
-        payload["rdkitVersion"] = rdkit_version
-    if error is not None:
-        payload["error"] = error
-    return payload
+    result.update(values)
+    return result
 
 
-def _write_result(payload: dict[str, Any]) -> None:
-    sys.stdout.write(json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True))
-    sys.stdout.write("\n")
-    sys.stdout.flush()
+class DelimiterReader:
+    """Observe SDF delimiters without retaining property lines or file copies."""
+
+    def __init__(self, source: BinaryIO):
+        self.source = source
+        self.byte_count = 0
+        self.delimiter_count = 0
+        self.terminal_delimiter = False
+        self._line_length = 0
+        self._is_delimiter = True
+        self._finished = False
+
+    def _part(self, value: bytes) -> None:
+        if self._is_delimiter:
+            self._is_delimiter = (
+                self._line_length + len(value) <= 4 and value == b"$" * len(value)
+            )
+        self._line_length += len(value)
+
+    def _end_line(self) -> None:
+        if self._line_length:
+            self.terminal_delimiter = self._is_delimiter and self._line_length == 4
+            if self.terminal_delimiter:
+                self.delimiter_count += 1
+        self._line_length = 0
+        self._is_delimiter = True
+
+    def read(self, size: int = -1) -> bytes:
+        value = self.source.read(size)
+        self.byte_count += len(value)
+        cursor = 0
+        for match in re.finditer(b"[\r\n]", value):
+            self._part(value[cursor:match.start()])
+            self._end_line()
+            cursor = match.end()
+        self._part(value[cursor:])
+        if not value and not self._finished:
+            self._end_line()
+            self._finished = True
+        return value
+
+    def drain(self) -> None:
+        # A parser stopping early must not hide an unread invalid tail.
+        while self.read(64 * 1024):
+            pass
 
 
-def _read_bounded_stdin() -> bytes:
-    raw = sys.stdin.buffer.read(MAX_INPUT_BYTES + 1)
-    if len(raw) > MAX_INPUT_BYTES:
-        raise ValueError(f"scientific artifact input exceeds {MAX_INPUT_BYTES} bytes")
-    return raw
-
-
-def _delimiter_count(raw: bytes) -> int:
-    return sum(1 for line in raw.splitlines() if line == b"$$$$")
-
-
-def _has_terminal_delimiter(raw: bytes) -> bool:
-    lines = raw.splitlines()
-    while lines and not lines[-1]:
-        lines.pop()
-    return bool(lines) and lines[-1] == b"$$$$"
-
-
-def validate_sdf(raw: bytes) -> dict[str, Any]:
-    delimiter_count = _delimiter_count(raw)
-    terminal_delimiter = _has_terminal_delimiter(raw)
-    if not raw:
-        return _result(
-            ok=False,
-            code="empty_sdf",
-            delimiter_count=0,
-            supplier_record_count=0,
-            parsed_count=0,
-            invalid_record_indexes=[],
-            atom_counts=[],
-            terminal_delimiter=False,
-        )
-    if delimiter_count == 0:
-        return _result(
-            ok=False,
-            code="missing_record_delimiter",
-            delimiter_count=0,
-            supplier_record_count=0,
-            parsed_count=0,
-            invalid_record_indexes=[],
-            atom_counts=[],
-            terminal_delimiter=terminal_delimiter,
-        )
-
+def validate_sdf(source: BinaryIO) -> dict[str, Any]:
+    reader = DelimiterReader(source)
+    result = _result("sdf")
     try:
         from rdkit import Chem, rdBase
     except Exception:
-        return _result(
-            ok=False,
-            code="parser_unavailable",
-            error="RDKit parser is unavailable in the managed runtime",
-            delimiter_count=delimiter_count,
-            supplier_record_count=0,
-            parsed_count=0,
-            invalid_record_indexes=[],
-            atom_counts=[],
-            terminal_delimiter=terminal_delimiter,
-        )
-
-    try:
-        supplier = Chem.ForwardSDMolSupplier(
-            io.BytesIO(raw),
-            sanitize=True,
-            removeHs=False,
-            strictParsing=True,
-        )
-        invalid_indexes: list[int] = []
-        atom_counts: list[int] = []
-        parsed_count = 0
-        supplier_record_count = 0
-        for supplier_record_count, molecule in enumerate(supplier, start=1):
-            if molecule is None:
-                invalid_indexes.append(supplier_record_count)
-                atom_counts.append(0)
-                continue
-            atom_count = int(molecule.GetNumAtoms())
-            atom_counts.append(atom_count)
-            if atom_count <= 0:
-                invalid_indexes.append(supplier_record_count)
-                continue
-            parsed_count += 1
-
-        if supplier_record_count < delimiter_count:
-            invalid_indexes.extend(range(supplier_record_count + 1, delimiter_count + 1))
-            atom_counts.extend([0] * (delimiter_count - supplier_record_count))
-
-        invalid_indexes = sorted(set(invalid_indexes))
-        ok = (
-            terminal_delimiter
-            and supplier_record_count == delimiter_count
-            and parsed_count == delimiter_count
-            and not invalid_indexes
-        )
-        code = "valid_sdf" if ok else "invalid_sdf_records"
-        if not terminal_delimiter:
-            code = "missing_terminal_delimiter"
-        elif supplier_record_count != delimiter_count:
-            code = "record_count_mismatch"
-        return _result(
-            ok=ok,
-            code=code,
-            delimiter_count=delimiter_count,
-            supplier_record_count=supplier_record_count,
-            parsed_count=parsed_count,
-            invalid_record_indexes=invalid_indexes,
-            atom_counts=atom_counts,
-            terminal_delimiter=terminal_delimiter,
-            rdkit_version=str(rdBase.rdkitVersion),
-        )
-    except Exception:
-        return _result(
-            ok=False,
-            code="parser_failed",
-            error="RDKit failed while parsing the SDF artifact",
-            delimiter_count=delimiter_count,
-            supplier_record_count=0,
-            parsed_count=0,
-            invalid_record_indexes=[],
-            atom_counts=[],
-            terminal_delimiter=terminal_delimiter,
-            rdkit_version=str(rdBase.rdkitVersion),
-        )
-
-
-def validate_smiles(raw: bytes) -> dict[str, Any]:
-    if not raw:
-        return _result("smi", ok=False, code="empty_smiles", terminal_delimiter=True)
-    try:
-        text = raw.decode("utf-8")
-    except UnicodeDecodeError:
-        return _result("smi", ok=False, code="invalid_utf8", terminal_delimiter=True)
-    lines = [
-        line.strip()
-        for line in text.splitlines()
-        if line.strip() and not line.lstrip().startswith("#")
-    ]
-    if not lines:
-        return _result("smi", ok=False, code="empty_smiles", terminal_delimiter=True)
-    first = re.split(r"[\t, ]+", lines[0])
-    aliases = {"smiles", "canonical_smiles", "isomeric_smiles"}
-    lowered = [value.strip().lower() for value in first]
-    header = any(value in aliases for value in lowered)
-    if header:
-        smiles_index = next(index for index, value in enumerate(lowered) if value in aliases)
-        data_lines = lines[1:]
+        reader.drain()
+        result.update(code="parser_unavailable", error="RDKit parser is unavailable in the managed runtime")
     else:
-        smiles_index = 0
-        data_lines = lines
-    if not data_lines:
-        return _result("smi", ok=False, code="empty_smiles_records", terminal_delimiter=True)
+        result["rdkitVersion"] = str(rdBase.rdkitVersion)
+        try:
+            # Every parse failure contributes to the returned counts instead
+            # of producing an unbounded, repetitive stderr transcript.
+            with rdBase.BlockLogs():
+                supplier = Chem.ForwardSDMolSupplier(
+                    reader, sanitize=True, removeHs=False, strictParsing=True
+                )
+                for molecule in supplier:
+                    result["supplierRecordCount"] += 1
+                    result["atomCountRecords"] += 1
+                    if molecule is None or molecule.GetNumAtoms() <= 0:
+                        result["invalidRecordCount"] += 1
+                    else:
+                        result["parsedCount"] += 1
+            reader.drain()
+        except Exception:
+            result.update(code="parser_failed", error="RDKit failed while parsing the SDF artifact")
+            reader.drain()
+    result["delimiterCount"] = delimiter_count = reader.delimiter_count
+    result["terminalDelimiter"] = reader.terminal_delimiter
+    if not reader.byte_count:
+        result["code"] = "empty_sdf"
+    elif not delimiter_count:
+        result["code"] = "missing_record_delimiter"
+    elif result["code"] in {"parser_unavailable", "parser_failed"}:
+        pass
+    else:
+        missing = max(0, delimiter_count - result["supplierRecordCount"])
+        result["invalidRecordCount"] += missing
+        result["atomCountRecords"] += missing
+        parsed_count = result["parsedCount"]
+        result["ok"] = (
+            reader.terminal_delimiter
+            and result["supplierRecordCount"] == delimiter_count
+            and parsed_count == delimiter_count
+            and result["invalidRecordCount"] == 0
+        )
+        result["code"] = "valid_sdf" if result["ok"] else "invalid_sdf_records"
+        if not reader.terminal_delimiter:
+            result["code"] = "missing_terminal_delimiter"
+        elif result["supplierRecordCount"] != delimiter_count:
+            result["code"] = "record_count_mismatch"
+    return result
 
+
+def validate_smiles(source: BinaryIO) -> dict[str, Any]:
+    result = _result("smi")
     try:
         from rdkit import Chem, rdBase
     except Exception:
-        return _result(
-            "smi",
-            ok=False,
-            code="parser_unavailable",
-            error="RDKit parser is unavailable in the managed runtime",
-            delimiter_count=len(data_lines),
-            supplier_record_count=len(data_lines),
-            terminal_delimiter=True,
-        )
-
-    invalid_indexes: list[int] = []
-    atom_counts: list[int] = []
-    parsed_count = 0
-    for record_index, line in enumerate(data_lines, start=1):
-        values = re.split(r"[\t, ]+", line)
-        if smiles_index >= len(values) or not values[smiles_index].strip():
-            invalid_indexes.append(record_index)
-            atom_counts.append(0)
-            continue
-        try:
-            molecule = Chem.MolFromSmiles(values[smiles_index].strip(), sanitize=True)
-        except Exception:
+        Chem = rdBase = None
+    if rdBase is not None:
+        result["rdkitVersion"] = str(rdBase.rdkitVersion)
+    header_seen = False
+    saw_header = False
+    smiles_index = 0
+    aliases = {"smiles", "canonical_smiles", "isomeric_smiles"}
+    text = io.TextIOWrapper(source, encoding="utf-8", errors="strict", newline=None)
+    try:
+        for raw in text:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            values = re.split(r"[\t, ]+", line)
+            if not header_seen:
+                header_seen = True
+                lowered = [value.lower() for value in values]
+                if any(value in aliases for value in lowered):
+                    saw_header = True
+                    smiles_index = next(index for index, value in enumerate(lowered) if value in aliases)
+                    continue
+            result["delimiterCount"] += 1
+            result["supplierRecordCount"] += 1
+            if Chem is None:
+                continue
+            result["atomCountRecords"] += 1
             molecule = None
-        if molecule is None or molecule.GetNumAtoms() <= 0:
-            invalid_indexes.append(record_index)
-            atom_counts.append(0)
-            continue
-        parsed_count += 1
-        atom_counts.append(int(molecule.GetNumAtoms()))
-    ok = parsed_count == len(data_lines) and not invalid_indexes
-    return _result(
-        "smi",
-        ok=ok,
-        code="valid_smiles" if ok else "invalid_smiles_records",
-        delimiter_count=len(data_lines),
-        supplier_record_count=len(data_lines),
-        parsed_count=parsed_count,
-        invalid_record_indexes=invalid_indexes,
-        atom_counts=atom_counts,
-        terminal_delimiter=True,
-        rdkit_version=str(rdBase.rdkitVersion),
-    )
+            if smiles_index < len(values) and values[smiles_index]:
+                try:
+                    with rdBase.BlockLogs():
+                        molecule = Chem.MolFromSmiles(values[smiles_index], sanitize=True)
+                except Exception:
+                    molecule = None
+            if molecule is None or molecule.GetNumAtoms() <= 0:
+                result["invalidRecordCount"] += 1
+            else:
+                result["parsedCount"] += 1
+    except UnicodeDecodeError:
+        result["code"] = "invalid_utf8"
+        return result
+    finally:
+        text.detach()
+    if not result["delimiterCount"]:
+        result["code"] = "empty_smiles_records" if saw_header else "empty_smiles"
+    elif Chem is None:
+        result.update(code="parser_unavailable", error="RDKit parser is unavailable in the managed runtime")
+    else:
+        result["ok"] = result["parsedCount"] == result["delimiterCount"] and result["invalidRecordCount"] == 0
+        result["code"] = "valid_smiles" if result["ok"] else "invalid_smiles_records"
+    return result
 
 
 def main() -> int:
@@ -263,19 +191,14 @@ def main() -> int:
     parser.add_argument("--format", choices=("sdf", "smi"), default="sdf")
     args = parser.parse_args()
     try:
-        raw = _read_bounded_stdin()
-    except ValueError as error:
-        _write_result(_result(args.format, ok=False, code="input_too_large", error=str(error)))
-        return 2
+        payload = validate_sdf(sys.stdin.buffer) if args.format == "sdf" else validate_smiles(sys.stdin.buffer)
     except Exception:
-        _write_result(_result(args.format, ok=False, code="input_read_failed", error="could not read scientific artifact bytes from stdin"))
-        return 3
-
-    payload = validate_sdf(raw) if args.format == "sdf" else validate_smiles(raw)
-    _write_result(payload)
-    if payload.get("ok") is True:
+        payload = _result(args.format, code="input_read_failed", error="could not read scientific artifact bytes from stdin")
+    sys.stdout.write(json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True) + "\n")
+    sys.stdout.flush()
+    if payload["ok"]:
         return 0
-    if payload.get("code") in {"parser_unavailable", "parser_failed", "input_read_failed"}:
+    if payload["code"] in {"parser_unavailable", "parser_failed", "input_read_failed"}:
         return 3
     return 2
 

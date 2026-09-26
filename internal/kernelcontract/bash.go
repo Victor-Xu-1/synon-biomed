@@ -1,10 +1,13 @@
 package kernelcontract
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
+
+	"synon-go/internal/executionprep"
 )
 
 const (
@@ -18,6 +21,21 @@ const (
 // encoded as data, never interpolated into executable Python source.
 func BashPythonWrapper(command string) (string, error) {
 	return bashPythonWrapper(command, bashStreamingPump)
+}
+
+// BashObservationPythonWrapper is the same canonical envelope with an explicit
+// native startup contract. Privileged mode disables imported functions,
+// SHELLOPTS and BASH_ENV; no profile runs before the user source's bindings.
+// It neither changes languages nor replaces the durable executor.
+func BashObservationPythonWrapper(command string, plan *executionprep.Observation) (string, error) {
+	if !plan.Matches("bash", command) {
+		return "", executionprep.ErrObservationUnproved
+	}
+	result, err := executionprep.Analyze(context.Background(), executionprep.Request{Language: "bash", Source: command}, nil)
+	if err != nil || !result.Observation.Matches("bash", command) {
+		return "", executionprep.ErrObservationUnproved
+	}
+	return bashPythonWrapper(command, bashStreamingPump, true)
 }
 
 // The legacy pump is accepted only when decoding immutable historical source;
@@ -51,11 +69,15 @@ const bashStreamingPump = `def _synon_pump(_synon_source, _synon_target):
         _synon_source.close()
 `
 
-func bashPythonWrapper(command, pump string) (string, error) {
+func bashPythonWrapper(command, pump string, observation ...bool) (string, error) {
 	if strings.TrimSpace(command) == "" || len(command) > MaxBashBytes || strings.ContainsRune(command, '\x00') {
 		return "", errors.New("bash command must be 1-262144 bytes without NUL characters")
 	}
 	encoded := base64.StdEncoding.EncodeToString([]byte(command))
+	arguments := `["/bin/bash", "-lc", _synon_script]`
+	if len(observation) > 0 && observation[0] {
+		arguments = `["/bin/bash", "--noprofile", "--norc", "-p", "-c", _synon_script]`
+	}
 	return fmt.Sprintf(`%s%s
 import base64 as _synon_b64
 import subprocess as _synon_subprocess
@@ -65,7 +87,7 @@ import threading as _synon_threading
 _synon_command = _synon_b64.b64decode(%q, validate=True).decode("utf-8")
 _synon_script = "set -e\nset -o pipefail\n" + _synon_command
 _synon_process = _synon_subprocess.Popen(
-    ["/bin/bash", "-lc", _synon_script],
+    %s,
     stdout=_synon_subprocess.PIPE,
     stderr=_synon_subprocess.PIPE,
     text=True,
@@ -82,7 +104,7 @@ _synon_stdout_thread.join()
 _synon_stderr_thread.join()
 _synon_sys.stderr.write("\n%s" + str(_synon_exit_code) + "\n")
 _synon_sys.stderr.flush()
-`, BashSourcePrefix, encoded, encoded, pump, BashExitPrefix), nil
+`, BashSourcePrefix, encoded, encoded, arguments, pump, BashExitPrefix), nil
 }
 
 // BashCommandFromWrapper verifies the complete canonical envelope before
@@ -106,6 +128,10 @@ func BashCommandFromWrapper(source string) (string, error) {
 		return "", err
 	}
 	if canonical != source {
+		observational, observationErr := bashPythonWrapper(command, bashStreamingPump, true)
+		if observationErr == nil && observational == source {
+			return command, nil
+		}
 		legacy, legacyErr := bashPythonWrapper(command, bashLegacyPump)
 		if legacyErr == nil && legacy == source {
 			return command, nil

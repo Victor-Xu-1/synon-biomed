@@ -121,6 +121,38 @@ func (s *Store) OpenArtifactVersionContent(versionID string) (Artifact, Artifact
 	return artifact, version, reader, true, nil
 }
 
+// OpenArtifactVersionContentForOwner opens immutable artifact content only
+// when the source project belongs to the requested owner. Callers that reuse
+// content across projects must use this owner-scoped path so an opaque version
+// ID can never become a cross-account read capability.
+func (s *Store) OpenArtifactVersionContentForOwner(
+	versionID, ownerUserID string,
+) (Artifact, ArtifactVersion, ArtifactContentReader, bool, error) {
+	if s == nil || s.db == nil {
+		return Artifact{}, ArtifactVersion{}, nil, false, errors.New("workspace store is closed")
+	}
+	if strings.TrimSpace(versionID) == "" {
+		return Artifact{}, ArtifactVersion{}, nil, false, errors.New("artifact version id is required")
+	}
+	if strings.TrimSpace(ownerUserID) == "" {
+		return Artifact{}, ArtifactVersion{}, nil, false, errors.New("artifact owner user id is required")
+	}
+	artifact, version, found, err := scanArtifactVersionRow(s.db.QueryRowContext(
+		context.Background(), artifactVersionJoinSelect+`
+			JOIN projects AS owner_project ON owner_project.id = artifact.project_id
+			WHERE version.id = ? AND owner_project.user_id = ?`,
+		versionID, ownerUserID,
+	))
+	if err != nil || !found {
+		return artifact, version, nil, found, err
+	}
+	reader, err := s.openArtifactVersionContent(version)
+	if err != nil {
+		return Artifact{}, ArtifactVersion{}, nil, false, err
+	}
+	return artifact, version, reader, true, nil
+}
+
 func (s *Store) hydrateArtifactVersion(artifact Artifact, version ArtifactVersion, found bool, err error) (Artifact, ArtifactVersion, bool, error) {
 	if err != nil || !found || version.StoragePath == "" {
 		return artifact, version, found, err

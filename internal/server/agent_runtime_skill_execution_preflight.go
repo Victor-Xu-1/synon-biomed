@@ -19,6 +19,7 @@ import (
 func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflight(
 	publicName string,
 	input map[string]any,
+	parents ...context.Context,
 ) map[string]any {
 	if g.server == nil || g.server.skillCatalog == nil || g.taskRun == nil {
 		return nil
@@ -33,13 +34,16 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflig
 	if preflight := g.agentRuntimeImplementationProvisioningSkillPreflight(name, input); preflight != nil {
 		return preflight
 	}
-	if preflight := g.agentRuntimeImplementationExecutionChoicePreflight(name, input); preflight != nil {
+	if preflight := g.agentRuntimeImplementationExecutionChoicePreflight(name, input, parents...); preflight != nil {
 		return preflight
 	}
 	if preflight := g.agentRuntimeSelectedImplementationEnvironmentPreflight(name, input); preflight != nil {
 		return preflight
 	}
 	if preflight := g.agentRuntimeSelectedImplementationMaterializedSkillPreflight(name, input); preflight != nil {
+		return preflight
+	}
+	if preflight := g.agentRuntimeCanonicalPackEnvironmentPreflight(name, input, parents...); preflight != nil {
 		return preflight
 	}
 	if preflight := g.agentRuntimeControlledEvidenceDerivationPreflight(name, input); preflight != nil {
@@ -90,6 +94,85 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflig
 	return nil
 }
 
+func (g serverAgentRuntimeToolGateway) agentRuntimeCanonicalPackEnvironmentPreflight(
+	publicName string,
+	input map[string]any,
+	parents ...context.Context,
+) map[string]any {
+	if g.server == nil || g.server.kernelManager == nil {
+		return nil
+	}
+	engine, found := g.server.canonicalManagedExecutionPack(publicName, input)
+	if !found {
+		return nil
+	}
+	pack := engine.ExecutionPack
+	condaPackages, pipPackages, err := registeredExecutionPackPackageSpecs(pack)
+	if err != nil {
+		return map[string]any{
+			"ok": false, "status": "execution_pack_environment_contract_invalid", "executed": false,
+			"execution_pack_id": pack.ID,
+			"message":           "The registered execution pack has an invalid environment contract.",
+			"recovery":          "Repair the registered execution-pack environment contract before retrying the same entrypoint.",
+		}
+	}
+	packageSpecs := append([]string(nil), condaPackages...)
+	for _, spec := range pipPackages {
+		packageSpecs = append(packageSpecs, "pip::"+spec)
+	}
+	dependencies, _ := managedEnvironmentPreflightDependencyNames(packageSpecs)
+	requestedEnvironment := strings.TrimSpace(stringValue(input["environment"]))
+	parent := context.Background()
+	if len(parents) > 0 && parents[0] != nil {
+		parent = parents[0]
+	}
+	// Inventory can contain hundreds of immutable generations. A full strict
+	// health scan is intentionally not part of this admission gate: it makes a
+	// ready, explicitly requested environment lose a short deadline while
+	// unrelated environments are inspected. The execution boundary performs
+	// the final generation-health check immediately before process start.
+	const discoveryTimeout = 30 * time.Second
+	ctx, cancel := context.WithTimeout(parent, discoveryTimeout)
+	defer cancel()
+	candidates, listErr := g.server.kernelManager.ListManagedEnvironments(ctx, kernelruntime.ManagedEnvironmentQuery{
+		Name:            requestedEnvironment,
+		Language:        strings.TrimSpace(pack.Language),
+		Dependencies:    dependencies,
+		IncludePackages: true,
+		SkipHealth:      true,
+	})
+	if listErr == nil {
+		rankManagedEnvironmentPreflightCandidates(candidates, requestedEnvironment)
+		for _, candidate := range candidates[:min(len(candidates), maxManagedEnvironmentPreflightAlternatives)] {
+			if err := g.server.kernelManager.VerifyManagedEnvironmentExecutable(candidate.Name, pack.Executable); err != nil {
+				continue
+			}
+			witnessesValid := true
+			for _, witness := range pack.CLIWitnesses {
+				if err := g.server.kernelManager.VerifyManagedEnvironmentExecutable(candidate.Name, witness.Executable); err != nil {
+					witnessesValid = false
+					break
+				}
+			}
+			if !witnessesValid {
+				continue
+			}
+			if err := g.server.kernelManager.VerifyManagedEnvironmentImports(ctx, candidate.Name, pack.Imports); err != nil {
+				continue
+			}
+			input["environment"] = candidate.Name
+			return nil
+		}
+	}
+	return map[string]any{
+		"ok": false, "status": "execution_pack_environment_preflight_required", "executed": false,
+		"execution_pack_id": pack.ID, "requested_environment": requestedEnvironment,
+		"required_packages": packageSpecs, "required_imports": append([]string(nil), pack.Imports...),
+		"message":  "No ready managed environment satisfies the registered execution pack's complete package and import contract.",
+		"recovery": "Use manage_environments preflight with the same implementation. Reuse the returned compatible environment, or create one immutable environment from the registered package contract before retrying this exact entrypoint.",
+	}
+}
+
 // agentRuntimeImplementationExecutionChoicePreflight prevents a historical
 // managed environment from silently choosing a substantial scientific engine
 // for a new task. The gate is capability- and metadata-driven: generic Skill
@@ -98,6 +181,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeSkillExecutionContractPreflig
 func (g serverAgentRuntimeToolGateway) agentRuntimeImplementationExecutionChoicePreflight(
 	publicName string,
 	input map[string]any,
+	parents ...context.Context,
 ) map[string]any {
 	switch publicName {
 	case "bash", "python", "r", "powershell":
@@ -114,6 +198,15 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeImplementationExecutionChoice
 	}
 	capabilities := semanticManagedEnvironmentCapabilities(g.taskRun.requiredScientificCapabilitiesSnapshot())
 	if len(capabilities) == 0 {
+		return nil
+	}
+	parent := context.Background()
+	if len(parents) > 0 && parents[0] != nil {
+		parent = parents[0]
+	}
+	if g.agentRuntimeDiagnosticObservation(parent, publicName, input) != nil {
+		// This only prepares a conditional exemption. The host must carry its
+		// binding obligations to the real executor; durable choice is unchanged.
 		return nil
 	}
 	selected := g.taskRun.selectedImplementationsSnapshot()
@@ -149,6 +242,57 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeImplementationExecutionChoice
 		return implementationExecutionSkillRequiredResult(dedicated, selected)
 	}
 	return nil
+}
+
+// Only a positive, full-source effect contract can prepare this exemption. The
+// execution gateway obtains it again from the final arguments after hooks and
+// approval; no model field or previously prepared source can supply it.
+func (g serverAgentRuntimeToolGateway) agentRuntimeDiagnosticObservation(parent context.Context, language string, input map[string]any) *executionprep.Observation {
+	if g.server == nil || g.server.kernelManager == nil || g.taskRun == nil ||
+		len(semanticManagedEnvironmentCapabilities(g.taskRun.requiredScientificCapabilitiesSnapshot())) == 0 {
+		return nil
+	}
+	// Do not impose a diagnostic obligation on ordinarily authorized code after
+	// the selection and dedicated Skill contracts have already been satisfied.
+	selected := g.taskRun.selectedImplementationsSnapshot()
+	pending := len(selected) == 0
+	if !pending && g.server.skillCatalog != nil {
+		for _, implementation := range selected {
+			if skill, found := dedicatedSkillForImplementation(g.server.skillCatalog, implementation); found && !g.taskRunHasExecutedSkill(skill.Name) {
+				pending = true
+				break
+			}
+		}
+	}
+	if !pending {
+		return nil
+	}
+	switch language {
+	case "python", "r", "bash", "powershell":
+	default:
+		return nil
+	}
+	if _, found := g.server.canonicalManagedExecutionPack(language, input); found {
+		return nil
+	}
+	if len(selected) == 0 {
+		if dedicated, found := g.taskExplicitDedicatedImplementationSkill(); found && g.taskRunHasExecutedSkill(dedicated.Name) {
+			return nil
+		}
+	}
+	source := stringValue(input["code"])
+	if language == "bash" || language == "powershell" {
+		source = stringValue(input["command"])
+	}
+	ctx, cancel := context.WithTimeout(parent, 8*time.Second)
+	defer cancel()
+	result, err := g.server.kernelManager.PrepareExecutionSource(ctx, executionprep.Request{
+		Language: language, Source: source, Environment: stringValue(input["environment"]),
+	})
+	if err != nil || !result.Observation.Matches(language, source) {
+		return nil
+	}
+	return result.Observation
 }
 
 func (g serverAgentRuntimeToolGateway) taskExplicitDedicatedImplementationSkill() (skills.Skill, bool) {

@@ -176,7 +176,7 @@ func TestRKernelRestartNoticeIsGenerationBoundAndConsumedOnce(t *testing.T) {
 		t.Fatalf("stale response=%#v state=%#v", stale, state)
 	}
 	first := consumeRKernelRestartNotice(state, 17, response)
-	want := "[kernel restarted]\nThis cell ran on a fresh kernel process: the previous R kernel for environment 'r-4.5' was shut down after a cell timeout. Variables, imports, and other in-memory state from earlier cells are gone; workspace files on disk are unaffected. Re-run setup before relying on earlier state.\nuser stderr"
+	want := "[kernel restarted]\nThis cell ran on a fresh kernel process: the previous R kernel for environment \"r-4.5\" was shut down after a cell timeout. Variables, imports, and other in-memory state from earlier cells are gone; workspace files on disk are unaffected. Re-run setup before relying on earlier state.\nuser stderr"
 	if first.Stderr != want {
 		t.Fatalf("restart stderr=%q\nwant=%q", first.Stderr, want)
 	}

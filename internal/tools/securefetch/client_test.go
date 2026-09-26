@@ -10,6 +10,7 @@ import (
 	"net/netip"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -192,6 +193,30 @@ func TestClientFetchesExactPrefixForLegacyPartialVerification(t *testing.T) {
 	}
 }
 
+func TestClientReadsExactPrefixWhenRangeIsIgnored(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Range") != "bytes=0-4" {
+			t.Errorf("prefix range=%q", r.Header.Get("Range"))
+		}
+		w.Header().Set("Content-Type", "chemical/x-pdb")
+		w.Header().Set("Content-Length", "10")
+		w.Header().Set("ETag", `"fixed"`)
+		_, _ = io.WriteString(w, "1234567890")
+	}))
+	defer server.Close()
+	client, target, policy := testClient(t, server)
+	policy.MaxBytes, policy.PrefixBytes = 10, 5
+	response, err := client.Fetch(context.Background(), target+"/source.pdb", policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := io.ReadAll(response.Body)
+	if err != nil || string(body) != "12345" || response.ContentLength != 10 {
+		t.Fatalf("prefix=%q full_length=%d error=%v", body, response.ContentLength, err)
+	}
+}
+
 func TestClientRejectsInvalidResumeRangeResponse(t *testing.T) {
 	for _, test := range []struct {
 		name         string
@@ -304,6 +329,70 @@ func TestClientRejectsRedirectOutsideClosedPolicyBeforeDial(t *testing.T) {
 	_, err := client.Fetch(context.Background(), target+"/download/4TZ4.pdb", policy)
 	if !IsCode(err, CodeRedirect) {
 		t.Fatalf("redirect error = %v", err)
+	}
+}
+
+func TestClientAllowsBoundedPublicCrossHostRedirectWhenExplicitlyEnabled(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		if request.URL.Path == "/start" {
+			_, port, err := net.SplitHostPort(request.Host)
+			if err != nil {
+				t.Fatal(err)
+			}
+			http.Redirect(w, request, "https://assets.example.org:"+port+"/archive.tar.gz", http.StatusFound)
+			return
+		}
+		w.Header().Set("Content-Type", "chemical/x-pdb")
+		_, _ = io.WriteString(w, "public release payload")
+	}))
+	defer server.Close()
+	client, target, policy := testClient(t, server)
+	policy.AllowPublicRedirects = true
+	response, err := client.Fetch(context.Background(), target+"/start", policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := io.ReadAll(response.Body)
+	if err != nil || string(body) != "public release payload" || response.FinalURL.Hostname() != "assets.example.org" {
+		t.Fatalf("redirect response=%#v body=%q err=%v", response, body, err)
+	}
+}
+
+func TestClientPublicRedirectModeStillRejectsPrivateResolution(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		_, port, err := net.SplitHostPort(request.Host)
+		if err != nil {
+			t.Fatal(err)
+		}
+		http.Redirect(w, request, "https://assets.example.org:"+port+"/archive.tar.gz", http.StatusFound)
+	}))
+	defer server.Close()
+	client, target, policy := testClientWithResolver(t, server, resolverFunc(func(_ context.Context, _, host string) ([]netip.Addr, error) {
+		if host == "assets.example.org" {
+			return []netip.Addr{netip.MustParseAddr("127.0.0.1")}, nil
+		}
+		return []netip.Addr{netip.MustParseAddr("93.184.216.34")}, nil
+	}))
+	policy.AllowPublicRedirects = true
+	_, err := client.Fetch(context.Background(), target+"/start", policy)
+	if !IsCode(err, CodeRedirect) {
+		t.Fatalf("private redirect error = %v", err)
+	}
+}
+
+func TestClientPublicRedirectModeDoesNotExpandInitialSourceAuthority(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "chemical/x-pdb")
+		_, _ = io.WriteString(w, "unexpected")
+	}))
+	defer server.Close()
+	client, target, policy := testClient(t, server)
+	policy.AllowPublicRedirects = true
+	target = strings.Replace(target, "files.rcsb.org", "assets.example.org", 1)
+	_, err := client.Fetch(context.Background(), target+"/untrusted-start", policy)
+	if !IsCode(err, CodeInvalidRequest) {
+		t.Fatalf("unlisted initial source error = %v", err)
 	}
 }
 

@@ -43,7 +43,7 @@ func (s *Server) approvedRunnerToolGateway(run *sessionRunnerChatRun, item works
 			return agentruntime.ToolResult{}, err
 		}
 		receipt := s.executeExactToolGateway(ctx, "agent-runtime", run.SessionID, call.ID, call.Name, input, exactServerToolGatewayOptions{ResumeAfterApproval: true, AuditExtra: map[string]any{"approvalId": approvalID}})
-		value["status"] = receipt.Status
+		value["status"] = agentRuntimeApprovalStatus(receipt.Status, receipt.Value)
 		value["result"] = receipt.Value
 		value["completedAt"] = time.Now().UTC().Format(time.RFC3339Nano)
 		if receipt.Err != nil {

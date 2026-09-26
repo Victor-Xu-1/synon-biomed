@@ -99,11 +99,14 @@ func boundedAgentWorkspaceTextEntry(entry, marker string, budget int) (string, b
 // so line pagination can reach every byte. Stored JSON and its hash are never
 // changed. A fixed view width keeps offsets stable across provider rounds.
 func agentWorkspaceJSONReadView(raw []byte) ([]byte, bool, error) {
+	return agentWorkspaceJSONReadViewWidth(raw, 1024)
+}
+
+func agentWorkspaceJSONReadViewWidth(raw []byte, width int) ([]byte, bool, error) {
 	var formatted bytes.Buffer
 	if err := json.Indent(&formatted, raw, "", "  "); err != nil {
 		return nil, false, err
 	}
-	const width = 1024
 	var view bytes.Buffer
 	wrapped := false
 	lines := bytes.Split(formatted.Bytes(), []byte{'\n'})

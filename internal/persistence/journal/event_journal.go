@@ -46,6 +46,9 @@ type Entry struct {
 	// SourceEventType is trusted in-memory projection provenance. It is never
 	// accepted from or serialized into the legacy journal JSON surface.
 	SourceEventType string `json:"-"`
+	// RuntimeProjection carries typed read-side data derived from canonical
+	// storage. It is neither accepted from nor written to journal/model JSON.
+	RuntimeProjection any `json:"-"`
 }
 
 // ReadCursor is an append-only journal position. It lets live projections
@@ -981,7 +984,7 @@ func cleanMetadata(value string) string {
 }
 
 func cloneMessage(message Message) Message {
-	copied := make(Message, len(message)+4)
+	copied := make(Message, len(message))
 	for key, value := range message {
 		copied[key] = value
 	}

@@ -28,6 +28,9 @@ func readAgentWorkspaceFile(
 	size int64,
 	input map[string]any,
 ) (any, error) {
+	if _, selected := input["byte_offset"]; selected {
+		return readAgentWorkspaceByteWindow(ctx, reader, filename, declaredContentType, size, input)
+	}
 	contentType, err := detectAgentWorkspaceContentType(reader, filename, declaredContentType)
 	if err != nil {
 		return nil, errors.New("read_file could not inspect the requested content")
@@ -72,7 +75,7 @@ func readAgentWorkspaceFile(
 				"The PDF is accepted but exceeds the inline model transport budget. Select a verified read-only PDF reader for streaming text extraction or bounded page rendering while preserving the original."), nil
 		}
 		pages := agentWorkspacePageValues(input["pages"])
-		return readAgentWorkspacePDF(ctx, reader, filename, contentType, size, pages)
+		return readAgentWorkspacePDF(ctx, reader, filename, contentType, size, pages, input)
 	}
 	if agentWorkspaceBinaryMIME(mediaType) {
 		return inspectAgentWorkspaceBinary(reader, filename, contentType, size, input, ""), nil
@@ -451,7 +454,7 @@ func readAgentWorkspaceTextWindow(
 		result["truncated_lines"] = truncatedLines
 	}
 	hasMore := lastLine > 0 && lastLine < totalLines
-	if windowTruncated || hasMore {
+	if windowTruncated || hasMore || truncatedLines > 0 {
 		result["truncated"] = true
 		result["requested_offset"] = offset
 		result["requested_limit"] = limit
@@ -459,6 +462,9 @@ func readAgentWorkspaceTextWindow(
 			result["next_offset"] = lastLine + 1
 		}
 		result["system_hint"] = agentWorkspaceTextContinuationHint
+		if truncatedLines > 0 {
+			result["system_hint"] = "Use byte_offset=0 and byte_limit for complete raw bytes; follow next_byte_offset."
+		}
 	}
 	return result, nil
 }

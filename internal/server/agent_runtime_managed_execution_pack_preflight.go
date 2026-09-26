@@ -72,7 +72,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionOutputMutatio
 		return managedExecutionOutputOwnershipInvalidResult(target, resolvedRoot)
 	}
 	for _, authority := range authorities {
-		if managedExecutionPathWithinRoot(authority.Root, resolvedTarget) {
+		if managedExecutionAuthorityContainsPath(authority, resolvedTarget) {
 			relative, _ := filepath.Rel(resolvedRoot, target)
 			return map[string]any{
 				"ok": false, "status": "managed_execution_output_immutable", "executed": false,
@@ -110,7 +110,7 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 	input map[string]any,
 ) map[string]any {
 	switch publicName {
-	case "bash", "python", "r", "powershell":
+	case "bash", "python", "repl", "r", "powershell":
 	default:
 		return nil
 	}
@@ -138,17 +138,25 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 		for _, engine := range g.server.scienceCapabilities.LocalExecutionPacksForSkill(skill.Name) {
 			entrypoint := engine.ExecutionPack.MaterializedSkillEntrypoint()
 			if publicName == "bash" && commandExecutesManagedExecutionPack(skill.Name, engine.ExecutionPack, command) {
+				g.server.bindExplicitTaskEvidenceResolver(g.taskRun, engine.ExecutionPack)
+				directImplementation, _ := g.selectedDirectExecutionPackImplementation(engine.ExecutionPack)
 				if preflight := managedExecutionPackParameterEvidencePreflight(
 					engine.ExecutionPack, command, g.taskRun.resolvedUserEvidenceRecordsSnapshot(),
 					managedExecutionResponseLanguage(g.taskRun), g.taskRun.selectedEvidenceResolversSnapshot(),
+					directImplementation,
 				); preflight != nil {
 					return preflight
 				}
 				return nil
 			}
 			identifiers := engine.ManagedExecutionIdentifiers()
-			identifier, matched := managedExecutionIdentifier(publicName, content, identifiers)
 			sourcePath := ""
+			identifier, matched := managedExecutionIdentifier(publicName, content, identifiers)
+			if referencedPath, referenced := managedExecutionMaterializedEntrypointReference(
+				content, skill.Name, entrypoint, g.kernel,
+			); referenced {
+				identifier, sourcePath, matched = engine.ExecutionPack.ID, referencedPath, true
+			}
 			if !matched {
 				identifier, sourcePath, matched = managedExecutionSourceIdentifier(content, identifiers, g.kernel)
 			}
@@ -164,6 +172,9 @@ func (g serverAgentRuntimeToolGateway) agentRuntimeManagedExecutionPackPreflight
 				"matched_identifier": identifier, "required_entrypoint": entrypoint,
 				"message":  "The scientific capability registry assigns this implementation to one reviewed execution-pack entrypoint; a competing direct command was rejected before process start.",
 				"recovery": "Execute the exact materialized execution-pack entrypoint once with the task inputs and registered arguments. Do not invoke its implementation CLI, preparation utilities, imports, splitters, or report writers through a competing path.",
+			}
+			if retained := g.retainedSkillExecutionDiagnostic(skill.Name); retained != nil {
+				result["required_entrypoint"] = retained["required_entrypoint"]
 			}
 			if sourcePath != "" {
 				result["competing_source"] = sourcePath
@@ -183,6 +194,7 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 	publicName string,
 	input map[string]any,
 ) map[string]any {
+	input = g.normalizeManagedExecutionTaskDirectory(publicName, input)
 	if publicName != "bash" || g.server == nil || g.server.skillCatalog == nil ||
 		g.server.scienceCapabilities == nil || g.taskRun == nil {
 		return input
@@ -207,6 +219,7 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 			if !commandExecutesManagedExecutionPack(skill.Name, pack, command) {
 				continue
 			}
+			g.server.bindExplicitTaskEvidenceResolver(g.taskRun, pack)
 			values := managedExecutionArgumentValues(command)
 			var extra []string
 			for _, parameter := range pack.Parameters {
@@ -219,8 +232,9 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 					if _, present := values[parameter.Argument]; present {
 						continue
 					}
-					if selected, found := selectedEvidenceResolverParameterValue(
-						pack, g.taskRun.selectedEvidenceResolversSnapshot(),
+					directImplementation, _ := g.selectedDirectExecutionPackImplementation(pack)
+					if selected, found := selectedExecutionPackParameterValue(
+						pack, g.taskRun.selectedEvidenceResolversSnapshot(), directImplementation,
 					); found {
 						extra = append(extra, parameter.Argument, selected)
 					}
@@ -241,6 +255,165 @@ func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionRuntimeArguments
 	return input
 }
 
+func (g serverAgentRuntimeToolGateway) selectedDirectExecutionPackImplementation(
+	pack sciencecapability.ExecutionPack,
+) (string, bool) {
+	if g.server == nil || g.server.skillCatalog == nil || g.taskRun == nil {
+		return "", false
+	}
+	skill, found := findCatalogSkill(g.server.skillCatalog, pack.Skill)
+	if !found {
+		return "", false
+	}
+	selected := g.taskRun.selectedImplementationsSnapshot()
+	matched := make([]string, 0, 1)
+	for _, identity := range skill.ImplementationIdentities {
+		for _, current := range selected {
+			if taskImplementationMatchesRegistered(current, identity) {
+				matched = append(matched, identity)
+				break
+			}
+		}
+		if len(selected) == 0 && taskExplicitlyNamesImplementation(g.taskRun.TaskIntent, identity) {
+			matched = append(matched, identity)
+		}
+	}
+	matched = uniqueSortedFolded(matched)
+	return firstString(matched), len(matched) == 1
+}
+
+func (s *Server) bindExplicitTaskEvidenceResolver(
+	run *sessionRunnerChatRun,
+	pack sciencecapability.ExecutionPack,
+) {
+	if s == nil || s.skillCatalog == nil || s.scienceCapabilities == nil || run == nil ||
+		strings.TrimSpace(pack.Skill) == "" || len(run.selectedEvidenceResolversSnapshot()) > 0 {
+		return
+	}
+	taskIntent := strings.TrimSpace(run.TaskIntent)
+	if taskIntent == "" {
+		return
+	}
+	type explicitResolverCandidate struct {
+		resolver sciencecapability.ExecutionEvidenceResolver
+		primary  string
+	}
+	candidates := map[string]explicitResolverCandidate{}
+	for _, capability := range s.scienceCapabilities.Capabilities {
+		for _, engine := range capability.AcceptedEngines {
+			parent := engine.ExecutionPack
+			if parent.Mode != "local" {
+				continue
+			}
+			for _, resolver := range parent.EvidenceResolvers {
+				if !strings.EqualFold(strings.TrimSpace(resolver.Skill), strings.TrimSpace(pack.Skill)) ||
+					!taskExplicitlyNamesImplementation(taskIntent, resolver.Implementation) {
+					continue
+				}
+				primary, unique := uniqueRegisteredEvidenceResolver(s.skillCatalog, s.scienceCapabilities, resolver)
+				if !unique || !taskExplicitlyNamesImplementation(taskIntent, primary) {
+					continue
+				}
+				key := strings.ToLower(strings.TrimSpace(resolver.EvidenceGroup) + "\x00" +
+					strings.TrimSpace(resolver.Skill) + "\x00" + strings.TrimSpace(resolver.Implementation))
+				candidates[key] = explicitResolverCandidate{resolver: resolver, primary: primary}
+			}
+		}
+	}
+	if len(candidates) != 1 {
+		return
+	}
+	var candidate explicitResolverCandidate
+	for _, current := range candidates {
+		candidate = current
+	}
+	previousPrimary := run.selectedImplementationsSnapshot()
+	reclassifiedResolver := len(previousPrimary) == 1 &&
+		taskImplementationMatchesRegistered(previousPrimary[0], candidate.resolver.Implementation) &&
+		!taskImplementationMatchesRegistered(previousPrimary[0], candidate.primary)
+	if reclassifiedResolver {
+		// Environment readiness can temporarily select the resolver as the only
+		// primary while capability discovery is still scoped to that upstream
+		// step. The explicit task names both sides of one registry relationship,
+		// so restore the parent before validating the auxiliary receipt.
+		run.setSelectedImplementations(candidate.primary)
+	}
+	validated, ok := validatedSelectedAskUserEvidenceResolvers(
+		s.skillCatalog, s.scienceCapabilities, run, []sciencecapability.ExecutionEvidenceResolver{candidate.resolver},
+	)
+	if !ok || len(validated) != 1 {
+		if reclassifiedResolver {
+			run.setSelectedImplementations(previousPrimary...)
+		}
+		return
+	}
+	run.setSelectedEvidenceResolvers(validated...)
+}
+
+// normalizeManagedExecutionTaskDirectory removes only a redundant `cd` to the
+// exact task workspace in front of an otherwise canonical registered pack
+// command. Bash already starts in that directory. Retaining the prefix would
+// make the same reviewed entrypoint look like a competing compound command;
+// any different directory, extra shell operation, or unregistered suffix is
+// left unchanged and remains fail-closed.
+func (g serverAgentRuntimeToolGateway) normalizeManagedExecutionTaskDirectory(
+	publicName string,
+	input map[string]any,
+) map[string]any {
+	if publicName != "bash" || g.kernel == nil || strings.TrimSpace(g.kernel.workspaceDir) == "" ||
+		g.server == nil || g.server.skillCatalog == nil || g.server.scienceCapabilities == nil || g.taskRun == nil {
+		return input
+	}
+	command := strings.TrimSpace(stringValue(input["command"]))
+	separator := strings.Index(command, "&&")
+	if separator < 0 || strings.Contains(command[separator+2:], "&&") {
+		return input
+	}
+	prefix := strings.TrimSpace(command[:separator])
+	suffix := strings.TrimSpace(command[separator+2:])
+	prefixTokens, ok := managedExecutionSingleShellCommandTokens(prefix)
+	if !ok || len(prefixTokens) != 2 || !strings.EqualFold(prefixTokens[0], "cd") || suffix == "" {
+		return input
+	}
+	workspace, err := filepath.Abs(filepath.Clean(g.kernel.workspaceDir))
+	if err != nil {
+		return input
+	}
+	workspace, err = filepath.EvalSymlinks(workspace)
+	if err != nil {
+		return input
+	}
+	target := strings.TrimSpace(prefixTokens[1])
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(workspace, target)
+	}
+	target, err = filepath.Abs(filepath.Clean(target))
+	if err != nil {
+		return input
+	}
+	target, err = filepath.EvalSymlinks(target)
+	if err != nil || target != workspace {
+		return input
+	}
+	skillNames := g.taskRun.executedSkillNamesSnapshot()
+	for _, implementation := range g.taskRun.selectedImplementationsSnapshot() {
+		if skill, found := dedicatedSkillForImplementation(g.server.skillCatalog, implementation); found {
+			skillNames = append(skillNames, skill.Name)
+		}
+	}
+	for _, skillName := range uniqueSortedFolded(skillNames) {
+		for _, engine := range g.server.scienceCapabilities.LocalExecutionPacksForSkill(skillName) {
+			if !commandExecutesManagedExecutionPack(skillName, engine.ExecutionPack, suffix) {
+				continue
+			}
+			normalized := copyMapAny(input)
+			normalized["command"] = suffix
+			return normalized
+		}
+	}
+	return input
+}
+
 func managedExecutionResponseLanguage(run *sessionRunnerChatRun) string {
 	if run != nil {
 		if sessionRunnerRequiresChinese(run.ResponseLanguage) {
@@ -253,30 +426,28 @@ func managedExecutionResponseLanguage(run *sessionRunnerChatRun) string {
 	return "en"
 }
 
-func managedExecutionSourceIdentifier(
+func managedExecutionMaterializedEntrypointReference(
 	content string,
-	identifiers []string,
+	skillName string,
+	entrypoint string,
 	kernel *agentKernelContext,
-) (string, string, bool) {
-	if kernel == nil || strings.TrimSpace(kernel.workspaceDir) == "" {
-		return "", "", false
+) (string, bool) {
+	if kernel == nil || strings.TrimSpace(kernel.workspaceDir) == "" || strings.TrimSpace(entrypoint) == "" {
+		return "", false
 	}
 	root, err := filepath.Abs(kernel.workspaceDir)
 	if err != nil {
-		return "", "", false
+		return "", false
 	}
 	resolvedRoot, err := filepath.EvalSymlinks(root)
 	if err != nil {
-		return "", "", false
+		return "", false
 	}
-	allowedExtensions := map[string]bool{
-		".py": true, ".r": true, ".sh": true, ".bash": true, ".zsh": true,
-		".ps1": true, ".pl": true, ".rb": true, ".js": true, ".mjs": true, ".cjs": true,
-	}
+	wantSuffix := "/" + strings.ToLower(filepath.ToSlash(entrypoint))
 	seen := map[string]bool{}
-	for _, token := range managedExecutionCommandTokens(content) {
-		token = strings.TrimSpace(token)
-		if !allowedExtensions[strings.ToLower(filepath.Ext(token))] {
+	for _, raw := range managedExecutionCommandTokens(content) {
+		token := managedExecutionPathToken(raw)
+		if !strings.EqualFold(filepath.Ext(token), filepath.Ext(entrypoint)) {
 			continue
 		}
 		path := token
@@ -296,19 +467,22 @@ func managedExecutionSourceIdentifier(
 		if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 			continue
 		}
+		relative = filepath.ToSlash(relative)
+		if !skillRuntimeCommandReferences(skillName, filepath.ToSlash(resolvedPath)) ||
+			!strings.HasSuffix(strings.ToLower(relative), wantSuffix) {
+			continue
+		}
 		info, err := os.Stat(resolvedPath)
 		if err != nil || !info.Mode().IsRegular() || info.Size() <= 0 || info.Size() > 2<<20 {
 			continue
 		}
-		raw, err := os.ReadFile(resolvedPath)
-		if err != nil {
-			continue
-		}
-		if identifier, matched := managedExecutionIdentifier(managedExecutionSourceLanguage(resolvedPath), string(raw), identifiers); matched {
-			return identifier, filepath.ToSlash(relative), true
-		}
+		return relative, true
 	}
-	return "", "", false
+	return "", false
+}
+
+func managedExecutionPathToken(value string) string {
+	return strings.Trim(strings.TrimSpace(value), "[](){},;")
 }
 
 func commandExecutesManagedExecutionPack(skillName string, pack sciencecapability.ExecutionPack, content string) bool {

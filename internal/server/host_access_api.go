@@ -15,6 +15,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	kernelruntime "synon-go/internal/kernel"
 )
 
 const hostGrantsSettingKey = "hostAccess.grants"
@@ -76,6 +78,10 @@ func (s *Server) handleHostGrants(w http.ResponseWriter, r *http.Request) {
 		}
 		grant, err := s.upsertHostGrant(userID, path, mode)
 		if err != nil {
+			if errors.Is(err, kernelruntime.ErrProtectedHostMount) {
+				writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": err.Error()})
+				return
+			}
 			writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 			return
 		}
@@ -129,9 +135,7 @@ func canonicalHostGrantReference(value string) (string, error) {
 	}
 	clean := filepath.Clean(value)
 	if resolved, err := filepath.EvalSymlinks(clean); err == nil {
-		if info, statErr := os.Stat(resolved); statErr == nil && info.IsDir() {
-			return filepath.Clean(resolved), nil
-		}
+		return filepath.Clean(resolved), nil
 	}
 	return clean, nil
 }
@@ -189,6 +193,10 @@ func (s *Server) handleHostGrantPicker(w http.ResponseWriter, r *http.Request) {
 	}
 	grant, err := s.upsertHostGrant(userID, selected, mode)
 	if err != nil {
+		if errors.Is(err, kernelruntime.ErrProtectedHostMount) {
+			writeWorkspaceJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": err.Error()})
+			return
+		}
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
@@ -335,33 +343,29 @@ func (s *Server) handleHostBrowse(w http.ResponseWriter, r *http.Request) {
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
-	allowed := false
+	grantedRoot := ""
 	for _, grant := range grants {
 		if hostPathWithin(grant.Path, target) {
-			allowed = true
+			grantedRoot = grant.Path
 			break
 		}
 	}
-	if !allowed {
+	if grantedRoot == "" {
 		writeWorkspaceJSON(w, http.StatusForbidden, map[string]any{"ok": false, "error": "path is outside granted host directories"})
 		return
 	}
-	items, err := os.ReadDir(target)
+	items, err := readAuthorizedHostDirectory(grantedRoot, target)
 	if err != nil {
 		writeWorkspaceJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
 	entries := make([]map[string]any, 0, len(items))
 	for _, item := range items {
-		info, err := item.Info()
-		if err != nil {
-			continue
-		}
 		entries = append(entries, map[string]any{
 			"name": item.Name(), "path": filepath.Join(target, item.Name()),
-			"isDirectory": item.IsDir(), "isSymlink": item.Type()&os.ModeSymlink != 0,
-			"size": info.Size(), "mode": info.Mode().Perm().String(),
-			"modifiedAt": info.ModTime().UTC(),
+			"isDirectory": item.IsDir(), "isSymlink": item.Mode()&os.ModeSymlink != 0,
+			"size": item.Size(), "mode": item.Mode().Perm().String(),
+			"modifiedAt": item.ModTime().UTC(),
 		})
 	}
 	writeWorkspaceJSON(w, http.StatusOK, map[string]any{"ok": true, "path": target, "entries": entries})
@@ -380,9 +384,14 @@ func canonicalHostDirectory(value string) (string, error) {
 	if err != nil {
 		return "", errors.New("host directory does not exist")
 	}
-	info, err := os.Stat(evaluated)
-	if err != nil || !info.IsDir() {
+	// This is admission metadata, not permission to read contents. Callers
+	// authorize the directory separately and perform I/O through a held root.
+	directory, err := os.OpenRoot(evaluated)
+	if err != nil {
 		return "", errors.New("host path must be an existing directory")
+	}
+	if err := directory.Close(); err != nil {
+		return "", err
 	}
 	return filepath.Clean(evaluated), nil
 }
@@ -520,6 +529,9 @@ func (s *Server) validateHostGrantProtectedPaths(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if err := kernelruntime.ValidateHostMountPath(path); err != nil {
+		return "", err
+	}
 	protectedPaths, err := s.agentKernelProtectedPaths()
 	if err != nil {
 		return "", err
@@ -579,25 +591,45 @@ func (s *Server) commitKernelConfinementMutation(userID string, mutate func() (b
 		return errors.New("host grant owner is required")
 	}
 	s.hostGrantKernelMu.Lock()
-	defer s.hostGrantKernelMu.Unlock()
 	changed, err := mutate()
 	if err != nil || !changed {
+		s.hostGrantKernelMu.Unlock()
 		return err
 	}
-	if s.kernelManager == nil {
-		delete(s.hostGrantKernelFences, userID)
-		return nil
+	if s.hostGrantKernelFences == nil {
+		s.hostGrantKernelFences = map[string]bool{}
 	}
+	if s.hostGrantKernelFenceEpoch == nil {
+		s.hostGrantKernelFenceEpoch = map[string]uint64{}
+	}
+	s.hostGrantKernelFenceEpoch[userID]++
+	fenceEpoch := s.hostGrantKernelFenceEpoch[userID]
+	s.hostGrantKernelFences[userID] = true
+	s.hostGrantKernelMu.Unlock()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := s.kernelManager.TerminateOwner(ctx, userID); err != nil {
-		if s.hostGrantKernelFences == nil {
-			s.hostGrantKernelFences = map[string]bool{}
+	var terminationErr error
+	if s.kernelManager != nil {
+		if err := func() error { _, err := s.kernelManager.TerminateOwner(ctx, userID); return err }(); err != nil {
+			terminationErr = errors.Join(terminationErr, err)
 		}
-		s.hostGrantKernelFences[userID] = true
+	}
+	if revoker, ok := s.kernelExecutionBackend.(interface {
+		TerminateOwner(context.Context, string) error
+	}); ok {
+		if err := revoker.TerminateOwner(ctx, userID); err != nil {
+			terminationErr = errors.Join(terminationErr, err)
+		}
+	}
+	s.hostGrantKernelMu.Lock()
+	defer s.hostGrantKernelMu.Unlock()
+	if terminationErr == nil && s.hostGrantKernelFenceEpoch[userID] == fenceEpoch {
+		delete(s.hostGrantKernelFences, userID)
+	}
+	if terminationErr != nil {
 		return errors.New("host grant changed but active kernel isolation could not be invalidated")
 	}
-	delete(s.hostGrantKernelFences, userID)
 	return nil
 }
 

@@ -81,6 +81,35 @@ func requiredScientificCapabilitiesFromRunnerEntries(entries []eventjournal.Entr
 	return uniqueSortedScientificCapabilities(capabilities)
 }
 
+// completedSkillInput returns the identity that was actually admitted and
+// executed. The model-requested toolInput is retained for legacy checkpoints
+// that predate executedToolInput, but it must not override a newer execution
+// receipt: request text is not execution authority.
+func completedSkillInput(message eventjournal.Message) map[string]any {
+	if raw, present := message["executedToolInput"]; present {
+		input := mapValue(raw)
+		if strings.TrimSpace(stringValue(input["skill"])) == "" {
+			return nil
+		}
+		return input
+	}
+	return mapValue(message["toolInput"])
+}
+
+// sessionRunnerEffectiveSelectedSkillNames keeps recovery on the exact Skill
+// identities that already crossed execution admission. A prior model request
+// may remain in SessionRunnerChatOptions after a resolver selected a different
+// concrete Skill; once a completed execution receipt exists, that request is
+// not allowed to become the recovery route again.
+func sessionRunnerEffectiveSelectedSkillNames(requested []string, run *sessionRunnerChatRun) []string {
+	if run != nil {
+		if executed := run.executedSkillNamesSnapshot(); len(executed) > 0 {
+			return executed
+		}
+	}
+	return append([]string(nil), requested...)
+}
+
 func completedSkillNamesFromRunnerEntries(entries []eventjournal.Entry) []string {
 	names := make([]string, 0)
 	for _, entry := range entries {
@@ -91,7 +120,7 @@ func completedSkillNamesFromRunnerEntries(entries []eventjournal.Entry) []string
 			!isCompletedSkillToolName(stringValue(message["toolName"])) {
 			continue
 		}
-		input, _ := message["toolInput"].(map[string]any)
+		input := completedSkillInput(message)
 		name := strings.TrimPrefix(strings.TrimSpace(stringValue(input["skill"])), "/")
 		if name != "" {
 			names = append(names, name)
@@ -117,7 +146,7 @@ func completedSkillInvocationKeysFromRunnerEntries(entries []eventjournal.Entry)
 			!isCompletedSkillToolName(stringValue(message["toolName"])) {
 			continue
 		}
-		input, _ := message["toolInput"].(map[string]any)
+		input := completedSkillInput(message)
 		if key := runtimeSkillInvocationKeyFromInput(input); key != "" {
 			keys = append(keys, key)
 		}

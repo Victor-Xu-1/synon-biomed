@@ -220,8 +220,10 @@ func managedEnvironmentMarkerEquivalent(left, right managedEnvironmentMarker) bo
 	return left.ValidationRevision == right.ValidationRevision && left.SchemaVersion == right.SchemaVersion && left.Name == right.Name && left.Language == right.Language &&
 		left.Generation == right.Generation && left.Kind == right.Kind && left.SourcePath == right.SourcePath &&
 		left.RuntimePath == right.RuntimePath && left.OperationKey == right.OperationKey && left.SpecDigest == right.SpecDigest &&
+		left.PipReplayRevision == right.PipReplayRevision && left.PipReplayBaseDigest == right.PipReplayBaseDigest &&
 		strings.Join(left.ImportNames, "\x00") == strings.Join(right.ImportNames, "\x00") &&
-		strings.Join(left.Packages, "\x00") == strings.Join(right.Packages, "\x00")
+		strings.Join(left.Packages, "\x00") == strings.Join(right.Packages, "\x00") &&
+		managedPipReplayEqual(left.PipReplay, right.PipReplay)
 }
 
 // Generation identity is content-addressed and intentionally survives
@@ -233,8 +235,10 @@ func managedEnvironmentGenerationEquivalent(left, right managedEnvironmentMarker
 	return left.ValidationRevision == right.ValidationRevision && left.SchemaVersion == right.SchemaVersion && left.Name == right.Name && left.Language == right.Language &&
 		left.Generation == right.Generation && left.Kind == right.Kind && left.SourcePath == right.SourcePath &&
 		left.RuntimePath == right.RuntimePath && left.SpecDigest == right.SpecDigest &&
+		left.PipReplayRevision == right.PipReplayRevision && left.PipReplayBaseDigest == right.PipReplayBaseDigest &&
 		strings.Join(left.ImportNames, "\x00") == strings.Join(right.ImportNames, "\x00") &&
-		strings.Join(left.Packages, "\x00") == strings.Join(right.Packages, "\x00")
+		strings.Join(left.Packages, "\x00") == strings.Join(right.Packages, "\x00") &&
+		managedPipReplayEqual(left.PipReplay, right.PipReplay)
 }
 
 func activateManagedEnvironment(root, name, generationPath string) error {

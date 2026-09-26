@@ -11,15 +11,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
 
-const (
-	maxScientificArtifactValidatorOutput = 1 << 20
-	scientificArtifactValidationTimeout  = 45 * time.Second
-)
+const maxScientificArtifactValidatorOutput = 1 << 20
 
 var (
 	errInvalidScientificArtifact               = errors.New("scientific artifact is invalid")
@@ -27,7 +23,8 @@ var (
 )
 
 type scientificArtifactValidationError struct {
-	Code string
+	Code       string
+	Validation scientificArtifactValidation
 }
 
 func (err *scientificArtifactValidationError) Error() string {
@@ -42,18 +39,18 @@ func (err *scientificArtifactValidationError) Unwrap() error {
 }
 
 type scientificArtifactValidation struct {
-	SchemaVersion        int    `json:"schemaVersion"`
-	Format               string `json:"format"`
-	OK                   bool   `json:"ok"`
-	Code                 string `json:"code"`
-	DelimiterCount       int    `json:"delimiterCount"`
-	SupplierRecordCount  int    `json:"supplierRecordCount"`
-	ParsedCount          int    `json:"parsedCount"`
-	InvalidRecordIndexes []int  `json:"invalidRecordIndexes"`
-	AtomCounts           []int  `json:"atomCounts"`
-	TerminalDelimiter    bool   `json:"terminalDelimiter"`
-	RDKitVersion         string `json:"rdkitVersion,omitempty"`
-	Error                string `json:"error,omitempty"`
+	SchemaVersion       int    `json:"schemaVersion"`
+	Format              string `json:"format"`
+	OK                  bool   `json:"ok"`
+	Code                string `json:"code"`
+	DelimiterCount      int    `json:"delimiterCount"`
+	SupplierRecordCount int    `json:"supplierRecordCount"`
+	ParsedCount         int    `json:"parsedCount"`
+	InvalidRecordCount  int    `json:"invalidRecordCount"`
+	AtomCountRecords    int    `json:"atomCountRecords"`
+	TerminalDelimiter   bool   `json:"terminalDelimiter"`
+	RDKitVersion        string `json:"rdkitVersion,omitempty"`
+	Error               string `json:"error,omitempty"`
 }
 
 type cappedScientificOutput struct {
@@ -114,12 +111,19 @@ func decodeScientificArtifactValidation(
 	allowedFields := map[string]struct{}{
 		"schemaVersion": {}, "format": {}, "ok": {}, "code": {},
 		"delimiterCount": {}, "supplierRecordCount": {}, "parsedCount": {},
-		"invalidRecordIndexes": {}, "atomCounts": {}, "terminalDelimiter": {},
+		"invalidRecordCount": {}, "atomCountRecords": {}, "terminalDelimiter": {},
 		"rdkitVersion": {}, "error": {},
 	}
 	for field := range fields {
 		if _, ok := allowedFields[field]; !ok {
 			return scientificArtifactValidation{}, errors.New("scientific artifact validator returned an invalid result")
+		}
+	}
+	for field := range allowedFields {
+		if field != "rdkitVersion" && field != "error" {
+			if value, found := fields[field]; !found || bytes.Equal(value, []byte("null")) {
+				return scientificArtifactValidation{}, errors.New("scientific artifact validator omitted a required result field")
+			}
 		}
 	}
 	var result scientificArtifactValidation
@@ -132,9 +136,13 @@ func decodeScientificArtifactValidation(
 	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
 		return scientificArtifactValidation{}, errors.New("scientific artifact validator returned trailing data")
 	}
-	if result.SchemaVersion != 1 || result.Format != format || result.Code == "" ||
+	if result.SchemaVersion != 2 || result.Format != format || result.Code == "" ||
 		result.DelimiterCount < 0 || result.SupplierRecordCount < 0 || result.ParsedCount < 0 ||
-		len(result.InvalidRecordIndexes) > result.DelimiterCount || len(result.AtomCounts) > result.DelimiterCount {
+		result.InvalidRecordCount < 0 || result.AtomCountRecords < 0 ||
+		result.ParsedCount > result.SupplierRecordCount ||
+		result.AtomCountRecords > max(result.DelimiterCount, result.SupplierRecordCount) ||
+		result.InvalidRecordCount > result.AtomCountRecords ||
+		result.ParsedCount > result.AtomCountRecords-result.InvalidRecordCount {
 		return scientificArtifactValidation{}, errors.New("scientific artifact validator result violates its contract")
 	}
 	if result.RDKitVersion != "" && result.RDKitVersion != expectedRDKit {
@@ -158,17 +166,19 @@ func (s *Server) validateMoleculeArtifact(
 	if err != nil {
 		return scientificArtifactValidation{}, errScientificArtifactValidationUnavailable
 	}
+	return runScientificArtifactValidator(ctx, reader, format, python, validator, generation, expectedRDKit)
+}
+
+func runScientificArtifactValidator(ctx context.Context, reader io.Reader, format, python, validator, generation, expectedRDKit string) (scientificArtifactValidation, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	validationContext, cancel := context.WithTimeout(ctx, scientificArtifactValidationTimeout)
-	defer cancel()
 	arguments := []string{"-I", validator}
 	if format != "sdf" {
 		arguments = append(arguments, "--format", format)
 	}
-	command := exec.CommandContext(validationContext, python, arguments...)
-	command.Stdin = io.LimitReader(reader, agentSavedArtifactRegularLimit+1)
+	command := exec.Command(python, arguments...)
+	command.Stdin = &contextReader{ctx: ctx, reader: reader}
 	prefix := filepath.Dir(filepath.Dir(python))
 	command.Env = []string{
 		"PATH=" + filepath.Join(prefix, "bin"),
@@ -182,41 +192,49 @@ func (s *Server) validateMoleculeArtifact(
 	stdout := &cappedScientificOutput{limit: maxScientificArtifactValidatorOutput}
 	stderr := &cappedScientificOutput{limit: maxScientificArtifactValidatorOutput}
 	command.Stdout, command.Stderr = stdout, stderr
-	runErr := command.Run()
-	if validationContext.Err() != nil {
-		return scientificArtifactValidation{}, errors.New("scientific artifact validation timed out")
+	runErr := runArtifactValidationCommand(ctx, command, 0)
+	if ctx.Err() != nil {
+		return scientificArtifactValidation{}, ctx.Err()
+	}
+	var exitError *exec.ExitError
+	if runErr != nil && !errors.As(runErr, &exitError) {
+		return scientificArtifactValidation{}, fmt.Errorf("%w: validator process failed", errScientificArtifactValidationUnavailable)
 	}
 	if stdout.overflow || stderr.overflow {
-		return scientificArtifactValidation{}, errors.New("scientific artifact validator output exceeded its bound")
+		return scientificArtifactValidation{}, fmt.Errorf("%w: validator output exceeded its bound", errScientificArtifactValidationUnavailable)
 	}
 	result, err := decodeScientificArtifactValidation(strings.NewReader(stdout.String()), format, expectedRDKit)
 	if err != nil {
-		return scientificArtifactValidation{}, err
+		return scientificArtifactValidation{}, fmt.Errorf("%w: %v", errScientificArtifactValidationUnavailable, err)
 	}
-	if runErr != nil || !result.OK {
-		code := result.Code
-		if code == "" {
-			code = "validator_failed"
+	exitCode := 0
+	if exitError != nil {
+		exitCode = exitError.ExitCode()
+	}
+	if result.Code == "parser_unavailable" || result.Code == "parser_failed" || result.Code == "input_read_failed" {
+		return result, fmt.Errorf("%w: %s", errScientificArtifactValidationUnavailable, result.Code)
+	}
+	if (result.OK && exitCode != 0) || (!result.OK && exitCode != 2) {
+		return result, scientificArtifactValidatorContractError()
+	}
+	if !result.OK {
+		if !scientificArtifactDataFailureCode(format, result.Code) {
+			return result, scientificArtifactValidatorContractError()
 		}
-		return result, &scientificArtifactValidationError{Code: code}
+		return result, &scientificArtifactValidationError{Code: result.Code, Validation: result}
 	}
 	switch format {
 	case "sdf":
 		if result.Code != "valid_sdf" || result.DelimiterCount <= 0 || !result.TerminalDelimiter ||
 			result.SupplierRecordCount != result.DelimiterCount || result.ParsedCount != result.DelimiterCount ||
-			len(result.InvalidRecordIndexes) != 0 || len(result.AtomCounts) != result.DelimiterCount || result.RDKitVersion != expectedRDKit {
-			return result, &scientificArtifactValidationError{Code: "validator_contract_mismatch"}
+			result.InvalidRecordCount != 0 || result.AtomCountRecords != result.DelimiterCount || result.RDKitVersion != expectedRDKit {
+			return result, scientificArtifactValidatorContractError()
 		}
 	case "smi":
 		if result.Code != "valid_smiles" || result.DelimiterCount <= 0 ||
 			result.SupplierRecordCount != result.DelimiterCount || result.ParsedCount != result.DelimiterCount ||
-			len(result.InvalidRecordIndexes) != 0 || len(result.AtomCounts) != result.DelimiterCount || result.RDKitVersion != expectedRDKit {
-			return result, &scientificArtifactValidationError{Code: "validator_contract_mismatch"}
-		}
-	}
-	for _, atomCount := range result.AtomCounts {
-		if atomCount <= 0 {
-			return result, &scientificArtifactValidationError{Code: "empty_molecule"}
+			result.InvalidRecordCount != 0 || result.AtomCountRecords != result.DelimiterCount || result.RDKitVersion != expectedRDKit {
+			return result, scientificArtifactValidatorContractError()
 		}
 	}
 	return result, nil

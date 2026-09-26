@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"synon-go/internal/assets"
+	"synon-go/internal/networktls"
 )
 
 type DiscoveryStage string
@@ -92,6 +93,10 @@ func DiscoverManagerWithPaths(condaHome, condaEnvsPath string) (*Manager, error)
 // DiscoverManagerWithPathsAndProxy keeps the normalized product proxy scoped
 // to installer processes while preserving the legacy two-path entrypoint.
 func DiscoverManagerWithPathsAndProxy(condaHome, condaEnvsPath, installerProxy string) (*Manager, error) {
+	installerProxy, err := networktls.NormalizeProxyURL(installerProxy)
+	if err != nil {
+		return nil, fmt.Errorf("kernel installer network route: %w", err)
+	}
 	assetRoot, err := discoverAssetRoot()
 	if err != nil {
 		return nil, discoveryFailure(DiscoveryStageAssetRoot, err)
@@ -150,8 +155,8 @@ func DiscoverManagerWithPathsAndProxy(condaHome, condaEnvsPath, installerProxy s
 	}
 	manager := NewManager(Config{
 		Python: python, Micromamba: micromamba, CondaHome: condaHome, CondaEnvsPath: condaEnvsPath,
-		InstallerProxy: strings.TrimSpace(installerProxy),
-		AssetRoot:      assetRoot, ManifestPath: filepath.Join(assetRoot, "kernel-compute.manifest.json"),
+		UpstreamProxy: installerProxy,
+		AssetRoot:     assetRoot, ManifestPath: filepath.Join(assetRoot, "kernel-compute.manifest.json"),
 		WorkerPath:               filepath.Join(assetRoot, "kernels", "kernel_worker.py"),
 		CondaRuntimeCatalog:      runtimeCatalog,
 		ManagedPythonEnvironment: defaultManagedPythonEnvironment,

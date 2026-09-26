@@ -44,7 +44,6 @@ func TestDownloadDiskWriterRechecksDecliningCapacityAndKeepsPrefix(t *testing.T)
 		t.Fatal(err)
 	}
 	free = agentPublicScientificDiskReserve
-	w.at = time.Now().Add(-2 * time.Second)
 	if n, err := w.Write([]byte("unsafe suffix")); n != 0 || !errors.Is(err, errAgentPublicScientificFileDiskSpace) {
 		t.Fatalf("write=%d error=%v", n, err)
 	}

@@ -10,6 +10,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import { useScrollSyncTarget } from '../../hooks/useScrollSyncHelpers';
 import {
+  HTML_PREVIEW_SANDBOX,
+  isolatedHtmlDocument,
+  isolatedPreviewMessage,
+  sendPreviewScripts,
+} from './isolatedHtmlDocument';
+import {
   generateHtmlAnnotationHighlightScript,
   generateInspectScript,
   type HtmlElementAnnotationMarker,
@@ -46,6 +52,7 @@ export interface HtmlTextSelection {
 
 interface HTMLRendererProps {
   content: string;
+  passiveSource?: boolean;
   file_path?: string;
   workspace?: string;
   isDirty?: boolean;
@@ -268,6 +275,7 @@ async function inlineRelativeResources(html: string, basePath: string, workspace
  */
 const HTMLRenderer: React.FC<HTMLRendererProps> = ({
   content,
+  passiveSource = false,
   file_path,
   workspace,
   isDirty = false,
@@ -284,7 +292,6 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
   const divRef = useRef<HTMLDivElement>(null);
   const webviewRef = useRef<ElectronWebView | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const iframeSelectionCleanupRef = useRef<(() => void) | null>(null);
   const webviewLoadedRef = useRef(false); // 跟踪 webview 是否已加载 / Track if webview is loaded
   const lastLoggedSourceRef = useRef<string | null>(null);
   const isSyncingScrollRef = useRef(false); // 防止滚动同步循环 / Prevent scroll sync loops
@@ -351,7 +358,7 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
       return;
     }
 
-    if (!hasRelativeResources || !file_path) {
+    if (passiveSource || !hasRelativeResources || !file_path) {
       // 没有相对资源或没有文件路径，使用原始内容
       // No relative resources or no file path, use original content
       setInlinedHtmlContent(content);
@@ -377,16 +384,22 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [content, file_path, isElectron, hasRelativeResources, workspace]);
+  }, [content, file_path, isElectron, hasRelativeResources, workspace, passiveSource]);
 
   // 用于 browser iframe 的最终 HTML 内容
   // Final HTML content for browser iframe
   const browserHtmlContent = useMemo(() => {
+    if (passiveSource) return content;
     if (hasRelativeResources && file_path) {
       return inlinedHtmlContent || content; // 在内联化完成前显示原始内容 / Show original content before inlining completes
     }
     return displayedContent;
-  }, [hasRelativeResources, file_path, inlinedHtmlContent, content, displayedContent]);
+  }, [hasRelativeResources, file_path, inlinedHtmlContent, content, displayedContent, passiveSource]);
+  const browserInstance = useMemo(() => crypto.randomUUID(), [browserHtmlContent, passiveSource]);
+  const isolatedBrowserHtml = useMemo(
+    () => isolatedHtmlDocument(browserHtmlContent, browserInstance, passiveSource),
+    [browserHtmlContent, browserInstance, passiveSource]
+  );
 
   // 计算 webview 的 src
   // Calculate webview src
@@ -677,87 +690,45 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
 
   useEffect(() => {
     if (isElectron) return;
-    const frameDocument = iframeRef.current?.contentDocument;
-    if (!frameDocument) return;
-    try {
-      executeIframeScript(frameDocument, inspectScript);
-      executeIframeScript(frameDocument, annotationHighlightScript);
-    } catch (error) {
-      console.warn('[HTMLRenderer] Failed to update browser inspect mode:', error);
-    }
-  }, [annotationHighlightScript, inspectScript, isElectron]);
+    sendPreviewScripts(iframeRef.current, browserInstance, [inspectScript, annotationHighlightScript]);
+  }, [annotationHighlightScript, inspectScript, isElectron, browserInstance]);
 
   const handleIframeLoad = useCallback(() => {
-    iframeSelectionCleanupRef.current?.();
-    iframeSelectionCleanupRef.current = null;
-    const iframe = iframeRef.current;
-    const frameWindow = iframe?.contentWindow;
-    const frameDocument = iframe?.contentDocument;
-    if (!iframe || !frameWindow || !frameDocument) return;
-
-    const handleMouseUp = () => {
-      window.setTimeout(() => {
-        const selection = frameWindow.getSelection();
-        const text = selection && !selection.isCollapsed ? selection.toString().trim() : '';
-        if (!text || !selection || selection.rangeCount === 0) {
-          onTextSelection?.(null);
-          return;
-        }
-        const selectionRect = selection.getRangeAt(0).getBoundingClientRect();
-        const iframeRect = iframe.getBoundingClientRect();
-        onTextSelection?.({
-          text,
-          x: iframeRect.left + selectionRect.left + selectionRect.width / 2,
-          y: iframeRect.top + selectionRect.bottom,
-        });
-      }, 20);
-    };
-    if (onTextSelection) frameDocument.addEventListener('mouseup', handleMouseUp);
-    try {
-      executeIframeScript(frameDocument, inspectScript);
-      executeIframeScript(frameDocument, annotationHighlightScript);
-    } catch (error) {
-      console.warn('[HTMLRenderer] Failed to initialize browser inspect mode:', error);
-    }
-    iframeSelectionCleanupRef.current = () => {
-      if (onTextSelection) frameDocument.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [annotationHighlightScript, inspectScript, onTextSelection]);
+    sendPreviewScripts(iframeRef.current, browserInstance, [inspectScript, annotationHighlightScript]);
+  }, [annotationHighlightScript, inspectScript, browserInstance]);
 
   useEffect(() => {
-    if (isElectron || !iframeRef.current?.contentDocument) return;
-    handleIframeLoad();
-    return () => {
-      iframeSelectionCleanupRef.current?.();
-      iframeSelectionCleanupRef.current = null;
-    };
-  }, [handleIframeLoad, isElectron]);
-
-  useEffect(() => {
-    if (!onElementSelected && !onElementAnnotationClick) return;
+    if (!onElementSelected && !onElementAnnotationClick && !onTextSelection) return;
     const handleMessage = (event: MessageEvent<unknown>) => {
-      if (event.source !== iframeRef.current?.contentWindow) return;
-      const payload = event.data as { __SYNON_AI_INSPECT_ELEMENT__?: InspectedElement } | null;
+      const data = isolatedPreviewMessage(event, iframeRef.current, browserInstance);
+      if (!data) return;
+      const payload = data as { __SYNON_AI_INSPECT_ELEMENT__?: InspectedElement } | null;
       if (payload?.__SYNON_AI_INSPECT_ELEMENT__ && iframeRef.current) {
-        onElementSelected(
+        onElementSelected?.(
           mapInspectedElementToHost(payload.__SYNON_AI_INSPECT_ELEMENT__, iframeRef.current.getBoundingClientRect())
         );
       }
-      const annotationPayload = event.data as { __SYNON_AI_HTML_ANNOTATION_CLICK__?: string } | null;
+      const annotationPayload = data as { __SYNON_AI_HTML_ANNOTATION_CLICK__?: string } | null;
       if (annotationPayload?.__SYNON_AI_HTML_ANNOTATION_CLICK__) {
         onElementAnnotationClick?.(annotationPayload.__SYNON_AI_HTML_ANNOTATION_CLICK__);
+      }
+      if ('selection' in data) {
+        const selection = data.selection as HtmlTextSelection | null;
+        const rect = iframeRef.current?.getBoundingClientRect();
+        if (selection === null) onTextSelection?.(null);
+        else if (
+          rect &&
+          typeof selection?.text === 'string' &&
+          Number.isFinite(selection.x) &&
+          Number.isFinite(selection.y)
+        ) {
+          onTextSelection?.({ text: selection.text, x: rect.left + selection.x, y: rect.top + selection.y });
+        }
       }
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [onElementAnnotationClick, onElementSelected]);
-
-  useEffect(
-    () => () => {
-      iframeSelectionCleanupRef.current?.();
-    },
-    []
-  );
+  }, [onElementAnnotationClick, onElementSelected, onTextSelection, browserInstance]);
 
   // 注入滚动监听脚本 / Inject scroll listener script
   const scrollSyncScript = useMemo(
@@ -908,7 +879,7 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
         <iframe
           ref={iframeRef}
           onLoad={handleIframeLoad}
-          srcDoc={browserHtmlContent}
+          srcDoc={isolatedBrowserHtml}
           title={t('preview.html.frameTitle')}
           className='w-full h-full border-0'
           style={{
@@ -916,7 +887,7 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
             width: '100%',
             height: '100%',
           }}
-          sandbox='allow-scripts allow-same-origin allow-forms allow-popups allow-modals'
+          sandbox={HTML_PREVIEW_SANDBOX}
         />
       )}
     </div>
@@ -935,13 +906,6 @@ function mapInspectedElementToHost(element: InspectedElement, hostRect: DOMRect)
     xPercent: Math.min(100, Math.max(0, ((rect.x + rect.width / 2) / Math.max(1, rect.viewportWidth)) * 100)),
     yPercent: Math.min(100, Math.max(0, ((rect.y + rect.height / 2) / Math.max(1, rect.viewportHeight)) * 100)),
   };
-}
-
-function executeIframeScript(frameDocument: Document, script: string): void {
-  const scriptElement = frameDocument.createElement('script');
-  scriptElement.textContent = script;
-  (frameDocument.head || frameDocument.documentElement).appendChild(scriptElement);
-  scriptElement.remove();
 }
 
 export default HTMLRenderer;

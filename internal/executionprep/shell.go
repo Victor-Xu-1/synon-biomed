@@ -15,6 +15,9 @@ func ParseShell(source string) ([]Fact, error) {
 		return nil, err
 	}
 	var facts []Fact
+	if operations := shellObservation(file); len(operations) != 0 {
+		facts = append(facts, Fact{Kind: "observation", Name: ObservationSchema, Args: operations})
+	}
 	bindings := make(map[string]string)
 	functions := make(map[string]*syntax.Stmt)
 	var walk func(syntax.Node, int)

@@ -119,19 +119,25 @@ func (s *Server) executeDetachedAgentKernel(
 	}
 	executionID := uuid.NewString()
 	toolUseID := operation.ToolCallID
-	startedOperation, execution, err := s.workspaceStore.StartDetachedKernelLocalOperation(ctx,
-		workspace.StartDetachedKernelLocalOperationInput{
-			Start: workspace.StartKernelLocalOperationInput{
-				OwnerUserID: prepared.OwnerUserID, OperationID: prepared.OperationID,
-				ExpectedStateVersion: prepared.StateVersion, Claim: claim,
-				BootID: s.kernelOperationBootID, ExecutionID: executionID,
-			},
-			BackendID: backendSession.BackendID, BackendGeneration: backendSession.BackendGeneration,
-			ControllerEpoch: lease.Epoch, ControllerToken: lease.Token,
-			Request: newDetachedKernelExecutionRequest(
-				prepared, spec, executionID, code, workingDir, background, executionTimeout, outputLimitBytes,
-			),
-		})
+	var startedOperation workspace.KernelLocalOperation
+	var execution workspace.DetachedKernelExecution
+	err = s.withKernelHostGrantAdmission(access.UserID, func() error {
+		var admissionErr error
+		startedOperation, execution, admissionErr = s.workspaceStore.StartDetachedKernelLocalOperation(ctx,
+			workspace.StartDetachedKernelLocalOperationInput{
+				Start: workspace.StartKernelLocalOperationInput{
+					OwnerUserID: prepared.OwnerUserID, OperationID: prepared.OperationID,
+					ExpectedStateVersion: prepared.StateVersion, Claim: claim,
+					BootID: s.kernelOperationBootID, ExecutionID: executionID,
+				},
+				BackendID: backendSession.BackendID, BackendGeneration: backendSession.BackendGeneration,
+				ControllerEpoch: lease.Epoch, ControllerToken: lease.Token,
+				Request: newDetachedKernelExecutionRequest(
+					prepared, spec, executionID, code, workingDir, background, executionTimeout, outputLimitBytes,
+				),
+			})
+		return admissionErr
+	})
 	if err != nil {
 		return releasePrepared(err)
 	}

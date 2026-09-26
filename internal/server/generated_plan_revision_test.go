@@ -70,8 +70,8 @@ func TestAutonomousPlanRevisionPreservesProgressAndImmutableVersions(t *testing.
 	if third["version_id"] != second["version_id"] || third["idempotent"] != true {
 		t.Fatal("identical plan created another version")
 	}
-	if remaining, err := f.server.incompleteGeneratedPlanStepTitles(f.stream.SessionID); err != nil || len(remaining) != 0 {
-		t.Fatal("autonomous revisions introduced a completion gate")
+	if remaining, err := f.server.incompleteGeneratedPlanCondition(f.stream.SessionID); err != nil || remaining == nil || len(remaining.condition.Steps) != 2 {
+		t.Fatalf("autonomous revision lost its remaining work: %#v %v", remaining, err)
 	}
 }
 

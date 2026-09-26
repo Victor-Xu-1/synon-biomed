@@ -12,6 +12,7 @@ import {
   indexScientificFilesByArtifactReference,
   matchScientificFilesToArtifactReferences,
 } from './components/artifactReferenceModel';
+import { artifactVersionIdsInPresentedContent } from './components/artifactReferencePresentation';
 import { isStandaloneToolCall } from './messagePresentationModel';
 import { isPublicToolActivity } from './toolActivityPresentationRegistry';
 import { startsNewToolSummary } from './toolSummaryGroupingModel';
@@ -202,18 +203,36 @@ export const buildMessagePresentationList = (
     )
     .flatMap((artifact) => artifact.payload.files);
   const scientificFilesByVersion = indexScientificFilesByArtifactReference(allScientificFiles);
+  const artifactPresentationIndex = {
+    byFilename: new Map(allScientificFiles.map((file) => [file.filename.toLocaleLowerCase(), file])),
+    byArtifactId: new Map(allScientificFiles.map((file) => [file.artifact_id, file])),
+    byVersionId: new Map(
+      allScientificFiles.filter((file) => file.version_id !== null).map((file) => [file.version_id as string, file])
+    ),
+  };
   const producedRelations = new Set<ArtifactReferenceRelation>(['produced']);
   const attachedRelations = new Set<ArtifactReferenceRelation>(['attached']);
   const resultWithInlineFiles: MessageListProcessedItem[] = [];
   for (const item of result) {
     resultWithInlineFiles.push(item);
     if (!('type' in item) || item.type !== 'text' || !item.artifact_refs?.length) continue;
+    const presentedVersionIds =
+      typeof item.content.content === 'string'
+        ? artifactVersionIdsInPresentedContent(
+            item.content.content,
+            item.artifact_refs,
+            artifactPresentationIndex,
+            item.status === 'finish' || item.status === 'error' || Boolean(item.terminal_status)
+          )
+        : new Set<string>();
     const files = matchScientificFilesToArtifactReferences(
       item.artifact_refs,
       allScientificFiles,
       item.position === 'right' ? attachedRelations : producedRelations,
       scientificFilesByVersion
-    ).filter((file) => file.version_id !== null);
+    )
+      .filter((file) => file.version_id !== null)
+      .filter((file) => file.version_id === null || !presentedVersionIds.has(file.version_id));
     if (files.length === 0) continue;
     resultWithInlineFiles.push({
       type: 'referenced_files',

@@ -69,6 +69,7 @@ func (observer *sessionRunnerCommunicationObserver) CompleteStream(ctx context.C
 		"required_tool_choice": agentruntime.InitialToolChoiceRequiresCall(request.ToolChoice),
 		"required_tool_name":   firstNonEmpty(stringValue(choice["name"]), stringValue(mapValue(choice["function"])["name"])),
 	}
+	addSessionRunnerNarrationCounters(observer.pending, "native_", response.Message.Content)
 	if err != nil {
 		observer.record("provider_interrupted")
 	}

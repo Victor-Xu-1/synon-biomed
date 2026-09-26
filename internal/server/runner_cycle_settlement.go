@@ -32,6 +32,7 @@ func (s *Server) settleSessionRunnerChatOutcome(
 	}
 	status := "completed"
 	message := "runner chat completed"
+	failureReason := ""
 	if cause := context.Cause(ctx); errors.Is(cause, ErrGenerationStopped) {
 		status = "cancelled"
 		message = cause.Error()
@@ -43,11 +44,12 @@ func (s *Server) settleSessionRunnerChatOutcome(
 	} else if chatErr != nil {
 		status = "failed"
 		message = chatErr.Error()
+		failureReason = sessionRunnerErrorReasonCode(chatErr)
 	}
 	if status == "failed" {
 		log.Printf(
-			"session runner chat failed session=%q attempt=%d err_type=%T reason=%q err=%v",
-			session.ID, result.Attempt, chatErr, sessionRunnerFailureReasonCode(message), chatErr,
+			"session runner chat failed session=%q attempt=%d err_type=%T reason=%q",
+			session.ID, result.Attempt, chatErr, failureReason,
 		)
 	}
 	hookCtx := ctx
@@ -79,13 +81,15 @@ func (s *Server) settleSessionRunnerChatOutcome(
 		} else {
 			status = "failed"
 			message = stopHookErr.Error()
+			failureReason = "runner_stop_hook_failed"
 		}
 	}
 	if status == "completed" || status == "cancelled" ||
-		(status == "failed" && !runnerInterruptionMayContinueSameTask(sessionRunnerFailureReasonCode(message))) {
+		(status == "failed" && !runnerInterruptionMayContinueSameTask(failureReason)) {
 		if cleanupErr := s.releaseSessionRunnerKernels(ctx, session.ID, transcriptAuthority); cleanupErr != nil {
 			status = "failed"
 			message = "task runtime cleanup failed: " + cleanupErr.Error()
+			failureReason = "runner_cleanup_failed"
 			assistantMessage = ""
 		}
 	}
@@ -111,10 +115,11 @@ func (s *Server) settleSessionRunnerChatOutcome(
 	if cause := context.Cause(ctx); errors.Is(cause, ErrGenerationStopped) || errors.Is(cause, context.Canceled) {
 		status = "cancelled"
 		message = cause.Error()
+		failureReason = ""
 		assistantMessage = ""
 	}
 	if status == "failed" {
-		if reason := sessionRunnerFailureReasonCode(message); reason != "" &&
+		if reason := failureReason; reason != "" &&
 			runnerInterruptionMayContinueSameTask(reason) {
 			resumeDetail := message
 			if reason == sessionRunnerVisualMediaUnsupportedReasonCode {
@@ -142,6 +147,7 @@ func (s *Server) settleSessionRunnerChatOutcome(
 			}); err != nil {
 				status = "failed"
 				message = fmt.Sprintf("append transcript assistant message failed: %v", err)
+				failureReason = "runner_response_persistence_failed"
 				assistantMessage = ""
 			}
 		}
@@ -150,10 +156,10 @@ func (s *Server) settleSessionRunnerChatOutcome(
 			if chatRun != nil {
 				failureLanguage = chatRun.ResponseLanguage
 			}
-			message = publicSessionRunnerFailureMessage(message, failureLanguage)
+			message = publicSessionRunnerFailureMessage(message, failureLanguage, failureReason)
 		}
-		terminalEvent, finishTranscriptErr := s.finishTranscriptRunner(
-			context.WithoutCancel(ctx), transcriptAuthority, status, message, chatRun.assistantSegmentOrdinal(),
+		terminalEvent, finishTranscriptErr := s.finishTranscriptRunnerWithReason(
+			context.WithoutCancel(ctx), transcriptAuthority, status, message, failureReason, chatRun.assistantSegmentOrdinal(),
 		)
 		if finishTranscriptErr == nil {
 			activeRun.settled = true
@@ -182,7 +188,7 @@ func (s *Server) settleSessionRunnerChatOutcome(
 			if chatRun != nil {
 				failureLanguage = chatRun.ResponseLanguage
 			}
-			message = publicSessionRunnerFailureMessage(message, failureLanguage)
+			message = publicSessionRunnerFailureMessage(message, failureLanguage, failureReason)
 		}
 		var assistant *eventjournal.Entry
 		if assistantMessage != "" {
@@ -198,6 +204,8 @@ func (s *Server) settleSessionRunnerChatOutcome(
 			if err != nil {
 				status = "failed"
 				message = fmt.Sprintf("append assistant session projection failed: %v", err)
+				failureReason = "runner_response_persistence_failed"
+				message = publicSessionRunnerFailureMessage(message, chatRun.ResponseLanguage, failureReason)
 				assistantMessage = ""
 				assistant = nil
 			} else if assistant != nil {
@@ -215,6 +223,7 @@ func (s *Server) settleSessionRunnerChatOutcome(
 			"runnerAttempt":   result.Attempt,
 			"claimToken":      claimToken,
 			"status":          status,
+			"reasonCode":      failureReason,
 			"message":         message,
 			"afterEventId":    maxInt64(result.CheckpointEventID, result.AssistantEventID),
 			"clientMessageId": runnerCommandClientMessageID(options.RunnerID, session.ID, result.Attempt, claimToken, "chat-finish"),

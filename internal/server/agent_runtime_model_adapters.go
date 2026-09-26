@@ -52,11 +52,24 @@ func normalizeStaticStreamingModelError(err error) error {
 	}
 	for _, prefix := range []string{"provider endpoint returned ", "model provider returned http "} {
 		if index := strings.Index(lower, prefix); index >= 0 {
-			return errors.New(message[:index] + "OpenAI chat endpoint returned " + message[index+len(prefix):])
+			return &staticStreamingModelPresentationError{
+				message: message[:index] + "OpenAI chat endpoint returned " + message[index+len(prefix):],
+				cause:   err,
+			}
 		}
 	}
 	return err
 }
+
+// Presentation compatibility must not erase the provider's typed HTTP/protocol
+// cause: recovery and advisory-review decisions consume that authority.
+type staticStreamingModelPresentationError struct {
+	message string
+	cause   error
+}
+
+func (err *staticStreamingModelPresentationError) Error() string { return err.message }
+func (err *staticStreamingModelPresentationError) Unwrap() error { return err.cause }
 
 func (m serverErrorModelClient) Complete(context.Context, agentruntime.ModelRequest) (agentruntime.ModelResponse, error) {
 	return agentruntime.ModelResponse{}, m.err

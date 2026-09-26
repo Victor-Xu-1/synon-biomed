@@ -127,27 +127,49 @@ rows = module.parse_predictions(module.Path(sys.argv[8]))
 candidates = module.build_candidates(rows, atoms, 20.0, 6.0)
 print(json.dumps(candidates[0]))
 
+with tempfile.TemporaryDirectory() as root_text:
+    root = Path(root_text).resolve()
+    structure = root / "protein.pdb"
+    archive = root / "p2rank.tar.gz"
+    structure.write_text("ATOM\n", encoding="utf-8")
+    archive.write_bytes(b"archive")
+    default = root / module.DEFAULT_OUTPUT_DIR
+    default.mkdir()
+    (default / module.OUTPUT_MARKER).write_text(
+        '{"execution_pack_id":"binding-pocket-prediction.p2rank","schema":"synon.execution-pack-output-owner.v1"}\n',
+        encoding="utf-8",
+    )
+    (root / f"{module.DEFAULT_OUTPUT_DIR}-2").mkdir()
+    target = module.output_target(root, module.DEFAULT_OUTPUT_DIR, (structure, archive))
+    assert target == root / f"{module.DEFAULT_OUTPUT_DIR}-3"
+    custom = root / "custom-output"
+    custom.mkdir()
+    (custom / module.OUTPUT_MARKER).write_text(
+        '{"execution_pack_id":"binding-pocket-prediction.p2rank","schema":"synon.execution-pack-output-owner.v1"}\n',
+        encoding="utf-8",
+    )
+    try:
+        module.output_target(root, custom.name, (structure, archive))
+    except ValueError as error:
+        assert "must not already exist" in str(error)
+    else:
+        raise AssertionError("an explicit existing output directory was silently reused")
+
 with tempfile.TemporaryDirectory() as root_text, tempfile.TemporaryDirectory() as outside_text:
     root = Path(root_text).resolve()
     outside = Path(outside_text).resolve()
     target = root / "pocket_detection"
-    target.mkdir()
-    (target / module.OUTPUT_MARKER).write_text(
-        '{"execution_pack_id":"binding-pocket-prediction.p2rank","schema":"synon.execution-pack-output-owner.v1"}\n',
-        encoding="utf-8",
-    )
-    (target / "old.txt").write_text("old", encoding="utf-8")
+    target.symlink_to(outside, target_is_directory=True)
     staging = root / ".p2rank-output-next"
     staging.mkdir()
     (staging / "new.txt").write_text("new", encoding="utf-8")
-    (root / ".p2rank-generations").symlink_to(outside, target_is_directory=True)
     try:
-        module.promote_output(root, staging, target, "token")
-    except ValueError as error:
-        assert "symbolic link" in str(error) or "escapes" in str(error)
+        module.promote_output(root, staging, target)
+    except RuntimeError as error:
+        assert "created before promotion" in str(error)
     else:
-        raise AssertionError("P2Rank history symlink escape was accepted")
-    assert (target / "old.txt").read_text(encoding="utf-8") == "old"
+        raise AssertionError("P2Rank promotion replaced a late output target")
+    assert (staging / "new.txt").read_text(encoding="utf-8") == "new"
     assert list(outside.iterdir()) == []
 
 with tempfile.TemporaryDirectory() as root_text, tempfile.TemporaryDirectory() as outside_text:

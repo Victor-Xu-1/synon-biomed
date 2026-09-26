@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	workspace "synon-go/internal/persistence/workspace"
@@ -34,7 +35,13 @@ func TestRunnerToolReplaySafetyUsesCapabilitiesAndFailsClosed(t *testing.T) {
 
 func TestToolReplaySafetyUnavailableIsBoundedCorrection(t *testing.T) {
 	err := sessionRunnerToolReplaySafetyPending{toolName: "mcp__source__lookup", cause: context.DeadlineExceeded}
-	reason, detail, bounded := sessionRunnerBoundedCorrectionDetails(err)
+	var correction sessionRunnerBoundedCorrection
+	bounded := errors.As(err, &correction)
+	if !bounded {
+		t.Fatalf("not a typed correction: %v", err)
+	}
+	cause := correction.runnerCorrection()
+	reason, detail := cause.ReasonCode, cause.Detail
 	if !bounded || reason != sessionRunnerToolReplaySafetyReasonCode || detail == "" {
 		t.Fatalf("reason=%q detail=%q bounded=%t", reason, detail, bounded)
 	}

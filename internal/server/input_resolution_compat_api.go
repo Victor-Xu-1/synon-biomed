@@ -165,6 +165,7 @@ func (s *Server) resolveCompatibilityInput(
 		origin *transcriptstore.AskUserOriginV1
 	}
 	typedAskUserAuthorities := make(map[string]askUserAuthority, len(input.Responses))
+	var resolverScope []transcriptstore.AskUserEvidenceResolverSelection
 	seen := map[string]bool{}
 	for _, response := range input.Responses {
 		id := strings.TrimSpace(firstNonEmpty(response.ToolID, response.RequestID))
@@ -201,7 +202,18 @@ func (s *Server) resolveCompatibilityInput(
 		}
 		if typedOrigin != nil {
 			typedAskUserAuthorities[id] = askUserAuthority{item: typedItem, origin: typedOrigin}
+			action := strings.TrimSpace(response.Action)
+			if action == "answer" || (action == "" && len(response.Answers) > 0) {
+				for _, resolver := range compatibilitySelectedAskUserEvidenceResolvers(typedItem, response.Answers) {
+					resolverScope = append(resolverScope, resolver)
+				}
+			}
 		}
+	}
+	// Validate the complete response batch before grants or durable answers are
+	// written. A conflict leaves every question available for correction.
+	if err := transcriptstore.ValidateAskUserEvidenceResolverScope(resolverScope); err != nil {
+		return compatibilityResolveInputResult{}, resolveInputRequestError(http.StatusBadRequest, err.Error())
 	}
 	resolutions := make([]workspace.CompatibilityInputResolution, 0, len(input.Responses))
 	grantRollbacks := make([]func() error, 0)
@@ -467,6 +479,9 @@ func (s *Server) resolveCompatibilityInputItem(
 			return content, "", false, nil, nil, err
 		}
 		content, continuation, result, err := compatibilityAskInputResult(item, response)
+		if err == nil && result != nil && string(result.Status) == "answered" {
+			continuation, err = s.reconcileAnsweredAskUserSelection(item, result.Answers, continuation)
+		}
 		return content, continuation, false, result, nil, err
 	}
 	if kind == agentToolApprovalKind {
@@ -525,7 +540,7 @@ func (s *Server) resolveCompatibilityAgentToolApproval(
 			return "", false, err
 		}
 	}
-	status := strings.ToLower(strings.TrimSpace(stringValue(value["status"])))
+	status := agentRuntimeApprovalStatus(stringValue(value["status"]), value["result"])
 	var resolution any
 	if status == "pending" {
 		message := map[string]any{

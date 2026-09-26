@@ -18,6 +18,11 @@ func agentKernelPythonCodePreflight(
 	outcome kernelruntime.ExecutionOutcome,
 	exitStatus string,
 ) (map[string]any, error) {
+	// Observation refusals are witnessed by the host before execution begins
+	// and use this existing durable preflight path for every native language.
+	if outcome.ObservationRefused {
+		return agentKernelObservationRefusal(outcome, exitStatus)
+	}
 	if strings.EqualFold(strings.TrimSpace(spec.KernelKind), "bash") {
 		return nil, nil
 	}

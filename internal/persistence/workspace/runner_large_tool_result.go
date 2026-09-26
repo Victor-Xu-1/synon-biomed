@@ -19,12 +19,16 @@ import (
 const (
 	runnerLargeToolResultVersionPrefix    = "ltr-"
 	runnerLargeToolResultArtifactIDPrefix = "large-tool-result-"
-	maxRunnerLargeToolResultBytes         = 256 << 20
 )
 
 var (
-	ErrRunnerLargeToolResultConflict = errors.New("runner large tool result conflicts with its immutable evidence")
-	errRunnerLargeToolResultInvalid  = errors.New("runner large tool result evidence is invalid")
+	// ErrRunnerLargeToolResultUnavailable means the immutable metadata remains,
+	// but its externalized content has been pruned or is no longer present.
+	// Callers may treat this as an unreadable historical result; metadata,
+	// identity, size, and digest conflicts remain hard failures.
+	ErrRunnerLargeToolResultUnavailable = errors.New("runner large tool result content is unavailable")
+	ErrRunnerLargeToolResultConflict    = errors.New("runner large tool result conflicts with its immutable evidence")
+	errRunnerLargeToolResultInvalid     = errors.New("runner large tool result evidence is invalid")
 )
 
 // RunnerLargeToolResult is immutable internal runtime evidence produced when a
@@ -122,11 +126,14 @@ func (s *Store) WriteRunnerLargeToolResult(
 		input.OwnerUserID == "" || input.RunnerID == "" || input.ClaimToken == "" ||
 		input.ToolName == "" || input.ToolCallID == "" || input.Attempt < 0 ||
 		input.SourceEventID <= 0 || len(input.Content) == 0 ||
-		len(input.Content) > maxRunnerLargeToolResultBytes || !json.Valid(input.Content) {
+		!json.Valid(input.Content) {
 		return RunnerLargeToolResult{}, errRunnerLargeToolResultInvalid
 	}
 	versionID := runnerLargeToolResultVersionPrefix + uuid.NewString()
-	temporary, size, digest, err := s.stageArtifactWrite(ctx, bytes.NewReader(input.Content), maxRunnerLargeToolResultBytes)
+	// The original result is already materialized by the tool contract. Bound
+	// the copy to those exact bytes; the shared writer checks actual remaining
+	// disk capacity as it streams, without an unrelated product-size ceiling.
+	temporary, size, digest, err := s.stageArtifactWrite(ctx, bytes.NewReader(input.Content), int64(len(input.Content)))
 	if err != nil {
 		return RunnerLargeToolResult{}, err
 	}
@@ -353,6 +360,9 @@ func (s *Store) openRunnerLargeToolResultBlob(record RunnerLargeToolResult) (Art
 	}
 	file, err := openRegularFile(absolute)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errors.Join(ErrRunnerLargeToolResultUnavailable, fmt.Errorf("open runner large tool result blob: %w", err))
+		}
 		return nil, fmt.Errorf("open runner large tool result blob: %w", err)
 	}
 	info, err := file.Stat()

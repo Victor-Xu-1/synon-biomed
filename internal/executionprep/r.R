@@ -58,3 +58,24 @@ walk <- function(value, depth=0L) {
   for (child in args) walk(child, depth+1L)
 }
 walk(tree)
+
+# Observation is a positive whole-tree grammar, independent of the effect
+# collector above. Literal values do not invoke user-defined coercion methods.
+observation <- function(expressions) {
+  if (length(expressions) == 0L || length(expressions) > 256L) return(NULL)
+  operations <- character()
+  registry <- c(getwd="r.directory", Sys.getpid="r.process", Sys.info="r.system")
+  for (value in expressions) {
+    if (is.null(value) || (is.atomic(value) && length(value) == 1L && is.null(attributes(value)))) {
+      operations <- c(operations, "r.literal")
+    } else if (is.call(value) && length(value) == 1L && is.symbol(value[[1L]]) &&
+               as.character(value[[1L]]) %in% names(registry)) {
+      operations <- c(operations, unname(registry[[as.character(value[[1L]])]]))
+    } else {
+      return(NULL)
+    }
+  }
+  sort(unique(operations))
+}
+observed <- observation(tree)
+if (!is.null(observed)) emit("observation", "synon.execution-observation.v1", observed)

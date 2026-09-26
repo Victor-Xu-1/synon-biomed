@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"unicode/utf8"
 
 	"synon-go/internal/agentruntime"
 )
@@ -149,47 +148,23 @@ func (s *Server) validateAgentSavedArtifactEvidenceForPathWithPolicy(
 	evidence []agentruntime.Message,
 	includeCitationReferences bool,
 ) error {
-	data, err := readAgentSavedArtifactEvidenceSnapshot(snapshot)
-	if err != nil {
+	return s.validateAgentSavedArtifactEvidenceStream(context.Background(), path, snapshot, evidence, includeCitationReferences)
+}
+
+func (s *Server) validateAgentSavedArtifactEvidenceStream(ctx context.Context, path string, snapshot *os.File, evidence []agentruntime.Message, includeCitationReferences bool) (resultErr error) {
+	if snapshot == nil {
+		return errAgentSavedArtifactEvidenceUnavailable
+	}
+	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
-	candidateText, _ := redactSessionReviewerDataURIs(string(data))
-	unsupported := []string(nil)
-	if includeCitationReferences {
-		unsupported = unsupportedSessionRunnerCitationReferencesWithArtifactCandidatesUsing(
-			evidence, len(evidence), candidateText, nil, nil, s.sessionRunnerEvidenceTool,
-		)
+	defer func() { _, err := snapshot.Seek(0, io.SeekStart); resultErr = errors.Join(resultErr, err) }()
+	if err := validateRunnerTextEncoding(ctx, snapshot); err != nil {
+		return err
 	}
-	if strings.TrimSpace(path) != "" {
-		artifactSnapshot := runnerCrossArtifactSnapshot{name: path, text: candidateText}
-		if includeCitationReferences {
-			unsupported = append(unsupported, runnerCitationIdentityFailures(
-				path, data, runnerCitationIdentityIndexFromMessages(evidence),
-			)...)
-		}
-		depth := runnerEvidenceRecordDepthIndexFromMessages(evidence)
-		corpus := runnerSourceEvidenceCorpus(evidence)
-		if _, _, recognized := runnerEvidenceLedgerRecords(artifactSnapshot); recognized {
-			unsupported = append(unsupported, runnerEvidenceProvenanceFailures(artifactSnapshot)...)
-			unsupported = append(unsupported, runnerEvidenceRecordDepthFailures(
-				artifactSnapshot, depth,
-			)...)
-			unsupported = append(unsupported, validateRunnerSourceEvidenceLedger(
-				path, data, corpus,
-			)...)
-		}
-		for _, table := range runnerEmbeddedMarkdownEvidenceTables(artifactSnapshot) {
-			headers := make(map[string]int, len(table.headers))
-			for index, header := range table.headers {
-				headers[normalizeRunnerTableToken(header)] = index
-			}
-			records := make([][]string, 0, len(table.rows)+1)
-			records = append(records, table.headers)
-			records = append(records, table.rows...)
-			unsupported = append(unsupported, runnerEvidenceProvenanceTableFailures(path, records, headers)...)
-			unsupported = append(unsupported, runnerEvidenceRecordDepthTableFailures(path, records, headers, depth)...)
-			unsupported = append(unsupported, validateRunnerSourceEvidenceLedgerRecords(path, records, headers, corpus)...)
-		}
+	unsupported, err := scanAgentSavedArtifactEvidence(ctx, path, snapshot, evidence, includeCitationReferences, s.sessionRunnerEvidenceTool)
+	if err != nil {
+		return err
 	}
 	unsupported = uniqueSortedFolded(unsupported)
 	if len(unsupported) == 0 {
@@ -211,40 +186,45 @@ func (s *Server) validateAgentSavedArtifactEvidenceForPathWithPolicy(
 	}
 }
 
-func readAgentSavedArtifactEvidenceSnapshot(snapshot *os.File) ([]byte, error) {
+func agentSavedArtifactContainsStructuredEvidence(ctx context.Context, path string, snapshot *os.File) (found bool, resultErr error) {
 	if snapshot == nil {
-		return nil, errAgentSavedArtifactEvidenceUnavailable
-	}
-	info, err := snapshot.Stat()
-	if err != nil {
-		return nil, errors.Join(errAgentSavedArtifactEvidenceUnavailable, err)
-	}
-	if info.Size() > v11ArtifactBinaryLimit {
-		return nil, errAgentSavedArtifactEvidenceUnavailable
+		return false, errAgentSavedArtifactEvidenceUnavailable
 	}
 	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
-		return nil, errors.Join(errAgentSavedArtifactEvidenceUnavailable, err)
-	}
-	data, readErr := io.ReadAll(io.LimitReader(snapshot, v11ArtifactBinaryLimit+1))
-	_, seekErr := snapshot.Seek(0, io.SeekStart)
-	if readErr != nil || seekErr != nil || int64(len(data)) > v11ArtifactBinaryLimit {
-		return nil, errors.Join(errAgentSavedArtifactEvidenceUnavailable, readErr, seekErr)
-	}
-	if !utf8.Valid(data) {
-		return nil, errAgentSavedArtifactTextInvalid
-	}
-	return data, nil
-}
-
-func agentSavedArtifactContainsStructuredEvidence(path string, snapshot *os.File) (bool, error) {
-	data, err := readAgentSavedArtifactEvidenceSnapshot(snapshot)
-	if err != nil {
 		return false, err
 	}
-	text, _ := redactSessionReviewerDataURIs(string(data))
-	artifactSnapshot := runnerCrossArtifactSnapshot{name: path, text: text}
-	if _, _, recognized := runnerEvidenceLedgerRecords(artifactSnapshot); recognized {
-		return true, nil
+	defer func() { _, err := snapshot.Seek(0, io.SeekStart); resultErr = errors.Join(resultErr, err) }()
+	if err := validateRunnerTextEncoding(ctx, snapshot); err != nil {
+		return false, err
 	}
-	return len(runnerEmbeddedMarkdownEvidenceTables(artifactSnapshot)) > 0, nil
+	if _, err := snapshot.Seek(0, io.SeekStart); err != nil {
+		return false, err
+	}
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".csv", ".tsv":
+		err := visitRunnerEvidenceRows(ctx, snapshot, path, func(headers map[string]int) bool {
+			found = runnerEvidenceLedgerHeaderShape(headers)
+			return false
+		}, nil)
+		return found, err
+	case ".md", ".markdown":
+		errFound := errors.New("structured evidence table found")
+		err := visitRunnerMarkdownRows(ctx, snapshot, func(_ int, _ int, header, _ []string) error {
+			headers := make(map[string]int, len(header))
+			for index, value := range header {
+				headers[normalizeRunnerTableToken(value)] = index
+			}
+			if runnerEvidenceLedgerHeaderShape(headers) {
+				found = true
+				return errFound
+			}
+			return nil
+		})
+		if errors.Is(err, errFound) {
+			err = nil
+		}
+		return found, err
+	default:
+		return false, nil
+	}
 }

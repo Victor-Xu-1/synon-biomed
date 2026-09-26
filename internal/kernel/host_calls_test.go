@@ -250,7 +250,7 @@ func TestHostCallPanicIsContainedAndWorkerRemainsUsable(t *testing.T) {
 	}
 }
 
-func TestHostCallLimitAndResultBoundAreEnforced(t *testing.T) {
+func TestHostCallLimitAndLargeResultArePreserved(t *testing.T) {
 	manager, _ := newHostCallTestSession(t, nil)
 	policy := &HostCallPolicy{
 		AllowedMethods: []string{"host.routine.status"}, MaxCalls: 2,
@@ -273,18 +273,22 @@ except RuntimeError as exc:
 	large := &HostCallPolicy{
 		AllowedMethods: []string{"host.routine.status"},
 		Handler: func(context.Context, HostCall) (any, error) {
-			return map[string]any{"value": strings.Repeat("x", maxHostResultBytes)}, nil
+			return map[string]any{"value": strings.Repeat("λ", maxHostResultBytes) + "tail", "count": 9007199254740991}, nil
 		},
 	}
 	bounded := executeHostCallCell(t, manager, "exec-result-bound", `
 import host
-try:
-    host.routine.status()
-except RuntimeError as exc:
-    print(str(exc))
+result = host.routine.status()
+assert result['count'] == 9007199254740991
+assert result['value'] == 'λ' * (4 * 1024 * 1024) + 'tail'
+print('full-result-preserved')
 `, large)
-	if bounded.Err != nil || bounded.Response.Error != "" || !strings.Contains(bounded.Response.Stdout, "host result exceeds") {
+	if bounded.Err != nil || bounded.Response.Error != "" || !strings.Contains(bounded.Response.Stdout, "full-result-preserved") {
 		t.Fatalf("result bound outcome = %#v", bounded)
+	}
+	reused := executeHostCallCell(t, manager, "exec-after-large-result", "print(len(result['value']))", nil)
+	if reused.Err != nil || reused.Response.Error != "" || strings.TrimSpace(reused.Response.Stdout) != fmt.Sprint(maxHostResultBytes+4) {
+		t.Fatalf("successful result delivery discarded live kernel state: %#v", reused)
 	}
 }
 

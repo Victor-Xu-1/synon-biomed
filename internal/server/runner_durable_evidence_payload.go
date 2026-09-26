@@ -10,6 +10,7 @@ import (
 
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
+	workspace "synon-go/internal/persistence/workspace"
 )
 
 // restoreDurableEvidencePayload is for server-side receipt consumers only.
@@ -24,16 +25,18 @@ func (s *Server) restoreDurableEvidencePayload(ctx context.Context, stream trans
 	if s.workspaceStore == nil || descriptor.VersionID == "" {
 		return "", errRunnerLargeToolResultAuthority
 	}
-	record, reader, found, err := s.workspaceStore.OpenRunnerLargeToolResultContent(ctx, descriptor.VersionID, stream.OwnerID)
+	// Validate the immutable receipt before opening its blob. A missing payload
+	// must never hide a foreign owner or a conflicting frame/call/version.
+	record, found, err := s.workspaceStore.GetRunnerLargeToolResult(ctx, descriptor.ArtifactID, stream.OwnerID)
 	if err != nil {
 		return "", err
 	}
 	if !found {
 		return "", errRunnerLargeToolResultAuthority
 	}
-	defer func() { resultErr = errors.Join(resultErr, reader.Close()) }()
 	if record.StreamUID != stream.UID || record.OwnerUserID != stream.OwnerID || record.ProjectID != stream.ProjectID ||
 		record.RootFrameID != stream.RootFrameID || record.FrameID != stream.FrameID || record.ArtifactID != descriptor.ArtifactID ||
+		record.VersionID != descriptor.VersionID ||
 		record.ToolCallID != checkpoint.ToolCallID || record.ToolName != checkpoint.ToolName || record.ContentSHA256 != descriptor.SHA256 ||
 		record.SizeBytes != descriptor.SizeBytes || record.ContentType != descriptor.ContentType || record.SourceEventID >= completedEventID {
 		return "", errRunnerLargeToolResultConflict
@@ -41,6 +44,17 @@ func (s *Server) restoreDurableEvidencePayload(ctx context.Context, stream trans
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
+	_, reader, found, err := s.workspaceStore.OpenRunnerLargeToolResultContent(ctx, record.VersionID, stream.OwnerID)
+	if err != nil {
+		if errors.Is(err, workspace.ErrRunnerLargeToolResultUnavailable) {
+			return "", errRunnerLargeToolResultUnavailable
+		}
+		return "", err
+	}
+	if !found {
+		return "", errRunnerLargeToolResultAuthority
+	}
+	defer func() { resultErr = errors.Join(resultErr, reader.Close()) }()
 	raw, err := io.ReadAll(io.LimitReader(reader, record.SizeBytes+1))
 	if err != nil {
 		return "", err
@@ -54,6 +68,12 @@ func (s *Server) restoreDurableEvidencePayload(ctx context.Context, stream trans
 	}
 	if err := ctx.Err(); err != nil {
 		return "", err
+	}
+	// Host MCP adapters return JSON text as a string. Keep those exact encoded
+	// bytes and their digest in storage, then use the same evidence projection
+	// as an inline result so structured records survive externalization.
+	if decoded, valid := sessionRunnerDurableToolResult(raw); valid {
+		return decoded, nil
 	}
 	return string(raw), nil
 }

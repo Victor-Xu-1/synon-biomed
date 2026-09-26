@@ -55,12 +55,13 @@ type ToolCallAdmissionDiagnostics interface {
 	ToolCallAdmissionDiagnostic(ToolCall) string
 }
 
-// ToolCallPreflightDiagnostics lets a gateway reject a context-sensitive call
+// ToolCallPreflightDiagnostics lets a gateway check a proposed batch once
 // before any model response, tool-start event, approval, or side effect becomes
-// durable. An empty diagnostic admits the call; a non-empty diagnostic must be
-// bounded and safe to return to the model for one corrected tool-selection turn.
+// durable. Diagnostics are keyed by the exact input index and must be safe to
+// return to the model. Authority/read failures and cancellation return an error,
+// not model-repair feedback. Implementations must honor the request context.
 type ToolCallPreflightDiagnostics interface {
-	ToolCallPreflightDiagnostic(ToolCall) string
+	ToolCallPreflightDiagnostics(context.Context, []ToolCall) (map[int]string, error)
 }
 
 // ModelToolChoicePolicy may require one exact tool on a later model round
@@ -427,7 +428,8 @@ func semanticToolFailureTarget(toolName string, arguments json.RawMessage) strin
 	keys := []string{"capability", "execution_pack_id", "provider", "environment", "executable", "working_dir"}
 	if normalizedTool == "edit_file" || normalizedTool == "read_file" {
 		selected["tool"] = "workspace_file"
-		keys = []string{"file_path", "path"}
+		selected["file_path"] = firstNonEmpty(stringValueAt(input, "file_path"), stringValueAt(input, "path"))
+		keys = nil
 	}
 	for _, key := range keys {
 		if value, found := input[key]; found {

@@ -62,7 +62,17 @@ func runKernelExecutorCLI(args []string) error {
 	if err := executor.ClaimStartup(ctx); err != nil {
 		return err
 	}
-	manager, err := kernelruntime.DiscoverManagerWithPaths(strings.TrimSpace(*condaHome), strings.TrimSpace(*condaEnvsPath))
+	// Read the same claimed, durable session route used by the worker itself.
+	// Ambient supervisor variables must not select a different installer route.
+	backend, found, err := store.GetKernelExecutionBackend(ctx, *backendID)
+	if err != nil || !found || backend.BackendGeneration != *backendGeneration || backend.ExecutorInstanceID != *executorInstanceID {
+		return executor.RecordStartupFailure("runtime_discovery", errors.New("claimed kernel executor network authority is unavailable"))
+	}
+	spec, err := workspace.DecodeKernelExecutionSessionSpecV1(backend.SessionSpecJSON)
+	if err != nil {
+		return executor.RecordStartupFailure("runtime_discovery", errors.New("claimed kernel executor session metadata is invalid"))
+	}
+	manager, err := kernelruntime.DiscoverManagerWithPathsAndProxy(strings.TrimSpace(*condaHome), strings.TrimSpace(*condaEnvsPath), spec.UpstreamProxy)
 	if err != nil {
 		return executor.RecordStartupFailure("runtime_discovery", fmt.Errorf("discover kernel executor runtime: %w", err))
 	}

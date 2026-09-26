@@ -111,7 +111,14 @@ func sessionRunnerToolContinuityRecords(entries []journal.Entry) ([]sessionRunne
 			),
 		}
 		if successful && isCompletedSkillToolName(toolName) {
-			record.SkillName = strings.TrimPrefix(strings.TrimSpace(stringValue(mapValue(input)["skill"])), "/")
+			// A governed resolver may select a concrete Skill after the model
+			// request. Continuity must preserve that admitted execution identity,
+			// not reintroduce the stale requested name during compaction.
+			executedInput := completedSkillInput(message)
+			if executedInput == nil {
+				executedInput = mapValue(input)
+			}
+			record.SkillName = strings.TrimPrefix(strings.TrimSpace(stringValue(executedInput["skill"])), "/")
 			record.RequiredScientificCapabilities = uniqueSortedScientificCapabilities(
 				stringArrayValue(message["requiredScientificCapabilities"]),
 			)

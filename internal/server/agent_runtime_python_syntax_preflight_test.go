@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -42,7 +43,7 @@ func TestGatewayPrivatelyPreflightsPythonSyntaxBeforeToolStart(t *testing.T) {
 	call := agentruntime.ToolCall{ID: "syntax", Name: "repl", Arguments: json.RawMessage(
 		`{"code":"rows.append(f\"{source},identifier}\")","human_description":"Writing evidence"}`,
 	)}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "python_syntax_preflight_required") || !strings.Contains(diagnostic, "syntax") {
 		t.Fatalf("gateway syntax diagnostic=%s", diagnostic)
 	}
@@ -56,14 +57,14 @@ func TestGatewayStatelessPreflightsRemainActiveWithoutTaskRun(t *testing.T) {
 	invalidPython := agentruntime.ToolCall{
 		Name: "python", Arguments: json.RawMessage(`{"code":"print(f\"broken}\")"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(invalidPython); !strings.Contains(diagnostic, "python_syntax_preflight_required") {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), invalidPython); !strings.Contains(diagnostic, "python_syntax_preflight_required") {
 		t.Fatalf("recovery gateway omitted syntax preflight: %q", diagnostic)
 	}
 
 	thirdPartyREPL := agentruntime.ToolCall{
 		Name: "repl", Arguments: json.RawMessage(`{"code":"import pandas as pd\nprint(pd.DataFrame())"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(thirdPartyREPL); !strings.Contains(diagnostic, "code_preflight_required") || !strings.Contains(diagnostic, "verified environment") {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), thirdPartyREPL); !strings.Contains(diagnostic, "code_preflight_required") || !strings.Contains(diagnostic, "verified environment") {
 		t.Fatalf("recovery gateway omitted REPL runtime preflight: %q", diagnostic)
 	}
 }
@@ -75,7 +76,7 @@ func TestGatewayPrivatelyRejectsOptionalFormatterBeforeKernelLifecycle(t *testin
 	call := agentruntime.ToolCall{
 		Name: "python", Arguments: json.RawMessage(`{"code":"print(frame.to_markdown())"}`),
 	}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "code_preflight_required") ||
 		!strings.Contains(diagnostic, "optional pandas tabulate formatter") {
 		t.Fatalf("gateway optional-formatter diagnostic=%q", diagnostic)
@@ -92,7 +93,7 @@ func TestReviewerLetsThirdPartyImportReachBoundedRuntimeCorrection(t *testing.T)
 	call := agentruntime.ToolCall{
 		Name: "repl", Arguments: json.RawMessage(`{"code":"import pandas as pd\nprint(pd.DataFrame())","human_description":"Checking evidence"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("reviewer third-party import was terminated before bounded runtime correction: %q", diagnostic)
 	}
 }

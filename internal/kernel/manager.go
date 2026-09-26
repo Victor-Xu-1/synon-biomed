@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 
 	"synon-go/internal/assets"
+	"synon-go/internal/executionprep"
 	"synon-go/internal/processsupervisor"
 )
 
@@ -31,6 +32,9 @@ const (
 )
 
 type Config struct {
+	// UpstreamProxy is the resolved operator network route. Installers must
+	// not re-read mutable process proxy variables after manager construction.
+	UpstreamProxy            string
 	Python                   string
 	Micromamba               string
 	CondaHome                string
@@ -41,6 +45,7 @@ type Config struct {
 	SDFValidatorPath         string
 	RWorkerPath              string
 	DefaultREnv              string
+	DefaultREnvPackages      []string
 	RSharedLibsBase          string
 	RSharedPackages          []string
 	DisableROperationLog     bool
@@ -53,9 +58,6 @@ type Config struct {
 	// observed installer output, CPU work, process-tree changes, or I/O. It is
 	// deliberately separate from a wall-clock execution deadline.
 	ManagedEnvironmentInstallerInactivityTimeout time.Duration
-	// InstallerProxy is the normalized product network proxy used only for
-	// bundled package installation. It is never inherited by task runtimes.
-	InstallerProxy string
 	// ExecutionTimeout is an optional active-cell wall-clock deadline. Zero
 	// leaves active cells running until completion, explicit cancellation, or
 	// worker shutdown; the separate worker idle policy owns unused lifetimes.
@@ -84,6 +86,9 @@ type request struct {
 	WorkingDir   string `json:"working_dir,omitempty"`
 	HostEnabled  bool   `json:"host_enabled"`
 	Fresh        bool   `json:"fresh,omitempty"`
+
+	Observation           *executionprep.Observation `json:"observation,omitempty"`
+	ObservationCodeSHA256 string                     `json:"observation_code_sha256,omitempty"`
 }
 
 type protocolMessage struct {
@@ -188,6 +193,10 @@ type Worker struct {
 	done         chan struct{}
 	diagnostics  *tailBuffer
 
+	// Protected by executeMu, outside the mutable interpreter. Once arbitrary
+	// source has been dispatched, later diagnostics cannot prove its bindings.
+	observationTainted bool
+
 	executeMu       sync.Mutex
 	writeMu         sync.Mutex
 	hostMu          sync.Mutex
@@ -232,8 +241,7 @@ func NewManager(config Config) *Manager {
 		config.DefaultREnv = defaultManagedREnvironment
 	}
 	if strings.TrimSpace(config.CondaHome) == "" && strings.TrimSpace(config.CondaEnvsPath) != "" {
-		// Keep installer caches beside an explicitly supplied environment root;
-		// never fall back to a relative `pkgs` directory or the process cwd.
+		// Keep installer caches beside an explicitly supplied environment root.
 		config.CondaHome = filepath.Dir(filepath.Clean(config.CondaEnvsPath))
 	}
 	if strings.TrimSpace(config.CondaEnvsPath) == "" && strings.TrimSpace(config.CondaHome) != "" {
@@ -401,8 +409,7 @@ func (m *Manager) startWorkerWithRuntime(
 		return nil, err
 	}
 	defer closeKernelCommandExtraFiles(command)
-	// Use the validated drive-rooted workspace on Windows; "/" has no
-	// well-defined native working-directory meaning there.
+	// Native Windows process creation requires a drive-rooted directory.
 	if runtime.GOOS == "windows" {
 		command.Dir = resolvedWorkspace
 	} else {
@@ -728,6 +735,7 @@ func (w *Worker) Execute(ctx context.Context, code, origin string) (Response, er
 		return Response{}, w.stoppedError()
 	default:
 	}
+	w.observationTainted = true
 	if err := w.writeProtocol(payload); err != nil {
 		return Response{}, fmt.Errorf("write kernel request: %w", err)
 	}
@@ -951,29 +959,7 @@ func (w *Worker) writeHostAck(callID string) error {
 }
 
 func (w *Worker) writeHostResult(call HostCall, result any, callErr error) error {
-	wire := hostResultWire{Type: "host_result", ID: call.ID, CellID: call.CellID, OK: callErr == nil, Result: result}
-	if callErr != nil {
-		wire.Result = nil
-		wire.Error = hostCallFailure(callErr)
-	}
-	payload, err := json.Marshal(wire)
-	if err != nil {
-		wire.OK, wire.Result = false, nil
-		wire.Error = &hostResultError{Code: "invalid_result", Message: "host result is not JSON serializable"}
-		payload, err = json.Marshal(wire)
-	}
-	if err != nil {
-		return err
-	}
-	if len(payload) > maxHostResultBytes {
-		wire.OK, wire.Result = false, nil
-		wire.Error = &hostResultError{Code: "result_too_large", Message: fmt.Sprintf("host result exceeds %d bytes", maxHostResultBytes)}
-		payload, err = json.Marshal(wire)
-		if err != nil {
-			return err
-		}
-	}
-	return w.writeProtocol(payload)
+	return w.writeHostResultContext(context.Background(), call, result, callErr)
 }
 
 func (w *Worker) wait() {
@@ -1142,10 +1128,6 @@ func kernelEnvironment(extra map[string]string) []string {
 		"TMPDIR": true, "TMP": true, "TEMP": true, "SSL_CERT_FILE": true, "SSL_CERT_DIR": true,
 	}
 	if runtime.GOOS == "windows" {
-		// Native process creation and Conda package scripts require the OS
-		// directory and command-shell contract even when task runtimes receive
-		// an otherwise narrow environment. These keys identify directories and
-		// executables, never provider credentials.
 		for _, key := range []string{
 			"USERPROFILE", "HOMEDRIVE", "HOMEPATH", "SYSTEMROOT", "WINDIR",
 			"COMSPEC", "PATHEXT", "APPDATA", "LOCALAPPDATA", "PROGRAMDATA",
@@ -1154,8 +1136,8 @@ func kernelEnvironment(extra map[string]string) []string {
 			allowed[key] = true
 		}
 	}
-	values := make(map[string]string, len(allowed)+len(extra)+1)
-	order := make([]string, 0, len(allowed)+len(extra)+1)
+	values := make(map[string]string, len(allowed))
+	order := make([]string, 0, len(allowed))
 	remember := func(key, value string) {
 		if runtime.GOOS == "windows" {
 			key = strings.ToUpper(key)

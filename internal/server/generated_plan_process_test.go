@@ -107,6 +107,21 @@ func TestResearchProcessInjectsOneBilingualModuleQuerySet(t *testing.T) {
 	}
 }
 
+func TestResearchProcessPreservesExactSourceDownloadInput(t *testing.T) {
+	server, _, frameID := newGeneratedPlanProcessFixture(t)
+	input := map[string]any{
+		"url":               "https://example.org/structure.cif",
+		"filename":          "structure.cif",
+		"human_description": "Downloading a structure",
+	}
+	capabilities := []string{"source-evidence", "source-download", "artifact-write"}
+	got := server.generatedPlanResearchQueryInput(frameID, "download_source_asset", input, capabilities)
+	if len(got) != len(input) || got["url"] != input["url"] || got["filename"] != input["filename"] ||
+		got["human_description"] != input["human_description"] {
+		t.Fatalf("research plan changed exact source-download arguments: %#v", got)
+	}
+}
+
 func TestAutonomousPlanPendingStepDoesNotDisplaceSubstantiveWork(t *testing.T) {
 	server, store, frameID := newGeneratedPlanProcessFixture(t)
 	metadata, found, err := store.GetFrameRuntimeMetadata(frameID)
@@ -848,6 +863,18 @@ func TestResearchProcessExecutesDiscoveredFetchAlternative(t *testing.T) {
 	if normalized["url"] != "https://evidence.example/next-record" {
 		t.Fatalf("discovered fetch route was not preserved exactly: %#v", normalized)
 	}
+	registeredBinary := server.generatedPlanResearchQueryInput(frameID, "web_fetch", map[string]any{
+		"url": "https://github.com/rdk/p2rank/releases/download/2.5.1/p2rank_2.5.1.tar.gz",
+	})
+	if registeredBinary["url"] != "https://github.com/rdk/p2rank/releases/download/2.5.1/p2rank_2.5.1.tar.gz" {
+		t.Fatalf("registered execution download was rewritten by research continuation: %#v", registeredBinary)
+	}
+	scientificFile := server.generatedPlanResearchQueryInput(frameID, "web_fetch", map[string]any{
+		"url": "https://files.rcsb.org/download/3DSH.pdb",
+	})
+	if scientificFile["url"] != "https://files.rcsb.org/download/3DSH.pdb" {
+		t.Fatalf("scientific file URL was rewritten by research continuation: %#v", scientificFile)
+	}
 	schemas := []agentruntime.ToolSchema{{Name: updateStepStatusToolName}, {Name: "web_fetch"}}
 	gateway := serverAgentRuntimeToolGateway{
 		server: server, sessionID: frameID, taskRun: &sessionRunnerChatRun{TaskIntent: "Research and deliver"},
@@ -1466,14 +1493,14 @@ func TestDeliveryStepPublishesArtifactsPreparedBeforeDelivery(t *testing.T) {
 	}
 }
 
-func TestAutonomousPlanCompletionDoesNotGateFinalOutput(t *testing.T) {
+func TestAutonomousPlanCompletionRetainsOpenWork(t *testing.T) {
 	server, _, frameID := newGeneratedPlanProcessFixture(t)
-	remaining, err := server.incompleteGeneratedPlanStepTitles(frameID)
+	remaining, err := server.incompleteGeneratedPlanCondition(frameID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(remaining) != 0 {
-		t.Fatalf("autonomous navigation became a completion gate: %v", remaining)
+	if remaining == nil || len(remaining.condition.Steps) != 3 {
+		t.Fatalf("autonomous plan lost open work: %#v", remaining)
 	}
 }
 

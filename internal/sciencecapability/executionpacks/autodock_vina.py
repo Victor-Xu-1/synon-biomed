@@ -16,7 +16,7 @@ import gemmi
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from autodock_vina_inputs import convert_ligand_source
+from autodock_vina_inputs import convert_ligand_source, read_smiles_records
 from autodock_vina_outputs import write_docking_report, write_primary_pose_artifacts
 from autodock_vina_pockets import load_validated_pocket_selection
 
@@ -52,6 +52,7 @@ PRIMARY_SELECTION_BASES = {
 }
 EXECUTION_PACK_ID = "molecular-docking.autodock-vina"
 OUTPUT_OWNERSHIP_MARKER = ".synon-execution-pack.json"
+DEFAULT_OUTPUT_DIR = "out"
 OUTPUT_PROMOTION_RECEIPT_PREFIX = "SYNON_EXECUTION_PACK_OUTPUT_RECEIPT="
 
 
@@ -245,6 +246,14 @@ def load_ligands(path: Path) -> list[Chem.Mol]:
     elif suffix == ".mol2":
         molecule = Chem.MolFromMol2File(str(path), removeHs=False)
         molecules = [molecule] if molecule is not None else []
+    elif suffix in {".smi", ".smiles"}:
+        molecules = []
+        for index, (smiles, name) in enumerate(read_smiles_records(path), start=1):
+            molecule = Chem.MolFromSmiles(smiles)
+            if molecule is None:
+                raise ValueError(f"invalid SMILES record {index}")
+            molecule.SetProp("_Name", name)
+            molecules.append(molecule)
     else:
         raise ValueError(f"unsupported ligand format: {suffix}")
     if not molecules:
@@ -252,13 +261,52 @@ def load_ligands(path: Path) -> list[Chem.Mol]:
     return molecules
 
 
-def normalize_ligands(source: Path, destination: Path, seed: int) -> list[str]:
+def normalize_dockable_fragment(
+    molecule: Chem.Mol,
+    candidate_id: str,
+    log: list[dict[str, object]],
+) -> Chem.Mol:
+    fragments = list(Chem.GetMolFrags(molecule, asMols=True, sanitizeFrags=True))
+    if len(fragments) <= 1:
+        return molecule
+    ranked: list[tuple[tuple[int, int, int], str, Chem.Mol]] = []
+    for fragment in fragments:
+        carbon_count = sum(1 for atom in fragment.GetAtoms() if atom.GetAtomicNum() == 6)
+        rank = (1 if carbon_count > 0 else 0, fragment.GetNumHeavyAtoms(), carbon_count)
+        ranked.append((rank, Chem.MolToSmiles(fragment, isomericSmiles=True), fragment))
+    ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    if len(ranked) > 1 and ranked[0][0] == ranked[1][0]:
+        raise ValueError(f"ligand {candidate_id} has ambiguous largest fragments")
+    selected = ranked[0]
+    log.append(
+        {
+            "operation": "normalize_ligand_fragments",
+            "candidate_id": candidate_id,
+            "source_fragment_count": len(ranked),
+            "selected_smiles": selected[1],
+            "removed_smiles": sorted(item[1] for item in ranked[1:]),
+        }
+    )
+    return selected[2]
+
+
+def normalize_ligands(
+    source: Path,
+    destination: Path,
+    seed: int,
+    log: list[dict[str, object]],
+) -> list[str]:
     molecules = load_ligands(source)
     candidate_ids: list[str] = []
     writer = Chem.SDWriter(str(destination))
     try:
         for index, original in enumerate(molecules, start=1):
-            molecule = Chem.AddHs(original, addCoords=True)
+            name = original.GetProp("_Name").strip() if original.HasProp("_Name") else ""
+            candidate_id = name or f"ligand-{index:04d}"
+            if candidate_id in candidate_ids:
+                raise ValueError(f"ligand input contains duplicate candidate ID: {candidate_id}")
+            molecule = normalize_dockable_fragment(original, candidate_id, log)
+            molecule = Chem.AddHs(molecule, addCoords=True)
             needs_conformer = molecule.GetNumConformers() == 0 or not molecule.GetConformer().Is3D()
             if needs_conformer:
                 parameters = AllChem.ETKDGv3()
@@ -266,10 +314,6 @@ def normalize_ligands(source: Path, destination: Path, seed: int) -> list[str]:
                 if AllChem.EmbedMolecule(molecule, parameters) != 0:
                     raise ValueError(f"3D conformer generation failed for ligand {index}")
                 AllChem.UFFOptimizeMolecule(molecule, maxIters=500)
-            name = molecule.GetProp("_Name").strip() if molecule.HasProp("_Name") else ""
-            candidate_id = name or f"ligand-{index:04d}"
-            if candidate_id in candidate_ids:
-                raise ValueError(f"ligand input contains duplicate candidate ID: {candidate_id}")
             molecule.SetProp("_Name", candidate_id)
             candidate_ids.append(candidate_id)
             writer.write(molecule)
@@ -815,7 +859,7 @@ def prepare_ligands(
         shutil.copyfile(source, destination)
         return [(source.stem, destination)], 1
     normalized = work / "normalized_ligands.sdf"
-    candidate_ids = normalize_ligands(source, normalized, seed)
+    candidate_ids = normalize_ligands(source, normalized, seed, log)
     count = len(candidate_ids)
     executable = shutil.which("mk_prepare_ligand.py")
     if executable is None:
@@ -912,7 +956,7 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--repeat-count", type=int, default=3)
     value.add_argument("--exhaustiveness", type=int, default=8)
     value.add_argument("--num-modes", type=int, default=9)
-    value.add_argument("--output-dir", default="out")
+    value.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     return value
 
 
@@ -972,23 +1016,32 @@ def validate_box_size_contract(
         raise ValueError("docking-box sizes must be finite values between 1 and 100 Angstrom")
 
 
-def validate_output_target(root: Path, output: Path, inputs: tuple[Path, ...]) -> None:
+def next_default_output_target(root: Path) -> Path:
+    for index in range(2, 1000):
+        candidate = (root / f"{DEFAULT_OUTPUT_DIR}-{index}").resolve()
+        if not candidate.exists() and not candidate.is_symlink():
+            return candidate
+    raise ValueError("no collision-free default AutoDock Vina output directory is available")
+
+
+def validate_output_target(
+    root: Path,
+    output: Path,
+    inputs: tuple[Path, ...],
+    redirect_default: bool = False,
+) -> Path:
     if output == root or root not in output.parents:
         raise ValueError("output directory must stay inside the authorized working directory")
     for source in inputs:
         if output == source or output in source.parents or source in output.parents:
             raise ValueError("output directory must not overlap an input path or its ancestors")
+    if output.is_symlink():
+        raise ValueError("output directory must not be a symbolic link")
     if not output.exists():
-        return
-    if output.is_symlink() or not output.is_dir():
-        raise ValueError("existing output path is not an execution-owned directory")
-    marker = output / OUTPUT_OWNERSHIP_MARKER
-    try:
-        ownership = json.loads(marker.read_text(encoding="utf-8"))
-    except (OSError, ValueError, TypeError):
-        raise ValueError("existing output directory is not owned by this execution pack") from None
-    if ownership != {"execution_pack_id": EXECUTION_PACK_ID, "schema": "synon.execution-pack-output-owner.v1"}:
-        raise ValueError("existing output directory has conflicting execution ownership")
+        return output
+    if redirect_default:
+        return next_default_output_target(root)
+    raise ValueError("explicit output directory must not already exist")
 
 
 def validated_internal_state_directory(root: Path, path: Path, label: str) -> Path:
@@ -1017,34 +1070,15 @@ def promote_execution_output(
         )
         + "\n",
     )
-    previous = None
-    if target.exists():
-        history_root = validated_internal_state_directory(
-            root, target.parent / ".vina-pack-generations" / target.name, "output history"
-        )
-        previous = history_root / token
-    elif target.is_symlink():
-        raise RuntimeError("execution output target became a symbolic link")
-    if previous is not None and (previous.exists() or previous.is_symlink()):
-        raise RuntimeError("execution output backup path already exists")
-    moved_previous = False
-    try:
-        if previous is not None:
-            if target.is_symlink() or not target.is_dir():
-                raise RuntimeError("execution output target changed before promotion")
-            target.rename(previous)
-            moved_previous = True
-        staging.rename(target)
-    except Exception:
-        if moved_previous and not target.exists() and previous.exists():
-            previous.rename(target)
-        raise
+    if target.exists() or target.is_symlink():
+        raise RuntimeError("execution output target was created before promotion")
+    staging.rename(target)
     return {
         "schema": "synon.execution-pack-output-promotion.v1",
         "execution_pack_id": EXECUTION_PACK_ID,
         "generation_id": token,
         "current": str(target.relative_to(root)),
-        "previous": str(previous.relative_to(root)) if previous is not None else None,
+        "previous": None,
     }
 
 
@@ -1110,7 +1144,9 @@ def main() -> int:
         for source in (receptor_source, ligand_source, pocket_selection_source, pocket_validation_source)
         if source is not None
     )
-    validate_output_target(root, target_output, input_paths)
+    target_output = validate_output_target(
+        root, target_output, input_paths, Path(args.output_dir) == Path(DEFAULT_OUTPUT_DIR)
+    )
     run_token = uuid.uuid4().hex
     output = root / f".vina-pack-output-{run_token}"
     work = root / f".vina-pack-work-{run_token}"

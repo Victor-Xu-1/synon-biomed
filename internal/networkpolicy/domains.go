@@ -110,6 +110,13 @@ func NormalizePatterns(values []string, max int) ([]string, error) {
 		seen[domain] = struct{}{}
 		domains = append(domains, domain)
 	}
+	// The public wildcard already covers every syntactically valid public
+	// hostname. Retaining narrower patterns beside it changes durable policy
+	// digests without changing authority, which can needlessly restart a bound
+	// execution session when a newly observed source domain is appended.
+	if _, found := seen[PublicWildcard]; found {
+		domains = []string{PublicWildcard}
+	}
 	if max > 0 && len(domains) > max {
 		return nil, fmt.Errorf("too many domains (max %d)", max)
 	}

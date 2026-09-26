@@ -19,7 +19,7 @@ import (
 func sessionRunnerSavedArtifactsFromToolContent(content string) []map[string]any {
 	var result any
 	if strings.TrimSpace(content) == "" || json.Unmarshal([]byte(content), &result) != nil ||
-		agentruntime.IsNonExecutingPreflight(result) {
+		agentruntime.ToolResultDidNotExecute(result) {
 		return nil
 	}
 	return sessionRunnerSavedArtifactResults(result)

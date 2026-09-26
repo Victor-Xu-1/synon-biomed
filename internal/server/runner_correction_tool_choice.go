@@ -58,7 +58,7 @@ func sessionRunnerCorrectionStillRequiresAction(run *sessionRunnerChatRun, messa
 		edited, saved := runnerSourceRepairMutationState(messages)
 		return !edited || !saved
 	}
-	toolNames := runnerToolNamesByCallID(messages[boundary+1:])
+	calls := runnerToolCallsByCallID(messages[boundary+1:])
 	if runnerCorrectionRequiresSourceLocatorRepair(run.CorrectionReason, run.CorrectionDetail) {
 		if runnerUnsupportedSourceRemovalSavedSinceCorrection(messages) {
 			return false
@@ -76,17 +76,22 @@ func sessionRunnerCorrectionStillRequiresAction(run *sessionRunnerChatRun, messa
 		if message.Role != "tool" || strings.TrimSpace(message.Content) == "" {
 			continue
 		}
+		call := calls[message.ToolCallID]
+		if runnerCorrectionReadCall(call) {
+			continue
+		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil ||
+			agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		if agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
 			if runnerCorrectionIsAgentOwnedArtifactRepair(run.CorrectionReason, run.CorrectionDetail) &&
-				!strings.EqualFold(toolNames[message.ToolCallID], "save_artifacts") {
+				!strings.EqualFold(call.Name, "save_artifacts") {
 				continue
 			}
 			if runnerCorrectionRequiresValidatedPublicDownload(run.CorrectionReason, run.CorrectionDetail) &&
-				!strings.EqualFold(toolNames[message.ToolCallID], "download_public_scientific_file") {
+				!strings.EqualFold(call.Name, "download_public_scientific_file") {
 				continue
 			}
 			return false
@@ -123,11 +128,12 @@ func sessionRunnerCorrectionReadyForRevalidation(
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) ||
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) ||
+			agentruntime.ToolResultDidNotExecute(result) ||
 			agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded {
 			continue
 		}
-		if _, found := calls[message.ToolCallID]; found {
+		if call, found := calls[message.ToolCallID]; found && !runnerCorrectionReadCall(call) {
 			return true
 		}
 	}
@@ -141,8 +147,31 @@ func sessionRunnerImmediateArtifactRepairRequired(
 	if len(runnerPendingArtifactSaveEvidenceClasses(run, messages)) > 0 {
 		return true
 	}
+	if runnerLatestArtifactSaveRequiresCorrection(messages) {
+		return true
+	}
 	paths, _ := runnerPendingArtifactFileRepair(messages)
 	return len(paths) > 0
+}
+
+func runnerLatestArtifactSaveRequiresCorrection(messages []agentruntime.Message) bool {
+	calls := runnerToolCallsByCallID(messages)
+	for index := len(messages) - 1; index >= 0; index-- {
+		message := messages[index]
+		if message.Role != "tool" {
+			continue
+		}
+		call, found := calls[message.ToolCallID]
+		if !found || normalizeAgentToolName(call.Name) != "saveartifacts" {
+			continue
+		}
+		var result map[string]any
+		if json.Unmarshal([]byte(strings.TrimSpace(message.Content)), &result) != nil {
+			return false
+		}
+		return runnerArtifactSaveRequiresCorrection(result) && len(anySliceValue(result["errors"])) > 0
+	}
+	return false
 }
 
 func runnerRequiredMCPSourceClassForChoice(
@@ -179,7 +208,10 @@ func sessionRunnerCorrectionRequiredToolChoice(
 	run *sessionRunnerChatRun,
 	messages []agentruntime.Message,
 	tools []agentruntime.ToolSchema,
-) any {
+) (choice any) {
+	defer func() {
+		choice = runnerCorrectionFailedEditChoice(choice, messages, tools)
+	}()
 	if choice := runnerPendingAskUserRequiredSkillChoice(runnerPendingAskUserRequiredSkillNames(messages), tools); choice != nil {
 		return choice
 	}
@@ -410,7 +442,7 @@ func runnerArtifactSaveFileRepairPaths(result map[string]any) []string {
 	for _, raw := range anySliceValue(result["errors"]) {
 		failure := mapValue(raw)
 		switch strings.TrimSpace(stringValue(failure["code"])) {
-		case "invalid_delimited_artifact", "invalid_json_artifact", "unresolved_template_marker":
+		case "invalid_delimited_artifact", "invalid_json_artifact", "invalid_scientific_artifact", "unresolved_template_marker":
 			if path := strings.TrimSpace(stringValue(failure["path"])); path != "" {
 				paths = append(paths, path)
 			}
@@ -798,7 +830,7 @@ func runnerCorrectionHasReturnedSourceURL(messages []agentruntime.Message) bool 
 		}
 		var result any
 		if json.Unmarshal([]byte(message.Content), &result) != nil ||
-			agentruntime.IsNonExecutingPreflight(result) {
+			agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		if runnerCorrectionValueHasSourceURL(result, 0, new(int)) {
@@ -897,7 +929,7 @@ func runnerCorrectionPreviouslyExhaustedSourceTools(
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		normalized := normalizeAgentToolName(call.Name)
@@ -975,9 +1007,9 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 		}
 		normalized := normalizeAgentToolName(call.Name)
 		resultObject := runnerCorrectionResultObject(result)
-		nonExecutingPreflight := agentruntime.IsNonExecutingPreflight(result) ||
-			(resultObject != nil && agentruntime.IsNonExecutingPreflight(resultObject))
-		if normalized == "skill" && !nonExecutingPreflight &&
+		nonExecutingResult := agentruntime.ToolResultDidNotExecute(result) ||
+			(resultObject != nil && agentruntime.ToolResultDidNotExecute(resultObject))
+		if normalized == "skill" && !nonExecutingResult &&
 			agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
 			// A newly materialized Skill is a real contract revision. It may expose
 			// the exact connector schema that the previous REPL call lacked, so one
@@ -985,7 +1017,7 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 			delete(exhausted, normalizeAgentToolName("repl"))
 			continue
 		}
-		if normalized == "repl" && nonExecutingPreflight {
+		if normalized == "repl" && nonExecutingResult {
 			// Any pre-execution rejection proves that this transport cannot run
 			// under the current loaded contract. It is not an execution attempt or
 			// evidence, but selecting it again without a Skill revision creates the
@@ -998,7 +1030,7 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 			exhausted[normalized] = true
 			continue
 		}
-		if normalized == "repl" && !nonExecutingPreflight &&
+		if normalized == "repl" && !nonExecutingResult &&
 			agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded {
 			// The connector transport actually ran and ended without a usable
 			// record. Preserve that execution outcome, then move to another source
@@ -1007,7 +1039,7 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 			exhausted[normalized] = true
 			continue
 		}
-		if normalized == "repl" && !nonExecutingPreflight &&
+		if normalized == "repl" && !nonExecutingResult &&
 			agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
 			// REPL is exposed here solely as the transport for the connector record
 			// named by the current repair. A successful arbitrary calculation or
@@ -1027,7 +1059,7 @@ func runnerCorrectionExhaustedSourceToolsSinceBoundary(
 		if normalized == "websearch" && agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded {
 			exhausted[normalized] = true
 		}
-		if normalized == "webresearch" && !agentruntime.IsNonExecutingPreflight(result) {
+		if normalized == "webresearch" && !agentruntime.ToolResultDidNotExecute(result) {
 			// One bounded research call may inspect many ranked pages. Repeating
 			// the identical transport inside the same validator correction adds
 			// no authoritative state and can loop indefinitely when the remaining
@@ -1102,7 +1134,7 @@ func runnerSourceRepairMutationState(messages []agentruntime.Message) (edited, s
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) ||
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) ||
 			agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded {
 			continue
 		}
@@ -1142,7 +1174,7 @@ func runnerUnsupportedSourceRemovalSavedSinceCorrection(messages []agentruntime.
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
 		call, found := calls[message.ToolCallID]
@@ -1285,7 +1317,7 @@ func runnerCorrectionSourceAttemptExhausted(call agentruntime.ToolCall, result a
 		// Bounded research may externalize an unavailable or partial outcome. Once
 		// execution occurred, recovery should move to another route or remove the
 		// unsupported claim instead of replaying the same research call.
-		return !agentruntime.IsNonExecutingPreflight(result)
+		return !agentruntime.ToolResultDidNotExecute(result)
 	case "fetcharticlefulltext":
 		_, recorded := object["available"].(bool)
 		return recorded
@@ -1415,17 +1447,21 @@ func runnerSuccessfulToolNamesSinceCorrection(messages []agentruntime.Message) m
 		return map[string]bool{}
 	}
 	window := messages[boundary+1:]
-	names := runnerToolNamesByCallID(window)
+	calls := runnerToolCallsByCallID(window)
 	succeeded := make(map[string]bool)
 	for _, message := range window {
 		if message.Role != "tool" || strings.TrimSpace(message.Content) == "" {
 			continue
 		}
 		var result any
-		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.IsNonExecutingPreflight(result) {
+		if json.Unmarshal([]byte(message.Content), &result) != nil || agentruntime.ToolResultDidNotExecute(result) {
 			continue
 		}
-		toolName := strings.ToLower(strings.TrimSpace(names[message.ToolCallID]))
+		call := calls[message.ToolCallID]
+		if runnerCorrectionReadCall(call) {
+			continue
+		}
+		toolName := strings.ToLower(strings.TrimSpace(call.Name))
 		if agentruntime.ClassifyToolResult(result) == agentruntime.ToolResultSucceeded ||
 			runnerCorrectionToolResultProvidesDownloadHandoff(toolName, result) {
 			succeeded[toolName] = true
@@ -1528,11 +1564,6 @@ func runnerToolCallsByCallID(messages []agentruntime.Message) map[string]agentru
 		}
 	}
 	return calls
-}
-
-func sessionRunnerCorrectionReasonRequiresTool(reason, detail string) bool {
-	entries := runnerCorrectionEntriesForClassification(reason, detail)
-	return recoveredRunnerCorrectionRequiresTool(entries)
 }
 
 // sessionRunnerCorrectionToolSchemas keeps user clarification available for

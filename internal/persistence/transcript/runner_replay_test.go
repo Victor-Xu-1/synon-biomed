@@ -62,6 +62,63 @@ func TestRunnerReplaySeparatesSemanticMessagesFromCheckpointVolume(t *testing.T)
 	}
 }
 
+func TestRunnerReplayRequiredCheckpointRetainsClosureAndFences(t *testing.T) {
+	repo, db, stream, source, claim := newFrameBranchForkFixture(t)
+	ctx := context.Background()
+	installRunnerReplayToolBatchTables(t, db)
+	root, terminals := seedRunnerReplayToolBatch(t, repo, db, claim, "required-batch", "settled", 1)
+	appendRunnerReplayCheckpoint(t, repo, claim, "later-checkpoint", `{"status":"running"}`)
+	input := ListRunnerReplayInput{StreamUID: claim.StreamUID, OwnerID: claim.OwnerID,
+		MessageLimit: 1, CheckpointLimit: 1, RequiredCheckpointEventID: terminals[0].EventID}
+	events, err := repo.ListRunnerReplay(ctx, input)
+	if err != nil || !runnerReplayContainsEvent(events, root.EventID) || !runnerReplayContainsEvent(events, terminals[0].EventID) {
+		t.Fatalf("required receipt did not retain protocol closure: events=%d error=%v", len(events), err)
+	}
+	for _, test := range []struct {
+		name   string
+		change func(*ListRunnerReplayInput)
+		want   error
+	}{
+		{"foreign-owner", func(in *ListRunnerReplayInput) { in.OwnerID = "owner-b" }, ErrOwnerMismatch},
+		{"missing-event", func(in *ListRunnerReplayInput) { in.RequiredCheckpointEventID = 1 << 60 }, ErrCheckpointUnavailable},
+		{"closure-budget", func(in *ListRunnerReplayInput) { in.MaxExpandedEvents = 1 }, ErrProviderReplayWindowTooLarge},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			changed := input
+			test.change(&changed)
+			if _, err := repo.ListRunnerReplay(ctx, changed); !errors.Is(err, test.want) {
+				t.Fatalf("error=%v want=%v", err, test.want)
+			}
+		})
+	}
+	negative := input
+	negative.RequiredCheckpointEventID = -1
+	if _, err := repo.ListRunnerReplay(ctx, negative); err == nil {
+		t.Fatal("negative checkpoint accepted")
+	}
+	canceled, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := repo.ListRunnerReplay(canceled, input); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled lookup returned %v", err)
+	}
+	// A checkpoint outside the active projection must not be pinned by ID.
+	base, err := repo.GetBranchState(ctx, stream.UID, stream.OwnerID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.ForkFrameUserMessageBranch(ctx, ForkFrameUserMessageBranchInput{
+		StreamUID: stream.UID, OwnerID: stream.OwnerID,
+		SourceBranchID: base.ActiveBranchID, ExpectedActiveBranchID: base.ActiveBranchID, ExpectedGeneration: base.Generation,
+		ClientMutationID: "edit-required-receipt-task", SourceClientMessageID: source.ClientMessageID,
+		SourceMessageIndex: 0, ReplacementText: "use the corrected task input", Destinations: []string{"ws"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.ListRunnerReplay(ctx, input); !errors.Is(err, ErrCheckpointUnavailable) {
+		t.Fatalf("inactive checkpoint returned %v", err)
+	}
+}
+
 func TestRunnerReplayPreservesLoadedSkillBeyondCheckpointSeedWindow(t *testing.T) {
 	repo, db, _ := newTranscriptRepository(t)
 	claim := seedArtifactProjectionClaim(t, repo, db, "stream-replay-skill-continuity", "owner-a")

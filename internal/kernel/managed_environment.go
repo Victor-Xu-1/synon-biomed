@@ -2,12 +2,9 @@ package kernel
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -30,43 +27,6 @@ const (
 	maxManagedEnvironmentGenerations  = 4096
 	managedEnvironmentHealthTimeout   = 20 * time.Second
 )
-
-func validateManagedLockedRequirements(path, expectedSHA256 string) (string, string, error) {
-	path = strings.TrimSpace(path)
-	expectedSHA256 = strings.ToLower(strings.TrimPrefix(strings.TrimSpace(expectedSHA256), "sha256:"))
-	if path == "" && expectedSHA256 == "" {
-		return "", "", nil
-	}
-	if path == "" || len(expectedSHA256) != sha256.Size*2 {
-		return "", "", errors.New("locked requirements path and SHA-256 must be supplied together")
-	}
-	if _, err := hex.DecodeString(expectedSHA256); err != nil {
-		return "", "", errors.New("locked requirements SHA-256 is invalid")
-	}
-	path = filepath.Clean(path)
-	if !filepath.IsAbs(path) {
-		return "", "", errors.New("locked requirements path must be absolute")
-	}
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil || resolved != path {
-		return "", "", errors.New("locked requirements path must be canonical")
-	}
-	info, err := os.Lstat(resolved)
-	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 || info.Size() <= 0 || info.Size() > maxManagedLockedRequirementsBytes {
-		return "", "", errors.New("locked requirements file is unavailable or exceeds the size limit")
-	}
-	file, err := os.Open(resolved)
-	if err != nil {
-		return "", "", errors.New("locked requirements file is unavailable")
-	}
-	defer file.Close()
-	digest := sha256.New()
-	written, err := io.Copy(digest, io.LimitReader(file, maxManagedLockedRequirementsBytes+1))
-	if err != nil || written != info.Size() || hex.EncodeToString(digest.Sum(nil)) != expectedSHA256 {
-		return "", "", errors.New("locked requirements file failed checksum validation")
-	}
-	return resolved, expectedSHA256, nil
-}
 
 var (
 	// Conda package names may begin with an underscore (for example,
@@ -92,6 +52,11 @@ type ManagedEnvironment struct {
 }
 
 type ManagedEnvironmentQuery struct {
+	// Name narrows inventory to one exact environment before any marker or
+	// health work. Callers that already have a model-selected environment must
+	// not scan the whole managed-environment catalog and then lose it to a
+	// short preflight deadline.
+	Name            string
 	Language        string
 	Dependencies    []string
 	IncludePackages bool
@@ -162,21 +127,24 @@ type DeleteManagedEnvironmentInput struct {
 }
 
 type managedEnvironmentMarker struct {
-	ValidationRevision int      `json:"validationRevision,omitempty"`
-	SchemaVersion      int      `json:"schemaVersion"`
-	Name               string   `json:"name"`
-	Language           string   `json:"language"`
-	Generation         string   `json:"generation"`
-	Packages           []string `json:"packages"`
-	Channels           []string `json:"channels,omitempty"`
-	CreatedAt          string   `json:"createdAt"`
-	Operation          string   `json:"operation"`
-	Kind               string   `json:"kind,omitempty"`
-	SourcePath         string   `json:"sourcePath,omitempty"`
-	RuntimePath        string   `json:"runtimePath,omitempty"`
-	OperationKey       string   `json:"operationKey,omitempty"`
-	SpecDigest         string   `json:"specDigest,omitempty"`
-	ImportNames        []string `json:"importNames,omitempty"`
+	ValidationRevision  int                     `json:"validationRevision,omitempty"`
+	SchemaVersion       int                     `json:"schemaVersion"`
+	Name                string                  `json:"name"`
+	Language            string                  `json:"language"`
+	Generation          string                  `json:"generation"`
+	Packages            []string                `json:"packages"`
+	Channels            []string                `json:"channels,omitempty"`
+	CreatedAt           string                  `json:"createdAt"`
+	Operation           string                  `json:"operation"`
+	Kind                string                  `json:"kind,omitempty"`
+	SourcePath          string                  `json:"sourcePath,omitempty"`
+	RuntimePath         string                  `json:"runtimePath,omitempty"`
+	OperationKey        string                  `json:"operationKey,omitempty"`
+	SpecDigest          string                  `json:"specDigest,omitempty"`
+	ImportNames         []string                `json:"importNames,omitempty"`
+	PipReplay           []managedPipReplayPhase `json:"pipReplay,omitempty"`
+	PipReplayRevision   int                     `json:"pipReplayRevision,omitempty"`
+	PipReplayBaseDigest string                  `json:"pipReplayBaseDigest,omitempty"`
 }
 
 type micromambaPackage struct {
@@ -201,6 +169,10 @@ func (m *Manager) ListManagedEnvironments(ctx context.Context, query ManagedEnvi
 	if err != nil {
 		return nil, err
 	}
+	name := strings.TrimSpace(query.Name)
+	if name != "" && !ValidEnvironmentName(name) {
+		return nil, errors.New("managed environment query name is invalid")
+	}
 	root, err := m.managedEnvironmentRoot()
 	if err != nil {
 		return nil, err
@@ -215,6 +187,9 @@ func (m *Manager) ListManagedEnvironments(ctx context.Context, query ManagedEnvi
 			return nil, err
 		}
 		if !ValidEnvironmentName(entry.Name()) || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		if name != "" && entry.Name() != name {
 			continue
 		}
 		// Dependency filtering needs the immutable marker's package inventory

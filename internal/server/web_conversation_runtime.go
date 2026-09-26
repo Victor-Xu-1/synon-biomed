@@ -134,6 +134,7 @@ func (s *Server) webConversationRuntimeSnapshot(frame workspace.CompatibilityFra
 	// is available: an active logical task must remain visibly running rather
 	// than being downgraded to a stale waiting state by that old cache.
 	modelConfigurationWait := false
+	recoveryConditionWait := false
 	if runtimeProjection, _, projectionErr := s.compatibilityFrameRuntimeProjection(frame.ID); projectionErr == nil {
 		if boolValue(runtimeProjection["runtime_active"], false) || boolValue(runtimeProjection["runtime_task_active"], false) {
 			pending = 0
@@ -141,14 +142,19 @@ func (s *Server) webConversationRuntimeSnapshot(frame workspace.CompatibilityFra
 		} else if boolValue(runtimeProjection["runtime_paused"], false) &&
 			strings.EqualFold(strings.TrimSpace(stringValue(runtimeProjection["runtime_interruption_reason"])), sessionRunnerModelProviderUnavailableReasonCode) {
 			modelConfigurationWait = true
+		} else if boolValue(runtimeProjection["runtime_paused"], false) {
+			recoveryConditionWait = true
 		}
 	}
 	runtime := webConversationRuntimeWithActions(frame, pending, planApproval)
-	if modelConfigurationWait {
+	if modelConfigurationWait || recoveryConditionWait {
 		// Missing model configuration is a recoverable user-owned input boundary,
 		// not a failed task and not background work. Keep the same logical task
 		// sendable so selecting a provider or sending Continue resumes it.
 		runtime["state"] = "waiting_input"
+		if recoveryConditionWait {
+			runtime["state"] = "paused"
+		}
 		runtime["can_send_message"] = true
 		runtime["has_task"] = true
 		runtime["task_status"] = "pending"

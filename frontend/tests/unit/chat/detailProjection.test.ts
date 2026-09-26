@@ -74,11 +74,10 @@ describe('tool detail projection', () => {
 
     expect(detail.resultRows).toEqual([
       { label: '当前阶段', value: '下载文件已就绪' },
-      { label: '下载进度', value: '100%' },
       { label: '已下载', value: '485 KB / 485 KB' },
       { label: '传输速度', value: '420 KB/s' },
       { label: '剩余', value: '0 B' },
-      { label: '本步骤已用时', value: '0:01' },
+      { label: '已用时', value: '0:01' },
       { label: '文件名', value: '4OGI.cif' },
     ]);
   });
@@ -126,16 +125,13 @@ describe('tool detail projection', () => {
         },
       }),
       'zh-CN',
-      '25%'
+      '进行中'
     );
 
     expect(detail.resultRows).toEqual([
       { label: '当前阶段', value: '解压依赖包' },
-      { label: '步骤完成比例', value: '25%' },
-      { label: '阶段进度', value: '72%' },
       { label: '传输速度', value: '1.5 MB/s' },
-      { label: '配置步骤', value: '2 / 8' },
-      { label: '本步骤已用时', value: '2:05' },
+      { label: '已用时', value: '2:05' },
     ]);
   });
 
@@ -156,16 +152,15 @@ describe('tool detail projection', () => {
         },
       }),
       'zh-CN',
-      '25%'
+      '进行中'
     );
 
     expect(detail.resultRows).toEqual([
       { label: '当前阶段', value: '下载文件' },
-      { label: '下载进度', value: '25%' },
       { label: '已下载', value: '25 MB / 100 MB' },
       { label: '传输速度', value: '500 KB/s' },
       { label: '剩余', value: '75 MB' },
-      { label: '本步骤已用时', value: '1:00' },
+      { label: '已用时', value: '1:00' },
     ]);
   });
 

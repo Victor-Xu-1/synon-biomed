@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -73,7 +74,7 @@ type Backend struct {
 }
 
 type backendSessionLock struct {
-	mu         sync.Mutex
+	gate       chan struct{}
 	references int
 }
 
@@ -96,12 +97,24 @@ func (b *Backend) EnsureSession(ctx context.Context, spec kernelruntime.SessionS
 		}
 		spec.KernelID = stableID
 	}
-	unlockSession := b.lockSession(spec.KernelID)
+	unlockSession, err := b.lockSession(ctx, spec.KernelID)
+	if err != nil {
+		return kernelruntime.BackendSessionRef{}, err
+	}
 	defer unlockSession()
 	durableSpec := durableSessionSpec(spec)
 	if existing, found, err := b.Store.FindKernelExecutionBackendForSession(ctx, durableSpec); err != nil {
 		return kernelruntime.BackendSessionRef{}, err
 	} else if found {
+		if existing.State == workspace.KernelExecutionBackendStateDraining {
+			var waitErr error
+			existing, _, waitErr = waitForPredecessorKernelAuthorityRelease(ctx, existing, func(refreshCtx context.Context) (workspace.KernelExecutionBackend, bool, error) {
+				return b.Store.GetKernelExecutionBackend(refreshCtx, existing.BackendID)
+			})
+			if waitErr != nil {
+				return kernelruntime.BackendSessionRef{}, waitErr
+			}
+		}
 		if existing.State == workspace.KernelExecutionBackendStateReady {
 			alive, liveErr := kernelruntime.ProcessIdentityAlive(existing.WorkerPID, existing.WorkerPIDStartTicks)
 			if liveErr != nil {
@@ -245,16 +258,7 @@ func (b *Backend) EnsureSession(ctx context.Context, spec kernelruntime.SessionS
 	if predecessor, found, findErr := b.Store.FindLatestKernelExecutionBackendForIdentity(ctx, durableSpec); findErr != nil {
 		return kernelruntime.BackendSessionRef{}, findErr
 	} else if found {
-		predecessor, dead, waitErr := waitForPredecessorKernelAuthorityRelease(
-			ctx, predecessor,
-			func(refreshCtx context.Context) (workspace.KernelExecutionBackend, bool, error) {
-				current, found, err := b.Store.FindLatestKernelExecutionBackendForIdentity(refreshCtx, durableSpec)
-				if err != nil || !found {
-					return current, found, err
-				}
-				return b.refreshStartingPredecessor(refreshCtx, current)
-			},
-		)
+		predecessor, dead, waitErr := b.retirePredecessorForReplacement(ctx, predecessor, durableSpec)
 		if waitErr != nil {
 			return kernelruntime.BackendSessionRef{}, waitErr
 		}
@@ -293,35 +297,131 @@ func (b *Backend) EnsureSession(ctx context.Context, spec kernelruntime.SessionS
 	return backendSessionRef(ready), nil
 }
 
+// retirePredecessorForReplacement serializes a session-spec handoff with the
+// durable execution admission boundary. A ready predecessor is drained only
+// after the store proves that no execution is still accepted on it. If work is
+// active, the caller waits for its durable terminal receipt and retries the
+// same transition; it never closes a worker with an in-flight execution.
+func (b *Backend) retirePredecessorForReplacement(
+	ctx context.Context,
+	predecessor workspace.KernelExecutionBackend,
+	spec workspace.KernelExecutionSessionSpecV1,
+) (workspace.KernelExecutionBackend, bool, error) {
+	for {
+		latest, found, err := b.Store.FindLatestKernelExecutionBackendForIdentity(ctx, spec)
+		if err != nil {
+			return predecessor, false, err
+		}
+		if !found {
+			return predecessor, false, workspace.ErrKernelExecutionBackendStale
+		}
+		predecessor = latest
+		if predecessor.State == workspace.KernelExecutionBackendStateStopped ||
+			predecessor.State == workspace.KernelExecutionBackendStateEvidenceLost {
+			return waitForPredecessorKernelAuthorityRelease(ctx, predecessor, func(refreshCtx context.Context) (workspace.KernelExecutionBackend, bool, error) {
+				return b.Store.GetKernelExecutionBackend(refreshCtx, predecessor.BackendID)
+			})
+		} else if predecessor.State == workspace.KernelExecutionBackendStateStarting {
+			if ready, waitErr := b.waitForReady(ctx, predecessor.BackendID, predecessor.BackendGeneration, b.StartTimeout); waitErr == nil {
+				predecessor = ready
+				continue
+			} else if err := ctx.Err(); err != nil {
+				return predecessor, false, err
+			}
+			refreshed, found, readErr := b.Store.GetKernelExecutionBackend(ctx, predecessor.BackendID)
+			if readErr != nil {
+				return predecessor, false, readErr
+			}
+			if !found || refreshed.BackendGeneration != predecessor.BackendGeneration {
+				return predecessor, false, workspace.ErrKernelExecutionBackendStale
+			}
+			predecessor = refreshed
+			if predecessor.State == workspace.KernelExecutionBackendStateStarting {
+				if err := b.settleExitedStartup(ctx, predecessor); err != nil {
+					return predecessor, false, err
+				}
+				continue
+			}
+		} else if predecessor.State == workspace.KernelExecutionBackendStateReady ||
+			predecessor.State == workspace.KernelExecutionBackendStateDraining {
+			transitioned, idle, err := b.Store.BeginKernelExecutionBackendDrainIfIdle(ctx,
+				workspace.BeginKernelExecutionBackendDrainIfIdleInput{
+					BackendID: predecessor.BackendID, BackendGeneration: predecessor.BackendGeneration,
+					ExecutorInstanceID: predecessor.ExecutorInstanceID,
+				})
+			if err != nil {
+				return predecessor, false, err
+			}
+			predecessor = transitioned
+			if idle {
+				ref := backendSessionRef(predecessor)
+				lease, err := b.AcquireSessionControl(ctx, ref, 2*time.Minute)
+				if err != nil {
+					return predecessor, false, err
+				}
+				if err := b.CloseSession(ctx, ref, lease); err != nil &&
+					!errors.Is(err, workspace.ErrKernelExecutionBackendStale) {
+					return predecessor, false, err
+				}
+				continue
+			}
+		}
+		dead, err := predecessorBackendDefinitelyDead(predecessor, time.Now().UTC())
+		if err != nil || dead {
+			return predecessor, dead, err
+		}
+		timer := time.NewTimer(defaultBackendPollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return predecessor, false, ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
 // lockSession serializes creation and replacement of one durable kernel
 // identity without coupling unrelated Frames or environments. EnsureSession
 // may intentionally wait for a live predecessor to drain; a process-wide lock
 // around that wait would make one slow scientific environment stall every
 // other task and would also prevent an approved operation from recovering.
-func (b *Backend) lockSession(kernelID string) func() {
+func (b *Backend) lockSession(ctx context.Context, kernelID string) (func(), error) {
 	kernelID = strings.TrimSpace(kernelID)
+	if ctx == nil || kernelID == "" {
+		return nil, errors.New("detached kernel session lock requires context and identity")
+	}
 	b.sessionLocksMu.Lock()
 	if b.sessionLocks == nil {
 		b.sessionLocks = make(map[string]*backendSessionLock)
 	}
 	lock := b.sessionLocks[kernelID]
 	if lock == nil {
-		lock = &backendSessionLock{}
+		lock = &backendSessionLock{gate: make(chan struct{}, 1)}
+		lock.gate <- struct{}{}
 		b.sessionLocks[kernelID] = lock
 	}
 	lock.references++
 	b.sessionLocksMu.Unlock()
 
-	lock.mu.Lock()
-	return func() {
-		lock.mu.Unlock()
-		b.sessionLocksMu.Lock()
-		lock.references--
-		if lock.references == 0 && b.sessionLocks[kernelID] == lock {
-			delete(b.sessionLocks, kernelID)
-		}
-		b.sessionLocksMu.Unlock()
+	select {
+	case <-ctx.Done():
+		b.releaseSessionLockReference(kernelID, lock)
+		return nil, ctx.Err()
+	case <-lock.gate:
 	}
+	return func() {
+		lock.gate <- struct{}{}
+		b.releaseSessionLockReference(kernelID, lock)
+	}, nil
+}
+
+func (b *Backend) releaseSessionLockReference(kernelID string, lock *backendSessionLock) {
+	b.sessionLocksMu.Lock()
+	lock.references--
+	if lock.references == 0 && b.sessionLocks[kernelID] == lock {
+		delete(b.sessionLocks, kernelID)
+	}
+	b.sessionLocksMu.Unlock()
 }
 
 // waitForPredecessorKernelAuthorityRelease follows the durable predecessor
@@ -335,8 +435,23 @@ func waitForPredecessorKernelAuthorityRelease(
 	refresh func(context.Context) (workspace.KernelExecutionBackend, bool, error),
 ) (workspace.KernelExecutionBackend, bool, error) {
 	for {
-		if predecessor.State == workspace.KernelExecutionBackendStateStopped ||
-			predecessor.State == workspace.KernelExecutionBackendStateEvidenceLost {
+		if predecessor.State == workspace.KernelExecutionBackendStateStopped {
+			workerAlive := false
+			if predecessor.WorkerPID > 0 {
+				var err error
+				workerAlive, err = kernelruntime.ProcessIdentityAlive(predecessor.WorkerPID, predecessor.WorkerPIDStartTicks)
+				if err != nil {
+					return predecessor, false, err
+				}
+			}
+			// A stopped backend is written only after its worker has been closed;
+			// the executor PID may still be returning from its final durable write
+			// (and is the service PID in in-process tests). Do not make a successor
+			// wait for that non-authoritative tail when the worker is gone.
+			if !workerAlive {
+				return predecessor, false, nil
+			}
+		} else if predecessor.State == workspace.KernelExecutionBackendStateEvidenceLost {
 			alive := false
 			if predecessor.WorkerPID > 0 {
 				var err error
@@ -636,6 +751,59 @@ func (b *Backend) CloseSession(
 		return errors.Join(err, waitErr)
 	}
 	return waitErr
+}
+
+// TerminateOwner is the forced revocation path for host-grant changes. It
+// validates persisted PID start ticks before signalling either the worker
+// process group or the detached controller, then records evidence_lost so the
+// durable execution recovery path can take over without reusing old authority.
+func (b *Backend) TerminateOwner(ctx context.Context, ownerID string) error {
+	ownerID = strings.TrimSpace(ownerID)
+	if b == nil || b.Store == nil || ctx == nil || ownerID == "" {
+		return errors.New("detached owner termination authority is unavailable")
+	}
+	backends, err := b.Store.ListKernelExecutionBackendsForOwner(ctx, ownerID)
+	if err != nil {
+		return err
+	}
+	var errs []error
+	for _, backend := range backends {
+		if err := ctx.Err(); err != nil {
+			errs = append(errs, err)
+			break
+		}
+		if err := terminateDetachedProcess(backend.WorkerPID, backend.WorkerPIDStartTicks, backend.WorkerPGID); err != nil {
+			errs = append(errs, fmt.Errorf("terminate detached worker %s: %w", backend.BackendID, err))
+		}
+		if err := terminateDetachedProcess(backend.ExecutorPID, backend.ExecutorPIDStartTicks, 0); err != nil {
+			errs = append(errs, fmt.Errorf("terminate detached executor %s: %w", backend.BackendID, err))
+		}
+		if _, finishErr := b.Store.FinishKernelExecutionBackend(ctx, workspace.FinishKernelExecutionBackendInput{
+			BackendID: backend.BackendID, BackendGeneration: backend.BackendGeneration,
+			ExecutorInstanceID: backend.ExecutorInstanceID, EvidenceLost: true,
+		}); finishErr != nil && !errors.Is(finishErr, workspace.ErrKernelExecutionBackendStale) {
+			errs = append(errs, fmt.Errorf("record detached revocation %s: %w", backend.BackendID, finishErr))
+		}
+	}
+	return errors.Join(errs...)
+}
+
+func terminateDetachedProcess(pid, startTicks, processGroup int64) error {
+	if pid <= 0 || startTicks <= 0 {
+		return nil
+	}
+	alive, err := kernelruntime.ProcessIdentityAlive(pid, startTicks)
+	if err != nil || !alive {
+		return err
+	}
+	target := pid
+	if processGroup > 0 {
+		target = -processGroup
+	}
+	if err := syscall.Kill(int(target), syscall.SIGKILL); err != nil && !errors.Is(err, syscall.ESRCH) {
+		return err
+	}
+	return nil
 }
 
 // waitForStopped turns a successful close acknowledgement into proof that the

@@ -39,6 +39,10 @@ func applyRecoveredRunnerCorrectionToTaskContract(
 		return contract
 	}
 	contract.CorrectionReason = strings.TrimSpace(correction.ReasonCode)
+	if correction.Condition != nil {
+		contract.CorrectionConditionID = correction.Condition.ContentID()
+		contract.CorrectionFingerprint = correction.Condition.Fingerprint()
+	}
 	detail := truncateTaskContractText(strings.TrimSpace(correction.Detail), 1024)
 	if detail != "" {
 		contract.AcceptanceChecks = uniqueTaskContractChecks(append(contract.AcceptanceChecks,

@@ -176,7 +176,11 @@ func (m *Manager) RegisteredEnvironmentPaths(name string) (sourcePath, runtimePa
 
 func (m *Manager) inspectManagedEnvironmentPackages(ctx context.Context, prefix string) ([]string, error) {
 	command := newWorkerProcessCommand(ctx, m.config.Micromamba, "--no-rc", "list", "-p", prefix, "--json")
-	command.Env = m.managedEnvironmentInstallerEnv()
+	environment, err := m.managedEnvironmentInstallerEnv()
+	if err != nil {
+		return nil, err
+	}
+	command.Env = environment
 	stdout := newTailBuffer(maxManagedEnvironmentListBytes + 1)
 	stderr := newTailBuffer(maxDiagnosticBytes)
 	command.Stdout, command.Stderr = stdout, stderr

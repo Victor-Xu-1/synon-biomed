@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -118,6 +119,33 @@ func TestScientificCapabilitiesResumeOnlyFromCompletedSkillCheckpoint(t *testing
 	keys := completedSkillInvocationKeysFromRunnerEntries(entries)
 	if len(keys) != 1 || keys[0] != runtimeSkillInvocationKey("real-docking", "", "") {
 		t.Fatalf("resumed exact Skill invocation keys=%#v", keys)
+	}
+}
+
+func TestScientificCapabilitiesResumeFromExecutedSkillIdentity(t *testing.T) {
+	entries := []journal.Entry{{Message: journal.Message{
+		"type": "runner_checkpoint", "status": "completed", "toolPhase": "completed", "toolName": "skill",
+		"toolInput":         map[string]any{"skill": "chemistry"},
+		"executedToolInput": map[string]any{"skill": "p2rank-pocket-detection"},
+	}}}
+
+	if names := completedSkillNamesFromRunnerEntries(entries); !reflect.DeepEqual(names, []string{"p2rank-pocket-detection"}) {
+		t.Fatalf("recovered executed Skill identity=%#v", names)
+	}
+	keys := completedSkillInvocationKeysFromRunnerEntries(entries)
+	if !reflect.DeepEqual(keys, []string{runtimeSkillInvocationKey("p2rank-pocket-detection", "", "")}) {
+		t.Fatalf("recovered executed Skill invocation=%#v", keys)
+	}
+}
+
+func TestEffectiveSelectedSkillsPreferCompletedExecutionIdentity(t *testing.T) {
+	run := &sessionRunnerChatRun{}
+	if got := sessionRunnerEffectiveSelectedSkillNames([]string{"chemistry"}, run); !reflect.DeepEqual(got, []string{"chemistry"}) {
+		t.Fatalf("unexecuted request=%#v", got)
+	}
+	run.addExecutedSkillNames("p2rank-pocket-detection")
+	if got := sessionRunnerEffectiveSelectedSkillNames([]string{"chemistry"}, run); !reflect.DeepEqual(got, []string{"p2rank-pocket-detection"}) {
+		t.Fatalf("completed execution did not replace stale request=%#v", got)
 	}
 }
 

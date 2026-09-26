@@ -11,6 +11,10 @@ import os
 import sys
 import threading
 import time
+import base64 as _host_base64
+import hashlib as _host_hashlib
+import tempfile as _host_tempfile
+import shutil as _host_shutil
 
 namespace = {}
 _protocol_stdin = getattr(sys, "_operon_protocol_stdin", None)
@@ -30,6 +34,11 @@ _host_json_loads = json.loads
 _host_uuid4 = _host_uuid.uuid4
 _host_select_read = _host_select.select
 _host_monotonic = time.monotonic
+_host_temporary_file = _host_tempfile.TemporaryFile
+_host_disk_usage = _host_shutil.disk_usage
+_host_sha256 = _host_hashlib.sha256
+_host_base64_decode = _host_base64.b64decode
+_host_json_load = json.load
 _host_rpc_lock = threading.Lock()
 _active_host_cell = {"id": None}
 _host_mcp_catalog_cache = {"cell_id": None, "value": None, "methods": {}}
@@ -59,6 +68,53 @@ def _host_read_frame(source, deadline, method):
     if not isinstance(line, str) or not line:
         raise RuntimeError(f"{method}: host transport closed while waiting")
     return line
+
+def _host_receive_result_stream(source, start, call_id, cell_id, method):
+    size = start.get("size_bytes")
+    digest = start.get("sha256")
+    if (type(size) is not int or size <= 0 or not isinstance(digest, str)
+            or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest)):
+        raise RuntimeError(f"{method}: invalid streamed host result manifest")
+    offset = 0
+    hasher = _host_sha256()
+    # Anonymous temporary storage is always closed on malformed input, EOF,
+    # cancellation or decoding failure. No path is accepted from the peer.
+    directory = os.getcwd()
+    with _host_temporary_file(mode="w+b", dir=directory) as spool:
+        while True:
+            if _active_host_cell["id"] != cell_id:
+                raise RuntimeError(f"{method}: kernel cell is no longer active")
+            frame = _host_json_loads(_host_read_frame(source, None, method))
+            if (not isinstance(frame, dict) or frame.get("id") != call_id
+                    or frame.get("cell_id") != cell_id):
+                raise RuntimeError(f"{method}: mismatched streamed host result identity")
+            if frame.get("type") == "host_result_end":
+                if (offset != size or frame.get("size_bytes") != size
+                        or frame.get("sha256") != digest or hasher.hexdigest() != digest):
+                    raise RuntimeError(f"{method}: incomplete or corrupt streamed host result")
+                break
+            if (frame.get("type") != "host_result_chunk" or type(frame.get("offset")) is not int
+                    or frame["offset"] != offset or not isinstance(frame.get("data"), str)
+                    or len(frame["data"]) > 4 * ((64 * 1024 + 2) // 3)):
+                raise RuntimeError(f"{method}: invalid or out-of-order host result chunk")
+            chunk = _host_base64_decode(frame["data"], validate=True)
+            if not chunk or len(chunk) > 64 * 1024 or offset + len(chunk) > size:
+                raise RuntimeError(f"{method}: invalid host result chunk size")
+            if _host_disk_usage(directory).free < (1 << 30) + len(chunk):
+                raise RuntimeError(f"{method}: insufficient local disk space for host result")
+            if spool.write(chunk) != len(chunk):
+                raise RuntimeError(f"{method}: short host result spool write")
+            hasher.update(chunk)
+            offset += len(chunk)
+        spool.seek(0)
+        # Transport buffering is bounded; materializing the caller's original
+        # JSON value necessarily allocates memory proportional to that value.
+        result = _host_json_load(spool)
+    if (not isinstance(result, dict) or result.get("type") != "host_result"
+            or result.get("id") != call_id or result.get("cell_id") != cell_id
+            or type(result.get("ok")) is not bool):
+        raise RuntimeError(f"{method}: invalid streamed host result envelope")
+    return result
 
 def _host_rpc(method, args, kwargs):
     cell_id = _active_host_cell["id"]
@@ -108,6 +164,9 @@ def _host_rpc(method, args, kwargs):
                 response = _host_json_loads(line)
             except Exception:
                 response = None
+            if (isinstance(response, dict) and response.get("type") == "host_result_start"
+                    and response.get("id") == call_id and response.get("cell_id") == cell_id):
+                response = _host_receive_result_stream(source, response, call_id, cell_id, method)
             if (
                 isinstance(response, dict)
                 and response.get("type") == "host_result"

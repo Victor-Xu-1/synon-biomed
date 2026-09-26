@@ -67,9 +67,14 @@ func answeredAskUserContinuationsFromRunnerEntries(entries []eventjournal.Entry)
 }
 
 func selectedAskUserEvidenceResolversFromRunnerEntries(entries []eventjournal.Entry) []sciencecapability.ExecutionEvidenceResolver {
-	selected := map[string]sciencecapability.ExecutionEvidenceResolver{}
+	type groupSelection struct {
+		eventID int64
+		choices map[string]sciencecapability.ExecutionEvidenceResolver
+	}
+	selected := map[string]groupSelection{}
+	_, scopeEventID := askUserPrimarySelectionScopeFromRunnerEntries(entries)
 	for _, continuation := range answeredAskUserContinuationsFromRunnerEntries(entries) {
-		if continuation.status != "answered" {
+		if continuation.status != "answered" || continuation.eventID < scopeEventID {
 			continue
 		}
 		for _, resolver := range continuation.evidenceResolvers {
@@ -77,9 +82,22 @@ func selectedAskUserEvidenceResolversFromRunnerEntries(entries []eventjournal.En
 			skill := strings.TrimSpace(resolver.Skill)
 			implementation := strings.TrimSpace(resolver.Implementation)
 			if group != "" && skill != "" && implementation != "" {
-				selected[strings.ToLower(group)] = sciencecapability.ExecutionEvidenceResolver{
+				groupKey := strings.ToLower(group)
+				current, found := selected[groupKey]
+				if found && continuation.eventID < current.eventID {
+					continue
+				}
+				if !found || continuation.eventID > current.eventID {
+					current = groupSelection{eventID: continuation.eventID, choices: map[string]sciencecapability.ExecutionEvidenceResolver{}}
+				}
+				// A later answer replaces the old group choice. Simultaneous
+				// choices must all survive for conflict validation, rather than
+				// letting map iteration pick a scientific route arbitrarily.
+				key := group + "\x00" + skill + "\x00" + implementation
+				current.choices[key] = sciencecapability.ExecutionEvidenceResolver{
 					EvidenceGroup: group, Skill: skill, Implementation: implementation,
 				}
+				selected[groupKey] = current
 			}
 		}
 	}
@@ -90,19 +108,30 @@ func selectedAskUserEvidenceResolversFromRunnerEntries(entries []eventjournal.En
 	sort.Strings(groups)
 	result := make([]sciencecapability.ExecutionEvidenceResolver, 0, len(groups))
 	for _, group := range groups {
-		result = append(result, selected[group])
+		choices := selected[group].choices
+		keys := make([]string, 0, len(choices))
+		for key := range choices {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			result = append(result, choices[key])
+		}
 	}
 	return result
 }
 
-// selectedAskUserImplementationsFromRunnerEntries recovers the latest exact
-// user-owned implementation identity from durable input-response messages.
-// Input-response messages contain the cumulative set of resolved AskUser calls,
-// so simply unioning every implementation makes retired choices remain active
-// forever. Track each AskUser call identity once and replace the active set only
-// when a new answered call appears. Historical answers remain in the journal as
-// audit evidence but no longer authorize a later environment mutation.
 func selectedAskUserImplementationsFromRunnerEntries(entries []eventjournal.Entry) []string {
+	selected, _ := askUserPrimarySelectionScopeFromRunnerEntries(entries)
+	return selected
+}
+
+// askUserPrimarySelectionScopeFromRunnerEntries is the shared authority for
+// primary selection and its dependent resolver scope. Cumulative answer replay
+// is deduplicated by call identity; an actual primary change retires prior
+// auxiliary selections, while re-confirming the same primary preserves them.
+// Historical events are never removed or rewritten by this active projection.
+func askUserPrimarySelectionScopeFromRunnerEntries(entries []eventjournal.Entry) ([]string, int64) {
 	continuations := answeredAskUserContinuationsFromRunnerEntries(entries)
 	resolverImplementations := make([]string, 0)
 	for _, continuation := range continuations {
@@ -113,15 +142,7 @@ func selectedAskUserImplementationsFromRunnerEntries(entries []eventjournal.Entr
 		}
 	}
 	resolverImplementations = uniqueSortedFolded(resolverImplementations)
-	selected := []string(nil)
-	currentEventID := int64(-1)
-	answeredInEvent := make([]string, 0, 1)
-	flush := func() {
-		if len(answeredInEvent) > 0 {
-			selected = uniqueSortedFolded(answeredInEvent)
-		}
-		answeredInEvent = nil
-	}
+	choices := map[int64][]string{}
 	for _, continuation := range continuations {
 		implementations := make([]string, 0, len(continuation.implementations))
 		for _, implementation := range continuation.implementations {
@@ -146,47 +167,56 @@ func selectedAskUserImplementationsFromRunnerEntries(entries []eventjournal.Entr
 		if len(implementations) == 0 {
 			continue
 		}
-		if currentEventID != -1 && continuation.eventID != currentEventID {
-			flush()
+		choices[continuation.eventID] = append(choices[continuation.eventID], implementations...)
+	}
+	for _, entry := range entries {
+		if registered := registrySelectedImplementationsFromRunnerEntry(entry); len(registered) > 0 {
+			choices[entry.EventID] = registered
 		}
-		currentEventID = continuation.eventID
-		answeredInEvent = append(answeredInEvent, implementations...)
 	}
-	flush()
-	if eventID, registered, found := registrySelectedImplementationsFromRunnerEntries(entries); found && eventID >= currentEventID {
-		selected = registered
+	eventIDs := make([]int64, 0, len(choices))
+	for eventID := range choices {
+		eventIDs = append(eventIDs, eventID)
 	}
-	return selected
+	sort.Slice(eventIDs, func(left, right int) bool { return eventIDs[left] < eventIDs[right] })
+	var selected []string
+	scopeEventID := int64(-1)
+	for _, eventID := range eventIDs {
+		choice := uniqueSortedFolded(choices[eventID])
+		same := len(choice) == len(selected)
+		if same {
+			for index := range choice {
+				same = same && askUserImplementationIdentityMatches(choice[index], selected[index])
+			}
+		}
+		if !same {
+			scopeEventID = eventID
+		}
+		selected = choice
+	}
+	return selected, scopeEventID
 }
 
-func registrySelectedImplementationsFromRunnerEntries(entries []eventjournal.Entry) (int64, []string, bool) {
-	latestEventID := int64(-1)
-	var selected []string
-	for _, entry := range entries {
-		message := entry.Message
-		if strings.TrimSpace(stringValue(message["type"])) != "runner_checkpoint" ||
-			strings.TrimSpace(stringValue(message["status"])) != "completed" ||
-			strings.TrimSpace(stringValue(message["toolPhase"])) != "completed" {
-			continue
-		}
-		toolResult, ok := softwareRuntimeObjectReceipt(message["toolResult"])
-		if !ok || agentruntime.ClassifyToolResult(toolResult) != agentruntime.ToolResultSucceeded {
-			continue
-		}
-		receipt, ok := softwareRuntimeObjectReceipt(toolResult["implementation_selection"])
-		if !ok || stringValue(receipt["provenance"]) != "registry-unique-local-pack" {
-			continue
-		}
-		implementations := uniqueSortedFolded(stringArrayValue(receipt["implementations"]))
-		if len(implementations) != 1 || strings.TrimSpace(implementations[0]) == "" {
-			continue
-		}
-		if entry.EventID >= latestEventID {
-			latestEventID = entry.EventID
-			selected = implementations
-		}
+func registrySelectedImplementationsFromRunnerEntry(entry eventjournal.Entry) []string {
+	message := entry.Message
+	if entry.EventID < 0 || strings.TrimSpace(stringValue(message["type"])) != "runner_checkpoint" ||
+		strings.TrimSpace(stringValue(message["status"])) != "completed" ||
+		strings.TrimSpace(stringValue(message["toolPhase"])) != "completed" {
+		return nil
 	}
-	return latestEventID, selected, latestEventID >= 0
+	toolResult, ok := softwareRuntimeObjectReceipt(message["toolResult"])
+	if !ok || agentruntime.ClassifyToolResult(toolResult) != agentruntime.ToolResultSucceeded {
+		return nil
+	}
+	receipt, ok := softwareRuntimeObjectReceipt(toolResult["implementation_selection"])
+	if !ok || stringValue(receipt["provenance"]) != "registry-unique-local-pack" {
+		return nil
+	}
+	implementations := uniqueSortedFolded(stringArrayValue(receipt["implementations"]))
+	if len(implementations) != 1 || strings.TrimSpace(implementations[0]) == "" {
+		return nil
+	}
+	return implementations
 }
 
 func resolvedAskUserEvidenceFromRunnerEntries(entries []eventjournal.Entry) map[string]string {

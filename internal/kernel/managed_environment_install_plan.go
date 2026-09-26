@@ -12,7 +12,7 @@ func planManagedPipInstall(phases [][]string, options, findLinks, extraIndexes [
 	}
 	plan := make([][]string, 0, len(inputs))
 	for _, packages := range inputs {
-		arguments := []string{"-I", "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--progress-bar", "on"}
+		arguments := []string{"-I", "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--progress-bar", "raw"}
 		arguments = append(arguments, options...)
 		arguments = append(arguments, managedPipSourceArguments(findLinks, extraIndexes)...)
 		arguments = append(arguments, packages...)
@@ -44,7 +44,11 @@ func (m *Manager) runManagedPipCommand(ctx context.Context, prefix string, argum
 	if err != nil {
 		return err
 	}
-	return m.runManagedEnvironmentProcessWithEnv(ctx, python, managedEnvironmentInstallerRuntimeEnv(prefix, m.config.InstallerProxy), arguments...)
+	environment, err := m.managedEnvironmentInstallerRuntimeEnv(prefix)
+	if err != nil {
+		return err
+	}
+	return m.runManagedEnvironmentProcessWithEnv(ctx, python, environment, arguments...)
 }
 
 // A newly requested installer stage may need capabilities absent from a native

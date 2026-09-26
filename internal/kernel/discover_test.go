@@ -101,7 +101,7 @@ func TestDiscoverManagerRequiresBundledRGenerationWithoutHostPython(t *testing.T
 	t.Setenv("SYNON_KERNEL_PYTHON", "")
 	t.Setenv("SYNON_MICROMAMBA", "")
 	t.Setenv("PATH", t.TempDir())
-	manager, err := DiscoverManagerWithPaths(filepath.Dir(envs), envs)
+	manager, err := DiscoverManagerWithPathsAndProxy(filepath.Dir(envs), envs, "")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -23,9 +23,12 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"golang.org/x/net/publicsuffix"
+
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
+	"synon-go/internal/runtimecontrol"
 	"synon-go/internal/toolcontract"
 	"synon-go/internal/tools/securefetch"
 )
@@ -35,19 +38,19 @@ const (
 	// streaming overflow probe; disk capacity is enforced during transfer.
 	agentPublicScientificFileLimit              = int64(math.MaxInt64 - 1)
 	agentPublicScientificDownloadConcurrency    = 2
-	agentPublicScientificDiskReserve            = uint64(1 << 30)
+	agentPublicScientificDiskReserve            = runtimecontrol.DiskFreeReserve
 	agentPublicScientificSourceMaxNestedDepth   = 12
 	agentPublicScientificSourceMaxVisitedValues = 200000
 	agentPublicScientificSourceHTMLScanLimit    = 4 << 20
 	agentPublicScientificRecoveryCandidateLimit = 16
 	agentPublicScientificReverseWindowSize      = int64(sessionRunnerDurableEvidencePageSize)
 	agentPublicScientificDownloadMaxAttempts    = 4
-	agentPublicScientificRetryBaseDelay         = 100 * time.Millisecond
 	agentPublicScientificArtifactLanguage       = "scientific-data"
 )
 
 var (
 	agentPublicScientificHrefPattern                 = regexp.MustCompile(`(?i)\bhref\s*=\s*["']([^"'<>]+)["']`)
+	agentPublicScientificDisplayLinkPattern          = regexp.MustCompile(`<((?:https|ftp)://[^<>\s]+)>`)
 	agentPublicScientificVersionedModelSuffixPattern = regexp.MustCompile(`(?i)(\.(?:ckpt|pt|pth))(?:[-._][a-z0-9]+)+$`)
 )
 
@@ -83,6 +86,13 @@ type agentPublicScientificFileRequest struct {
 	AcceptedTypes    []string
 	RedirectHosts    []string
 	RegisteredSize   int64
+	// RecoveryParentVersionID is set only after validating an unavailable
+	// completed download receipt. New verified bytes get a fresh version;
+	// historical missing content never becomes an invented readable snapshot.
+	RecoveryParentVersionID string
+	// AllowPublicRedirects is derived only from the active conversation's
+	// full-access mode. It is never accepted from model input or source data.
+	AllowPublicRedirects bool
 }
 
 func (request agentPublicScientificFileRequest) maximumBytes() int64 {
@@ -125,7 +135,7 @@ type agentPublicScientificDownloadRecoveryState struct {
 func agentPublicScientificFileToolSchema() agentruntime.ToolSchema {
 	return agentruntime.ToolSchema{
 		Name:         "download_public_scientific_file",
-		Description:  "Download one public scientific file whose exact URL already appears in a completed durable source-tool result. This is the only file-download path: use web_fetch for bounded page inspection, then use this tool for complete PDB/mmCIF/SDF, datasets, archives, PDFs, model checkpoints, or other supported scientific files. The server infers source_tool_call_id when omitted, validates the public destination and content type, preserves verified partial bytes across cancellation or service restart, resumes with Range and If-Range when supported, writes completed content atomically to the task workspace, and records immutable provenance.",
+		Description:  "Download one public scientific file or complete HTML/XHTML source page whose exact URL already appears in a completed durable source-tool result. This is the only file-download path: use web_fetch for bounded page inspection, then use this tool for complete source pages, PDB/mmCIF/SDF, datasets, archives, PDFs, model checkpoints, or other supported scientific files. Use read_file with the returned immutable version_id to read bounded line or raw-byte windows. HTML is untrusted source data and is previewed passively. The server infers source_tool_call_id when omitted, validates the public destination and content type, reuses an owner-scoped previously verified artifact across tasks when the exact URL, filename, and expected_sha256 match, preserves verified partial bytes across cancellation or service restart, resumes with Range and If-Range when supported, writes completed content atomically to the task workspace, and records immutable provenance.",
 		Capabilities: []string{"source-evidence", "source-download", "artifact-write"},
 		Exposure:     agentruntime.ToolExposureDirect,
 		Parameters: map[string]any{
@@ -134,7 +144,7 @@ func agentPublicScientificFileToolSchema() agentruntime.ToolSchema {
 				"source_tool_call_id": map[string]any{"type": "string", "maxLength": 512, "description": "Optional prior source tool-call id. Omit when the exact URL uniquely identifies the latest durable source result."},
 				"url":                 map[string]any{"type": "string", "minLength": 1, "maxLength": 4096, "description": "Exact public HTTPS URL already returned by a completed source tool."},
 				"filename":            map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "Optional path-free filename with the same format extension as the source URL."},
-				"expected_sha256":     map[string]any{"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Optional authoritative lowercase SHA-256 checksum."},
+				"expected_sha256":     map[string]any{"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Optional authoritative lowercase SHA-256 checksum; provide it for safe owner-scoped reuse of an already verified download across tasks."},
 				"human_description":   map[string]any{"type": "string", "minLength": 1, "maxLength": 256, "description": "Short present-participle label for the download."},
 			},
 			"required": []string{"url", "human_description"},
@@ -163,12 +173,17 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	if err != nil {
 		return nil, err
 	}
+	chatRun, _ := transcriptRunnerChatRunFromContext(ctx)
+	if correction := s.registeredAcquisitionPreflight(chatRun, "download_public_scientific_file", input); correction != nil {
+		return correction, nil
+	}
 	access, err := s.validateKernelHostIdentity(ctx, identity.access)
 	if err != nil {
 		log.Printf("download_public_scientific_file authority rejected frame=%q stage=kernel_identity err=%v",
 			identity.access.Frame.ID, err)
 		return nil, errAgentPublicScientificFileAuthority
 	}
+	request.AllowPublicRedirects = s.agentPublicScientificAllowsPublicRedirects(access.Frame.ID)
 	run, ok := transcriptArtifactRunFromContext(ctx)
 	if !ok || run.Authority == nil || run.SourceEventID <= 0 {
 		log.Printf("download_public_scientific_file authority rejected frame=%q call=%q stage=tool_source present=%t source_event_id=%d",
@@ -190,17 +205,30 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 			access.Frame.ID, toolCallID, run.SourceEventID, err)
 		return nil, errAgentPublicScientificFileAuthority
 	}
+	registered := false
 	if chatRun, _ := transcriptRunnerChatRunFromContext(ctx); chatRun != nil {
 		if download, _, found := s.registeredExecutionDownload(chatRun, request); found {
 			request.RedirectHosts = append([]string(nil), download.RedirectHosts...)
 			request.RegisteredSize = download.SizeBytes
+			registered = true
 		}
 	}
-	resolvedSourceCallID, err := s.validateAgentPublicScientificSourceURL(ctx, stream.UID, stream.OwnerID, request)
+	// A fresh run can request a registered execution asset before its model
+	// selection has been restored. The catalog is still the immutable authority
+	// for this exact URL, filename, checksum, size, and redirect policy, so use
+	// it to establish the same bounds before source-evidence validation.
+	if !registered {
+		if download, _, found := s.registeredExecutionDownloadCatalogSource(request); found {
+			request.RedirectHosts = append([]string(nil), download.RedirectHosts...)
+			request.RegisteredSize = download.SizeBytes
+		}
+	}
+	sourceBinding, err := s.validateAgentPublicScientificSourceURL(ctx, stream.UID, stream.OwnerID, request)
 	if err != nil {
 		return nil, err
 	}
-	request.SourceToolCallID = resolvedSourceCallID
+	request.SourceToolCallID = sourceBinding.ToolCallID
+	request.RedirectHosts = append(request.RedirectHosts, sourceBinding.RedirectHosts...)
 	workspaceDir, err := s.ensureAgentWorkspaceRoot(identity)
 	if err != nil {
 		log.Printf("download_public_scientific_file authority rejected frame=%q call=%q stage=workspace_root err=%v",
@@ -213,15 +241,25 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	); replayErr != nil || found {
 		return replayed, replayErr
 	}
+	if reused, found, reuseErr := s.reuseCompletedAgentPublicScientificFileDownload(
+		ctx, workspaceDir, stream, claim, run.SourceEventID, toolCallID, artifactID, &request,
+	); reuseErr != nil || found {
+		return reused, reuseErr
+	}
+	if reused, found, release, reuseErr := s.reuseOrCoordinateCachedAgentPublicScientificFileDownload(
+		ctx, workspaceDir, stream, claim, run.SourceEventID, toolCallID, artifactID, request,
+	); reuseErr != nil || found {
+		return reused, reuseErr
+	} else if release != nil {
+		defer release()
+	}
+	// A verified cache hit is authoritative even if an earlier network attempt
+	// in this task was unavailable. Only consult the no-retry receipt after all
+	// durable local reuse paths have been exhausted.
 	if unavailable, found, unavailableErr := s.previouslyUnavailableAgentPublicScientificFileDownload(
 		ctx, stream, request,
 	); unavailableErr != nil || found {
 		return unavailable, unavailableErr
-	}
-	if reused, found, reuseErr := s.reuseCompletedAgentPublicScientificFileDownload(
-		ctx, workspaceDir, stream, claim, run.SourceEventID, toolCallID, artifactID, request,
-	); reuseErr != nil || found {
-		return reused, reuseErr
 	}
 	if err := ensureAgentWorkspaceDownloadTarget(
 		ctx, workspaceDir, request.Filename, 0, "", request.maximumBytes(),
@@ -279,7 +317,8 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 		workspace.WriteArtifactVersionInput{
 			ArtifactID: artifactID, ProjectID: stream.ProjectID, Name: request.Filename,
 			ContentType: verifiedContentType, Content: staged.file, MaxBytes: request.maximumBytes(),
-			CreatedBy: claim.RunnerID, RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
+			ParentVersionID: request.RecoveryParentVersionID,
+			CreatedBy:       claim.RunnerID, RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
 			TranscriptAssociation: &workspace.ArtifactTranscriptAssociation{
 				StreamUID: stream.UID, RunnerID: claim.RunnerID, ClaimToken: claim.ClaimToken,
 				// A downloaded public file is a task input, not a final research
@@ -309,6 +348,11 @@ func (s *Server) executeAgentPublicScientificFileDownload(
 	reportAgentPublicScientificDownloadProgress(ctx, "download_ready", staged.sizeBytes, staged.sizeBytes, staged.bytesPerSecond)
 	staged.discard()
 	return s.agentPublicScientificFileResult(stream, artifact, version, request), nil
+}
+
+func (s *Server) agentPublicScientificAllowsPublicRedirects(frameID string) bool {
+	mode, err := s.webSessionApprovalMode(frameID)
+	return err == nil && mode == "allow"
 }
 
 func (s *Server) previouslyUnavailableAgentPublicScientificFileDownload(
@@ -352,6 +396,27 @@ func agentPublicScientificSourceUnavailable(
 	request agentPublicScientificFileRequest,
 	err error,
 ) (map[string]any, bool) {
+	var interrupted *agentPublicScientificTransferInterrupted
+	if errors.As(err, &interrupted) {
+		result := map[string]any{
+			"sourceUnavailable": true, "status": "download_interrupted", "code": "download_interrupted",
+			"retryable": true, "downloaded": false, "url": request.SourceURL, "filename": request.Filename,
+			"bytes_retained": interrupted.BytesRetained, "resumable": interrupted.Resumable,
+			"connection_attempts": interrupted.Attempts, "consecutive_stalled_attempts": interrupted.StalledAttempts,
+			"message": interrupted.Error(), "recovery": "retry_same_download_after_recorded_backoff; retain_existing_checkpoint",
+		}
+		if !interrupted.RetryNotBefore.IsZero() {
+			result["retry_not_before"] = interrupted.RetryNotBefore.UTC().Format(time.RFC3339Nano)
+			result["retry_after_seconds"] = max(0, time.Until(interrupted.RetryNotBefore).Seconds())
+		}
+		if interrupted.Cause != nil {
+			result["reason"] = agentPublicScientificTransferErrorCode(interrupted.Cause)
+		}
+		if status, found := securefetch.HTTPStatus(interrupted); found {
+			result["http_status"] = status
+		}
+		return result, true
+	}
 	statusFailure := securefetch.IsCode(err, securefetch.CodeStatus)
 	contentMismatch := securefetch.IsCode(err, securefetch.CodeContentType) || err.Error() == string(securefetch.CodeContentType) ||
 		errors.Is(err, errAgentFileContentTypeMismatch)
@@ -378,7 +443,7 @@ func agentPublicScientificSourceUnavailable(
 	}
 	if status, found := securefetch.HTTPStatus(err); found {
 		result["http_status"] = status
-		retryable := status == 408 || status == 425 || status == 429 || status >= 500
+		retryable := isRetryableAgentPublicScientificDownloadError(err)
 		result["retryable"] = retryable
 		if retryable {
 			result["code"] = "source_temporarily_unavailable"
@@ -418,19 +483,13 @@ func parseAgentPublicScientificFileRequest(input map[string]any) (agentPublicSci
 		return agentPublicScientificFileRequest{}, errors.New("public scientific file human_description must be 1-256 bytes")
 	}
 	parsed, err := url.Parse(request.SourceURL)
-	if err != nil || parsed.Hostname() == "" || parsed.User != nil || parsed.Fragment != "" || parsed.RawQuery != "" ||
+	if err != nil || parsed.Hostname() == "" || parsed.User != nil || parsed.Fragment != "" ||
 		parsed.Port() != "" || (parsed.Scheme != "https" && parsed.Scheme != "ftp") {
 		return agentPublicScientificFileRequest{}, errAgentPublicScientificFileSource
 	}
-	host := strings.ToLower(strings.TrimSuffix(parsed.Hostname(), "."))
-	_, literalErr := netip.ParseAddr(host)
-	if host == "localhost" || strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".local") || literalErr == nil {
+	host, err := agentPublicScientificPublicHostname(parsed)
+	if err != nil {
 		return agentPublicScientificFileRequest{}, errAgentPublicScientificFileSource
-	}
-	for _, character := range host {
-		if character > 0x7f {
-			return agentPublicScientificFileRequest{}, errAgentPublicScientificFileSource
-		}
 	}
 	if parsed.Scheme == "ftp" {
 		if host != "ftp.ncbi.nlm.nih.gov" {
@@ -440,8 +499,14 @@ func parseAgentPublicScientificFileRequest(input map[string]any) (agentPublicSci
 	}
 	request.DownloadURL, request.SourceHost = parsed.String(), host
 	derived, err := url.PathUnescape(filepath.Base(parsed.EscapedPath()))
-	if err != nil || derived == "." || derived == "/" || derived == "" {
+	if err != nil {
 		return agentPublicScientificFileRequest{}, errAgentPublicScientificFileSource
+	}
+	if derived == "." || derived == "/" || derived == "" {
+		if !agentPublicScientificHTMLFilename(request.Filename) {
+			return agentPublicScientificFileRequest{}, errAgentPublicScientificFileSource
+		}
+		derived = "page"
 	}
 	if filepath.Ext(derived) == "" {
 		formatExtension := "." + strings.ToLower(derived)
@@ -474,6 +539,11 @@ func parseAgentPublicScientificFileRequest(input map[string]any) (agentPublicSci
 	request.AcceptedTypes, err = agentPublicScientificAcceptedTypes(request.Filename)
 	if err != nil {
 		return agentPublicScientificFileRequest{}, err
+	}
+	// Query-bearing page URLs remain exact source identities. File download
+	// routes retain their existing query-free contract.
+	if parsed.RawQuery != "" && !agentPublicScientificHTMLFilename(request.Filename) {
+		return agentPublicScientificFileRequest{}, errAgentPublicScientificFileSource
 	}
 	if request.ExpectedSHA256 != "" && !toolcontract.ValidLowerHexSHA256(request.ExpectedSHA256) {
 		return agentPublicScientificFileRequest{}, errors.New("public scientific file expected_sha256 must be lowercase SHA-256")
@@ -539,6 +609,8 @@ func agentPublicScientificAcceptedTypes(filename string) ([]string, error) {
 		}, nil
 	}
 	switch strings.ToLower(filepath.Ext(lower)) {
+	case ".html", ".htm", ".xhtml":
+		return []string{"application/xhtml+xml", "text/html"}, nil
 	case ".gz":
 		return []string{"application/gzip", "application/x-gzip", "application/octet-stream"}, nil
 	case ".zip":
@@ -580,6 +652,9 @@ func verifyAgentPublicScientificStagedContent(
 ) (string, error) {
 	if file == nil {
 		return "", errAgentPublicScientificFileAuthority
+	}
+	if agentPublicScientificHTMLFilename(filename) {
+		return verifyAgentPublicScientificHTML(file, reportedContentType, acceptedTypes)
 	}
 	if err := validateAgentFileContentType(filename, file); err != nil {
 		return "", err
@@ -727,15 +802,22 @@ func (s *Server) validateAgentPublicScientificSourceURL(
 	ctx context.Context,
 	streamUID, ownerID string,
 	request agentPublicScientificFileRequest,
-) (string, error) {
+) (agentPublicScientificSourceBinding, error) {
 	if run, _ := transcriptRunnerChatRunFromContext(ctx); run != nil {
 		if source, found := s.registeredExecutionDownloadSource(run, request); found {
-			return source, nil
+			return agentPublicScientificSourceBinding{ToolCallID: source}, nil
 		}
+	}
+	// The selected-run view may be unavailable during a fresh acquisition. An
+	// exact match against the local execution-pack catalog is independently
+	// authoritative and permits cache reuse without inventing a web source
+	// receipt. Arbitrary URLs still take the durable source-evidence path below.
+	if _, source, found := s.registeredExecutionDownloadCatalogSource(request); found {
+		return agentPublicScientificSourceBinding{ToolCallID: source}, nil
 	}
 	snapshot, err := s.transcriptStore.GetProjectionSnapshot(ctx, streamUID, ownerID)
 	if err != nil {
-		return "", errAgentPublicScientificFileSource
+		return agentPublicScientificSourceBinding{}, errAgentPublicScientificFileSource
 	}
 	requestedSourceToolCallID := request.SourceToolCallID
 	for windowEnd := snapshot.ThroughPublicationSequence; windowEnd > 0; {
@@ -747,9 +829,9 @@ func (s *Server) validateAgentPublicScientificSourceURL(
 			Limit:                      sessionRunnerDurableEvidencePageSize,
 		})
 		if err != nil {
-			return "", errAgentPublicScientificFileSource
+			return agentPublicScientificSourceBinding{}, errAgentPublicScientificFileSource
 		}
-		fallbackSourceToolCallID := ""
+		var fallback agentPublicScientificSourceBinding
 		for index := len(page) - 1; index >= 0; index-- {
 			projected := page[index]
 			if projected.Event.Type != "runner_checkpoint" {
@@ -761,30 +843,93 @@ func (s *Server) validateAgentPublicScientificSourceURL(
 			}
 			var checkpoint sessionRunnerDurableToolCheckpoint
 			if json.Unmarshal(payload, &checkpoint) != nil ||
-				!strings.EqualFold(strings.TrimSpace(checkpoint.ToolPhase), "completed") ||
-				!s.sessionRunnerDurableCheckpointEvidenceTool(checkpoint) {
+				!strings.EqualFold(strings.TrimSpace(checkpoint.ToolPhase), "completed") {
 				continue
 			}
 			content, err := s.agentPublicScientificSourceResult(ctx, ownerID, checkpoint.ToolResult)
+			if err == nil && agentPublicScientificReadWindowAuthorizesDownload(checkpoint, content, request.SourceURL) {
+				return agentPublicScientificSourceBinding{ToolCallID: checkpoint.ToolCallID}, nil
+			}
+			if !s.sessionRunnerDurableCheckpointEvidenceTool(checkpoint) {
+				continue
+			}
 			if err != nil || !agentPublicScientificResultAuthorizesDownload(content, request.SourceURL) {
 				continue
+			}
+			binding := agentPublicScientificSourceBinding{ToolCallID: checkpoint.ToolCallID}
+			// Host expansion is transport metadata, not a capability granted by
+			// arbitrary connector payloads or URLs in an incomplete page body.
+			if checkpoint.ToolName == "web_fetch" {
+				canonical, hosts, verified := agentPublicScientificWebFetchRedirectBinding(content)
+				var executedInput struct {
+					URL string `json:"url"`
+				}
+				if verified && canonical == request.SourceURL &&
+					json.Unmarshal(sessionRunnerDurableExecutedToolInput(checkpoint), &executedInput) == nil &&
+					executedInput.URL == canonical {
+					binding.RedirectHosts = hosts
+				}
 			}
 			// A model-supplied ID is only a preference. The durable checkpoint
 			// and exact URL remain the authority, so invented opaque IDs cannot
 			// block an otherwise valid download.
 			if requestedSourceToolCallID != "" && checkpoint.ToolCallID == requestedSourceToolCallID {
-				return checkpoint.ToolCallID, nil
+				return binding, nil
 			}
-			if fallbackSourceToolCallID == "" {
-				fallbackSourceToolCallID = checkpoint.ToolCallID
+			if fallback.ToolCallID == "" {
+				fallback = binding
 			}
 		}
-		if fallbackSourceToolCallID != "" {
-			return fallbackSourceToolCallID, nil
+		if fallback.ToolCallID != "" {
+			return fallback, nil
 		}
 		windowEnd = windowStart
 	}
-	return "", errAgentPublicScientificFileSource
+	return agentPublicScientificSourceBinding{}, errAgentPublicScientificFileSource
+}
+
+func agentPublicScientificReadWindowAuthorizesDownload(
+	checkpoint sessionRunnerDurableToolCheckpoint,
+	value any,
+	expectedURL string,
+) bool {
+	if !strings.EqualFold(strings.TrimSpace(checkpoint.ToolName), "read_file") || strings.TrimSpace(checkpoint.ToolCallID) == "" {
+		return false
+	}
+	result, ok := value.(map[string]any)
+	if !ok || result["source_content_included"] != true ||
+		strings.TrimSpace(stringValue(result["view_format"])) != "html-readable-display-lines" ||
+		strings.TrimSpace(stringValue(result["file_path_scope"])) != "original_source" ||
+		!validSHA256Hex(stringValue(result["source_body_sha256"])) {
+		return false
+	}
+	sourceVersionID := strings.TrimSpace(stringValue(result["source_version_id"]))
+	if !strings.HasPrefix(sourceVersionID, "ltr-") {
+		return false
+	}
+	var input struct {
+		VersionID string `json:"version_id"`
+	}
+	if json.Unmarshal(sessionRunnerDurableExecutedToolInput(checkpoint), &input) != nil ||
+		strings.TrimSpace(input.VersionID) != sourceVersionID ||
+		strings.TrimSpace(stringValue(mapValue(result["raw_read_with"])["version_id"])) != sourceVersionID {
+		return false
+	}
+	sourceURL, sourceValid := agentPublicScientificSourceBaseURL(stringValue(result["source_url"]))
+	expected, expectedValid := agentPublicScientificSourceBaseURL(expectedURL)
+	if !sourceValid || !expectedValid || !agentPublicScientificSameSite(sourceURL, expected) {
+		return false
+	}
+	content := stringValue(result["content"])
+	if content == "" || len(content) > agentPublicScientificSourceHTMLScanLimit {
+		return false
+	}
+	for _, match := range agentPublicScientificDisplayLinkPattern.FindAllStringSubmatch(content, -1) {
+		if len(match) == 2 && agentPublicScientificURLsEquivalent(strings.TrimSpace(match[1]), expectedURL) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) agentPublicScientificSourceResult(
@@ -798,7 +943,8 @@ func (s *Server) agentPublicScientificSourceResult(
 		return nil, err
 	}
 	if externalized {
-		if descriptor.Outcome != string(agentruntime.ToolResultSucceeded) {
+		if descriptor.Outcome != string(agentruntime.ToolResultSucceeded) &&
+			descriptor.Outcome != string(agentruntime.ToolResultPartial) {
 			return nil, errAgentPublicScientificFileSource
 		}
 		record, reader, found, err := s.workspaceStore.OpenRunnerLargeToolResultContent(ctx, descriptor.VersionID, ownerID)
@@ -833,6 +979,11 @@ func (s *Server) agentPublicScientificSourceResult(
 		}
 	}
 	result = agentPublicScientificNormalizeResultEnvelope(result, 0)
+	if externalized && descriptor.Outcome == string(agentruntime.ToolResultPartial) &&
+		(agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultPartial ||
+			!agentPublicScientificTruncatedWebFetchAuthority(result, "")) {
+		return nil, errAgentPublicScientificFileSource
+	}
 	return result, nil
 }
 
@@ -1164,18 +1315,22 @@ func agentPublicScientificDownloadDiscoveryValue(value any) any {
 	if agentruntime.ClassifyToolResult(value) != agentruntime.ToolResultPartial {
 		return value
 	}
-	object, ok := agentPublicScientificPartialResultEnvelope(value)
-	if !ok || !agentPublicScientificTruncatedWebFetchAuthority(object, "") {
+	object, ok := agentPublicScientificTransportEnvelope(value)
+	if !ok || !agentPublicScientificTruncatedWebFetchAuthority(value, "") {
 		return nil
 	}
-	// A partial WebFetch is authoritative only for the exact final URL that
-	// the transport returned. Nested URLs from an incomplete prefix must not
-	// silently expand the durable download authority.
+	// Prefer the stable request when the transport proves its exact chain to
+	// the response. Do not publish expiring signed URLs as recovery targets.
+	if canonical, _, verified := agentPublicScientificWebFetchRedirectBinding(value); verified {
+		return map[string]any{"url": canonical}
+	}
+	// Legacy nonredirected receipts authorize only their final URL, never
+	// nested URLs inside the incomplete response prefix.
 	return map[string]any{"url": strings.TrimSpace(stringValue(object["url"]))}
 }
 
 func agentPublicScientificTruncatedWebFetchAuthority(value any, expectedURL string) bool {
-	object, ok := agentPublicScientificPartialResultEnvelope(value)
+	object, ok := agentPublicScientificTransportEnvelope(value)
 	if !ok || object["partial"] != true || stringValue(object["recovery"]) != "use_dedicated_download_or_fulltext_tool" ||
 		(object["truncated"] != true && object["binary"] != true) {
 		return false
@@ -1184,33 +1339,15 @@ func agentPublicScientificTruncatedWebFetchAuthority(value any, expectedURL stri
 	if rawURL == "" {
 		return false
 	}
+	if canonical, _, verified := agentPublicScientificWebFetchRedirectBinding(value); verified {
+		if expectedURL == "" || agentPublicScientificURLsEquivalent(canonical, expectedURL) {
+			return true
+		}
+	}
 	if expectedURL == "" {
 		return agentPublicScientificResultContainsURL(map[string]any{"url": rawURL}, rawURL)
 	}
 	return agentPublicScientificURLsEquivalent(rawURL, expectedURL)
-}
-
-// agentPublicScientificPartialResultEnvelope unwraps only the documented
-// bounded tool-result envelope. WebFetch may arrive directly or beneath the
-// gateway's {ok,result} wrapper; both represent the same durable source call.
-// Arbitrary nested payloads are never searched for authority status.
-func agentPublicScientificPartialResultEnvelope(value any) (map[string]any, bool) {
-	current := value
-	for depth := 0; depth < 4; depth++ {
-		object, ok := current.(map[string]any)
-		if !ok {
-			return nil, false
-		}
-		if object["partial"] == true {
-			return object, true
-		}
-		nested, ok := object["result"].(map[string]any)
-		if !ok {
-			return nil, false
-		}
-		current = nested
-	}
-	return nil, false
 }
 
 func agentPublicScientificURLsEquivalent(left, right string) bool {
@@ -1228,8 +1365,10 @@ func agentPublicScientificURLsEquivalent(left, right string) bool {
 }
 
 // agentPublicScientificVisitResultURLs visits only structured URL values and
-// same-origin links from HTML returned alongside an authoritative page URL.
-// It deliberately does not mine arbitrary prose for URLs.
+// same-site links from HTML returned alongside an authoritative page URL. A
+// scientific portal may serve exact native files from a sibling host, while
+// unrelated external links remain outside the source authority. It
+// deliberately does not mine arbitrary prose for URLs.
 func agentPublicScientificVisitResultURLs(value any, visit func(string) bool) bool {
 	visited := 0
 	var inspect func(any, int, *url.URL) bool
@@ -1252,6 +1391,12 @@ func agentPublicScientificVisitResultURLs(value any, visit func(string) bool) bo
 			}); err == nil && visit(request.SourceURL) {
 				return true
 			}
+			// A completed structured source may identify an extensionless page.
+			// Exact URL authority does not depend on guessing its filename; the
+			// requested filename and actual response media are checked separately.
+			if parsed, valid := agentPublicScientificSourceBaseURL(trimmed); valid && parsed.Scheme == "https" && parsed.Fragment == "" && visit(trimmed) {
+				return true
+			}
 			if inheritedBase == nil {
 				return false
 			}
@@ -1268,7 +1413,7 @@ func agentPublicScientificVisitResultURLs(value any, visit func(string) bool) bo
 					continue
 				}
 				resolved := inheritedBase.ResolveReference(reference)
-				if !agentPublicScientificSameOrigin(inheritedBase, resolved) {
+				if !agentPublicScientificSameSite(inheritedBase, resolved) {
 					continue
 				}
 				request, err := parseAgentPublicScientificFileRequest(map[string]any{
@@ -1315,7 +1460,7 @@ func agentPublicScientificVisitResultURLs(value any, visit func(string) bool) bo
 
 func agentPublicScientificBaseURLKey(key string) bool {
 	switch strings.ToLower(strings.TrimSpace(key)) {
-	case "url", "source_url", "sourceurl", "request_url", "requesturl", "final_url", "finalurl":
+	case "url", "source_url", "sourceurl", "request_url", "requesturl", "requested_url", "requestedurl", "final_url", "finalurl":
 		return true
 	default:
 		return false
@@ -1348,6 +1493,20 @@ func agentPublicScientificSameOrigin(baseURL, candidateURL *url.URL) bool {
 	}
 	return strings.EqualFold(baseURL.Scheme, candidateURL.Scheme) &&
 		strings.EqualFold(strings.TrimSuffix(baseURL.Hostname(), "."), strings.TrimSuffix(candidateURL.Hostname(), "."))
+}
+
+func agentPublicScientificSameSite(baseURL, candidateURL *url.URL) bool {
+	if agentPublicScientificSameOrigin(baseURL, candidateURL) {
+		return true
+	}
+	if baseURL == nil || candidateURL == nil || baseURL.User != nil || candidateURL.User != nil ||
+		baseURL.Port() != "" || candidateURL.Port() != "" ||
+		!strings.EqualFold(baseURL.Scheme, "https") || !strings.EqualFold(candidateURL.Scheme, "https") {
+		return false
+	}
+	baseSite, baseErr := publicsuffix.EffectiveTLDPlusOne(strings.TrimSuffix(strings.ToLower(baseURL.Hostname()), "."))
+	candidateSite, candidateErr := publicsuffix.EffectiveTLDPlusOne(strings.TrimSuffix(strings.ToLower(candidateURL.Hostname()), "."))
+	return baseErr == nil && candidateErr == nil && baseSite == candidateSite
 }
 
 func ensureAgentPublicScientificDiskSpace(
@@ -1429,99 +1588,12 @@ func (s *Server) replayAgentPublicScientificFileDownload(
 	return s.agentPublicScientificFileResult(stream, artifact, version, request), true, nil
 }
 
-// reuseCompletedAgentPublicScientificFileDownload makes a logically repeated
-// download idempotent across runner segments, process restarts, and new tool
-// call IDs. The completed transcript receipt, immutable artifact version, and
-// workspace checksum must all agree; otherwise the normal download/conflict
-// path remains authoritative. Reuse still appends a consumed association for
-// the current source event so causal lineage is never borrowed silently.
-func (s *Server) reuseCompletedAgentPublicScientificFileDownload(
-	ctx context.Context,
-	workspaceDir string,
-	stream transcriptstore.Stream,
-	claim transcriptstore.RunnerClaim,
-	sourceEventID int64,
-	toolCallID string,
-	artifactID string,
-	request agentPublicScientificFileRequest,
-) (map[string]any, bool, error) {
-	state, err := s.agentPublicScientificDownloadRecoveryState(
-		ctx, stream.UID, stream.OwnerID, agentPublicScientificRecoveryCandidateLimit,
-	)
-	if err != nil {
-		return nil, false, err
-	}
-	var completed agentPublicScientificCompletedDownload
-	found := false
-	for index := len(state.Completed) - 1; index >= 0; index-- {
-		candidate := state.Completed[index]
-		if candidate.URL == request.SourceURL && candidate.Filename == request.Filename {
-			completed, found = candidate, true
-			break
-		}
-	}
-	if !found {
-		return nil, false, nil
-	}
-	if completed.ArtifactID != artifactID || completed.VersionID == "" || completed.SHA256 == "" ||
-		completed.SizeBytes <= 0 || (request.ExpectedSHA256 != "" && request.ExpectedSHA256 != completed.SHA256) {
-		return nil, true, errAgentPublicScientificFileConflict
-	}
-	artifact, priorVersion, content, contentFound, err := s.workspaceStore.OpenArtifactVersionContent(completed.VersionID)
-	if err != nil || !contentFound {
-		return nil, true, errAgentPublicScientificFileAuthority
-	}
-	defer content.Close()
-	if artifact.ID != artifactID || artifact.ProjectID != stream.ProjectID || artifact.Name != request.Filename ||
-		priorVersion.ArtifactID != artifact.ID || priorVersion.SizeBytes != completed.SizeBytes ||
-		priorVersion.ContentSHA256 != completed.SHA256 {
-		return nil, true, errAgentPublicScientificFileConflict
-	}
-	if err := ensureAgentWorkspaceDownloadTarget(
-		ctx, workspaceDir, request.Filename, priorVersion.SizeBytes, priorVersion.ContentSHA256,
-		request.maximumBytes(),
-	); err != nil {
-		return nil, true, agentPublicScientificWorkspaceDownloadError(err)
-	}
-	mutationDigest := sha256.Sum256([]byte(fmt.Sprintf(
-		"reuse-public-scientific-file-v1:%s:%d:%s:%s:%s",
-		stream.UID, sourceEventID, toolCallID, request.Filename, request.SourceURL,
-	)))
-	reusedArtifact, reusedVersion, err := s.workspaceStore.WriteArtifactVersionRealtime(
-		workspace.WithMutationIdempotencyKey(ctx, "reuse-public-scientific-file-"+hex.EncodeToString(mutationDigest[:])),
-		workspace.WriteArtifactVersionInput{
-			ArtifactID: artifactID, ProjectID: stream.ProjectID, Name: request.Filename,
-			ContentType: artifact.Kind, Content: content, MaxBytes: request.maximumBytes(),
-			CreatedBy: claim.RunnerID, RootFrameID: stream.RootFrameID, FrameID: stream.FrameID,
-			TranscriptAssociation: &workspace.ArtifactTranscriptAssociation{
-				StreamUID: stream.UID, RunnerID: claim.RunnerID, ClaimToken: claim.ClaimToken,
-				Attempt: claim.Attempt, SourceEventID: sourceEventID, Relation: "consumed",
-				ReuseCurrentVersionIfUnchanged: true,
-			},
-			Language: agentPublicScientificArtifactLanguage, IsIntermediate: true,
-		},
-		stream.OwnerID,
-	)
-	if err != nil {
-		return nil, true, err
-	}
-	replayArtifact, replayVersion, replayContent, replayFound, err := s.workspaceStore.OpenArtifactVersionContent(reusedVersion.ID)
-	if err != nil || !replayFound || replayArtifact.ID != reusedArtifact.ID || replayVersion.ID != reusedVersion.ID {
-		return nil, true, errAgentPublicScientificFileAuthority
-	}
-	defer replayContent.Close()
-	if err := publishAgentWorkspaceDownloadFile(
-		ctx, workspaceDir, request.Filename, replayContent, reusedVersion.SizeBytes, reusedVersion.ContentSHA256,
-		request.maximumBytes(),
-	); err != nil {
-		return nil, true, agentPublicScientificWorkspaceDownloadError(err)
-	}
-	return s.agentPublicScientificFileResult(stream, reusedArtifact, reusedVersion, request), true, nil
-}
-
 func agentPublicScientificWorkspaceDownloadError(err error) error {
 	if err == nil {
 		return nil
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
 	}
 	if errors.Is(err, errAgentWorkspaceDownloadConflict) {
 		return errAgentPublicScientificFileConflict
@@ -1552,6 +1624,7 @@ func (s *Server) agentPublicScientificFileResult(
 			log.Printf("download_public_scientific_file compatibility projection failed for artifact %s", artifact.ID)
 		}
 	}
+	s.indexAgentPublicScientificDownload(stream, artifact, version, request)
 	artifactResult := map[string]any{
 		"artifact_id": artifact.ID, "version_id": version.ID, "version_number": version.VersionNumber,
 		"filename": artifact.Name, "content_type": artifact.Kind, "size_bytes": version.SizeBytes,

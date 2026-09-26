@@ -91,7 +91,17 @@ func selectedEvidenceResolverForGroup(
 	run *sessionRunnerChatRun,
 	group string,
 ) (sciencecapability.ExecutionEvidenceResolver, bool) {
-	for _, resolver := range run.selectedEvidenceResolversSnapshot() {
+	if run == nil {
+		return sciencecapability.ExecutionEvidenceResolver{}, false
+	}
+	return selectedEvidenceResolverFromSelection(run.selectedEvidenceResolversSnapshot(), group)
+}
+
+func selectedEvidenceResolverFromSelection(
+	selected []sciencecapability.ExecutionEvidenceResolver,
+	group string,
+) (sciencecapability.ExecutionEvidenceResolver, bool) {
+	for _, resolver := range selected {
 		if strings.EqualFold(strings.TrimSpace(resolver.EvidenceGroup), strings.TrimSpace(group)) {
 			return resolver, true
 		}

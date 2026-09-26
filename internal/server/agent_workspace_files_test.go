@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +22,26 @@ import (
 	"synon-go/internal/agentruntime"
 	workspace "synon-go/internal/persistence/workspace"
 )
+
+func TestStrictPositiveAgentWorkspaceIntegerRejectsNarrowingAndFloatOverflow(t *testing.T) {
+	for name, raw := range map[string]any{
+		"zero":        json.Number("0"),
+		"negative":    json.Number("-1"),
+		"too large":   json.Number("9223372036854775808"),
+		"fraction":    1.5,
+		"infinity":    math.Inf(1),
+		"float-bound": float64(math.MaxInt64),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if value, ok := strictPositiveAgentWorkspaceInteger(raw); ok || value != 0 {
+				t.Fatalf("strictPositiveAgentWorkspaceInteger(%v) = (%d, %t), want rejection", raw, value, ok)
+			}
+		})
+	}
+	if value, ok := strictPositiveAgentWorkspaceInteger(json.Number("1")); !ok || value != 1 {
+		t.Fatalf("strictPositiveAgentWorkspaceInteger(1) = (%d, %t), want (1, true)", value, ok)
+	}
+}
 
 func TestAgentWorkspaceFileToolsMatchCanonicalEditAndReadContract(t *testing.T) {
 	fixture := newAgentSaveArtifactsFixture(t)

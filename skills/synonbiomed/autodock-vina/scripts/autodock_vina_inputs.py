@@ -5,6 +5,26 @@ import subprocess
 from pathlib import Path
 
 
+def read_smiles_records(source: Path) -> list[tuple[str, str]]:
+    """Read ordinary whitespace-delimited SMILES records with stable IDs."""
+    records: list[tuple[str, str]] = []
+    with source.open("r", encoding="utf-8", errors="strict") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            fields = line.split(maxsplit=1)
+            records.append((fields[0], fields[1].strip() if len(fields) == 2 else ""))
+    if not records:
+        raise ValueError("SMILES input contains no valid records")
+    normalized: list[tuple[str, str]] = []
+    for index, (smiles, name) in enumerate(records, start=1):
+        if not name:
+            name = source.stem if len(records) == 1 else f"{source.stem}-{index:04d}"
+        normalized.append((smiles, name))
+    return normalized
+
+
 def convert_ligand_source(
     source: Path,
     work: Path,

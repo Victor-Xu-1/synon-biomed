@@ -142,22 +142,6 @@ func agentKernelCallerRequiresExecutionStop(ctx context.Context) bool {
 	return errors.Is(cause, ErrGenerationStopped) || errors.Is(cause, ErrRuntimeDraining)
 }
 
-const detachedKernelInfrastructureGrace = 2 * time.Minute
-
-func detachedKernelSetupContext(ctx context.Context, executionTimeout time.Duration) (context.Context, context.CancelFunc) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	setupCtx := context.WithoutCancel(ctx)
-	if run, _ := ctx.Value(transcriptRunnerChatRunContextKey{}).(*sessionRunnerChatRun); run != nil && run.Transcript != nil {
-		setupCtx = withTranscriptRunnerChatRun(setupCtx, run)
-	}
-	if executionTimeout <= 0 {
-		return context.WithCancel(setupCtx)
-	}
-	return context.WithTimeout(setupCtx, executionTimeout+detachedKernelInfrastructureGrace)
-}
-
 func agentKernelSystemPythonEnvironment(environment string) bool {
 	switch strings.ToLower(strings.TrimSpace(environment)) {
 	case "python", "system", "repl", "operon":
@@ -410,6 +394,9 @@ func (s *Server) agentKernelConfinementMounts(userID, workspaceDir string, prote
 		root, resolveErr := canonicalHostDirectory(grant.Path)
 		if resolveErr != nil {
 			return nil, errors.New("working_dir authorization could not be verified")
+		}
+		if err := kernelruntime.ValidateHostMountPath(root); err != nil {
+			return nil, err
 		}
 		if hostPathWithin(workspaceDir, root) || hostPathWithin(root, workspaceDir) {
 			continue

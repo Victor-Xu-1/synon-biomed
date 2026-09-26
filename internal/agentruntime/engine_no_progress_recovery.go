@@ -8,6 +8,30 @@ import (
 
 const maxNoProgressRecoveryCallLabels = 8
 
+// Failure feedback is already carried by the exact native tool receipt. Never
+// describe rejected/failed or decision-required actions as successful reusable
+// work merely because they made no progress. A compact reuse receipt is a
+// successful idempotent result even though it truthfully reports executed=false.
+func noProgressReceiptsAreSuccessful(messages []Message) bool {
+	found := false
+	for _, message := range messages {
+		if message.Role != "tool" {
+			continue
+		}
+		found = true
+		var value any
+		if json.Unmarshal([]byte(message.Content), &value) != nil || ClassifyToolResult(value) != ToolResultSucceeded {
+			return false
+		}
+		if object, ok := value.(map[string]any); ok && object["executed"] == false {
+			if object["reused"] != true && !toolResultExplicitlyUnchanged(object) && !toolResultExplicitlyNoMutation(object) {
+				return false
+			}
+		}
+	}
+	return found
+}
+
 func appendNoProgressRecoveryCalls(history []ToolCall, calls []ToolCall) []ToolCall {
 	seen := make(map[string]struct{}, len(history)+len(calls))
 	for _, call := range history {
@@ -35,7 +59,9 @@ func noProgressRecoveryCallKey(call ToolCall) string {
 	if name == "" {
 		return ""
 	}
-	return strings.ToLower(name) + "\x00" + compactNoProgressArguments(call.Arguments)
+	// Display clipping cannot define execution identity. Use the same complete
+	// semantic fingerprint as the live failed-call guard and durable recovery.
+	return ExecutionCallFingerprint(name, call.Arguments)
 }
 
 func compactNoProgressArguments(arguments json.RawMessage) string {

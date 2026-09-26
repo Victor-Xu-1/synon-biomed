@@ -112,7 +112,7 @@ func agentWorkspaceJSONPreview(base map[string]any, entries []map[string]any, se
 	}
 	views := make([]map[string]any, len(entries))
 	for i, entry := range entries {
-		view := make(map[string]any, len(entry)+2)
+		view := make(map[string]any, len(entry))
 		for key, value := range entry {
 			view[key] = value
 		}

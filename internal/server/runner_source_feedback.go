@@ -44,7 +44,7 @@ func runnerSourceFeedbackDescriptor(
 		ArtifactID: record.ArtifactID, VersionID: record.VersionID, SHA256: record.ContentSHA256,
 		SizeBytes: record.SizeBytes, ContentType: record.ContentType, Outcome: input.Outcome,
 		ContentURL: "/api/artifacts/" + url.PathEscape(record.ArtifactID) + "/versions/" + url.PathEscape(record.VersionID),
-		ReadWith:   "read_file(version_id=\"" + record.VersionID + "\")", Truncated: true,
+		ReadWith:   toolcontract.CanonicalReadWith(record.VersionID), Truncated: true,
 	}
 	envelope, _ := json.Marshal(base)
 	inlineLimit := min(input.MaxInlineBytes, runnerLargeToolResultInlineLimitBytes)

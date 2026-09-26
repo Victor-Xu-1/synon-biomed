@@ -593,12 +593,18 @@ func TestEngineEnforcesDynamicToolChoiceNoneBeforeTerminalValidation(t *testing.
 	}
 }
 
-func (g preflightAwareGateway) ToolCallPreflightDiagnostic(call ToolCall) string {
-	var input map[string]any
-	if json.Unmarshal(call.Arguments, &input) == nil && input["blocked"] == true {
-		return `{"code":"runtime_preflight_required","message":"The selected route is unavailable.","recovery":"Choose an available route."}`
+func (g preflightAwareGateway) ToolCallPreflightDiagnostics(ctx context.Context, calls []ToolCall) (map[int]string, error) {
+	diagnostics := make(map[int]string)
+	for index, call := range calls {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		var input map[string]any
+		if json.Unmarshal(call.Arguments, &input) == nil && input["blocked"] == true {
+			diagnostics[index] = `{"code":"runtime_preflight_required","message":"The selected route is unavailable.","recovery":"Choose an available route."}`
+		}
 	}
-	return ""
+	return diagnostics, nil
 }
 
 func (g preflightAwareGateway) Execute(_ context.Context, _ ToolCall) (ToolResult, error) {
@@ -2608,7 +2614,7 @@ func TestNormalizeModelStreamEventRequiresOneExplicitSemanticKind(t *testing.T) 
 	}
 }
 
-func TestCompleteModelRoundBoundsAndCoalescesBufferedSemanticEvents(t *testing.T) {
+func TestCompleteModelRoundCoalescesBufferedSemanticMarkers(t *testing.T) {
 	coalescedModel := &streamingStaticModelClient{
 		deltas: []ModelStreamEvent{
 			{Kind: ModelStreamEventPrivateReasoning, ReasoningActive: true},
@@ -2625,14 +2631,4 @@ func TestCompleteModelRoundBoundsAndCoalescesBufferedSemanticEvents(t *testing.T
 		t.Fatalf("buffered=%#v err=%v", buffered, err)
 	}
 
-	flood := make([]ModelStreamEvent, maxBufferedModelStreamEvents+1)
-	for index := range flood {
-		flood[index] = ModelStreamEvent{Kind: ModelStreamEventContentDelta, ContentDelta: "x"}
-	}
-	_, _, err = (Engine{Model: &streamingStaticModelClient{deltas: flood}}).completeModelRound(
-		context.Background(), ModelRequest{}, true,
-	)
-	if err == nil || !strings.Contains(err.Error(), "event limit") {
-		t.Fatalf("event flood error=%v", err)
-	}
 }

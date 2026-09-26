@@ -19,8 +19,9 @@ import (
 )
 
 var (
-	errRunnerLargeToolResultAuthority = errors.New("runner large tool result authority is unavailable")
-	errRunnerLargeToolResultConflict  = errors.New("runner large tool result conflicts with its immutable artifact")
+	errRunnerLargeToolResultAuthority   = errors.New("runner large tool result authority is unavailable")
+	errRunnerLargeToolResultUnavailable = errors.New("runner large tool result content is unavailable")
+	errRunnerLargeToolResultConflict    = errors.New("runner large tool result conflicts with its immutable artifact")
 )
 
 const (
@@ -352,7 +353,7 @@ func buildRunnerLargeToolResultDescriptor(
 		}
 		return best, nil
 	}
-	readWith := "read_file(version_id=\"" + record.VersionID + "\")"
+	readWith := toolcontract.CanonicalReadWith(record.VersionID)
 	best, err := fit(readWith)
 	if err != nil {
 		return agentruntime.LargeToolResultDescriptor{}, errors.Join(errRunnerLargeToolResultAuthority, err)

@@ -293,53 +293,7 @@ func (s *Server) handleKernelMCPHostCallForAccess(
 	}
 	s.auditAgentRuntimePostToolHooks(ctx, resolution.tool.Name, toolCall, updated, "completed", response)
 	if evidenceAuthority != nil && kernelMCPStructuredEvidenceResult(output) {
-		requestRaw, requestErr := json.Marshal(updated)
-		resultRaw, resultErr := json.Marshal(output)
-		if requestErr != nil || resultErr != nil {
-			return nil, kernelruntime.NewHostCallError("audit_unavailable", "MCP evidence could not be encoded")
-		}
-		requestSHA := kernelMCPEvidenceSHA256(requestRaw)
-		resultSHA := kernelMCPEvidenceSHA256(resultRaw)
-		payload := map[string]any{
-			"schema": "synon.kernel_mcp_evidence.v1", "status": "completed", "toolPhase": "completed",
-			"toolName": currentResolution.tool.Name, "toolCallId": call.ID,
-			"toolInput": updated, "toolResult": output,
-			"outerToolCallId":   evidenceAuthority.operation.ToolCallID,
-			"kernelOperationId": evidenceAuthority.operation.OperationID,
-			"executionId":       evidenceAuthority.operation.ExecutionID,
-			"hostCallId":        call.ID, "kernelId": evidenceAuthority.operation.KernelID,
-			"kernelGeneration": evidenceAuthority.operation.KernelGeneration,
-			"requestSha256":    requestSHA, "resultSha256": resultSHA,
-			"evidenceClass": attestation.Class, "connectorId": attestation.ConnectorID,
-			"connectorSource": attestation.ConnectorSource, "inputSchemaSha256": attestation.InputSchemaSHA256,
-			"readOnlyHint": attestation.ReadOnlyHint,
-		}
-		terminalAudit := workspace.KernelMCPAuditTerminalInput{
-			KernelMCPAuditInput: auditInput, Status: "completed", Result: output,
-		}
-		_, err = s.checkpointTranscriptRunnerEventWithDestinationsAndHook(
-			ctx,
-			&transcriptRunnerAuthority{Stream: evidenceAuthority.stream, Claim: evidenceAuthority.identity.RunnerClaim},
-			transcriptstore.RunnerPhaseExecuting,
-			"kernel-mcp-evidence-"+call.ID,
-			payload,
-			true,
-			nil,
-			func(commitCtx context.Context, tx *transcriptstore.ImmediateTransaction, event transcriptstore.Event, _ bool) (transcriptstore.RunnerCheckpointCommitReceipt, error) {
-				_, commitErr := s.workspaceStore.CommitKernelMCPEvidenceTx(commitCtx, tx, event, workspace.KernelMCPEvidenceCommitInput{
-					Audit: terminalAudit, OperationID: evidenceAuthority.operation.OperationID,
-					OuterToolCallID: evidenceAuthority.operation.ToolCallID, HostCallID: call.ID,
-					ExecutionID: evidenceAuthority.operation.ExecutionID, ToolName: currentResolution.tool.Name,
-					KernelID: evidenceAuthority.operation.KernelID, KernelGeneration: evidenceAuthority.operation.KernelGeneration,
-					Claim: evidenceAuthority.identity.RunnerClaim, RequestSHA256: requestSHA, ResultSHA256: resultSHA,
-					EvidenceClass: attestation.Class, ConnectorID: attestation.ConnectorID,
-					ConnectorSource: attestation.ConnectorSource, InputSchemaSHA256: attestation.InputSchemaSHA256,
-					ReadOnlyHint: attestation.ReadOnlyHint,
-				})
-				return transcriptstore.RunnerCheckpointCommitReceipt{}, commitErr
-			},
-		)
-		if err != nil {
+		if err := s.commitKernelMCPSourceEvidence(ctx, evidenceAuthority, auditInput, call, currentResolution.tool.Name, updated, output, attestation); err != nil {
 			return nil, kernelruntime.NewHostCallError("audit_unavailable", "MCP evidence could not be persisted")
 		}
 		s.bindKernelMCPTrustedScientificEvidenceForSession(

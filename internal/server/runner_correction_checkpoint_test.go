@@ -9,7 +9,7 @@ import (
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
 
-func TestExhaustedCorrectionRetainsExplicitContinuationCheckpoint(t *testing.T) {
+func TestRetiredCorrectionRetainsAutomaticAndExplicitContinuationCheckpoint(t *testing.T) {
 	ctx := context.Background()
 	store, repo, _ := newTranscriptWebFixture(t)
 	seedTranscriptWebFrame(t, store, "local", "correction-project", "correction-frame")
@@ -41,7 +41,7 @@ func TestExhaustedCorrectionRetainsExplicitContinuationCheckpoint(t *testing.T) 
 		runnerInterruptionAutoResume(sessionRunnerCorrectionNoProgressExhaustedReasonCode),
 		"Keep the prior artifacts and continue with a different repair.",
 	)
-	if err != nil || result.Status != "interrupted" || result.InterruptionAutoResume {
+	if err != nil || result.Status != "interrupted" || !result.InterruptionAutoResume {
 		t.Fatalf("result=%+v err=%v", result, err)
 	}
 	checkpoint, found, err := repo.LatestResumableCheckpoint(ctx, stream.UID, stream.OwnerID)

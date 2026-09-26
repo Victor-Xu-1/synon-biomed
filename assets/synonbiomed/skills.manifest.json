@@ -132,13 +132,13 @@
     },
     {
       "path": "autodock-vina/scripts/autodock_vina.py",
-      "sha256": "2a05abaca845afb28838a63e107d3c051433ff44d14d2cec0b81ee43fa545172",
-      "bytes": 63629
+      "sha256": "65aa70306989d8115781683a28f4677dd83ed4f11fbd3ecdd6ac686eb0720fcb",
+      "bytes": 64652
     },
     {
       "path": "autodock-vina/scripts/autodock_vina_inputs.py",
-      "sha256": "d8be79d79d24fa6e2939bc0d57a33b8c5b6a96288d1026fa96a25ddd48412366",
-      "bytes": 1262
+      "sha256": "a0dfa84f8c4bf7904b6538326d617374fe72308868b5eeb8aac2589f3d339b90",
+      "bytes": 2153
     },
     {
       "path": "autodock-vina/scripts/autodock_vina_outputs.py",
@@ -152,8 +152,8 @@
     },
     {
       "path": "autodock-vina/SKILL.md",
-      "sha256": "b42684e9a667c427e6c2157a0214064bc43645fc6d17c0641069d3d1443c80da",
-      "bytes": 14202
+      "sha256": "bef8af9ee68c79a16da950946595f4ea11497affcd429b4608e28d8f5478fff6",
+      "bytes": 15066
     },
     {
       "path": "binding-mode-analysis/scripts/analyze_binding_pocket.py",
@@ -1162,13 +1162,13 @@
     },
     {
       "path": "p2rank-pocket-detection/scripts/p2rank_binding_pockets.py",
-      "sha256": "40dd1d770128506f164da66385469646e5b3d1cbb573518ae94de0eb9f059994",
-      "bytes": 23262
+      "sha256": "4e1c1192ec8529f73cce83d56cdfd805f539f80008ba7fcce4816de5a3dd5ba1",
+      "bytes": 22610
     },
     {
       "path": "p2rank-pocket-detection/SKILL.md",
-      "sha256": "43195dfe599375b408867f02d4fa2c138400ce2a85000c77d98c5c2e8af3765c",
-      "bytes": 5653
+      "sha256": "28b6609449b524f7862a6c30bdd782bd941cc2ffcd5550c066c1f26d05864aa8",
+      "bytes": 6072
     },
     {
       "path": "paper-narrative/kernel.py",

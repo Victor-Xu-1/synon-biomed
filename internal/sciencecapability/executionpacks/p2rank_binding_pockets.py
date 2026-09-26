@@ -21,6 +21,7 @@ PACK_ID = "binding-pocket-prediction.p2rank"
 P2RANK_VERSION = "2.5.1"
 P2RANK_ARCHIVE_SHA256 = "d243f2d9036ac053fefb9407b5fe1c85f4fe077c519fd975ac585e995feab274"
 OUTPUT_MARKER = ".synon-execution-pack.json"
+DEFAULT_OUTPUT_DIR = "pocket_detection"
 MAX_ARCHIVE_MEMBERS = 50_000
 MAX_ARCHIVE_EXPANDED_BYTES = 2_000_000_000
 
@@ -48,6 +49,14 @@ def task_file(root: Path, raw: str, label: str) -> Path:
     return path
 
 
+def next_default_output_target(root: Path) -> Path:
+    for index in range(2, 1000):
+        candidate = (root / f"{DEFAULT_OUTPUT_DIR}-{index}").resolve()
+        if not candidate.exists() and not candidate.is_symlink():
+            return candidate
+    raise ValueError("no collision-free default P2Rank output directory is available")
+
+
 def output_target(root: Path, raw: str, inputs: tuple[Path, ...]) -> Path:
     target = root / raw
     if target.is_symlink():
@@ -59,13 +68,9 @@ def output_target(root: Path, raw: str, inputs: tuple[Path, ...]) -> Path:
         if target == source or target in source.parents or source in target.parents:
             raise ValueError("output directory must not overlap an input path or its ancestors")
     if target.exists():
-        marker = target / OUTPUT_MARKER
-        try:
-            owner = json.loads(marker.read_text(encoding="utf-8"))
-        except (OSError, ValueError, TypeError):
-            raise ValueError("existing output directory is not owned by the P2Rank execution pack") from None
-        if owner != {"execution_pack_id": PACK_ID, "schema": "synon.execution-pack-output-owner.v1"}:
-            raise ValueError("existing output directory has conflicting execution ownership")
+        if Path(raw) == Path(DEFAULT_OUTPUT_DIR):
+            return next_default_output_target(root)
+        raise ValueError("explicit output directory must not already exist")
     return target
 
 
@@ -329,30 +334,15 @@ def write_selected_atoms(
     atomic_text(path, "\n".join(lines + ["END", ""]))
 
 
-def promote_output(root: Path, staging: Path, target: Path, token: str) -> dict[str, object]:
-    previous: Path | None = None
-    if target.exists():
-        history = validated_internal_state_directory(
-            root, root / ".p2rank-generations" / target.name, "output history"
-        )
-        previous = history / token
-        if previous.exists() or previous.is_symlink():
-            raise RuntimeError("P2Rank output history path already exists")
-        if target.is_symlink() or not target.is_dir():
-            raise RuntimeError("P2Rank output target changed before promotion")
-        history = validated_internal_state_directory(root, history, "output history")
-        target.rename(previous)
-    try:
-        staging.rename(target)
-    except Exception:
-        if previous is not None and not target.exists() and previous.exists():
-            previous.rename(target)
-        raise
+def promote_output(root: Path, staging: Path, target: Path) -> dict[str, object]:
+    if target.exists() or target.is_symlink():
+        raise RuntimeError("P2Rank output target was created before promotion")
+    staging.rename(target)
     return {
         "schema": "synon.execution-pack-output-promotion.v1",
         "execution_pack_id": PACK_ID,
         "current": str(target.relative_to(root)),
-        "previous": str(previous.relative_to(root)) if previous is not None else None,
+        "previous": None,
     }
 
 
@@ -366,7 +356,7 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--threads", type=int, default=4)
     value.add_argument("--minimum-box-size", type=float, default=20.0)
     value.add_argument("--box-padding", type=float, default=6.0)
-    value.add_argument("--output-dir", default="pocket_detection")
+    value.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     return value
 
 
@@ -484,7 +474,7 @@ def main() -> int:
             raise RuntimeError("P2Rank execution validation failed")
         atomic_text(staging / "pocket_validation.json", json.dumps(validation, ensure_ascii=False, indent=2) + "\n")
         shutil.rmtree(runtime)
-        promotion = promote_output(root, staging, target, token)
+        promotion = promote_output(root, staging, target)
         atomic_text(target / "promotion.json", json.dumps(promotion, ensure_ascii=False, indent=2) + "\n")
         print(
             f"P2Rank {P2RANK_VERSION} selected pocket rank 1: probability "

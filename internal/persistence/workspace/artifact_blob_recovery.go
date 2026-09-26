@@ -17,16 +17,21 @@ func (s *Store) reconcileArtifactBlobs(ctx context.Context) error {
 	if err := s.recoverBlobCommits(ctx); err != nil {
 		return err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT storage_path FROM artifact_versions WHERE storage_path <> ''`)
+	rows, err := s.db.QueryContext(ctx, `SELECT storage_path, content_available
+		FROM artifact_versions WHERE storage_path <> ''`)
 	if err != nil {
 		return fmt.Errorf("list referenced artifact blobs: %w", err)
 	}
 	referenced := map[string]bool{}
 	for rows.Next() {
 		var relative string
-		if err := rows.Scan(&relative); err != nil {
+		var available bool
+		if err := rows.Scan(&relative, &available); err != nil {
 			_ = rows.Close()
 			return fmt.Errorf("scan referenced artifact blob: %w", err)
+		}
+		if !available {
+			continue
 		}
 		absolute, err := s.blobAbsolute(relative)
 		if err != nil {
@@ -78,9 +83,15 @@ func (s *Store) reconcileArtifactBlobs(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reconcile artifact blobs: %w", err)
 	}
+	missing := make([]string, 0)
 	for path := range referenced {
 		if !found[path] {
-			return fmt.Errorf("referenced artifact blob is missing: %s", path)
+			missing = append(missing, path)
+		}
+	}
+	if len(missing) > 0 {
+		if err := s.markMissingArtifactBlobsUnavailable(ctx, missing); err != nil {
+			return err
 		}
 	}
 	if err := s.reconcileAttachmentBlobs(ctx); err != nil {
@@ -93,6 +104,37 @@ func (s *Store) reconcileArtifactBlobs(ctx context.Context) error {
 		return err
 	}
 	return s.cleanArtifactStaging()
+}
+
+// markMissingArtifactBlobsUnavailable preserves the immutable version metadata
+// and digest while preventing one lost external blob from making the whole
+// workspace impossible to reopen. Content readers fail closed through the
+// existing content_available contract; a later verified recovery can restore
+// the blob and set the version available again without rewriting its identity.
+func (s *Store) markMissingArtifactBlobsUnavailable(ctx context.Context, paths []string) error {
+	if len(paths) == 0 {
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin missing artifact recovery: %w", err)
+	}
+	defer tx.Rollback()
+	for _, absolute := range paths {
+		relative, err := filepath.Rel(s.blobRoot, absolute)
+		if err != nil || relative == "." || filepath.IsAbs(relative) || strings.HasPrefix(filepath.ToSlash(relative), "../") {
+			return fmt.Errorf("invalid missing artifact blob path %q", absolute)
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE artifact_versions
+			SET content_available=0 WHERE storage_path=? AND content_available=1`,
+			filepath.ToSlash(relative)); err != nil {
+			return fmt.Errorf("mark missing artifact blob unavailable: %w", err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit missing artifact recovery: %w", err)
+	}
+	return nil
 }
 
 func (s *Store) reconcileScientificSubmissionBlobs(ctx context.Context) error {

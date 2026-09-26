@@ -169,7 +169,7 @@ func sessionRunnerFinalArtifactVersionSet(content string) map[string]struct{} {
 func sessionRunnerSuccessfulToolResult(content string) (any, bool) {
 	var result any
 	if strings.TrimSpace(content) == "" || json.Unmarshal([]byte(content), &result) != nil ||
-		agentruntime.IsNonExecutingPreflight(result) ||
+		agentruntime.ToolResultDidNotExecute(result) ||
 		agentruntime.ClassifyToolResult(result) != agentruntime.ToolResultSucceeded {
 		return nil, false
 	}

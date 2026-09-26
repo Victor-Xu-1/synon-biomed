@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"synon-go/internal/agentruntime"
+	"synon-go/internal/executionprep"
 	"synon-go/internal/toolcontract"
 	"synon-go/internal/toolgateway"
 )
@@ -280,10 +281,14 @@ func serverAgentRuntimeGatewayAdmit(invocation *toolgateway.Invocation) {
 func serverAgentRuntimeGatewayPreflight(invocation *toolgateway.Invocation) {
 	execution := serverAgentRuntimeExecution(invocation)
 	gateway := execution.gateway
+	name := invocation.CanonicalName
+	if preflight := gateway.agentRuntimeRegisteredAcquisitionPreflight(name, invocation.Input); preflight != nil {
+		invocation.CompleteForAudit(preflight, "completed", "", nil)
+		return
+	}
 	if gateway.resumeAfterApproval {
 		return
 	}
-	name := invocation.CanonicalName
 	preflight := agentRuntimeUnresolvedToolResultTemplatePreflight(name, invocation.Input)
 	if preflight == nil {
 		preflight = agentRuntimeUnresolvedSkillDirectoryPreflight(name, invocation.Input)
@@ -305,7 +310,7 @@ func serverAgentRuntimeGatewayPreflight(invocation *toolgateway.Invocation) {
 	// check here prevents a second execution path from bypassing loaded Skill
 	// contracts when an older checkpoint falls outside the model replay window.
 	if preflight == nil {
-		preflight = gateway.agentRuntimeSkillExecutionContractPreflight(name, invocation.Input)
+		preflight = gateway.agentRuntimeSkillExecutionContractPreflight(name, invocation.Input, invocation.Context)
 	}
 	if preflight != nil {
 		invocation.CompleteForAudit(preflight, "completed", "", nil)
@@ -459,6 +464,21 @@ func serverAgentRuntimeGatewayExecute(invocation *toolgateway.Invocation) {
 	execution := serverAgentRuntimeExecution(invocation)
 	gateway := execution.gateway
 	name := invocation.CanonicalName
+	// Keep the immutable binary-route invariant at the final execution
+	// boundary as well as the preflight stage. Approved resumes may bypass
+	// permission-oriented preflight, but they must never bypass route safety.
+	if boundary := gateway.agentRuntimeRegisteredAcquisitionPreflight(name, invocation.Input); boundary != nil {
+		invocation.CompleteForAudit(boundary, "completed", "", nil)
+		return
+	}
+	// Rebind the final source after all earlier stages, including approved
+	// resumes. The proof stays in a private host context, never tool arguments.
+	if boundary := gateway.agentRuntimeImplementationExecutionChoicePreflight(name, invocation.Input, invocation.Context); boundary != nil {
+		invocation.CompleteForAudit(boundary, "completed", "", nil)
+		return
+	}
+	invocation.Context = executionprep.WithObservation(invocation.Context,
+		gateway.agentRuntimeDiagnosticObservation(invocation.Context, name, invocation.Input))
 	if name == "wait_for_notification" {
 		result, err := gateway.server.executeAgentKernelNotificationWait(
 			invocation.Context, gateway.kernel, execution.call.ID, invocation.Input,

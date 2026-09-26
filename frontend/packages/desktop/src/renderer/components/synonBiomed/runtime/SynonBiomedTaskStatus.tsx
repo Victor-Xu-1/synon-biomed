@@ -144,6 +144,13 @@ const titleKeys: Record<SynonBiomedLongTaskPhase, string> = {
   cancelled: 'conversation.synonRuntime.runtimeOperations.taskCancelled',
 };
 
+const failureReasonKeys: Record<string, string> = {
+  response_language_mismatch: 'conversation.synonRuntime.runtimeOperations.failurePresentation',
+  runner_stop_hook_failed: 'conversation.synonRuntime.runtimeOperations.failureFinalization',
+  runner_cleanup_failed: 'conversation.synonRuntime.runtimeOperations.failureCleanup',
+  runner_response_persistence_failed: 'conversation.synonRuntime.runtimeOperations.failurePersistence',
+};
+
 const failureKindKeys: Partial<Record<NonNullable<SynonBiomedRuntimeFailureKind>, string>> = {
   safety_refusal: 'conversation.synonRuntime.runtimeOperations.safetyPaused',
   model_not_found: 'conversation.synonRuntime.runtimeOperations.modelUnavailable',
@@ -234,7 +241,10 @@ const SynonBiomedTaskStatus: React.FC<SynonBiomedTaskStatusProps> = ({
   const status = projected?.ok ? projected.value : null;
   const failureKindKey = snapshot?.failureKind ? failureKindKeys[snapshot.failureKind] : undefined;
   const failureKindLabel = failureKindKey ? t(failureKindKey) : null;
+  const failureReasonKey =
+    snapshot?.status === 'failed' && snapshot.failureReason ? failureReasonKeys[snapshot.failureReason] : undefined;
   const publicFailureLabel =
+    (failureReasonKey ? t(failureReasonKey) : null) ??
     failureKindLabel ??
     (snapshot?.status === 'failed' ? t('conversation.synonRuntime.runtimeOperations.taskFailed') : null);
   const guidedFailureDetail =
@@ -258,11 +268,18 @@ const SynonBiomedTaskStatus: React.FC<SynonBiomedTaskStatusProps> = ({
   // Runtime reason codes and backend diagnostics remain available to recovery
   // logic, but are not user-facing copy. The capsule presents the closed,
   // localized failure category from the authoritative runtime projection.
-  const failureDetailSource = guidedFailureDetail ?? publicFailureLabel;
+  const presentationFailure = snapshot?.failureReason === 'response_language_mismatch';
+  const failureDetailSource = presentationFailure
+    ? t('conversation.synonRuntime.runtimeOperations.failurePresentationDetail')
+    : (guidedFailureDetail ?? publicFailureLabel);
   const failureDetail = failureDetailSource ? redactErrorText(failureDetailSource).trim().slice(0, 500) || null : null;
   const unsupported = Boolean(snapshot && projected && !projected.ok);
   const busy = loading && !snapshot;
   const phase = status?.phase ?? null;
+  // Pending transcript hydration is not execution liveness. Only a successful
+  // completed run can be waiting to display its final answer; failure, pause,
+  // cancellation and newer active phases keep their authoritative presentation.
+  const completedAnswerPending = terminalProjectionPending && phase === 'completed';
   const specializedFailure =
     snapshot?.failureKind === 'model_not_found' ||
     snapshot?.failureKind === 'safety_refusal' ||
@@ -343,7 +360,7 @@ const SynonBiomedTaskStatus: React.FC<SynonBiomedTaskStatusProps> = ({
   if (busy || authorityPending) {
     title = t('conversation.synonRuntime.runtimeOperations.taskStatusLoading');
     dataState = 'loading';
-  } else if (terminalProjectionPending) {
+  } else if (completedAnswerPending) {
     title = t('conversation.synonRuntime.runtimeOperations.taskFinalizing');
     dataState = 'finalizing';
   } else if (unsupported) {
@@ -417,7 +434,7 @@ const SynonBiomedTaskStatus: React.FC<SynonBiomedTaskStatusProps> = ({
   const statusIcon = (
     <StatusIcon
       phase={phase}
-      busy={busy || authorityPending || terminalProjectionPending || resuming || taskActive || pausePending}
+      busy={busy || authorityPending || completedAnswerPending || resuming || taskActive || pausePending}
       reviewNeedsAttention={reviewNeedsAttention}
     />
   );
@@ -471,7 +488,6 @@ const SynonBiomedTaskStatus: React.FC<SynonBiomedTaskStatusProps> = ({
             escToClose
             containerScrollToClose
             updateOnScroll
-            autoFitPosition={false}
             autoFixPosition
             popupAlign={{ top: 8 }}
             duration={120}

@@ -45,6 +45,7 @@ type Witness struct {
 }
 
 type Result struct {
+	Observation  *Observation  `json:"observation,omitempty"`
 	Requirements []Requirement `json:"requirements,omitempty"`
 	ReadFiles    []Witness     `json:"read_files,omitempty"`
 	Unresolved   []string      `json:"unresolved,omitempty"`
@@ -65,6 +66,9 @@ func Analyze(ctx context.Context, request Request, native NativeParser) (Result,
 		analysis.request.WorkingDir = request.WorkspaceRoot
 	}
 	err := analysis.source(ctx, request.Language, request.Source, 0)
+	if err != nil || len(analysis.result.Unresolved) != 0 || len(analysis.result.Requirements) != 0 || len(analysis.result.ReadFiles) != 0 {
+		analysis.result.Observation = nil
+	}
 	return analysis.result, err
 }
 
@@ -113,6 +117,10 @@ func (a *analyzer) source(ctx context.Context, language, source string, depth in
 			break
 		}
 		switch fact.Kind {
+		case "observation":
+			if depth == 0 && err == nil && fact.Name == ObservationSchema {
+				a.result.Observation = newObservation(language, source, fact.Args)
+			}
 		case "source":
 			if len(fact.Args) == 1 {
 				if err := a.source(ctx, fact.Name, fact.Args[0], depth+1); err != nil {

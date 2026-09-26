@@ -58,6 +58,8 @@ describe('HTMLViewer', () => {
     const { container } = await renderWithI18n(<HTMLViewer content='<h1>Test</h1>' />, 'en-US');
     const iframe = container.querySelector('iframe');
     expect(iframe?.contentWindow).toBeTruthy();
+    const instance = /const instance = "([^"]+)"/.exec(iframe?.srcdoc ?? '')?.[1];
+    expect(instance).toBeTruthy();
 
     window.dispatchEvent(
       new MessageEvent('message', {
@@ -71,7 +73,10 @@ describe('HTMLViewer', () => {
       window.dispatchEvent(
         new MessageEvent('message', {
           source: iframe?.contentWindow,
-          data: { type: 'element-selected', data: { path: 'body > h1', html: '<h1>Test</h1>' } },
+          data: {
+            __synonPreviewInstance: instance,
+            payload: { type: 'element-selected', data: { path: 'body > h1', html: '<h1>Test</h1>' } },
+          },
         })
       );
     });
@@ -91,10 +96,35 @@ describe('HTMLRenderer', () => {
 
     const iframe = container.querySelector('iframe');
     expect(iframe).toBeInTheDocument();
-    expect(iframe).toHaveAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-modals');
+    expect(iframe).toHaveAttribute('sandbox', 'allow-scripts');
     expect(iframe).toHaveAttribute('title', 'HTML preview');
     expect(iframe?.getAttribute('srcdoc')).toContain('cdn.example.com/app.js');
     expect(container.querySelector('webview')).not.toBeInTheDocument();
+  });
+
+  it('passively sanitizes a source document and rejects stale instance messages', async () => {
+    const onElementSelected = vi.fn();
+    const { container } = await renderWithI18n(
+      <HTMLRenderer
+        content='<h1 id="source">Source</h1><script>parent.pwned=true</script><img src="https://remote.example/track" onerror="parent.pwned=true">'
+        passiveSource
+        onElementSelected={onElementSelected}
+      />
+    );
+    const frame = container.querySelector('iframe');
+    expect(frame?.srcdoc).not.toContain('parent.pwned');
+    expect(frame?.srcdoc).toContain("default-src 'none'");
+    expect(frame).toHaveAttribute('sandbox', 'allow-scripts');
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: frame?.contentWindow,
+        data: {
+          __synonPreviewInstance: 'stale-instance',
+          payload: { __SYNON_AI_INSPECT_ELEMENT__: { html: '<h1>Forged</h1>', tag: 'h1' } },
+        },
+      })
+    );
+    expect(onElementSelected).not.toHaveBeenCalled();
   });
 
   it('keeps dirty local HTML content in the browser iframe', async () => {

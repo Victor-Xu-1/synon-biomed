@@ -53,11 +53,15 @@ type Config struct {
 }
 
 type NetworkPolicyConfig struct {
-	AllowedDomains []string `json:"allowed_domains"`
-	DeniedDomains  []string `json:"denied_domains"`
-	Proxy          string   `json:"proxy"`
-	CABundle       string   `json:"ca_bundle"`
-	MCPX509Strict  string   `json:"mcp_x509_strict"`
+	ResponseHeaderTimeoutSeconds int64    `json:"response_header_timeout_seconds,omitempty"`
+	ReadIdleTimeoutSeconds       int64    `json:"read_idle_timeout_seconds,omitempty"`
+	TransferIdleTimeoutSeconds   int64    `json:"transfer_idle_timeout_seconds,omitempty"`
+	SearchTimeoutSeconds         int64    `json:"search_timeout_seconds,omitempty"`
+	AllowedDomains               []string `json:"allowed_domains"`
+	DeniedDomains                []string `json:"denied_domains"`
+	Proxy                        string   `json:"proxy"`
+	CABundle                     string   `json:"ca_bundle"`
+	MCPX509Strict                string   `json:"mcp_x509_strict"`
 }
 
 type SynonLinkAuthConfig struct {
@@ -290,6 +294,9 @@ func Load() (Config, error) {
 }
 
 func applyNetworkPolicy(cfg *Config, configPath string) error {
+	if err := applyNetworkTimeouts(&cfg.Network); err != nil {
+		return err
+	}
 	if value, found := os.LookupEnv("SYNON_NETWORK_ALLOWED_DOMAINS"); found {
 		cfg.Network.AllowedDomains = splitCSV(value)
 	}

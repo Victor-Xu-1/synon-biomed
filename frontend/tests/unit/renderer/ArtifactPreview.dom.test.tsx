@@ -247,9 +247,13 @@ describe('ArtifactPreview', () => {
     expect(preview).toHaveTextContent('statuscompleted');
     expect(preview).toHaveTextContent('hits3');
 
-    fireEvent.click(within(preview).getByRole('tab', { name: '源码' }));
-    await waitFor(() => expect(preview).toHaveTextContent('"status": "completed"'));
-    expect(preview).toHaveTextContent('"hits": 3');
+    const sourceTab = within(preview).getByRole('tab', { name: '源码' });
+    fireEvent.click(sourceTab);
+    await waitFor(() => {
+      expect(sourceTab).toHaveAttribute('aria-selected', 'true');
+      expect(preview).toHaveTextContent('"status": "completed"');
+      expect(preview).toHaveTextContent('"hits": 3');
+    });
     expect(fetchMock).toHaveBeenCalledWith('/api/artifacts/artifact-1', {
       credentials: 'same-origin',
       headers: {

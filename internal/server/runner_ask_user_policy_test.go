@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -26,7 +27,7 @@ func TestFreshAskUserIsNotClassifiedByQuestionWording(t *testing.T) {
 			]
 		}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("fresh AskUser was rejected by wording instead of typed task state: %q", diagnostic)
 	}
 }
@@ -51,7 +52,7 @@ func TestComputeQuestionCannotSwitchScientificImplementation(t *testing.T) {
 			"human_description":"Choose Engine B instead"
 		}`),
 	}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "selected_implementation_recovery_required") ||
 		!strings.Contains(diagnostic, "cannot be used to switch") {
 		t.Fatalf("compute implementation switch diagnostic=%q", diagnostic)

@@ -181,8 +181,12 @@ func (s *Server) hydrateSessionRunnerReadReuse(run *sessionRunnerChatRun, entrie
 		}
 		name := strings.TrimSpace(stringValue(message["toolName"]))
 		input := decodeReadReuseMap(message["toolInput"])
-		if name == "" || input == nil || !gateway.readReuseEnabled(name) {
+		conditionRead := runnerCorrectionReadInput(name, input)
+		if name == "" || input == nil || (!gateway.readReuseEnabled(name) && !conditionRead) {
 			continue
+		}
+		if conditionRead {
+			input = normalizeAgentWorkspaceReadFileArguments(input)
 		}
 		result, recorded := s.hydrateSessionRunnerReadReuseValue(
 			run, name, strings.TrimSpace(stringValue(message["toolCallId"])), message["toolResult"],

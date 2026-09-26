@@ -13,7 +13,7 @@ func TestAgentRuntimeBashDownloadPreflightRoutesFileTransferClientsToDurableAuth
 		`curl --output=result.sdf https://example.org/result.sdf`,
 		`aria2c https://example.org/matrix.h5`,
 	} {
-		preflight := agentExecutionPreparationPreflight("bash", map[string]any{"command": command}, nil, nil)
+		preflight := agentExecutionPreparationPreflight(context.Background(), "bash", map[string]any{"command": command}, nil, nil)
 		if preflight == nil || preflight["status"] != "durable_download_preflight_required" ||
 			preflight["executed"] != false || !strings.Contains(stringValue(preflight["recovery"]), "download_public_scientific_file") {
 			t.Fatalf("command=%q preflight=%#v", command, preflight)
@@ -24,7 +24,7 @@ func TestAgentRuntimeBashDownloadPreflightRoutesFileTransferClientsToDurableAuth
 		`printf '%s\n' 'wget -O file https://example.org/file'`,
 		`python analysis.py`,
 	} {
-		if preflight := agentExecutionPreparationPreflight("bash", map[string]any{"command": command}, nil, nil); preflight != nil {
+		if preflight := agentExecutionPreparationPreflight(context.Background(), "bash", map[string]any{"command": command}, nil, nil); preflight != nil {
 			t.Fatalf("ordinary command=%q preflight=%#v", command, preflight)
 		}
 	}

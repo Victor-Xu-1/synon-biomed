@@ -963,8 +963,8 @@ func TestAgentPublicScientificFileDownloadAcceptsTruncatedWebFetchAsDownloadAuth
 	resolved, err := fixture.server.validateAgentPublicScientificSourceURL(
 		context.Background(), fixture.stream.UID, fixture.stream.OwnerID, request,
 	)
-	if err != nil || resolved != sourceCallID {
-		t.Fatalf("resolved=%q want=%q err=%v", resolved, sourceCallID, err)
+	if err != nil || resolved.ToolCallID != sourceCallID {
+		t.Fatalf("resolved=%#v want=%q err=%v", resolved, sourceCallID, err)
 	}
 
 	request.SourceURL = "https://ftp.ncbi.nlm.nih.gov/geo/other.h5"
@@ -1023,7 +1023,7 @@ func TestAgentPublicScientificDownloadPreflightPrivatelyRejectsGuessedURL(t *tes
 		ID: "guessed-download", Name: "download_public_scientific_file",
 		Arguments: json.RawMessage(`{"url":"https://files.rcsb.org/download/9ODR.cif.gz","filename":"9ODR.cif.gz","human_description":"Downloading coordinates"}`),
 	}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "scientific_download_source_preflight_required") ||
 		!strings.Contains(diagnostic, "Do not retry another guessed") ||
 		!strings.Contains(diagnostic, "continue with the verified evidence") ||
@@ -1032,7 +1032,7 @@ func TestAgentPublicScientificDownloadPreflightPrivatelyRejectsGuessedURL(t *tes
 		t.Fatalf("guessed URL preflight diagnostic=%q", diagnostic)
 	}
 	call.Arguments = json.RawMessage(`{"url":"https://files.rcsb.org/download/9ODR.cif","filename":"9ODR.cif","human_description":"Downloading coordinates"}`)
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("canonical durable source URL was rejected: %s", diagnostic)
 	}
 }
@@ -1052,7 +1052,7 @@ func TestAgentPublicScientificDownloadPreflightPrivatelyRejectsPathFilename(t *t
 		ID: "nested-download", Name: "download_public_scientific_file",
 		Arguments: json.RawMessage(`{"url":"https://files.rcsb.org/download/9ODR.cif","filename":"inputs/9ODR.cif","human_description":"Downloading coordinates"}`),
 	}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "scientific_download_contract_preflight_required") ||
 		!strings.Contains(diagnostic, "path-free filename") || !strings.Contains(diagnostic, "continue with sufficient verified evidence") {
 		t.Fatalf("nested filename preflight diagnostic=%q", diagnostic)
@@ -1217,6 +1217,97 @@ func TestAgentPublicScientificFileDownloadAuthorizesSameOriginRelativeHTMLLink(t
 	if download["source_tool_call_id"] != sourceCallID || download["source_url"] != sourceURL ||
 		len(calls) != 1 || calls[0].URL != sourceURL {
 		t.Fatalf("download=%#v calls=%#v", download, calls)
+	}
+}
+
+func TestAgentPublicScientificFileDownloadAuthorizesSameSiteHTMLFileLink(t *testing.T) {
+	fixture := newAgentSaveArtifactsFixture(t)
+	pageURL := "https://www.rcsb.org/structure/3DSH"
+	sourceURL := "https://files.rcsb.org/download/3DSH.pdb"
+	result := map[string]any{
+		"ok": true,
+		"result": map[string]any{
+			"requestedUrl": pageURL,
+			"body": `<html><a href="//files.rcsb.org/download/3DSH.pdb">coordinates</a>` +
+				`<a href="https://files.example.org/download/3DSH.pdb">external</a></html>`,
+		},
+	}
+	if !agentPublicScientificResultContainsURL(result, sourceURL) {
+		t.Fatal("same-site scientific file link was not recognized by the bounded source parser")
+	}
+	if agentPublicScientificResultContainsURL(result, "https://files.example.org/download/3DSH.pdb") {
+		t.Fatal("an unrelated external file link inherited source authority")
+	}
+	discovered := agentPublicScientificCandidatesFromResult(result, "rcsb-html-structure", 8)
+	if len(discovered) != 1 || discovered[0].URL != sourceURL {
+		t.Fatalf("same-site scientific candidates=%#v", discovered)
+	}
+
+	sourceCallID := appendAgentPublicScientificSourceCheckpoint(
+		t, fixture, "rcsb-html-structure", pageURL, false, func(payload map[string]any) {
+			payload["toolName"] = "web_fetch"
+			raw := json.RawMessage(`{"ok":true,"result":{"requestedUrl":"https://www.rcsb.org/structure/3DSH","body":"\u003chtml\u003e\u003ca href=\"//files.rcsb.org/download/3DSH.pdb\"\u003ecoordinates\u003c/a\u003e\u003c/html\u003e"}}`)
+			payload["toolResult"] = raw
+			payload["resultSha256"] = kernelMCPEvidenceSHA256(raw)
+		},
+	)
+	request, err := parseAgentPublicScientificFileRequest(map[string]any{
+		"url": sourceURL, "filename": "3DSH.pdb", "human_description": "Downloading IRF5 coordinates",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := fixture.server.validateAgentPublicScientificSourceURL(
+		context.Background(), fixture.stream.UID, fixture.stream.OwnerID, request,
+	)
+	if err != nil || resolved.ToolCallID != sourceCallID {
+		t.Fatalf("same-site durable source resolved=%#v want=%q err=%v", resolved, sourceCallID, err)
+	}
+}
+
+func TestAgentPublicScientificReadWindowAuthorizesSameSiteImmutableSourceLink(t *testing.T) {
+	checkpoint := sessionRunnerDurableToolCheckpoint{
+		ToolName: "read_file", ToolCallID: "read-source-window", ToolPhase: "completed",
+		ExecutedToolInput: json.RawMessage(`{"version_id":"ltr-source-window"}`),
+	}
+	value := map[string]any{
+		"content":                 "107\\tCoordinates <https://files.example.org/download/TEST1.cif>\n108\\tLegacy PDB <https://files.example.org/download/TEST1.pdb>",
+		"file_path_scope":         "original_source",
+		"raw_read_with":           map[string]any{"version_id": "ltr-source-window"},
+		"source_body_sha256":      strings.Repeat("a", 64),
+		"source_content_included": true,
+		"source_url":              "https://www.example.org/structure/TEST1",
+		"source_version_id":       "ltr-source-window",
+		"view_format":             "html-readable-display-lines",
+	}
+	if !agentPublicScientificReadWindowAuthorizesDownload(
+		checkpoint, value, "https://files.example.org/download/TEST1.pdb",
+	) {
+		t.Fatal("immutable source line window did not authorize its exact same-site file link")
+	}
+	for name, mutate := range map[string]func(map[string]any){
+		"unrelated site": func(candidate map[string]any) {
+			candidate["content"] = "108\\tLegacy PDB <https://files.unrelated.test/download/TEST1.pdb>"
+		},
+		"wrong source version": func(candidate map[string]any) {
+			candidate["source_version_id"] = "ltr-other"
+		},
+		"missing digest": func(candidate map[string]any) {
+			delete(candidate, "source_body_sha256")
+		},
+		"ordinary text view": func(candidate map[string]any) {
+			candidate["view_format"] = "text-lines"
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			candidate := copyMapAny(value)
+			mutate(candidate)
+			if agentPublicScientificReadWindowAuthorizesDownload(
+				checkpoint, candidate, "https://files.example.org/download/TEST1.pdb",
+			) {
+				t.Fatalf("untrusted read window authorized download: %#v", candidate)
+			}
+		})
 	}
 }
 

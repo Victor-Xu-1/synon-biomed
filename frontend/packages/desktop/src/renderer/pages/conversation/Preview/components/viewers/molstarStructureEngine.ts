@@ -459,6 +459,11 @@ export type MolstarStructureEngine = {
     filename: string,
     format: string
   ) => Promise<MolstarStructureComposition>;
+  readonly add: (
+    source: string | ArrayBuffer,
+    filename: string,
+    format: string
+  ) => Promise<MolstarStructureComposition>;
   readonly loadDockingEnsemble: (
     source: string,
     filename: string,
@@ -3502,6 +3507,27 @@ export async function createMolstarStructureEngine(
         if (!preset || plugin.managers.structure.hierarchy.current.structures.length === 0) {
           throw new Error('MOLSTAR_STRUCTURE_MISSING');
         }
+      }
+      applyStructureObjectVisibility();
+      await applyStructureLigandColor();
+      plugin.handleResize();
+      return getStructureComposition();
+    },
+    add: async (source, filename, format) => {
+      if (format === 'cube') throw new Error('MOLSTAR_STRUCTURE_SCENE_CUBE_UNSUPPORTED');
+      const raw = await plugin.builders.data.rawData({
+        data: source,
+        label: filename,
+      });
+      const trajectory = await plugin.builders.structure.parseTrajectory(raw, format as MolstarTrajectoryFormat);
+      const preset = await plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default', {
+        structure: { name: 'model', params: {} },
+        showUnitcell: false,
+        representationPreset: 'auto',
+        representationPresetParams: INITIAL_REPRESENTATION_PRESET_PARAMS,
+      });
+      if (!preset || plugin.managers.structure.hierarchy.current.structures.length === 0) {
+        throw new Error('MOLSTAR_STRUCTURE_SCENE_LAYER_MISSING');
       }
       applyStructureObjectVisibility();
       await applyStructureLigandColor();

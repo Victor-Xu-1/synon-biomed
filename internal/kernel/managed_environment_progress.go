@@ -35,7 +35,6 @@ type managedEnvironmentProgressObserver struct {
 	lastPercent     *float64
 	packageCount    *int64
 	packageCountTag string
-	plannedBytes    *int64
 	clock           func() time.Time
 	lastBytesDone   int64
 	lastBytesTotal  int64
@@ -101,7 +100,6 @@ func (o *managedEnvironmentProgressObserver) flushLocked() {
 		packageCountFresh = o.packageCount == nil || *packageCount != *o.packageCount || line != o.packageCountTag
 		o.packageCount, o.packageCountTag = packageCount, line
 	}
-	o.observePlannedTotal(line)
 	if phase == "" {
 		phase = o.lastPhase
 	}
@@ -112,17 +110,6 @@ func (o *managedEnvironmentProgressObserver) flushLocked() {
 	if packageCount != nil && packageCountFresh {
 		zero := int64(0)
 		completedItems = &zero
-	}
-	transferDone := managedEnvironmentTransferDonePattern.MatchString(line)
-	if bytesTotal == nil && bytesCompleted == nil && o.plannedTotal() != nil &&
-		(managedEnvironmentInstallerPhase(line) != "" || transferDone) {
-		bytesTotal = o.plannedTotal()
-		zero := int64(0)
-		bytesCompleted = &zero
-		if transferDone {
-			done := *o.plannedTotal()
-			bytesCompleted = &done
-		}
 	}
 	if derivedRate := o.observeByteRate(bytesCompleted, bytesTotal); bytesPerSecond == nil {
 		bytesPerSecond = derivedRate
@@ -189,18 +176,7 @@ func (o *managedEnvironmentProgressObserver) Complete() {
 	percent := float64(100)
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	var bytesCompleted, bytesTotal *int64
-	if o.plannedBytes != nil {
-		total := *o.plannedBytes
-		completed := total
-		bytesCompleted, bytesTotal = &completed, &total
-	} else if o.hasByteSnapshot {
-		completed, total := o.lastBytesTotal, o.lastBytesTotal
-		if total > 0 {
-			bytesCompleted, bytesTotal = &completed, &total
-		}
-	}
-	o.publish("installer_process_completed", &percent, nil, bytesCompleted, bytesTotal, nil, false)
+	o.publish("installer_process_completed", &percent, nil, nil, nil, nil, false)
 }
 
 func reportManagedEnvironmentMilestone(ctx context.Context, phase string, completed, total int64) {
@@ -279,8 +255,13 @@ func managedEnvironmentObservedByteCounts(line string) (*int64, *int64) {
 	if match := managedEnvironmentRawByteProgressPattern.FindStringSubmatch(line); len(match) == 3 {
 		completed, completedErr := strconv.ParseInt(match[1], 10, 64)
 		total, totalErr := strconv.ParseInt(match[2], 10, 64)
-		if completedErr == nil && totalErr == nil && completed >= 0 && total > 0 && completed <= total {
-			return &completed, &total
+		if completedErr == nil && totalErr == nil && completed >= 0 && total >= 0 {
+			if total == 0 {
+				return &completed, nil
+			}
+			if completed <= total {
+				return &completed, &total
+			}
 		}
 		return nil, nil
 	}
@@ -306,15 +287,22 @@ func managedEnvironmentNormalizeByteCounts(completedNumber, completedUnit, total
 }
 
 func (o *managedEnvironmentProgressObserver) observeByteRate(completed, total *int64) *float64 {
-	if completed == nil || total == nil || *total <= 0 || *completed < 0 || *completed > *total {
+	if completed == nil || *completed < 0 {
 		return nil
+	}
+	observedTotal := int64(0)
+	if total != nil {
+		if *total <= 0 || *completed > *total {
+			return nil
+		}
+		observedTotal = *total
 	}
 	now := time.Now()
 	if o.clock != nil {
 		now = o.clock()
 	}
 	var rate *float64
-	if o.hasByteSnapshot && o.lastBytesTotal == *total && *completed >= o.lastBytesDone {
+	if o.hasByteSnapshot && o.lastBytesTotal == observedTotal && *completed >= o.lastBytesDone {
 		elapsed := now.Sub(o.lastBytesAt).Seconds()
 		delta := *completed - o.lastBytesDone
 		if delta > 0 && elapsed > 0 {
@@ -324,7 +312,7 @@ func (o *managedEnvironmentProgressObserver) observeByteRate(completed, total *i
 			}
 		}
 	}
-	o.lastBytesDone, o.lastBytesTotal, o.lastBytesAt, o.hasByteSnapshot = *completed, *total, now, true
+	o.lastBytesDone, o.lastBytesTotal, o.lastBytesAt, o.hasByteSnapshot = *completed, observedTotal, now, true
 	return rate
 }
 
@@ -365,27 +353,7 @@ func managedEnvironmentByteValue(number, unit string) (float64, bool) {
 	}
 }
 
-var (
-	managedEnvironmentTotalDownloadPattern   = regexp.MustCompile(`(?i)^total download:\s*([0-9]+(?:\.[0-9]+)?)\s*(bytes?|b|kb|mb|gb|kib|mib|gib)\s*$`)
-	managedEnvironmentTransferDonePattern    = regexp.MustCompile("(?i)(transaction finished|transaction complete|successfully installed)")
-	managedEnvironmentRawByteProgressPattern = regexp.MustCompile(`(?i)^\s*progress\s+([0-9]+)\s+of\s+([0-9]+)\s*$`)
-)
-
-// observePlannedTotal records the installer's own planned download size from
-// its transaction summary.
-func (o *managedEnvironmentProgressObserver) observePlannedTotal(line string) {
-	if match := managedEnvironmentTotalDownloadPattern.FindStringSubmatch(line); len(match) == 3 {
-		if value, ok := managedEnvironmentByteValue(match[1], match[2]); ok && value > 0 && value <= math.MaxInt64 {
-			total := int64(math.Round(value))
-			o.plannedBytes = &total
-		}
-	}
-}
-
-// managedEnvironmentPlannedTotal exposes the stored planned size for publish.
-func (o *managedEnvironmentProgressObserver) plannedTotal() *int64 {
-	return o.plannedBytes
-}
+var managedEnvironmentRawByteProgressPattern = regexp.MustCompile(`(?i)^\s*progress\s+([0-9]+)\s+of\s+([0-9]+)\s*$`)
 
 // managedEnvironmentProcessName derives the bounded public-safe installer
 // identity that produced the output. It is the generic process boundary every

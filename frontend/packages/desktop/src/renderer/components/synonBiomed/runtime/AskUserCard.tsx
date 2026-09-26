@@ -165,6 +165,26 @@ const AskUserCard: React.FC<AskUserCardProps> = ({
         </div>
       ) : null}
       <h3 className='m-0'>{question.question}</h3>
+      {question.stageProgress ? (
+        <div className='synon-ask-user-card__stage mt-10px' data-testid='synon-plan-stage-progress'>
+          <p className='m-0 text-12px text-t-tertiary'>
+            {t('conversation.synonRuntime.askUser.stageRecorded', { count: question.stageProgress.completedCount })}
+          </p>
+          <ul className='my-4px pl-18px'>
+            {question.stageProgress.completedSteps.map((step) => (
+              <li key={step.id}>{step.title}</li>
+            ))}
+          </ul>
+          <p className='m-0 text-12px text-t-tertiary'>
+            {t('conversation.synonRuntime.askUser.stageRemaining', { count: question.stageProgress.remainingCount })}
+          </p>
+          <ul className='my-4px pl-18px'>
+            {question.stageProgress.remainingSteps.map((step) => (
+              <li key={step.id}>{step.title}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {submitFailed ? <p role='alert'>{t('conversation.synonRuntime.runtimeOperations.answerSubmitFailed')}</p> : null}
 
       <div

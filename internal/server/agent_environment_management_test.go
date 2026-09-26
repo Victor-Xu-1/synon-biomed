@@ -1258,6 +1258,28 @@ func TestManagedEnvironmentFailureClassificationUsesTerminalCauseNotWarnings(t *
 	}
 }
 
+func TestManagedPipRestoreFailureReceiptKeepsSourceGenerationReady(t *testing.T) {
+	err := &kernelruntime.ManagedPipRestorationError{
+		Legacy: true, BeforeRequestedPackage: true,
+		Cause: errors.New("ModuleNotFoundError: No module named 'core'"),
+	}
+	receipt := managedEnvironmentFailureReceipt(managePackagesToolName, err)
+	failure := mapValue(receipt["failure"])
+	details := mapValue(failure["details"])
+	recovery := stringValue(failure["recovery"])
+	if stringValue(failure["category"]) != "build_isolation_missing_dependency" ||
+		stringValue(details["missing_module"]) != "core" ||
+		stringValue(details["operation_stage"]) != "restore_previous_pip_packages" ||
+		!boolValue(details["source_generation_ready"], false) ||
+		!boolValue(details["legacy_inventory"], false) ||
+		!boolValue(details["requested_package_not_started"], false) ||
+		!strings.Contains(recovery, "active source environment remains verified") ||
+		!strings.Contains(recovery, "previously verified wheel/index source") ||
+		!strings.Contains(recovery, "before rebuilding its dependent package") {
+		t.Fatalf("legacy restore receipt=%#v", receipt)
+	}
+}
+
 func TestManagedEnvironmentDependencyFailurePreservesGenericRecoveryInvariants(t *testing.T) {
 	server, identity := managedEnvironmentToolFixture(t)
 	name, capability := "test accelerator", "12.0"

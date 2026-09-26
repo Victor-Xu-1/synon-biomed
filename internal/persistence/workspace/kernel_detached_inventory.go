@@ -7,7 +7,162 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	transcriptstore "synon-go/internal/persistence/transcript"
 )
+
+type BeginKernelExecutionBackendDrainIfIdleInput struct {
+	BackendID          string
+	BackendGeneration  int64
+	ExecutorInstanceID string
+}
+
+// CountNonterminalKernelExecutions returns the durable work that still needs
+// an executor-owned receipt. It deliberately includes accepted work that has
+// not reached the in-memory executor yet; a process-local active map is not a
+// recovery authority across a controller handoff.
+func (s *Store) CountNonterminalKernelExecutions(
+	ctx context.Context,
+	backendID string,
+	generation int64,
+) (int, error) {
+	backendID = strings.TrimSpace(backendID)
+	if s == nil || s.db == nil || ctx == nil || !validDetachedIdentity(backendID) || generation <= 0 {
+		return 0, errors.New("kernel execution drain authority is required")
+	}
+	readDB := s.readDB
+	if readDB == nil {
+		readDB = s.db
+	}
+	var count int
+	if err := readDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM kernel_detached_executions
+		WHERE backend_id=? AND backend_generation=?
+		AND state IN ('accepted','dispatch_committed','started','cancel_requested')`,
+		backendID, generation).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// ListKernelExecutionBackendsForOwner returns live detached authorities whose
+// mounts or network policy may still be usable. Terminal history is excluded;
+// durable executions remain available for recovery after a forced revocation.
+func (s *Store) ListKernelExecutionBackendsForOwner(ctx context.Context, ownerID string) ([]KernelExecutionBackend, error) {
+	ownerID = strings.TrimSpace(ownerID)
+	if s == nil || s.db == nil || ctx == nil || !validDetachedIdentity(ownerID) {
+		return nil, errors.New("kernel owner inventory authority is required")
+	}
+	readDB := s.readDB
+	if readDB == nil {
+		readDB = s.db
+	}
+	rows, err := readDB.QueryContext(ctx, `SELECT backend_id FROM kernel_execution_backends
+		WHERE owner_user_id=? AND state IN ('starting','ready','draining')
+		ORDER BY updated_at,backend_id`, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	backends := make([]KernelExecutionBackend, 0, len(ids))
+	for _, id := range ids {
+		backend, found, err := s.GetKernelExecutionBackend(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if found && backend.OwnerUserID == ownerID &&
+			(backend.State == KernelExecutionBackendStateStarting || backend.State == KernelExecutionBackendStateReady || backend.State == KernelExecutionBackendStateDraining) {
+			backends = append(backends, backend)
+		}
+	}
+	return backends, nil
+}
+
+// BeginKernelExecutionBackendDrainIfIdle closes the admission race between
+// checking for active executions and retiring an idle executor. The state
+// transition and active-execution check share one immediate transaction, so a
+// new accepted execution cannot appear after the idle decision.
+func (s *Store) BeginKernelExecutionBackendDrainIfIdle(
+	ctx context.Context,
+	input BeginKernelExecutionBackendDrainIfIdleInput,
+) (KernelExecutionBackend, bool, error) {
+	input.BackendID = strings.TrimSpace(input.BackendID)
+	input.ExecutorInstanceID = strings.TrimSpace(input.ExecutorInstanceID)
+	if s == nil || s.db == nil || ctx == nil || !validDetachedIdentity(input.BackendID) ||
+		input.BackendGeneration <= 0 || !validDetachedIdentity(input.ExecutorInstanceID) {
+		return KernelExecutionBackend{}, false, errors.New("kernel backend drain authority is required")
+	}
+	repository, err := s.TranscriptRepository(ctx)
+	if err != nil {
+		return KernelExecutionBackend{}, false, err
+	}
+	var backend KernelExecutionBackend
+	idle := false
+	err = repository.RunImmediate(ctx, func(tx *transcriptstore.ImmediateTransaction) error {
+		current, found, queryErr := getKernelExecutionBackendQuery(ctx, tx, input.BackendID)
+		if queryErr != nil {
+			return queryErr
+		}
+		if !found || current.BackendGeneration != input.BackendGeneration ||
+			current.ExecutorInstanceID != input.ExecutorInstanceID {
+			return ErrKernelExecutionBackendStale
+		}
+		if current.State == KernelExecutionBackendStateDraining {
+			var active int
+			if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM kernel_detached_executions
+				WHERE backend_id=? AND backend_generation=?
+				AND state IN ('accepted','dispatch_committed','started','cancel_requested')`,
+				input.BackendID, input.BackendGeneration).Scan(&active); err != nil {
+				return err
+			}
+			backend, idle = current, active == 0
+			return nil
+		}
+		if current.State != KernelExecutionBackendStateReady {
+			return ErrKernelExecutionBackendStale
+		}
+		var active int
+		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM kernel_detached_executions
+			WHERE backend_id=? AND backend_generation=?
+			AND state IN ('accepted','dispatch_committed','started','cancel_requested')`,
+			input.BackendID, input.BackendGeneration).Scan(&active); err != nil {
+			return err
+		}
+		if active != 0 {
+			backend, idle = current, false
+			return nil
+		}
+		now := s.now().UTC().Format(time.RFC3339Nano)
+		result, err := tx.ExecContext(ctx, `UPDATE kernel_execution_backends SET
+			state='draining',state_version=state_version+1,updated_at=?
+			WHERE backend_id=? AND backend_generation=? AND executor_instance_id=?
+			AND state_version=? AND state='ready'`, now, input.BackendID,
+			input.BackendGeneration, input.ExecutorInstanceID, current.StateVersion)
+		if err != nil {
+			return err
+		}
+		if rows, err := result.RowsAffected(); err != nil || rows != 1 {
+			if err != nil {
+				return err
+			}
+			return ErrKernelExecutionBackendStale
+		}
+		backend, _, err = getKernelExecutionBackendQuery(ctx, tx, input.BackendID)
+		idle = err == nil
+		return err
+	})
+	return backend, idle, err
+}
 
 // DetachedKernelInventoryEntry is the durable cross-process projection used
 // by the global compute panel. It deliberately contains only validated backend

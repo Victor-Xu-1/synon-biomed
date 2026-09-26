@@ -1,9 +1,7 @@
 package server
 
 import (
-	"encoding/csv"
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -16,19 +14,7 @@ var runnerEvidenceStableLocatorPattern = regexp.MustCompile(`(?i)(?:https?://\S+
 // "FDA label" or "literature" is a category, not provenance. This gate is
 // deliberately domain-neutral: URLs, DOIs, registry IDs, accessions, and
 // regulatory application IDs are accepted without interpreting the claim.
-func runnerEvidenceProvenanceFailures(snapshot runnerCrossArtifactSnapshot) []string {
-	records, headers, ok := runnerEvidenceLedgerRecords(snapshot)
-	if !ok {
-		return nil
-	}
-	return runnerEvidenceProvenanceTableFailures(snapshot.name, records, headers)
-}
-
-func runnerEvidenceProvenanceTableFailures(
-	name string,
-	records [][]string,
-	headers map[string]int,
-) []string {
+func runnerEvidenceProvenanceTableFailuresAtRow(name string, records [][]string, headers map[string]int, firstRow int) []string {
 	sourceTypeIndex, found := firstRunnerEvidenceColumn(headers, "source_type", "sourcetype", "来源类型", "证据类型")
 	locatorIndexes := runnerEvidenceLocatorIndexes(headers)
 	statusIndex, hasStatus := firstRunnerEvidenceColumn(
@@ -62,38 +48,11 @@ func runnerEvidenceProvenanceTableFailures(
 		if !located {
 			failures = append(failures, fmt.Sprintf(
 				"evidence_source_locator_missing:%s row=%d source_type=%s",
-				name, rowIndex+2, sourceType,
+				name, rowIndex+firstRow, sourceType,
 			))
 		}
 	}
 	return failures
-}
-
-func runnerEvidenceLedgerRecords(
-	snapshot runnerCrossArtifactSnapshot,
-) ([][]string, map[string]int, bool) {
-	base := strings.ToLower(filepath.Base(strings.TrimSpace(snapshot.name)))
-	ext := strings.ToLower(filepath.Ext(base))
-	if ext != ".csv" && ext != ".tsv" {
-		return nil, nil, false
-	}
-	reader := csv.NewReader(strings.NewReader(strings.TrimPrefix(snapshot.text, "\ufeff")))
-	if ext == ".tsv" {
-		reader.Comma = '\t'
-	}
-	reader.FieldsPerRecord = -1
-	records, err := reader.ReadAll()
-	if err != nil || len(records) < 2 {
-		return nil, nil, false
-	}
-	headers := make(map[string]int, len(records[0]))
-	for index, header := range records[0] {
-		headers[normalizeRunnerTableToken(header)] = index
-	}
-	if !runnerEvidenceLedgerHeaderShape(headers) {
-		return nil, nil, false
-	}
-	return records, headers, true
 }
 
 func runnerEvidenceLedgerHeaderShape(headers map[string]int) bool {
@@ -110,24 +69,6 @@ func runnerEvidenceLedgerHeaderShape(headers map[string]int) bool {
 	// locator. This keeps evidence ledgers strict without making execution-pack
 	// output editable merely because it records an input filename in `source`.
 	return hasLocator && (hasSummary || hasSourceType || hasIdentifier)
-}
-
-func runnerEmbeddedMarkdownEvidenceTables(snapshot runnerCrossArtifactSnapshot) []runnerCrossArtifactTable {
-	ext := strings.ToLower(filepath.Ext(strings.TrimSpace(snapshot.name)))
-	if ext != ".md" && ext != ".markdown" {
-		return nil
-	}
-	result := make([]runnerCrossArtifactTable, 0)
-	for _, table := range runnerMarkdownArtifactTables(snapshot) {
-		headers := make(map[string]int, len(table.headers))
-		for index, header := range table.headers {
-			headers[normalizeRunnerTableToken(header)] = index
-		}
-		if runnerEvidenceLedgerHeaderShape(headers) {
-			result = append(result, table)
-		}
-	}
-	return result
 }
 
 func runnerEvidenceRowHasContent(row []string) bool {

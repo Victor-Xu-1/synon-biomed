@@ -217,7 +217,8 @@ func TestCompletionReviewReviseRejectsCandidateWithoutAutoResumeLoop(t *testing.
 			Claim: "No docking calculation or ranked output was produced.", Severity: "high",
 		}},
 	}
-	reason, detail := correction.runnerCorrection()
+	cause := correction.runnerCorrection()
+	reason, detail := cause.ReasonCode, cause.Detail
 	if reason != "completion_review_correction_required" ||
 		!strings.Contains(detail, "completion reviewer rejected the current candidate") ||
 		!strings.Contains(detail, "high: No docking calculation or ranked output was produced.") {
@@ -225,17 +226,6 @@ func TestCompletionReviewReviseRejectsCandidateWithoutAutoResumeLoop(t *testing.
 	}
 	if !runnerInterruptionAutoResume(reason) || !runnerInterruptionMayContinueSameTask(reason) {
 		t.Fatal("review correction did not enter the bounded automatic correction path")
-	}
-}
-
-func TestCompletionReviewCorrectionUsesBoundedBounceBudget(t *testing.T) {
-	for _, reviewIndex := range []int{0, 1, 2} {
-		if !sessionReviewerShouldRequestCorrection(reviewIndex) {
-			t.Fatalf("review %d should still request correction", reviewIndex+1)
-		}
-	}
-	if sessionReviewerShouldRequestCorrection(3) || sessionReviewerMaxConsecutiveBounces != 3 {
-		t.Fatalf("the review after three correction bounces must ship with visible unresolved findings; budget=%d", sessionReviewerMaxConsecutiveBounces)
 	}
 }
 

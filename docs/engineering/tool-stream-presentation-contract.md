@@ -237,6 +237,13 @@ validation remain unchanged. Incomplete responses and final-looking or
 report-sized drafts are not promoted to progress. Progress is bounded to 300
 Unicode characters without clipping the underlying model response.
 
+Required-tool rounds retain candidate text under the model-response byte budget
+until the tool-choice contract can be checked. Adjacent content fragments are
+coalesced into bounded chunks, with complete UTF-8 strings and typed marker order
+preserved. Provider token fragmentation is not an event-count lifetime for the
+response or task. Explicit public progress still uses its own immediate validated
+publication path; coalescing grants no new publication or execution authority.
+
 Live text retains its durable publication coordinate. A loaded history page
 carries the publication range already represented by its text snapshots. An
 increment within that covered range cannot be appended again, and an older live

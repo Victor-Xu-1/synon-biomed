@@ -28,6 +28,8 @@ reviewable pull requests; changes must not be pushed directly to `main`.
 
    ```bash
    go test ./internal/buildinfo
+   make frontend-install
+   (cd frontend && npx --no-install playwright install chromium)
    make frontend-test
    make frontend-typecheck
    make audit-source-clean
@@ -37,6 +39,9 @@ reviewable pull requests; changes must not be pushed directly to `main`.
    example) and run frontend checks when the frontend is affected. The complete
    release-quality suite is for release candidates and scheduled verification,
    not every small change. Report checks that cannot run.
+   Browser-backed HTML isolation tests require the Chromium revision selected by
+   the locked Playwright dependency. The explicit installation step above also
+   runs in frontend CI; it does not depend on a developer's browser profile.
 6. Open a pull request with the problem, design, tests, compatibility impact,
    and rollback considerations. Do not merge until required checks and review
    are complete.

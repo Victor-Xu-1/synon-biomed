@@ -3,8 +3,10 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"synon-go/internal/agentruntime"
+	runtimekv "synon-go/internal/persistence/runtimekv"
 	"testing"
 )
 
@@ -89,5 +91,78 @@ func TestCommunicationObserverNeverGeneratesOrPublishesText(t *testing.T) {
 	encoded, _ := json.Marshal(record)
 	if err != nil || model.calls != 1 || streamed != text || response.Message.Content != text || record["published_bytes"] != len(text) || strings.Contains(string(encoded), text) || strings.Contains(string(encoded), "PRIVATE_SENTINEL") {
 		t.Fatalf("calls=%d streamed=%q audit=%s err=%v", model.calls, streamed, encoded, err)
+	}
+}
+
+func TestCommunicationObserverRecordsOnlyStructuralNarrationCounters(t *testing.T) {
+	text := "private-label " + strings.Repeat("repeated-private-word ", 40)
+	model := &nativeCommunicationFixture{responses: []agentruntime.ModelResponse{{Message: agentruntime.Message{Content: text}}}}
+	var record map[string]any
+	observer := &sessionRunnerCommunicationObserver{delegate: model, publicationBytes: func() int { return 0 }, audit: func(value map[string]any) { record = value }}
+	response, err := observer.CompleteStream(context.Background(), agentruntime.ModelRequest{}, nil)
+	observer.recordBoundary(false)
+	encoded, _ := json.Marshal(record)
+	if err != nil || model.calls != 1 || response.Message.Content != text {
+		t.Fatalf("diagnostics changed the native response: calls=%d err=%v", model.calls, err)
+	}
+	if record["native_whitespace_units"] != 41 || record["native_longest_equal_unit_run"] != 40 {
+		t.Fatalf("missing native structural counters: %s", encoded)
+	}
+	if strings.Contains(string(encoded), "private-label") || strings.Contains(string(encoded), "repeated-private-word") {
+		t.Fatal("narration diagnostics retained response data")
+	}
+}
+
+func TestNarrationCountersUseWhitespaceUnitsWithoutLanguageHeuristics(t *testing.T) {
+	for _, tc := range []struct {
+		name, text string
+		units, run int
+	}{
+		{"empty", "", 0, 0},
+		{"spaces", " \t\n\u3000", 0, 0},
+		{"unicode spaces", " 甲\u3000甲\t乙\n乙 乙 ", 5, 3},
+		{"unsegmented sequence", strings.Repeat("ACGT", 10000), 1, 1},
+		{"intentional prose", "repeat repeat break repeat repeat repeat", 6, 3},
+		{"punctuation preserved", "word word. word", 3, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			record := map[string]any{}
+			addSessionRunnerNarrationCounters(record, "native_", tc.text)
+			if len(record) != 2 || record["native_whitespace_units"] != tc.units || record["native_longest_equal_unit_run"] != tc.run {
+				t.Fatalf("counters=%v", record)
+			}
+		})
+	}
+}
+
+func TestCommunicationObserverCountersPersistWithoutResponseText(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "runtime-state.sqlite")
+	store := runtimekv.New(path)
+	server := &Server{runtimeStore: store}
+	text := strings.Repeat("sensitive-response-unit ", 50)
+	record := map[string]any{"decision": "language_localized"}
+	addSessionRunnerNarrationCounters(record, "input_", text)
+	addSessionRunnerNarrationCounters(record, "output_", text)
+	server.recordSessionRunnerCommunicationAudit(&sessionRunnerChatRun{SessionID: "counter-session"}, record)
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened := runtimekv.New(path)
+	defer reopened.Close()
+	entries, err := reopened.List(sessionRunnerCommunicationAuditNamespace)
+	if err != nil || len(entries) != 1 {
+		t.Fatalf("persisted records=%d err=%v", len(entries), err)
+	}
+	raw, err := json.Marshal(entries[0].Value)
+	if err != nil || strings.Contains(string(raw), "sensitive-response-unit") {
+		t.Fatalf("audit serialization leaked response data: err=%v", err)
+	}
+	var got struct {
+		Input     int    `json:"input_longest_equal_unit_run"`
+		Output    int    `json:"output_longest_equal_unit_run"`
+		SessionID string `json:"session_id"`
+	}
+	if err := json.Unmarshal(raw, &got); err != nil || got.Input != 50 || got.Output != 50 || got.SessionID != "counter-session" {
+		t.Fatalf("reopened audit lost counters or scope: value=%+v err=%v", got, err)
 	}
 }

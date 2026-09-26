@@ -34,6 +34,32 @@ vi.mock('react-i18next', () => ({
 }));
 
 describe('MessageToolGroupSummary', () => {
+  it('shows recoverable source unavailability from the native receipt without a completed-evidence claim', () => {
+    const messages = [
+      {
+        id: 'unavailable-source',
+        conversation_id: 'retrieval-task',
+        type: 'tool_call',
+        content: {
+          call_id: 'unavailable-source',
+          name: 'web_fetch',
+          status: 'completed',
+          args: { url: 'https://example.org/source' },
+          output: JSON.stringify({
+            ok: true,
+            result: { sourceUnavailable: true, statusCode: 403, bytesRead: 146, complete: true },
+          }),
+        },
+      },
+    ] as ToolMessage[];
+    render(<MessageToolGroupSummary messages={messages} />);
+    expect(screen.getByTestId('tool-chip')).toHaveTextContent('Source unavailable');
+    expect(screen.getByTestId('tool-chip')).not.toHaveTextContent('Completed');
+    fireEvent.click(screen.getByTestId('tool-chip'));
+    expect(
+      screen.getByText('This response is not usable source evidence. The task can retry or use another source.')
+    ).toBeVisible();
+  });
   it('retains file subjects in collapsed groups and never opens evidence on progress', () => {
     const messages = ['data.csv', 'study.md'].map((path, index) => ({
       id: `subject-${index}`,
@@ -127,8 +153,10 @@ describe('MessageToolGroupSummary', () => {
     const { rerender } = render(<MessageToolGroupSummary messages={message(1, 20, 30_000)} />);
     const originalRow = screen.getByTestId('tool-chip');
     expect(originalRow).toHaveTextContent('Preparing the molecular design environment');
-    expect(originalRow).toHaveTextContent('Downloading packages · phase 20% · Step elapsed 0:30');
-    expect(originalRow).toHaveTextContent('1 / 8 steps');
+    expect(originalRow).toHaveTextContent('Downloading packages · Elapsed 0:30');
+    expect(originalRow).toHaveTextContent('Running');
+    expect(originalRow).not.toHaveTextContent('%');
+    expect(originalRow).not.toHaveTextContent('1 / 8 steps');
     expect(originalRow).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByTestId('tool-public-detail')).not.toBeInTheDocument();
 
@@ -137,12 +165,14 @@ describe('MessageToolGroupSummary', () => {
     const updatedRow = screen.getByTestId('tool-chip');
     expect(updatedRow).toBe(originalRow);
     expect(updatedRow).toHaveAttribute('aria-expanded', 'false');
-    expect(updatedRow).toHaveTextContent('Downloading packages · phase 65% · Step elapsed 1:00');
-    expect(updatedRow).toHaveTextContent('2 / 8 steps');
+    expect(updatedRow).toHaveTextContent('Downloading packages · Elapsed 1:00');
+    expect(updatedRow).not.toHaveTextContent('%');
+    expect(updatedRow).not.toHaveTextContent('2 / 8 steps');
     fireEvent.click(updatedRow);
     expect(screen.getByTestId('show-output-toggle')).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(screen.getByTestId('show-output-toggle'));
-    expect(screen.getByTestId('tool-public-detail')).toHaveTextContent('Milestones completed25%');
+    expect(screen.getByTestId('tool-public-detail')).not.toHaveTextContent('Milestones completed');
+    expect(screen.getByTestId('tool-public-detail')).not.toHaveTextContent('Setup milestones');
   });
 
   it('shows completed history rows by default while keeping their detail cards collapsed', () => {
@@ -179,7 +209,7 @@ describe('MessageToolGroupSummary', () => {
 
     expect(screen.queryByText(/public-source search.*is complete/i)).not.toBeInTheDocument();
     const summary = screen.getByRole('button', {
-      name: /Ran a search, Inspected a source.*2 steps/,
+      name: /Ran a search, Inspected a source/,
     });
     const group = summary.closest('.tool-group-summary');
     const details = group?.querySelector('.tool-group-summary__details');
@@ -255,7 +285,8 @@ describe('MessageToolGroupSummary', () => {
 
     const { rerender } = render(<MessageToolGroupSummary messages={runningMessages} />);
 
-    const summary = screen.getByRole('button', { name: /2 steps/ });
+    const summary = screen.getByRole('button', { name: /Ran a search, Inspected a source/ });
+    expect(summary).not.toHaveTextContent('2 steps');
     const details = summary.closest('.tool-group-summary')?.querySelector('.tool-group-summary__details');
     expect(summary).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(summary);
@@ -524,7 +555,7 @@ describe('MessageToolGroupSummary', () => {
 
     const summary = screen.getByTestId('tool-group-header');
     expect(summary).toHaveAttribute('aria-expanded', 'true');
-    expect(summary).toHaveTextContent('6 steps');
+    expect(summary).not.toHaveTextContent('6 steps');
     expect(screen.getAllByTestId('tool-chip')).toHaveLength(6);
     expect(screen.queryByTestId('tool-public-detail')).not.toBeInTheDocument();
   });
@@ -624,7 +655,8 @@ describe('MessageToolGroupSummary', () => {
 
     const summary = screen.getByTestId('tool-group-header');
     expect(summary).toHaveTextContent('Reviewed 17 execution attempts');
-    expect(summary).toHaveTextContent('1 step · 17 not executed · 1 failed');
+    expect(summary).toHaveTextContent('17 not executed · 1 failed');
+    expect(summary).not.toHaveTextContent('1 step');
     expect(summary).not.toHaveTextContent('18 failed');
     expect(summary).toHaveAttribute('aria-expanded', 'true');
 
@@ -1159,105 +1191,124 @@ describe('MessageToolGroupSummary', () => {
     expect(document.body).not.toHaveTextContent('old owner private evidence');
   });
 
-  it('hydrates a durable large search result before rendering its source disclosure', async () => {
-    const contentUrl =
-      '/api/artifacts/large-tool-result-b99bbabc3daa06ffac144155ec2d9118/versions/ltr-acfa9b05-f3ed-45ec-b8da-9d6f8f45ee83';
-    const hydratedOutput = JSON.stringify({
-      ok: true,
-      result: {
-        query: 'sotorasib brain metastasis',
-        sources: [
-          { title: 'Primary study', url: 'https://example.org/primary' },
-          {
-            title: 'Independent study',
-            url: 'https://example.org/independent',
-          },
-        ],
-      },
-    });
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(hydratedOutput, {
-        status: 200,
-        headers: {
-          'content-length': String(new TextEncoder().encode(hydratedOutput).byteLength),
-        },
-      })
-    );
-    vi.stubGlobal('fetch', fetchMock);
-
-    try {
-      const invoke = vi.mocked(ipcBridge.database.getConversationMessage.invoke);
-      invoke.mockReset();
-      invoke.mockResolvedValue({
-        id: 'message-large-search',
-        conversation_id: 'conversation-1',
-        type: 'tool_call',
-        content: {
-          call_id: 'tool-large-search',
-          name: 'web_search',
-          status: 'completed',
-          output: JSON.stringify({
-            artifact_id: 'large-tool-result-b99bbabc3daa06ffac144155ec2d9118',
-            content_url: contentUrl,
-            truncated: true,
-          }),
-        },
-      } as unknown as TMessage);
-
-      render(
-        <MessageToolGroupSummary
-          messages={[
+  it.each([true, false])(
+    'hydrates a durable large search result (history compact marker: %s)',
+    async (historyCompact) => {
+      const contentUrl =
+        '/api/artifacts/large-tool-result-b99bbabc3daa06ffac144155ec2d9118/versions/ltr-acfa9b05-f3ed-45ec-b8da-9d6f8f45ee83';
+      const hydratedOutput = JSON.stringify({
+        ok: true,
+        result: {
+          query: 'sotorasib brain metastasis',
+          sources: [
+            { title: 'Primary study', url: 'https://example.org/primary' },
             {
-              id: 'message-large-search',
-              conversation_id: 'conversation-1',
-              type: 'tool_call',
-              content: {
-                call_id: 'tool-large-search',
-                name: 'web_search',
-                status: 'completed',
-                output: '{"preview":"partial"}',
-                _compact: {
-                  truncated: true,
-                  original_size: 60000,
-                  result_count: 2,
+              title: 'Independent study',
+              url: 'https://example.org/independent',
+            },
+          ],
+        },
+      });
+      const descriptor = JSON.stringify({
+        artifact_id: 'large-tool-result-b99bbabc3daa06ffac144155ec2d9118',
+        version_id: 'ltr-acfa9b05-f3ed-45ec-b8da-9d6f8f45ee83',
+        content_url: contentUrl,
+        truncated: true,
+        outcome: 'succeeded',
+        preview: JSON.stringify({
+          view_format: 'search-results-display-lines',
+          source_version_id: 'ltr-acfa9b05-f3ed-45ec-b8da-9d6f8f45ee83',
+          source_count: 2,
+          content: '1\tQuery: public evidence',
+        }),
+      });
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(hydratedOutput, {
+          status: 200,
+          headers: {
+            'content-length': String(new TextEncoder().encode(hydratedOutput).byteLength),
+          },
+        })
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      try {
+        const invoke = vi.mocked(ipcBridge.database.getConversationMessage.invoke);
+        invoke.mockReset();
+        invoke.mockResolvedValue({
+          id: 'message-large-search',
+          conversation_id: 'conversation-1',
+          type: 'tool_call',
+          content: {
+            call_id: 'tool-large-search',
+            name: 'web_search',
+            status: 'completed',
+            output: descriptor,
+          },
+        } as unknown as TMessage);
+
+        render(
+          <MessageToolGroupSummary
+            messages={[
+              {
+                id: 'message-large-search',
+                conversation_id: 'conversation-1',
+                type: 'tool_call',
+                content: {
+                  call_id: 'tool-large-search',
+                  name: 'web_search',
+                  status: 'completed',
+                  output: historyCompact ? '{"preview":"partial"}' : descriptor,
+                  ...(historyCompact
+                    ? {
+                        _compact: {
+                          truncated: true,
+                          original_size: 60000,
+                          result_count: 2,
+                        },
+                      }
+                    : {}),
                 },
-              },
-            } as unknown as ToolMessage,
-          ]}
-        />
-      );
+              } as unknown as ToolMessage,
+            ]}
+          />
+        );
 
-      fireEvent.click(screen.getByRole('button', { name: /Search sources.*2 results/ }));
+        expect(invoke).not.toHaveBeenCalled();
+        expect(fetchMock).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: /Search sources.*2 results/ }));
+        expect(document.querySelector('.tool-research-sources__empty')).toBeNull();
 
-      expect(await screen.findByRole('link', { name: 'Primary study' })).toHaveAttribute(
-        'href',
-        'https://example.org/primary'
-      );
-      expect(screen.getByRole('link', { name: 'Independent study' })).toBeInTheDocument();
-      expect(fetchMock).toHaveBeenNthCalledWith(
-        1,
-        contentUrl,
-        expect.objectContaining({
-          method: 'HEAD',
-          credentials: 'include',
-          signal: expect.anything(),
-        })
-      );
-      expect(fetchMock).toHaveBeenNthCalledWith(
-        2,
-        contentUrl,
-        expect.objectContaining({
-          credentials: 'include',
-          signal: expect.anything(),
-        })
-      );
-      expect(
-        screen.queryByText('No usable sources were found. Refine the query or use another public database.')
-      ).not.toBeInTheDocument();
-    } finally {
-      vi.unstubAllGlobals();
+        expect(await screen.findByRole('link', { name: 'Primary study' })).toHaveAttribute(
+          'href',
+          'https://example.org/primary'
+        );
+        expect(screen.getByRole('link', { name: 'Independent study' })).toBeInTheDocument();
+        expect(fetchMock).toHaveBeenNthCalledWith(
+          1,
+          contentUrl,
+          expect.objectContaining({
+            method: 'HEAD',
+            credentials: 'include',
+            signal: expect.anything(),
+          })
+        );
+        expect(fetchMock).toHaveBeenNthCalledWith(
+          2,
+          contentUrl,
+          expect.objectContaining({
+            credentials: 'include',
+            signal: expect.anything(),
+          })
+        );
+        expect(
+          screen.queryByText('No usable sources were found. Refine the query or use another public database.')
+        ).not.toBeInTheDocument();
+      } finally {
+        vi.unstubAllGlobals();
+      }
     }
-  });
+  );
 
   it('switches an oversized durable result to the authenticated paged detail tree', async () => {
     const contentUrl =

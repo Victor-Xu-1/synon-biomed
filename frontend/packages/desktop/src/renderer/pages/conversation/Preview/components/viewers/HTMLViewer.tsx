@@ -7,8 +7,14 @@
 import { Message } from '@arco-design/web-react';
 import { CheckOne, Copy, Download, Edit, Info, Search } from '@icon-park/react';
 import MonacoEditor from '@monaco-editor/react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  HTML_PREVIEW_SANDBOX,
+  isolatedHtmlDocument,
+  isolatedPreviewMessage,
+  sendPreviewScripts,
+} from '../renderers/isolatedHtmlDocument';
 
 interface HTMLPreviewProps {
   content: string;
@@ -61,9 +67,8 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
   /**
    * 注入元素选择器脚本到 iframe
    */
-  const injectInspectorScript = useCallback((iframeDoc: Document) => {
-    const script = iframeDoc.createElement('script');
-    script.textContent = `
+  const inspectorScript = useMemo(
+    () => `
       (function() {
         let hoveredElement = null;
         let overlay = null;
@@ -182,49 +187,40 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
           }
         });
       })();
-    `;
-    iframeDoc.body.appendChild(script);
-  }, []);
+    `,
+    []
+  );
 
-  // Initialize iframe content and refresh it whenever its source inputs change.
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document;
-    if (!iframeDoc) return;
-
-    iframeDoc.open();
-    let finalHtml = htmlCode;
-    if (file_path) {
-      const fileDir = file_path.substring(0, file_path.lastIndexOf('/') + 1);
-      const baseUrl = `file://${fileDir}`;
-      if (!finalHtml.match(/<base\s+href=/i)) {
-        if (finalHtml.match(/<head>/i)) {
-          finalHtml = finalHtml.replace(/<head>/i, `<head><base href="${baseUrl}">`);
-        } else if (finalHtml.match(/<html>/i)) {
-          finalHtml = finalHtml.replace(/<html>/i, `<html><head><base href="${baseUrl}"></head>`);
-        } else {
-          finalHtml = `<head><base href="${baseUrl}"></head>${finalHtml}`;
-        }
-      }
-    }
-
-    iframeDoc.write(finalHtml);
-    iframeDoc.close();
-    if (inspectorMode) injectInspectorScript(iframeDoc);
-  }, [file_path, htmlCode, injectInspectorScript, inspectorMode]);
+  const previewInstance = useMemo(() => crypto.randomUUID(), [file_path, htmlCode, inspectorMode]);
+  const previewDocument = useMemo(
+    () => isolatedHtmlDocument(htmlCode, previewInstance, true),
+    [htmlCode, previewInstance]
+  );
+  const handlePreviewLoad = useCallback(() => {
+    if (inspectorMode) sendPreviewScripts(iframeRef.current, previewInstance, [inspectorScript]);
+  }, [inspectorMode, inspectorScript, previewInstance]);
 
   /**
    * 监听 iframe 消息
    */
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.source !== iframeRef.current?.contentWindow || typeof event.data !== 'object' || !event.data) return;
-      if (event.data.type === 'element-selected') {
-        const elementInfo: SelectedElement = event.data.data;
+      const payload = isolatedPreviewMessage(event, iframeRef.current, previewInstance);
+      if (!payload) return;
+      if (payload.type === 'element-selected') {
+        const elementInfo = payload.data as SelectedElement;
+        if (typeof elementInfo?.path !== 'string' || typeof elementInfo.html !== 'string') return;
         setSelectedElement(elementInfo);
         messageApi.info(t('preview.html.elementSelected', { path: elementInfo.path }));
-      } else if (event.data.type === 'element-contextmenu') {
-        const { element, x, y } = event.data.data;
+      } else if (payload.type === 'element-contextmenu') {
+        const { element, x, y } = payload.data as { element: SelectedElement; x: number; y: number };
+        if (
+          typeof element?.path !== 'string' ||
+          typeof element.html !== 'string' ||
+          !Number.isFinite(x) ||
+          !Number.isFinite(y)
+        )
+          return;
 
         // 计算上下文菜单位置（相对于父窗口）
         const iframe = iframeRef.current;
@@ -241,7 +237,7 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [messageApi, t]);
+  }, [messageApi, t, previewInstance]);
 
   /**
    * 关闭右键菜单
@@ -390,8 +386,10 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
         <div className={`${editMode ? 'flex-1' : 'w-full'} overflow-auto bg-white`}>
           <iframe
             ref={iframeRef}
+            srcDoc={previewDocument}
+            onLoad={handlePreviewLoad}
             className='w-full h-full border-0'
-            sandbox='allow-scripts allow-same-origin'
+            sandbox={HTML_PREVIEW_SANDBOX}
             title={t('preview.html.frameTitle')}
           />
         </div>

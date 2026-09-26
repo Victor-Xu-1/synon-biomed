@@ -1705,7 +1705,7 @@ func TestPlanApprovalCheckpointOnlyGatesFirstDispatchAttempt(t *testing.T) {
 	}
 }
 
-func TestFrameResumeDispatchBacksOffExhaustedToolRoundNoProgressWithoutFailingTask(t *testing.T) {
+func TestFrameResumeDispatchParksExhaustedToolRoundNoProgressWithoutFailingTask(t *testing.T) {
 	todoArgs := `{"todos":[{"content":"search PubMed","activeForm":"Searching PubMed","status":"completed"}]}`
 	var calls atomic.Int64
 	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -1748,18 +1748,21 @@ func TestFrameResumeDispatchBacksOffExhaustedToolRoundNoProgressWithoutFailingTa
 		}
 	}
 	exhausted, err := srv.RunFrameResumeDispatchOnce(context.Background(), options)
-	if err != nil || !exhausted.Claimed || exhausted.Status != "interrupted" ||
+	if err != nil || !exhausted.Claimed || exhausted.Status != "paused" ||
 		exhausted.Runner.InterruptionReasonCode != sessionRunnerToolRoundNoProgressExhaustedReasonCode ||
-		!exhausted.Runner.InterruptionAutoResume {
+		exhausted.Runner.InterruptionAutoResume || !exhausted.Runner.AwaitingRecoveryCondition {
 		t.Fatalf("exhausted route did not remain resumable: result=%#v err=%v", exhausted, err)
 	}
 	dispatch, found, err := store.GetCompatibilityFrameResumeDispatchByFrame("loop-root")
-	if err != nil || !found || dispatch.Status != "registered" || dispatch.NotBefore.IsZero() {
-		t.Fatalf("backed-off dispatch=%#v found=%t err=%v", dispatch, found, err)
+	if err != nil || !found || dispatch.Status != "registered" || !dispatch.NotBefore.IsZero() ||
+		dispatch.WaitingFor != workspace.CompatibilityFrameResumeDispatchWaitRecoveryCondition {
+		t.Fatalf("parked dispatch=%#v found=%t err=%v", dispatch, found, err)
 	}
+	before := calls.Load()
+	srv.autoResumeInterruptedFrames(context.Background())
 	next, err := srv.RunFrameResumeDispatchOnce(context.Background(), options)
-	if err != nil || next.Claimed {
-		t.Fatalf("backed-off dispatch was hot-reclaimed=%#v err=%v", next, err)
+	if err != nil || next.Claimed || calls.Load() != before {
+		t.Fatalf("unchanged parked dispatch called the model again=%#v err=%v", next, err)
 	}
 	assertFrameResumeDispatchEvents(t, store, "loop-root", map[string]int{
 		"frame_resume_dispatch_claimed":     3,

@@ -70,9 +70,15 @@ python "${SYNON_SKILL_DIR}/scripts/p2rank_binding_pockets.py" \
   --top-k 5 \
   --threads 4 \
   --minimum-box-size 20 \
-  --box-padding 6 \
-  --output-dir "pocket_detection"
+  --box-padding 6
 ```
+
+Do not create, remove, or mark an output directory before running the pack.
+If the default `pocket_detection` path already exists, the pack preserves it
+and deterministically selects the first absent `pocket_detection-2`,
+`pocket_detection-3`, and so on. A workspace marker never authorizes reuse.
+Use the validated output path printed by the pack for downstream docking. An
+explicit non-default output path must be absent and fails closed if it exists.
 
 `--profile auto` uses verified PDB provenance/method records, never B-factor
 variance. Explicit `EXPDTA` is authoritative: crystallography selects `default`,

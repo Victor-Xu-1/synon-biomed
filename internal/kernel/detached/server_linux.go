@@ -18,6 +18,13 @@ type CommandHandler interface {
 	HandleDetachedKernelCommand(context.Context, CommandRequest) CommandResponse
 }
 
+// CommandPostHandler runs only after the response frame has been written. It
+// is used for lifecycle commands whose acknowledgement must reach the caller
+// before the handler tears down its own control socket.
+type CommandPostHandler interface {
+	AfterDetachedKernelCommand(context.Context, CommandRequest, CommandResponse)
+}
+
 type CommandHandlerFunc func(context.Context, CommandRequest) CommandResponse
 
 func (handler CommandHandlerFunc) HandleDetachedKernelCommand(
@@ -121,6 +128,9 @@ func (s Server) handleConnection(parent context.Context, connection *net.UnixCon
 		))
 	}
 	_ = writeAll(connection, encoded)
+	if postHandler, ok := s.Handler.(CommandPostHandler); ok {
+		postHandler.AfterDetachedKernelCommand(parent, request, response)
+	}
 }
 
 type unixSocketIdentity struct {

@@ -105,6 +105,7 @@ jobs:
         run: |
           cd frontend
           npm ci --ignore-scripts
+          npx --no-install playwright install chromium
           npm run i18n:types
           npm run typecheck
           npm run lint

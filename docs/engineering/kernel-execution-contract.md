@@ -42,6 +42,53 @@ Host RPC is implemented by the existing `synon_host_bridge` adapter; Go binds
 each call to the active cell and its allowed methods. Interpreter helpers and
 audit hooks do not replace the OS sandbox or server authorization.
 
+## Observation effects
+
+Scientific implementation selection does not itself authorize or prohibit a
+diagnostic expression. `internal/executionprep` can positively classify a small
+observation domain using complete native AST coverage. Empty requirements or an
+empty unresolved list are never proof of observation. Scripts, unknown calls,
+dynamic lookup, unbounded syntax and uncovered operations retain the scientific
+selection requirement.
+
+| Language | Covered observation domain | Actual binding obligation |
+| --- | --- | --- |
+| Python | Literal expressions and builtin output with literal operands | Exact builtin identity, unchanged implicit output/trace bindings, and host-owned interpreter provenance |
+| R | Atomic literals and zero-argument directory/process/system observations | Captured base bindings and implicit output identity, without evaluating active bindings or promises |
+| Bash | Literal directory/output operations and bounded formatting | The canonical Bash envelope establishes profile-free native startup and rejects inherited callable shadows |
+| PowerShell | Literal expressions and native location/output cmdlets with literal operands | The native AST and effective cmdlet identity are checked in the execution process using system modules |
+
+The plan binds the exact source digest, language and registered operation
+capabilities. It travels in a private host context and optional internal worker
+request fields `observation` and `observation_code_sha256`, never in a model tool
+schema. Bash binds its original command separately from its generated canonical
+interpreter envelope. The manager checks the existing session identity and
+generation and freezes the plan before queueing it. Source/binding checks run
+under the same execution lock as dispatch.
+
+Once unproved code has been dispatched, the manager retains a conservative
+provenance mark outside the mutable Python/R namespace. A later diagnostic cannot
+clear that mark or rely on a guest-local claim of clean bindings. Rejection does
+not reset the interpreter, select an implementation, load its required Skill,
+clear capabilities, or grant filesystem/network/host permissions. Already
+authorized scientific execution continues through the existing ordinary path.
+An observation classification is not a sandbox safety claim.
+
+The Bash diagnostic invocation uses the existing envelope with `--noprofile
+--norc -p -c`: login profiles, `BASH_ENV`, imported shell functions and inherited
+shell options cannot run before its source. It does not create a persistent
+shell namespace or replace the Python worker. The worker declines known inherited
+callable shadows instead of silently accepting them. Ordinary Bash execution
+retains its existing startup behavior. Native PowerShell is required; a missing
+runtime or the compatibility implementation cannot discharge native obligations.
+
+`scripts/quality/test_kernel_worker_effects.py` exercises the real worker
+protocols, preserved namespaces, prior-cell shadows and non-executing refusal.
+Native R checks use `SYNON_TEST_RSCRIPT` to identify an existing interpreter;
+the tests do not alter managed runtime metadata. Focused Go tests additionally
+cover native ASTs, serialized provenance, source/generation binding and canonical
+Bash/PowerShell execution on their supported platforms.
+
 ## Process policy
 
 The Linux/amd64 syscall filter is generated from named Linux ABI constants.
@@ -100,6 +147,36 @@ and [Python signal semantics](https://docs.python.org/3/library/signal.html).
 These describe platform APIs, not an imported execution implementation.
 
 ## Integrity and verification
+
+Saved molecule validation uses the integrity-checked managed RDKit interpreter
+and `sdf_artifact_validator.py`. Its internal v2 summary counts delimiters,
+supplier records, parsed molecules, invalid records and atom-count coverage;
+all molecules are parsed with sanitization and strict SDF parsing. A missing
+terminal delimiter, zero-atom molecule or invalid tail remains a failure.
+The summary does not accumulate per-molecule arrays or impose a total input
+byte ceiling. Memory still includes one molecule or SMILES line, so resource
+exhaustion is a real validator failure, never evidence of valid data. The
+validator asset and host consumer must be updated together; v1 output is not
+silently treated as a complete v2 summary.
+
+Save failures preserve the validator's defined data-error code, format and
+observed record/parsed/invalid counts. These are diagnostic counts, not physical
+line locations. Raw parser stderr and molecule content are not exposed in the
+failure detail. Valid results require exit 0; defined invalid-data results
+require exit 2. Unexpected exit/result combinations, unknown data-error codes,
+and malformed validator responses are runtime validation failures, never
+evidence that the user's file needs rewriting. No artifact is published until
+the complete file passes the managed validator.
+
+Molecule and saved-Python validators share the owned process-tree boundary and
+activity watchdog. Cancellation and sustained absence of CPU, I/O or output
+stop the helper; elapsed total validation time alone does not. Python source
+goes directly to the interpreter's symbol-table parser, without an additional
+whole-file host buffer or duplicate AST parse. Symbol analysis still requires
+compiler memory for the source; only its diagnostic name sample is bounded,
+with an exact unresolved-name count. Artifact code is never executed by these
+validators. A missing or mismatched managed runtime remains unavailable and
+must not be bypassed with a host-Python fallback.
 
 `python3 scripts/quality/kernel_manifest.py --write` reproducibly updates the
 asset inventory; omit `--write` to verify it. The generated manifest includes

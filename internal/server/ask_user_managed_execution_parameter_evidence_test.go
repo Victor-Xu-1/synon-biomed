@@ -327,7 +327,7 @@ func TestManagedExecutionResolverChoiceCopyIsDomainNeutral(t *testing.T) {
 func TestDurableExecutedSkillRetainsResolverAuthorityOutsideSelectionWindow(t *testing.T) {
 	skillCatalog := skills.NewCatalog()
 	skillCatalog.AddSkill(skills.Skill{
-		Name: "primary-skill", ImplementationIdentities: []string{"Primary Engine"},
+		Name: "resolver-skill", ImplementationIdentities: []string{"Resolver Engine"},
 	})
 	skillCatalog.AddSkill(skills.Skill{
 		Name: "primary-skill", ImplementationIdentities: []string{"Primary Engine"},
@@ -356,6 +356,9 @@ func TestDurableExecutedSkillRetainsResolverAuthorityOutsideSelectionWindow(t *t
 	)
 	if !ok || len(validated) != 1 || validated[0] != candidate {
 		t.Fatalf("durable Skill resolver authority validated=%#v ok=%t", validated, ok)
+	}
+	if !reflect.DeepEqual(run.selectedImplementationsSnapshot(), []string{"Primary Engine"}) {
+		t.Fatalf("unique parent was not restored: %v", run.selectedImplementationsSnapshot())
 	}
 }
 

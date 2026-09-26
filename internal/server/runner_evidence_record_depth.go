@@ -3,10 +3,8 @@ package server
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -15,8 +13,6 @@ import (
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
 )
-
-const maxRunnerEvidenceDepthScanBytes = 16 << 20
 
 var runnerEvidenceDepthPatentIdentifierPattern = regexp.MustCompile(`(?i)\b[A-Z]{2}[A-Z0-9-]{4,38}\b`)
 var runnerEvidenceDepthPubMedURLPattern = regexp.MustCompile(`(?i)pubmed\.ncbi\.nlm\.nih\.gov/([1-9][0-9]{0,8})(?:[/?#]|$)`)
@@ -78,7 +74,7 @@ func (s *Server) validateSessionRunnerEvidenceRecordDepth(
 	failures := make([]string, 0)
 	classesPresent := make(map[string]bool)
 	classesVerified := make(map[string]bool)
-	classIdentifiers := make(map[string][]string)
+	classIdentifiers := make(map[string]string)
 	for _, commit := range latest {
 		if ctx != nil {
 			select {
@@ -107,7 +103,7 @@ func (s *Server) validateSessionRunnerEvidenceRecordDepth(
 			_ = reader.Close()
 			continue
 		}
-		data, readErr := io.ReadAll(io.LimitReader(reader, maxRunnerEvidenceDepthScanBytes+1))
+		scanned, readErr := scanRunnerEvidenceDepthLedger(ctx, reader, name, depth)
 		closeErr := reader.Close()
 		if readErr != nil {
 			return nil, fmt.Errorf("read runner evidence-depth ledger %q: %w", name, readErr)
@@ -115,22 +111,15 @@ func (s *Server) validateSessionRunnerEvidenceRecordDepth(
 		if closeErr != nil {
 			return nil, fmt.Errorf("close runner evidence-depth ledger %q: %w", name, closeErr)
 		}
-		if len(data) > maxRunnerEvidenceDepthScanBytes {
-			continue
-		}
-		snapshot := runnerCrossArtifactSnapshot{name: name, text: string(data)}
-		if _, _, recognized := runnerEvidenceLedgerRecords(snapshot); !recognized {
-			continue
-		}
-		failures = append(failures, runnerEvidenceRecordDepthFailures(snapshot, depth)...)
-		for class := range runnerEvidenceRecordDepthClasses(snapshot, depth) {
+		failures = append(failures, scanned.failures...)
+		for class := range scanned.present {
 			classesPresent[class] = true
 		}
-		for class := range runnerEvidenceRecordDepthVerifiedClasses(snapshot, depth) {
+		for class := range scanned.verified {
 			classesVerified[class] = true
 		}
-		for class, identifiers := range runnerEvidenceRecordDepthClassIdentifiers(snapshot) {
-			classIdentifiers[class] = append(classIdentifiers[class], identifiers...)
+		for class, identifier := range scanned.representative {
+			retainRunnerEvidenceRepresentative(classIdentifiers, class, identifier)
 		}
 	}
 	// A focused review is allowed to leave lower-priority rows at discovery
@@ -142,10 +131,9 @@ func (s *Server) validateSessionRunnerEvidenceRecordDepth(
 	// an unbounded correction loop.
 	for _, class := range []string{"patent", "trial", "publication", "web"} {
 		if classesPresent[class] && !classesVerified[class] {
-			identifiers := uniqueSortedFolded(classIdentifiers[class])
 			identifierDetail := ""
-			if class != "web" && len(identifiers) > 0 {
-				identifierDetail = " identifier=" + identifiers[0]
+			if class != "web" && classIdentifiers[class] != "" {
+				identifierDetail = " identifier=" + classIdentifiers[class]
 			}
 			if runnerEvidenceRouteExhaustedForClass(class, trustedSignals) {
 				failures = append(failures, fmt.Sprintf(
@@ -265,42 +253,22 @@ func runnerEvidenceRecordRequirementsForMarker(
 	return requirements
 }
 
-func runnerEvidenceRecordDepthFailures(
-	snapshot runnerCrossArtifactSnapshot,
-	depth runnerEvidenceRecordDepthIndex,
-) []string {
-	ext := strings.ToLower(filepath.Ext(snapshot.name))
-	reader := csv.NewReader(strings.NewReader(strings.TrimPrefix(snapshot.text, "\ufeff")))
-	if ext == ".tsv" {
-		reader.Comma = '\t'
-	}
-	reader.FieldsPerRecord = -1
-	records, err := reader.ReadAll()
-	if err != nil || len(records) < 2 {
-		return nil
-	}
-	headers := make(map[string]int, len(records[0]))
-	for index, header := range records[0] {
-		headers[normalizeRunnerTableToken(header)] = index
-	}
-	return runnerEvidenceRecordDepthTableFailures(snapshot.name, records, headers, depth)
-}
-
-func runnerEvidenceRecordDepthTableFailures(
+func runnerEvidenceRecordDepthTableFailuresAtRow(
 	name string,
 	records [][]string,
 	headers map[string]int,
 	depth runnerEvidenceRecordDepthIndex,
+	firstRow int,
 ) []string {
 	typeIndex, found := firstRunnerEvidenceColumn(
 		headers, "source_type", "sourcetype", "evidence_type", "evidencetype", "来源类型", "证据类型", "标识符类型",
 	)
 	if !found {
 		if len(runnerEvidenceWideIdentifierColumns(headers)) > 0 {
-			return runnerEvidenceWideRecordDepthFailures(name, records[1:], headers, depth)
+			return runnerEvidenceWideRecordDepthFailures(name, records[1:], headers, depth, firstRow)
 		}
 		return runnerEvidenceGenericRecordDepthFailures(
-			name, records[1:], runnerEvidenceDepthIdentifierIndexes(headers), depth,
+			name, records[1:], runnerEvidenceDepthIdentifierIndexes(headers), depth, firstRow,
 		)
 	}
 	identifierIndexes := runnerEvidenceDepthIdentifierIndexes(headers)
@@ -317,7 +285,7 @@ func runnerEvidenceRecordDepthTableFailures(
 		}
 		failures = append(failures, fmt.Sprintf(
 			"evidence_record_depth_missing:%s row=%d source_type=%s declared_source_type=%s identifier=%s",
-			name, rowIndex+2, requiredClass, declaredType, identifier,
+			name, rowIndex+firstRow, requiredClass, declaredType, identifier,
 		))
 	}
 	return failures
@@ -326,25 +294,12 @@ func runnerEvidenceRecordDepthTableFailures(
 // runnerEvidenceRecordDepthClasses returns the source classes represented by
 // identifier-bearing rows. It intentionally ignores empty or unclassified
 // rows, which are not evidence claims and should not create a repair loop.
-func runnerEvidenceRecordDepthClasses(
-	snapshot runnerCrossArtifactSnapshot,
+func runnerEvidenceRecordDepthTableClasses(
+	records [][]string,
+	headers map[string]int,
 	depth runnerEvidenceRecordDepthIndex,
 ) map[string]bool {
 	classes := make(map[string]bool)
-	ext := strings.ToLower(filepath.Ext(snapshot.name))
-	reader := csv.NewReader(strings.NewReader(strings.TrimPrefix(snapshot.text, "\ufeff")))
-	if ext == ".tsv" {
-		reader.Comma = '\t'
-	}
-	reader.FieldsPerRecord = -1
-	records, err := reader.ReadAll()
-	if err != nil || len(records) < 2 {
-		return classes
-	}
-	headers := make(map[string]int, len(records[0]))
-	for index, header := range records[0] {
-		headers[normalizeRunnerTableToken(header)] = index
-	}
 	typeIndex, found := firstRunnerEvidenceColumn(
 		headers, "source_type", "sourcetype", "evidence_type", "evidencetype", "来源类型", "证据类型", "标识符类型",
 	)
@@ -370,25 +325,12 @@ func runnerEvidenceRecordDepthClasses(
 	return classes
 }
 
-func runnerEvidenceRecordDepthVerifiedClasses(
-	snapshot runnerCrossArtifactSnapshot,
+func runnerEvidenceRecordDepthTableVerifiedClasses(
+	records [][]string,
+	headers map[string]int,
 	depth runnerEvidenceRecordDepthIndex,
 ) map[string]bool {
 	verified := make(map[string]bool)
-	ext := strings.ToLower(filepath.Ext(snapshot.name))
-	reader := csv.NewReader(strings.NewReader(strings.TrimPrefix(snapshot.text, "\ufeff")))
-	if ext == ".tsv" {
-		reader.Comma = '\t'
-	}
-	reader.FieldsPerRecord = -1
-	records, err := reader.ReadAll()
-	if err != nil || len(records) < 2 {
-		return verified
-	}
-	headers := make(map[string]int, len(records[0]))
-	for index, header := range records[0] {
-		headers[normalizeRunnerTableToken(header)] = index
-	}
 	typeIndex, found := firstRunnerEvidenceColumn(
 		headers, "source_type", "sourcetype", "evidence_type", "evidencetype", "来源类型", "证据类型", "标识符类型",
 	)
@@ -419,24 +361,11 @@ func runnerEvidenceRecordDepthVerifiedClasses(
 // failures carry one deterministic representative identifier so recovery must
 // read a record from the affected table rather than accepting an unrelated
 // historical receipt from the same broad source class.
-func runnerEvidenceRecordDepthClassIdentifiers(
-	snapshot runnerCrossArtifactSnapshot,
+func runnerEvidenceRecordDepthTableIdentifiers(
+	records [][]string,
+	headers map[string]int,
 ) map[string][]string {
 	result := make(map[string][]string)
-	ext := strings.ToLower(filepath.Ext(snapshot.name))
-	reader := csv.NewReader(strings.NewReader(strings.TrimPrefix(snapshot.text, "\ufeff")))
-	if ext == ".tsv" {
-		reader.Comma = '\t'
-	}
-	reader.FieldsPerRecord = -1
-	records, err := reader.ReadAll()
-	if err != nil || len(records) < 2 {
-		return result
-	}
-	headers := make(map[string]int, len(records[0]))
-	for index, header := range records[0] {
-		headers[normalizeRunnerTableToken(header)] = index
-	}
 	typeIndex, typed := firstRunnerEvidenceColumn(
 		headers, "source_type", "sourcetype", "evidence_type", "evidencetype", "来源类型", "证据类型", "标识符类型",
 	)
@@ -493,6 +422,7 @@ func runnerEvidenceGenericRecordDepthFailures(
 	records [][]string,
 	identifierIndexes []int,
 	depth runnerEvidenceRecordDepthIndex,
+	firstRow int,
 ) []string {
 	failures := make([]string, 0)
 	for rowIndex, row := range records {
@@ -502,7 +432,7 @@ func runnerEvidenceGenericRecordDepthFailures(
 			}
 			failures = append(failures, fmt.Sprintf(
 				"evidence_record_depth_missing:%s row=%d source_type=%s declared_source_type=identifier identifier=%s",
-				name, rowIndex+2, requirement.class, requirement.identifier,
+				name, rowIndex+firstRow, requirement.class, requirement.identifier,
 			))
 		}
 	}
@@ -623,6 +553,7 @@ func runnerEvidenceWideRecordDepthFailures(
 	records [][]string,
 	headers map[string]int,
 	depth runnerEvidenceRecordDepthIndex,
+	firstRow int,
 ) []string {
 	columns := runnerEvidenceWideIdentifierColumns(headers)
 	failures := make([]string, 0)
@@ -637,7 +568,7 @@ func runnerEvidenceWideRecordDepthFailures(
 				}
 				failures = append(failures, fmt.Sprintf(
 					"evidence_record_depth_missing:%s row=%d source_type=%s declared_source_type=wide_column identifier=%s",
-					name, rowIndex+2, column.class, identifier,
+					name, rowIndex+firstRow, column.class, identifier,
 				))
 			}
 		}

@@ -1,7 +1,6 @@
 package mcpstdio
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -9,7 +8,6 @@ import (
 	"fmt"
 	"github.com/coder/websocket"
 	"io"
-	"mime"
 	"net/http"
 	"net/url"
 	"strings"
@@ -25,11 +23,14 @@ func remoteHTTPRPC(ctx context.Context, root string, config ServerConfig, sessio
 }
 
 func remoteHTTPRPCOnce(ctx context.Context, root string, config ServerConfig, sessionID *string, id int, method string, params any, options remoteHTTPRPCOptions) (json.RawMessage, error) {
-	client, err := secureRemoteHTTPClient(ctx, config.URL)
+	requestURL, err := remoteMCPRequestURL(config.URL, config.QueryParams)
 	if err != nil {
 		return nil, err
 	}
-	requestURL, err := remoteMCPRequestURL(config.URL, config.QueryParams)
+	// Validate and pin the exact URL that will be requested, including the
+	// configured query parameters, instead of validating a base URL and then
+	// sending a separately assembled destination.
+	client, err := secureRemoteHTTPClient(ctx, requestURL)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +74,9 @@ func remoteHTTPRPCOnce(ctx context.Context, root string, config ServerConfig, se
 		req.Header.Set("Mcp-Session-Id", *sessionID)
 	}
 	secrets := remoteMCPSecretValues(config, req.Header)
+	// requestURL is the exact destination validated and DNS-pinned by
+	// secureRemoteHTTPClient above; redirects and proxies are disabled.
+	// codeql[go/request-forgery]
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, &remoteMCPTransportError{message: fmt.Sprintf("remote MCP %s request failed: %s", method, redactMCPErrorText(err.Error(), secrets)), cause: err}
@@ -86,14 +90,12 @@ func remoteHTTPRPCOnce(ctx context.Context, root string, config ServerConfig, se
 	if resp.StatusCode == http.StatusAccepted && id == 0 {
 		return json.RawMessage(`null`), nil
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxRemoteResponseBytes))
-	if err != nil {
-		return nil, err
-	}
-	if len(body) >= maxRemoteResponseBytes {
-		return nil, fmt.Errorf("remote MCP %s response exceeded %d bytes", method, maxRemoteResponseBytes)
-	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// Error pages are bounded diagnostics, never successful source data.
+		body, err := io.ReadAll(io.LimitReader(resp.Body, maxRemoteResponseBytes))
+		if err != nil {
+			return nil, err
+		}
 		if rawMessage, decodeErr := decodeRemoteHTTPMessage(resp.Header.Get("Content-Type"), body); decodeErr == nil && rawMessage.Error != nil {
 			return nil, redactedRPCErrorFor(method, rawMessage.Error, resp.StatusCode, secrets)
 		}
@@ -103,10 +105,10 @@ func remoteHTTPRPCOnce(ctx context.Context, root string, config ServerConfig, se
 		}
 		return nil, fmt.Errorf("remote MCP %s failed with HTTP %d: %s", method, resp.StatusCode, detail)
 	}
-	if id == 0 && len(strings.TrimSpace(string(body))) == 0 {
+	rawMessage, err := decodeMCPResponseStream(ctx, resp.Header.Get("Content-Type"), resp.Body)
+	if id == 0 && errors.Is(err, io.EOF) {
 		return json.RawMessage(`null`), nil
 	}
-	rawMessage, err := decodeRemoteHTTPMessage(resp.Header.Get("Content-Type"), body)
 	if err != nil {
 		return nil, err
 	}
@@ -168,44 +170,11 @@ func routableMCPName(method string, params any) string {
 }
 
 func decodeRemoteHTTPMessage(contentType string, body []byte) (rpcMessage, error) {
-	mediaType, _, _ := mime.ParseMediaType(contentType)
-	if mediaType == "text/event-stream" {
-		return decodeSSEMessage(body)
-	}
-	var msg rpcMessage
-	if err := json.Unmarshal(body, &msg); err != nil {
-		return rpcMessage{}, err
-	}
-	return msg, nil
+	return decodeMCPResponseStream(context.Background(), contentType, bytes.NewReader(body))
 }
 
 func decodeSSEMessage(body []byte) (rpcMessage, error) {
-	scanner := bufio.NewScanner(bytes.NewReader(body))
-	scanner.Buffer(make([]byte, 64*1024), maxScannerTokenBytes)
-	var dataLines []string
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			if len(dataLines) > 0 {
-				break
-			}
-			continue
-		}
-		if strings.HasPrefix(line, "data:") {
-			dataLines = append(dataLines, strings.TrimSpace(strings.TrimPrefix(line, "data:")))
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return rpcMessage{}, err
-	}
-	if len(dataLines) == 0 {
-		return rpcMessage{}, errors.New("remote MCP SSE response did not contain a data event")
-	}
-	var msg rpcMessage
-	if err := json.Unmarshal([]byte(strings.Join(dataLines, "\n")), &msg); err != nil {
-		return rpcMessage{}, err
-	}
-	return msg, nil
+	return decodeMCPResponseStream(context.Background(), "text/event-stream", bytes.NewReader(body))
 }
 
 type remoteWebSocketSession struct {
@@ -222,18 +191,18 @@ func (s *remoteWebSocketSession) request(ctx context.Context, id int, method str
 		return nil, err
 	}
 	for {
-		messageType, raw, err := s.conn.Read(ctx)
+		messageType, reader, err := s.conn.Reader(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("read remote MCP WebSocket response for %s: %w", method, err)
 		}
 		if messageType != websocket.MessageText {
+			if _, err := io.Copy(io.Discard, reader); err != nil {
+				return nil, err
+			}
 			continue
 		}
-		if len(raw) >= maxRemoteResponseBytes {
-			return nil, fmt.Errorf("remote MCP WebSocket %s response exceeded %d bytes", method, maxRemoteResponseBytes)
-		}
-		var response rpcMessage
-		if err := json.Unmarshal(raw, &response); err != nil {
+		response, err := decodeMCPResponseStream(ctx, "application/json", reader)
+		if err != nil {
 			return nil, err
 		}
 		if response.Method != "" && response.ID != nil {

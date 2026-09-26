@@ -22,16 +22,29 @@ func TestExecutionPreparationHasOneAdmissionAndExecutionDecision(t *testing.T) {
 	for _, test := range []struct{ source, status string }{
 		{`import subprocess as child
 child.run(["python", "-m", "pip", "install", "package-name"], check=True)`, "managed_package_authority_required"},
+		{`import urllib.request
+version = "3.2.1"
+url = f"https://example.org/releases/{version}/engine_{version}.tar.gz"
+try:
+    urllib.request.urlretrieve(url, "engine.tar.gz")
+except Exception as error:
+    print(error)`, "durable_download_preflight_required"},
 		{`import requests
 response=requests.get("https://example.org/data.csv")
 open("data.csv","wb").write(response.content)`, "durable_download_preflight_required"},
+		{`import requests
+with requests.get("https://example.org/data.tar", stream=True) as response:
+    with open("data.tar", "wb") as output:
+        for chunk in response.iter_content(8192):
+            if chunk:
+                output.write(chunk)`, "durable_download_preflight_required"},
 	} {
 		input := map[string]any{"code": test.source, "environment": "python", "human_description": "Execution preparation witness"}
 		raw, err := json.Marshal(input)
 		if err != nil {
 			t.Fatal(err)
 		}
-		diagnostic := gateway.ToolCallPreflightDiagnostic(agentruntime.ToolCall{Name: "python", Arguments: raw})
+		diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), agentruntime.ToolCall{Name: "python", Arguments: raw})
 		if !strings.Contains(diagnostic, test.status) {
 			t.Fatalf("admission missed source effect: %s", diagnostic)
 		}

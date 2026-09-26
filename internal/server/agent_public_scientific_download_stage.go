@@ -7,10 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"log"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,21 +15,22 @@ import (
 	"sync"
 	"time"
 
+	"synon-go/internal/networkpolicy"
 	"synon-go/internal/tools/securefetch"
 )
 
 const (
 	agentPublicScientificDownloadStageVersion = 1
-	agentPublicScientificTransferIdleTimeout  = 5 * time.Minute
 )
 
 type agentPublicScientificDownloadStageState struct {
-	Version       int    `json:"version"`
-	RequestSHA256 string `json:"request_sha256"`
-	Filename      string `json:"filename"`
-	Validator     string `json:"validator,omitempty"`
-	ContentType   string `json:"content_type,omitempty"`
-	ExpectedTotal int64  `json:"expected_total"`
+	Version        int       `json:"version"`
+	RequestSHA256  string    `json:"request_sha256"`
+	Filename       string    `json:"filename"`
+	Validator      string    `json:"validator,omitempty"`
+	ContentType    string    `json:"content_type,omitempty"`
+	ExpectedTotal  int64     `json:"expected_total"`
+	RetryNotBefore time.Time `json:"retry_not_before,omitzero"`
 }
 
 type agentPublicScientificDownloadStage struct {
@@ -182,6 +180,10 @@ func (s *Server) fetchAndStageAgentPublicScientificFile(
 	if err != nil {
 		return nil, "", errAgentPublicScientificFileAuthority
 	}
+	if delay := time.Until(stage.state.RetryNotBefore); delay > 0 {
+		return nil, "", &agentPublicScientificTransferInterrupted{BytesRetained: offset, Resumable: offset > 0 && stage.state.Validator != "",
+			RetryNotBefore: stage.state.RetryNotBefore}
+	}
 	if offset == 0 {
 		adopted, adoptErr := s.adoptExistingAgentPublicScientificPartial(ctx, workspaceDir, request, stage)
 		if adoptErr != nil {
@@ -263,14 +265,9 @@ func (s *Server) adoptExistingAgentPublicScientificPartial(
 		return false, errAgentPublicScientificFileConflict
 	}
 	defer local.Close()
-	response, err := s.publicScientificFiles.Fetch(ctx, request.DownloadURL, securefetch.Policy{
-		AllowedHosts: agentPublicScientificAllowedHosts(request), AllowedPorts: []string{"443"},
-		AcceptedMediaTypes: request.AcceptedTypes, MaxRedirects: 3,
-		AllowMissingContentType: true, IdentityEncoding: true,
-		MaxBytes:          maximumBytes,
-		LongLivedTransfer: true, TransferIdleTimeout: agentPublicScientificTransferIdleTimeout,
-		UserAgent: "Synon-Biomed-scientific-data/1.0", PrefixBytes: info.Size(),
-	})
+	policy := s.agentPublicScientificTransferPolicy(request)
+	policy.PrefixBytes = info.Size()
+	response, err := s.publicScientificFiles.Fetch(ctx, request.DownloadURL, policy)
 	if err != nil {
 		return false, err
 	}
@@ -314,7 +311,7 @@ func (s *Server) adoptExistingAgentPublicScientificPartial(
 		return false, errAgentPublicScientificFileAuthority
 	}
 	stage.state.Validator = validator
-	stage.state.ContentType = response.ContentType
+	stage.state.ContentType = agentPublicScientificReportedContentType(response)
 	stage.state.ExpectedTotal = remoteTotal
 	if err := stage.persist(); err != nil {
 		return false, errAgentPublicScientificFileAuthority
@@ -326,155 +323,6 @@ func (s *Server) adoptExistingAgentPublicScientificPartial(
 		return false, errAgentPublicScientificFileAuthority
 	}
 	return true, nil
-}
-
-func (s *Server) continueAgentPublicScientificDownload(
-	ctx context.Context,
-	workspaceDir string,
-	request agentPublicScientificFileRequest,
-	stage *agentPublicScientificDownloadStage,
-	offset *int64,
-) error {
-	maximumBytes := request.maximumBytes()
-	var lastErr error
-	for attempt := 0; attempt < agentPublicScientificDownloadMaxAttempts; attempt++ {
-		if attempt > 0 {
-			if err := waitAgentPublicScientificDownloadRetry(ctx, attempt-1); err != nil {
-				return err
-			}
-		}
-		if *offset > 0 && stage.state.Validator == "" {
-			if err := stage.reset(request); err != nil {
-				return errAgentPublicScientificFileAuthority
-			}
-			*offset = 0
-		}
-		if _, err := stage.file.Seek(*offset, io.SeekStart); err != nil {
-			return errors.New("public scientific file download staging failed")
-		}
-		response, fetchErr := s.publicScientificFiles.Fetch(ctx, request.DownloadURL, securefetch.Policy{
-			AllowedHosts: agentPublicScientificAllowedHosts(request), AllowedPorts: []string{"443"},
-			AcceptedMediaTypes: request.AcceptedTypes, MaxRedirects: 3,
-			AllowMissingContentType: true, IdentityEncoding: true,
-			MaxBytes:          maximumBytes,
-			LongLivedTransfer: true, TransferIdleTimeout: agentPublicScientificTransferIdleTimeout,
-			UserAgent: "Synon-Biomed-scientific-data/1.0", RangeStart: *offset,
-			IfRange: stage.state.Validator,
-		})
-		if fetchErr != nil {
-			lastErr = fetchErr
-			if attempt+1 < agentPublicScientificDownloadMaxAttempts && isRetryableAgentPublicScientificDownloadError(fetchErr) {
-				log.Printf("download_public_scientific_file retrying filename=%q host=%q attempt=%d offset=%d reason=%v", request.Filename, request.SourceHost, attempt+1, *offset, fetchErr)
-				continue
-			}
-			return fetchErr
-		}
-		if response == nil || response.Body == nil || response.FinalURL == nil ||
-			!agentPublicScientificResponseHostAllowed(request, response.FinalURL.Hostname()) {
-			if response != nil && response.Body != nil {
-				_ = response.Body.Close()
-			}
-			return errAgentPublicScientificFileAuthority
-		}
-		freshResponse := response.StatusCode == http.StatusOK
-		partialResponse := response.StatusCode == http.StatusPartialContent
-		if !freshResponse && !partialResponse {
-			_ = response.Body.Close()
-			return errAgentPublicScientificFileResume
-		}
-		if partialResponse {
-			if response.ContentRangeStart != *offset || response.ContentRangeEnd < *offset ||
-				response.ContentRangeTotal <= response.ContentRangeEnd || response.ContentRangeTotal > maximumBytes ||
-				stage.state.Validator == "" || securefetch.ResumeValidator(response) != stage.state.Validator {
-				_ = response.Body.Close()
-				return errAgentPublicScientificFileResume
-			}
-			stage.state.ExpectedTotal = response.ContentRangeTotal
-		} else {
-			if *offset > 0 {
-				if err := stage.file.Truncate(0); err != nil {
-					_ = response.Body.Close()
-					return errors.New("public scientific file download staging failed")
-				}
-				*offset = 0
-				if _, err := stage.file.Seek(0, io.SeekStart); err != nil {
-					_ = response.Body.Close()
-					return errors.New("public scientific file download staging failed")
-				}
-			}
-			stage.state.ExpectedTotal = response.ContentLength
-			stage.state.Validator = securefetch.ResumeValidator(response)
-		}
-		if stage.state.ContentType == "" {
-			stage.state.ContentType = response.ContentType
-		} else if response.ContentType != "" && response.ContentType != stage.state.ContentType {
-			_ = response.Body.Close()
-			return errAgentPublicScientificFileResume
-		}
-		if err := stage.persist(); err != nil {
-			_ = response.Body.Close()
-			return errAgentPublicScientificFileAuthority
-		}
-		diskMeasurement := stage.state.ExpectedTotal
-		if diskMeasurement <= 0 {
-			diskMeasurement = response.ContentLength
-		}
-		guard := newAgentDownloadDiskGuard(workspaceDir, s.fileRoot)
-		if err := guard.check(*offset, max(1, diskMeasurement-*offset)); err != nil {
-			_ = response.Body.Close()
-			return err
-		}
-		remaining := maximumBytes - *offset
-		bodyClosed := make(chan struct{})
-		go func(body io.ReadCloser) {
-			select {
-			case <-ctx.Done():
-				_ = body.Close()
-			case <-bodyClosed:
-			}
-		}(response.Body)
-		progressReader := newAgentPublicScientificProgressReader(
-			ctx, response.Body, *offset, stage.state.ExpectedTotal,
-		)
-		transferStarted := time.Now()
-		written, copyErr := io.Copy(
-			&agentDownloadDiskWriter{writer: stage.file, guard: guard, written: *offset},
-			io.LimitReader(&contextReader{ctx: ctx, reader: progressReader}, remaining+1),
-		)
-		stage.recordTransfer(written, time.Since(transferStarted))
-		progressReader.Complete()
-		close(bodyClosed)
-		closeErr := response.Body.Close()
-		if copyErr == nil && closeErr != nil {
-			copyErr = closeErr
-		}
-		*offset += written
-		if syncErr := stage.file.Sync(); copyErr == nil && syncErr != nil {
-			copyErr = syncErr
-		}
-		if *offset > maximumBytes || (stage.state.ExpectedTotal > 0 && *offset > stage.state.ExpectedTotal) {
-			return errors.New("public scientific file download exceeds the maximum size")
-		}
-		if copyErr == nil && stage.state.ExpectedTotal > 0 && *offset < stage.state.ExpectedTotal {
-			copyErr = io.ErrUnexpectedEOF
-		}
-		if copyErr != nil {
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			lastErr = copyErr
-			if attempt+1 < agentPublicScientificDownloadMaxAttempts && isRetryableAgentPublicScientificDownloadError(copyErr) {
-				log.Printf("download_public_scientific_file retrying filename=%q host=%q attempt=%d offset=%d reason=%v", request.Filename, request.SourceHost, attempt+1, *offset, copyErr)
-				continue
-			}
-			return fmt.Errorf("public scientific file transfer remained interrupted after %d attempts: %w", attempt+1, copyErr)
-		}
-		if *offset <= 0 {
-			return errors.New("public scientific file download staging failed")
-		}
-		return nil
-	}
-	return lastErr
 }
 
 func agentPublicScientificAllowedHosts(request agentPublicScientificFileRequest) []string {
@@ -489,6 +337,10 @@ func agentPublicScientificResponseHostAllowed(
 		if strings.EqualFold(strings.TrimSpace(allowed), strings.TrimSpace(host)) {
 			return true
 		}
+	}
+	if request.AllowPublicRedirects {
+		normalized, err := networkpolicy.NormalizePattern(host)
+		return err == nil && !networkpolicy.PrivateOrReserved(normalized)
 	}
 	return false
 }
@@ -683,31 +535,4 @@ func ensureAgentPublicScientificPrivateDirectory(path string) error {
 		return os.Chmod(path, 0o700)
 	}
 	return nil
-}
-
-func waitAgentPublicScientificDownloadRetry(ctx context.Context, retry int) error {
-	delay := agentPublicScientificRetryBaseDelay << min(retry, 4)
-	timer := time.NewTimer(delay)
-	defer timer.Stop()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-timer.C:
-		return nil
-	}
-}
-
-func isRetryableAgentPublicScientificDownloadError(err error) bool {
-	if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		return false
-	}
-	if errors.Is(err, io.ErrUnexpectedEOF) || securefetch.IsCode(err, securefetch.CodeTransport) {
-		return true
-	}
-	var networkError net.Error
-	if errors.As(err, &networkError) {
-		return true
-	}
-	status, ok := securefetch.HTTPStatus(err)
-	return ok && (status == http.StatusRequestTimeout || status == http.StatusTooManyRequests || status >= 500)
 }

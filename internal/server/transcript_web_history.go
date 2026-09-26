@@ -777,6 +777,9 @@ func (s *Server) projectTranscriptWebProjectedEvent(
 			return err
 		}
 		(*messages)[index]["terminal_status"] = projection.TerminalStatus
+		if projection.ReasonCode != "" {
+			(*messages)[index]["terminal_reason_code"] = projection.ReasonCode
+		}
 		if projection.Superseded {
 			(*messages)[index]["terminal_superseded"] = true
 		}
@@ -1561,6 +1564,7 @@ func transcriptWebRuntimeDrainFence(payload map[string]any) bool {
 		sessionRunnerModelProviderTemporaryReasonCode,
 		sessionRunnerVisualMediaUnsupportedReasonCode,
 		sessionRunnerResponseLanguageMismatchReasonCode,
+		sessionRunnerFinalPresentationReasonCode,
 		"artifact_reference_correction_required",
 		sessionRunnerRequiredToolChoiceUnsatisfiedReasonCode,
 		sessionRunnerVisualArtifactValidationReasonCode,
@@ -1597,7 +1601,7 @@ func transcriptWebCorrectionResumeFence(payload map[string]any) bool {
 		sessionRunnerRequiredToolChoiceUnsatisfiedReasonCode,
 		sessionRunnerVisualMediaUnsupportedReasonCode,
 		sessionRunnerVisualArtifactValidationReasonCode,
-		sessionRunnerResponseLanguageMismatchReasonCode:
+		sessionRunnerResponseLanguageMismatchReasonCode, sessionRunnerFinalPresentationReasonCode:
 		return true
 	default:
 		return false

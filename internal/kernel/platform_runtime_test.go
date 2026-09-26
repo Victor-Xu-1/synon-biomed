@@ -39,7 +39,10 @@ func TestWindowsManagedInstallerCarriesNativeProcessHome(t *testing.T) {
 	root := t.TempDir()
 	condaHome := filepath.Join(root, "conda")
 	manager := NewManager(Config{CondaHome: condaHome, Micromamba: filepath.Join(root, "micromamba.exe")})
-	environment := manager.managedEnvironmentInstallerEnv()
+	environment, err := manager.managedEnvironmentInstallerEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if got := environmentValue(environment, "USERPROFILE"); got != condaHome {
 		t.Fatalf("installer USERPROFILE=%q want=%q", got, condaHome)
 	}

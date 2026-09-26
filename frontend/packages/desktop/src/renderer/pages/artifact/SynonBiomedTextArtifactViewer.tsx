@@ -16,6 +16,7 @@ import HTMLRenderer, {
   type HtmlTextSelection,
   type InspectedElement,
 } from '@/renderer/pages/conversation/Preview/components/renderers/HTMLRenderer';
+import { readHtmlResponseText } from '@/renderer/pages/conversation/Preview/components/renderers/isolatedHtmlDocument';
 import type { SynonBiomedArtifactCanvasSelection } from './artifactCanvasSelection';
 import SynonBiomedJsonViewer from '@/renderer/pages/conversation/Preview/components/viewers/SynonBiomedJsonViewer';
 import { Button, Result, Spin } from '@arco-design/web-react';
@@ -46,6 +47,7 @@ const SynonBiomedTextArtifactViewer: React.FC<SynonBiomedTextArtifactViewerProps
 }) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
+  const [passiveSource, setPassiveSource] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ScientificPreviewError | null>(null);
   const [generation, setGeneration] = useState(0);
@@ -125,7 +127,10 @@ const SynonBiomedTextArtifactViewer: React.FC<SynonBiomedTextArtifactViewerProps
     })
       .then(async (response) => {
         if (!response.ok) throw new ScientificPreviewError('request-failed', { status: response.status });
-        const rawContent = await response.text();
+        // The response mode only adds passive sanitization. Every HTML frame,
+        // including generated interactive documents, has an opaque origin.
+        setPassiveSource(response.headers.get('X-Synon-HTML-Preview') !== 'isolated');
+        const rawContent = kind === 'html' ? await readHtmlResponseText(response) : await response.text();
         return language === 'json' ? formatJsonContent(rawContent) : rawContent;
       })
       .then(setContent)
@@ -144,7 +149,7 @@ const SynonBiomedTextArtifactViewer: React.FC<SynonBiomedTextArtifactViewerProps
       });
 
     return () => controller.abort();
-  }, [contentUrl, generation, language]);
+  }, [contentUrl, generation, language, kind]);
 
   useEffect(() => {
     onSelectionChange?.(null);
@@ -188,6 +193,7 @@ const SynonBiomedTextArtifactViewer: React.FC<SynonBiomedTextArtifactViewerProps
       <div className='relative size-full min-h-360px overflow-hidden'>
         <HTMLRenderer
           content={content}
+          passiveSource={passiveSource}
           inspectMode={inspectMode}
           copySuccessMessage={t('preview.scientific.text.htmlElementSelected')}
           elementAnnotations={annotations

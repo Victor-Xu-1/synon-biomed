@@ -24,7 +24,7 @@ func TestAdvertisedRootToolDoesNotRequireSkillPreflight(t *testing.T) {
 		ID: "fetch", Name: "web_fetch",
 		Arguments: json.RawMessage(`{"url":"https://example.test"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("advertised root tool was forced through Skill preflight: %s", diagnostic)
 	}
 }
@@ -108,7 +108,7 @@ func TestLoadedSkillGuidanceDoesNotCreateAStringMatchingExecutionGate(t *testing
 		ID: "alternate", Name: "python",
 		Arguments: json.RawMessage(`{"code":"from examplelib import Builder\nBuilder().run()","environment":"science"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("Skill guidance became a substring-based execution gate: %s", diagnostic)
 	}
 }
@@ -134,7 +134,7 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 	if err := os.MkdirAll(filepath.Dir(script), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(script, []byte("import argparse\nif False:\n import examplelib\np=argparse.ArgumentParser()\np.add_argument('--engine')\np.add_argument('--x')\np.add_argument('--y')\np.add_argument('--z')\np.parse_args()\n"), 0o600); err != nil {
+	if err := os.WriteFile(script, []byte("import argparse\np=argparse.ArgumentParser()\np.add_argument('--engine')\np.add_argument('--x')\np.add_argument('--y')\np.add_argument('--z')\np.parse_args()\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	competing := filepath.Join(workspace, "competing.py")
@@ -182,6 +182,8 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 		},
 		"python import":           {"code": "from examplelib import Runner\nRunner().run()"},
 		"python argv indirection": {"code": "import subprocess\ncommand = ['example-cli', '--version']\nsubprocess.run(command)"},
+		"python subprocess pack path": {"code": `import subprocess, sys
+subprocess.run([sys.executable, "` + script + `", "--engine", "example-cli"], check=True)`},
 	} {
 		t.Run(name, func(t *testing.T) {
 			publicName := "bash"
@@ -193,6 +195,12 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 				t.Fatalf("exclusive execution preflight=%#v", blocked)
 			}
 		})
+	}
+	if blocked := gateway.agentRuntimeSkillExecutionContractPreflight("repl", map[string]any{
+		"code": `import subprocess, sys
+subprocess.run([sys.executable, "` + script + `", "--help"], check=True)`,
+	}); blocked == nil || blocked["status"] != "skill_execution_entrypoint_required" || blocked["executed"] != false {
+		t.Fatalf("repl subprocess bypassed the managed execution entrypoint: %#v", blocked)
 	}
 	canonicalCommand := `python "` + script + `" --engine example-cli`
 	for _, code := range []string{
@@ -221,6 +229,24 @@ func TestRegistryManagedExecutionRejectsDirectEngineCallsAndAllowsItsReviewedEnt
 		"command": canonicalCommand,
 	}); allowed != nil {
 		t.Fatalf("reviewed preferred entrypoint was blocked: %#v", allowed)
+	}
+	redundantCWD := `cd "` + workspace + `" && ` + canonicalCommand
+	normalized := gateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{"command": redundantCWD})
+	if normalized["command"] != canonicalCommand {
+		t.Fatalf("exact task-directory prefix was not normalized: %#v", normalized)
+	}
+	if allowed := gateway.agentRuntimeSkillExecutionContractPreflight("bash", normalized); allowed != nil {
+		t.Fatalf("normalized reviewed entrypoint was blocked: %#v", allowed)
+	}
+	for name, command := range map[string]string{
+		"different directory": `cd "` + filepath.Dir(workspace) + `" && ` + canonicalCommand,
+		"extra operation":     redundantCWD + ` && printf unexpected`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := gateway.normalizeManagedExecutionRuntimeArguments("bash", map[string]any{"command": command}); got["command"] != command {
+				t.Fatalf("unsafe compound command was normalized: %#v", got)
+			}
+		})
 	}
 	for name, input := range map[string]map[string]any{
 		"python result text": {"code": `print("example-cli")`},
@@ -419,6 +445,36 @@ func TestLoadedSkillRequiresCompatibleEnvironmentBeforeBundledScript(t *testing.
 	}
 }
 
+func TestCanonicalExecutionPackRequiresRegisteredEnvironmentWithoutLoadedSkillState(t *testing.T) {
+	scienceCatalog, err := sciencecapability.DefaultCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	skillCatalog := skills.NewCatalog()
+	skillCatalog.AddSkill(skills.Skill{
+		Name: "autodock-vina", ImplementationIdentities: []string{"AutoDock Vina"},
+		RequiredEnvironmentPackages: []string{"vina", "meeko", "rdkit", "gemmi", "prody", "biopython", "openbabel"},
+	})
+	environments := filepath.Join(t.TempDir(), "envs")
+	if err := os.MkdirAll(environments, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	gateway := serverAgentRuntimeToolGateway{
+		server: &Server{
+			skillCatalog: skillCatalog, scienceCapabilities: &scienceCatalog,
+			kernelManager: kernelruntime.NewManager(kernelruntime.Config{CondaEnvsPath: environments}),
+		},
+		taskRun: &sessionRunnerChatRun{TaskIntent: "Run AutoDock Vina docking."},
+	}
+	preflight := gateway.agentRuntimeSkillExecutionContractPreflight("bash", map[string]any{
+		"environment": "partial-vina",
+		"command":     `python "/workspace/.synon/runtime/skills/autodock-vina-72ca3834b505/36de78b8fd4ba9745e149f873a3904005be6b2b867e583ae1b0cafe3347c7b87/scripts/autodock_vina.py" --help`,
+	})
+	if preflight == nil || preflight["status"] != "execution_pack_environment_preflight_required" {
+		t.Fatalf("canonical pack environment preflight=%#v", preflight)
+	}
+}
+
 func TestLoadedSkillPackageContractDoesNotBlockControlPlaneInspection(t *testing.T) {
 	run := &sessionRunnerChatRun{TaskIntent: "inspect one loaded workflow before selecting an environment"}
 	run.addExecutedSkillNames("managed-workflow")
@@ -469,7 +525,7 @@ func TestLoadedSkillDoesNotRevokeAdvertisedRootTool(t *testing.T) {
 		ID: "read", Name: "read_file",
 		Arguments: json.RawMessage(`{"path":"/tmp/input.txt"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("loaded Skill revoked an advertised root tool: %s", diagnostic)
 	}
 }
@@ -633,7 +689,7 @@ func TestMaterializedSkillScriptPreflightRunsInPrivateGatewayAdmission(t *testin
 		ID: "invalid-script-arguments", Name: "bash",
 		Arguments: json.RawMessage(`{"command":"python \"` + script + `\" --inputs data.csv"}`),
 	}
-	diagnostic := gateway.ToolCallPreflightDiagnostic(call)
+	diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call)
 	if !strings.Contains(diagnostic, "skill_arguments_preflight_required") ||
 		!strings.Contains(diagnostic, "--inputs") {
 		t.Fatalf("private gateway diagnostic=%q", diagnostic)
@@ -650,7 +706,7 @@ func TestNamedHostMCPCallUsesLiveSnapshotWithoutSkillAdmission(t *testing.T) {
 		ID: "mcp-query", Name: "repl",
 		Arguments: json.RawMessage(`{"code":"result = host.mcp(\"literature\", \"search\", query=\"example\")"}`),
 	}
-	if diagnostic := gateway.ToolCallPreflightDiagnostic(call); diagnostic != "" {
+	if diagnostic := gateway.toolCallPreflightDiagnostic(context.Background(), call); diagnostic != "" {
 		t.Fatalf("named host.mcp call was forced through Skill admission: %s", diagnostic)
 	}
 }

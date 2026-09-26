@@ -437,6 +437,7 @@ type InterruptRunnerInput struct {
 	ClientMessageID          string
 	ReasonCode               string
 	ResumeDetail             string
+	Cause                    *RunnerInterruptionCause
 	RecoveryContractRevision int64
 	// Resumable preserves an exact checkpoint for an explicit user or
 	// configuration action without making the interruption eligible for
@@ -691,6 +692,9 @@ type ListRunnerReplayInput struct {
 	OwnerID         string
 	MessageLimit    int
 	CheckpointLimit int
+	// RequiredCheckpointEventID pins one caller-resolved canonical checkpoint
+	// and its complete tool transaction independently of the ordinary seed size.
+	RequiredCheckpointEventID int64
 	// MaxExpandedEvents and MaxExpandedBytes are hard limits applied after
 	// transaction closure. Zero selects the bounded defaults; closure is never
 	// truncated to satisfy either limit.

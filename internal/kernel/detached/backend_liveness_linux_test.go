@@ -4,6 +4,7 @@ package detached
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"strconv"
@@ -42,12 +43,18 @@ func TestWaitForPredecessorKernelAuthorityReleaseLetsTheNextToolFollowDrain(t *t
 
 func TestBackendSessionLockDoesNotBlockUnrelatedKernelIdentity(t *testing.T) {
 	backend := &Backend{}
-	releaseBlocked := backend.lockSession("kernel-blocked")
+	releaseBlocked, err := backend.lockSession(context.Background(), "kernel-blocked")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer releaseBlocked()
 
 	acquired := make(chan struct{})
 	go func() {
-		releaseIndependent := backend.lockSession("kernel-independent")
+		releaseIndependent, lockErr := backend.lockSession(context.Background(), "kernel-independent")
+		if lockErr != nil {
+			return
+		}
 		close(acquired)
 		releaseIndependent()
 	}()
@@ -61,11 +68,17 @@ func TestBackendSessionLockDoesNotBlockUnrelatedKernelIdentity(t *testing.T) {
 
 func TestBackendSessionLockSerializesOneKernelIdentity(t *testing.T) {
 	backend := &Backend{}
-	releaseFirst := backend.lockSession("kernel-shared")
+	releaseFirst, err := backend.lockSession(context.Background(), "kernel-shared")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	acquiredSecond := make(chan struct{})
 	go func() {
-		releaseSecond := backend.lockSession("kernel-shared")
+		releaseSecond, lockErr := backend.lockSession(context.Background(), "kernel-shared")
+		if lockErr != nil {
+			return
+		}
 		close(acquiredSecond)
 		releaseSecond()
 	}()
@@ -83,6 +96,29 @@ func TestBackendSessionLockSerializesOneKernelIdentity(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("the waiting kernel identity was not released")
 	}
+}
+
+func TestBackendSessionLockHonorsCancellationWhileWaiting(t *testing.T) {
+	backend := &Backend{}
+	releaseFirst, err := backend.lockSession(context.Background(), "kernel-cancelled")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cancel()
+	acquired, err := backend.lockSession(ctx, "kernel-cancelled")
+	if err == nil || acquired != nil || !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled session lock returned=%t err=%v", acquired != nil, err)
+	}
+	// A cancelled waiter must not leave a stale lock entry or consume the gate.
+	releaseFirst()
+	reacquired, err := backend.lockSession(context.Background(), "kernel-cancelled")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reacquired()
 }
 
 func TestPredecessorBackendDefinitelyDeadUsesExactProcessIdentity(t *testing.T) {

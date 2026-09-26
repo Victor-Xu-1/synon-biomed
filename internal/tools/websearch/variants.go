@@ -151,6 +151,10 @@ func MergeVariantOutputs(queries []string, outputs []Output, errorsByQuery []err
 			merged.DurationSeconds = max(merged.DurationSeconds, outputs[index].DurationSeconds)
 			if outputs[index].Failure != nil {
 				state["unavailable"] = true
+				state["failure"] = *outputs[index].Failure
+			}
+			if backends, found := outputs[index].Diagnostics["httpBackends"]; found {
+				state["httpBackends"] = backends
 			}
 		}
 		if index < len(errorsByQuery) && errorsByQuery[index] != nil {
@@ -188,9 +192,7 @@ func MergeVariantOutputs(queries []string, outputs []Output, errorsByQuery []err
 				return merged, nil
 			}
 		}
-		merged.Failure = &Failure{
-			Kind: "search_unavailable", Message: "No query variant returned a usable source.", Recoverable: true,
-		}
+		merged.Results = []any{"The completed search returned no relevant sources.", SearchResult{ToolUseID: "synon-websearch-web-search", Content: []Hit{}}}
 		return merged, nil
 	}
 	hits := make([]Hit, 0, len(merged.Sources))

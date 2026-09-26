@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"os/exec"
 	kernelruntime "synon-go/internal/kernel"
 	"testing"
@@ -45,7 +46,7 @@ utils.install_packages("package-name")`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := agentExecutionPreparationPreflight(test.tool, test.input, nil, preparer)
+			result := agentExecutionPreparationPreflight(context.Background(), test.tool, test.input, nil, preparer)
 			if stringValue(result["status"]) != "managed_package_authority_required" ||
 				boolValue(result["executed"], true) {
 				t.Fatalf("package-manager bypass was not rejected: %#v", result)
@@ -65,7 +66,7 @@ subprocess.run(["vina", "--config", "dock.conf"], check=True)`}},
 		{"r", map[string]any{"code": `result <- read.csv("input.csv")`}},
 	}
 	for _, test := range allowed {
-		if result := agentExecutionPreparationPreflight(test.tool, test.input, nil, nil); result != nil {
+		if result := agentExecutionPreparationPreflight(context.Background(), test.tool, test.input, nil, nil); result != nil {
 			t.Fatalf("scientific execution was blocked for %s: %#v", test.tool, result)
 		}
 	}

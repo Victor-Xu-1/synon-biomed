@@ -4,8 +4,30 @@ import (
 	"context"
 	"os/exec"
 	"reflect"
+	"strings"
 	"testing"
 )
+
+func validateAgentSavedPythonSource(ctx context.Context, python string, source []byte) (agentSavedPythonStaticValidation, error) {
+	return validateAgentSavedPythonReader(ctx, python, strings.NewReader(string(source)))
+}
+
+func TestValidateAgentSavedPythonStreamsLargeSourceAndTail(t *testing.T) {
+	python, err := exec.LookPath("python3")
+	if err != nil {
+		t.Skip("python3 unavailable")
+	}
+	padding := "#" + strings.Repeat(" ", 17<<20) + "\n"
+	for _, tail := range []string{"print('ok')", "print(undefined_value)", "def invalid(:"} {
+		result, err := validateAgentSavedPythonReader(context.Background(), python, strings.NewReader(padding+tail))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.OK != (tail == "print('ok')") {
+			t.Fatalf("tail=%q result=%#v", tail, result)
+		}
+	}
+}
 
 func TestValidateAgentSavedPythonSource(t *testing.T) {
 	python, err := exec.LookPath("python3")

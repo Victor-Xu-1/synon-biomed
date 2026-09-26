@@ -147,16 +147,10 @@ func runnerToolRoundNoProgressInterruptionCount(entries []eventjournal.Entry) in
 			count = 0
 			continue
 		}
-		reason := strings.TrimSpace(stringValue(message["reason_code"]))
-		if reason == "" {
-			reason = strings.TrimSpace(stringValue(message["reasonCode"]))
-		}
+		cause := runnerCheckpointRecoveryCondition(entry)
+		reason := cause.ReasonCode
 		if runnerCorrectionReasonStartsNewRepairScope(reason) {
-			detail := firstNonEmpty(
-				strings.TrimSpace(stringValue(message["resume_detail"])),
-				strings.TrimSpace(stringValue(message["resumeDetail"])),
-			)
-			nextScope := runnerRecoveryConditionFingerprint(reason, detail)
+			nextScope := runnerCorrectionFingerprint(cause)
 			if nextScope != scope {
 				scope = nextScope
 				count = 0
@@ -177,50 +171,6 @@ func runnerRecoveryConditionFingerprint(reason, detail string) string {
 	return hex.EncodeToString(digest[:])
 }
 
-// runnerRepeatedCorrectionInterruptionCount counts the same durable repair
-// obligation within the current logical user turn. It intentionally ignores
-// the appended no-progress state so recovery bookkeeping cannot make an
-// unchanged correction look new on every bounce.
-func runnerRepeatedCorrectionInterruptionCount(
-	entries []eventjournal.Entry,
-	reason, detail string,
-) int {
-	baseDetail := strings.TrimSpace(detail)
-	if marker := strings.Index(baseDetail, sessionRunnerNoProgressDetailMarker); marker >= 0 {
-		baseDetail = strings.TrimSpace(baseDetail[:marker])
-	}
-	target := runnerRecoveryConditionFingerprint(reason, baseDetail)
-	count := 0
-	for _, entry := range entries {
-		if runnerEntryStartsNewLogicalTask(entry) {
-			count = 0
-			continue
-		}
-		message := entry.Message
-		if strings.TrimSpace(stringValue(message["type"])) != "runner_checkpoint" {
-			continue
-		}
-		entryReason := firstNonEmpty(
-			strings.TrimSpace(stringValue(message["reason_code"])),
-			strings.TrimSpace(stringValue(message["reasonCode"])),
-		)
-		if entryReason != strings.TrimSpace(reason) {
-			continue
-		}
-		entryDetail := firstNonEmpty(
-			strings.TrimSpace(stringValue(message["resume_detail"])),
-			strings.TrimSpace(stringValue(message["resumeDetail"])),
-		)
-		if marker := strings.Index(entryDetail, sessionRunnerNoProgressDetailMarker); marker >= 0 {
-			entryDetail = strings.TrimSpace(entryDetail[:marker])
-		}
-		if runnerRecoveryConditionFingerprint(entryReason, entryDetail) == target {
-			count++
-		}
-	}
-	return count
-}
-
 func runnerCheckpointHasMaterialProgress(message eventjournal.Message) bool {
 	if strings.TrimSpace(stringValue(message["type"])) != "runner_checkpoint" ||
 		strings.TrimSpace(stringValue(message["status"])) != "completed" ||
@@ -232,8 +182,12 @@ func runnerCheckpointHasMaterialProgress(message eventjournal.Message) bool {
 		return false
 	}
 	result := mapValue(message["toolResult"])
-	if len(result) == 0 || agentruntime.IsNonExecutingPreflight(result) ||
-		agentruntime.ClassifyToolResult(result).HardFailed() ||
+	outcome := agentruntime.ClassifyToolResult(result)
+	// An unavailable source is recoverable, but acquired no new evidence. It
+	// must not clear the same durable route quarantine on live and replay paths.
+	// Partial results may still carry useful work alongside unavailable sources.
+	if len(result) == 0 || agentruntime.ToolResultDidNotExecute(result) ||
+		outcome.HardFailed() || outcome == agentruntime.ToolResultUnavailable ||
 		boolValue(result["reused"], false) || boolValue(result["idempotent"], false) ||
 		runnerCorrectionResultUnchanged(result) {
 		return false
@@ -275,9 +229,10 @@ func runnerCorrectionReasonStartsNewRepairScope(reason string) bool {
 		sessionRunnerCompletionReviewRecoveryReasonCode,
 		sessionRunnerRealScientificEvidenceRequiredReasonCode,
 		sessionRunnerPlanStepsIncompleteReasonCode,
+		sessionRunnerPlanApprovalRequiredReasonCode,
 		sessionRunnerRequiredToolChoiceUnsatisfiedReasonCode,
 		sessionRunnerVisualArtifactValidationReasonCode,
-		sessionRunnerResponseLanguageMismatchReasonCode:
+		sessionRunnerResponseLanguageMismatchReasonCode, sessionRunnerFinalPresentationReasonCode:
 		return true
 	default:
 		return false

@@ -30,9 +30,14 @@ func (s *Server) loadTranscriptRunnerReplay(
 	if err != nil {
 		return nil, err
 	}
+	var readCheckpoint int64
+	if coverage := recoveryProjection.Correction.ReadCoverage; recoveryProjection.HasCorrection && coverage != nil {
+		readCheckpoint = coverage.EventID
+	}
 	projected, err := s.transcriptStore.ListRunnerReplay(ctx, transcriptstore.ListRunnerReplayInput{
 		StreamUID: authority.Stream.UID, OwnerID: authority.Stream.OwnerID,
 		MessageLimit: messageLimit, CheckpointLimit: checkpointLimit,
+		RequiredCheckpointEventID: readCheckpoint,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("load transcript runner replay: %w", err)
@@ -88,6 +93,16 @@ func (s *Server) loadTranscriptRunnerReplay(
 			message["type"] = "message"
 			message["role"] = "system"
 		case "runner_checkpoint":
+			if _, chunk := message[transcriptstore.RunnerCorrectionConditionChunkField]; chunk {
+				continue
+			}
+			if cause, present, err := transcriptstore.ParseRunnerInterruptionCause(message); err != nil {
+				return nil, err
+			} else if present && runnerCorrectionReasonStartsNewRepairScope(cause.ReasonCode) {
+				// The full canonical projection supplies the active condition and
+				// repetition aggregate below. Storage bytes are not model history.
+				continue
+			}
 			message["type"] = "runner_checkpoint"
 		case transcriptstore.TerminalToolRecoveryEventType:
 			// A terminal recovery receipt closes a durable model tool-call
@@ -123,13 +138,17 @@ func (s *Server) loadTranscriptRunnerReplay(
 		current, found := latestRunnerCorrection(entries)
 		if !found || current.ReasonCode != recoveryProjection.Correction.ReasonCode ||
 			current.Detail != recoveryProjection.Correction.Detail ||
-			current.RecoveryContractRevision != recoveryProjection.Correction.RecoveryContractRevision {
-			entries = append(entries, eventjournal.Entry{Message: eventjournal.Message{
-				"type": "runner_checkpoint", "status": "interrupted",
-				"reason_code":                recoveryProjection.Correction.ReasonCode,
-				"resume_detail":              recoveryProjection.Correction.Detail,
-				"recovery_contract_revision": recoveryProjection.Correction.RecoveryContractRevision,
-			}})
+			current.RecoveryContractRevision != recoveryProjection.Correction.RecoveryContractRevision ||
+			(current.Condition == nil && recoveryProjection.Correction.Condition != nil) {
+			entries = append(entries, eventjournal.Entry{SessionID: authority.Stream.SessionID,
+				SourceEventType: runnerCorrectionProjectionType, RuntimeProjection: recoveryProjection.Correction,
+				Message: eventjournal.Message{
+					"type": "runner_checkpoint", "status": "interrupted",
+					"runnerAttempt":              authority.Claim.Attempt,
+					"reason_code":                recoveryProjection.Correction.ReasonCode,
+					"resume_detail":              recoveryProjection.Correction.Detail,
+					"recovery_contract_revision": recoveryProjection.Correction.RecoveryContractRevision,
+				}})
 		}
 	}
 	if recoveryProjection.NoProgress.Consecutive > 0 || len(recoveryProjection.NoProgress.ClosedActions) > 0 {
@@ -137,6 +156,17 @@ func (s *Server) loadTranscriptRunnerReplay(
 			"type":                               sessionRunnerNoProgressRecoveryField,
 			sessionRunnerNoProgressRecoveryField: recoveryProjection.NoProgress.payload(),
 		}})
+	}
+	if recoveryProjection.CorrectionRepetition.Count > 0 {
+		entries = append(entries, eventjournal.Entry{
+			SessionID:       authority.Stream.SessionID,
+			SourceEventType: runnerCorrectionRepetitionProjectionType,
+			Message: eventjournal.Message{
+				"runnerAttempt":                          authority.Claim.Attempt,
+				"type":                                   runnerCorrectionRepetitionProjectionType,
+				runnerCorrectionRepetitionProjectionType: recoveryProjection.CorrectionRepetition,
+			},
+		})
 	}
 	return entries, nil
 }

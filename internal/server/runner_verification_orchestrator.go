@@ -15,12 +15,10 @@ import (
 )
 
 const (
-	// The fixed reviewer gets 20 iterations and lets an agent
-	// address at most three consecutive reviewer bounces before the result is
-	// delivered with the remaining findings still visible to the user.
+	// Each independent review is bounded. Findings remain visible advisory
+	// evidence; execution and persistence integrity are separate hard contracts.
 	sessionReviewerMaxToolRounds         = 20
 	sessionReviewerMaxReplCalls          = 8
-	sessionReviewerMaxConsecutiveBounces = 3
 	sessionReviewerMaxGenerationAttempts = 1
 )
 
@@ -52,8 +50,19 @@ func (err sessionRunnerCompletionReviewCorrection) Error() string {
 	return sessionRunnerCompletionReviewCorrectionDetail(err.Summary, err.Issues)
 }
 
-func (err sessionRunnerCompletionReviewCorrection) runnerCorrection() (string, string) {
-	return "completion_review_correction_required", err.Error()
+func (err sessionRunnerCompletionReviewCorrection) runnerCorrection() transcriptstore.RunnerInterruptionCause {
+	review := transcriptstore.RunnerReviewCondition{Summary: err.Summary}
+	for _, issue := range err.Issues {
+		version := ""
+		if issue.ArtifactVersionID != nil {
+			version = *issue.ArtifactVersionID
+		}
+		review.Issues = append(review.Issues, transcriptstore.RunnerReviewConditionIssue{
+			MessageIndex: issue.MessageIndex, Claim: issue.Claim, Verdict: issue.Verdict, Severity: issue.Severity,
+			Evidence: issue.Evidence, ArtifactVersionID: version, EvidenceRefs: append([]string(nil), issue.EvidenceRefs...), EvidenceQuote: issue.EvidenceQuote,
+		})
+	}
+	return newRunnerCorrection("completion_review_correction_required", err.Error(), transcriptstore.RunnerCorrectionCondition{Review: &review})
 }
 
 func sessionRunnerCompletionReviewCorrectionDetail(summary string, issues []sessionRunnerReviewIssue) string {
@@ -73,9 +82,7 @@ func sessionRunnerCompletionReviewCorrectionDetail(summary string, issues []sess
 		parts = append(parts, severity+": "+claim)
 	}
 	detail := strings.Join(parts, "; ")
-	if len(detail) > maxRunnerCorrectionResumeDetailBytes {
-		detail = detail[:maxRunnerCorrectionResumeDetailBytes]
-	}
+	detail = truncateSessionRunnerReferenceDiagnostic(detail, maxRunnerCorrectionResumeDetailBytes)
 	return detail
 }
 
@@ -139,6 +146,12 @@ func wrapSessionRunnerReviewStageError(err error) error {
 	return &sessionRunnerReviewStageError{Cause: err}
 }
 
+func sessionRunnerReviewCandidateUsable(result agentruntime.RunResult) bool {
+	return strings.TrimSpace(sessionRunnerLatestFinalCandidateContent(
+		result.Messages, result.FinalMessage.Content,
+	)) != ""
+}
+
 type sessionReviewerArtifactEvidence struct {
 	ArtifactID    string `json:"artifactId"`
 	Name          string `json:"name"`
@@ -155,21 +168,6 @@ type sessionReviewerWorkspaceEvidence struct {
 }
 
 func (s *Server) runVerifiedSessionAgent(
-	ctx context.Context,
-	session sessionstore.Session,
-	options SessionRunnerChatOptions,
-	engine agentruntime.Engine,
-	request agentruntime.RunRequest,
-	plan sessionRunnerTaskContract,
-	run *sessionRunnerChatRun,
-	onPlanModeCandidateRejected sessionRunnerPlanModeCandidateRejected,
-) (agentruntime.RunResult, error) {
-	return s.runVerifiedSessionAgentStrict(
-		ctx, session, options, engine, request, plan, run, onPlanModeCandidateRejected,
-	)
-}
-
-func (s *Server) runVerifiedSessionAgentStrict(
 	ctx context.Context,
 	session sessionstore.Session,
 	options SessionRunnerChatOptions,
@@ -245,9 +243,12 @@ func (s *Server) runVerifiedSessionAgentStrict(
 	logicalTaskMessages = append(logicalTaskMessages, request.Messages...)
 	logicalTaskMessages = append(logicalTaskMessages, result.Messages...)
 	explicitToolContract := buildSessionRunnerExplicitToolContract(sessionRunnerTaskIntent(run))
-	if gaps := explicitToolContract.gaps(logicalTaskMessages); len(gaps) > 0 {
-		issues := make([]sessionRunnerReviewIssue, 0, len(gaps))
-		for _, gap := range gaps {
+	explicitToolGaps := explicitToolContract.gaps(logicalTaskMessages)
+	finalCandidateContent := sessionRunnerLatestFinalCandidateContent(result.Messages, result.FinalMessage.Content)
+	explicitToolGaps = append(explicitToolGaps, explicitToolContract.finalGaps(logicalTaskMessages, finalCandidateContent)...)
+	if len(explicitToolGaps) > 0 {
+		issues := make([]sessionRunnerReviewIssue, 0, len(explicitToolGaps))
+		for _, gap := range explicitToolGaps {
 			issues = append(issues, sessionRunnerReviewIssue{
 				MessageIndex: 0, Claim: gap, Verdict: "fail", Severity: "high", Evidence: gap,
 			})
@@ -277,24 +278,18 @@ func (s *Server) runVerifiedSessionAgentStrict(
 	if !reviewRequired {
 		return result, nil
 	}
-	rejectCandidate := func(cause error) error {
-		// Preserve the last streamed candidate on terminal review failure. It is
-		// visibly marked failed by runner_finished and remains useful diagnostic
-		// evidence. Empty resets below still precede a real replacement attempt.
-		return cause
-	}
 	reviewerOptions, err := s.resolveSessionReviewerOptions(ctx, session, options, sessionRunnerAttempt(run))
 	if err != nil {
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("resolve completion reviewer: %w", err)))
+		return result, wrapSessionRunnerReviewStageError(fmt.Errorf("resolve completion reviewer: %w", err))
 	}
 	rootFrameID, err := s.sessionRunnerVerificationRoot(session.ID)
 	if err != nil {
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(err))
+		return result, wrapSessionRunnerReviewStageError(err)
 	}
 	reviewerBudget := agentruntime.NewToolRoundBudget(sessionReviewerMaxToolRounds)
 	openCheckIDs, err := s.sessionRunnerOpenVerificationCheckIDs(rootFrameID, session.ID, run)
 	if err != nil {
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("load completion review findings: %w", err)))
+		return result, wrapSessionRunnerReviewStageError(fmt.Errorf("load completion review findings: %w", err))
 	}
 	reviewStart := 0
 	if run != nil && run.Transcript != nil {
@@ -302,19 +297,19 @@ func (s *Server) runVerifiedSessionAgentStrict(
 			ctx, run.Transcript.Stream.UID, run.Transcript.Stream.OwnerID, run.Transcript.Claim.Attempt,
 		)
 		if err != nil {
-			return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("restore completion review cursor: %w", err)))
+			return result, wrapSessionRunnerReviewStageError(fmt.Errorf("restore completion review cursor: %w", err))
 		}
 	}
 	reviewIndex := reviewStart
 	workspaceEvidence, err := s.sessionReviewerWorkspaceEvidence(session, rootFrameID)
 	if err != nil {
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("resolve completion review evidence: %w", err)))
+		return result, wrapSessionRunnerReviewStageError(fmt.Errorf("resolve completion review evidence: %w", err))
 	}
 	reviewBinding, err := sessionRunnerVerificationSourceRef(
 		rootFrameID, session.ID, reviewIndex, result.FinalMessage.Content, run, workspaceEvidence,
 	)
 	if err != nil {
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("bind completion review evidence: %w", err)))
+		return result, wrapSessionRunnerReviewStageError(fmt.Errorf("bind completion review evidence: %w", err))
 	}
 	reviewBinding["review_scope"] = "logical_task_terminal"
 	var reviewerFrame workspace.Frame
@@ -330,7 +325,7 @@ func (s *Server) runVerifiedSessionAgentStrict(
 			ctx, session, reviewerOptions.Model, sessionRunnerAttempt(run), reviewIndex,
 		)
 		if err != nil {
-			return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("start completion reviewer frame: %w", err)))
+			return result, wrapSessionRunnerReviewStageError(fmt.Errorf("start completion reviewer frame: %w", err))
 		}
 	}
 	if err := s.checkpointSessionReview(options, run, reviewIndex, "running", "independent completion review started", map[string]any{"reviewerFrameId": reviewerFrame.ID}); err != nil {
@@ -338,7 +333,7 @@ func (s *Server) runVerifiedSessionAgentStrict(
 		if reusedAutomaticReviewer {
 			_ = automaticReviewState.stopReviewerHeartbeat()
 		}
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(err))
+		return result, wrapSessionRunnerReviewStageError(err)
 	}
 	bookmarkerDone := make(chan error, 1)
 	go func() {
@@ -369,7 +364,7 @@ func (s *Server) runVerifiedSessionAgentStrict(
 		_ = stopReviewerHeartbeat()
 		_ = s.finishSessionReviewerFrame(reviewerFrame.ID, "failed", err.Error(), reviewIndex)
 		_ = s.checkpointSessionReview(options, run, reviewIndex, "failed", err.Error(), map[string]any{"reviewerFrameId": reviewerFrame.ID})
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("bind completion reviewer runner: %w", err)))
+		return result, wrapSessionRunnerReviewStageError(fmt.Errorf("bind completion reviewer runner: %w", err))
 	}
 	reviewResult := result
 	reviewMessages := request.Messages
@@ -379,7 +374,7 @@ func (s *Server) runVerifiedSessionAgentStrict(
 	if transcriptHashErr != nil {
 		_ = stopReviewerHeartbeat()
 		_ = s.finishSessionReviewerFrame(reviewerFrame.ID, "failed", transcriptHashErr.Error(), reviewIndex)
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(transcriptHashErr))
+		return result, wrapSessionRunnerReviewStageError(transcriptHashErr)
 	}
 	if automaticReviewState != nil && len(automaticReviewState.Units) > 0 &&
 		automaticReviewState.CoveredThrough >= 0 && automaticReviewState.CoveredThrough <= len(completeReviewMessages) {
@@ -400,44 +395,44 @@ func (s *Server) runVerifiedSessionAgentStrict(
 			terminalMessageStart, len(completeReviewMessages), completeReviewTranscriptSHA256,
 		)
 	}
-	if heartbeatErr := stopReviewerHeartbeat(); reviewErr == nil && heartbeatErr != nil {
-		reviewErr = heartbeatErr
+	if heartbeatErr := stopReviewerHeartbeat(); heartbeatErr != nil {
+		reviewErr = errors.Join(reviewErr, wrapSessionRunnerReviewStageError(heartbeatErr))
+	}
+	// Inventory consistency is required even when a provider outage prevents a
+	// verdict. Advisory review must not deliver a candidate bound to stale data.
+	currentEvidence, evidenceErr := s.sessionReviewerWorkspaceEvidence(session, rootFrameID)
+	if evidenceErr != nil {
+		reviewErr = errors.Join(reviewErr, wrapSessionRunnerReviewStageError(fmt.Errorf("recheck completion review evidence: %w", evidenceErr)))
+	} else {
+		currentBinding, bindingErr := sessionRunnerVerificationSourceRef(
+			rootFrameID, session.ID, reviewIndex, result.FinalMessage.Content, run, currentEvidence,
+		)
+		if bindingErr == nil && currentBinding["artifact_inventory_sha256"] != reviewBinding["artifact_inventory_sha256"] {
+			bindingErr = errors.New("artifact inventory changed during completion review; the current immutable versions require a fresh review")
+		}
+		if bindingErr != nil {
+			reviewErr = errors.Join(reviewErr, wrapSessionRunnerReviewStageError(bindingErr))
+		}
 	}
 	if reviewErr != nil {
 		status := sessionReviewerFailureStatus(ctx, reviewErr)
 		finishErr := s.finishSessionReviewerFrame(reviewerFrame.ID, status, reviewErr.Error(), reviewIndex)
-		_ = s.checkpointSessionReview(options, run, reviewIndex, status, reviewErr.Error(), map[string]any{"reviewerFrameId": reviewerFrame.ID})
-		if finishErr != nil {
-			return result, wrapSessionRunnerReviewStageError(rejectCandidate(errors.Join(fmt.Errorf("review runner completion: %w", reviewErr), fmt.Errorf("finish completion reviewer frame: %w", finishErr))))
-		}
+		checkpointErr := s.checkpointSessionReview(options, run, reviewIndex, status, reviewErr.Error(), map[string]any{
+			"reviewerFrameId": reviewerFrame.ID, "disposition": "unverified",
+		})
 		if cause := context.Cause(ctx); cause != nil {
 			return result, cause
 		}
-		// The background reviewer is an error-reduction
-		// layer, not as the scientific result itself. Preserve the failed reviewer
-		// frame and visible review_failed state, but do not relabel a completed
-		// agent result as failed merely because the reviewer transport or protocol
-		// could not finish.
+		if finishErr != nil || checkpointErr != nil || !sessionReviewerFailureIsAdvisory(reviewErr) || !sessionRunnerReviewCandidateUsable(result) {
+			return result, wrapSessionRunnerReviewStageError(errors.Join(reviewErr, finishErr, checkpointErr))
+		}
 		return result, nil
 	}
-	currentEvidence, evidenceErr := s.sessionReviewerWorkspaceEvidence(session, rootFrameID)
-	if evidenceErr != nil {
-		_ = s.finishSessionReviewerFrame(reviewerFrame.ID, "failed", evidenceErr.Error(), reviewIndex)
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("recheck completion review evidence: %w", evidenceErr)))
-	}
-	currentBinding, evidenceErr := sessionRunnerVerificationSourceRef(
-		rootFrameID, session.ID, reviewIndex, result.FinalMessage.Content, run, currentEvidence,
-	)
-	if evidenceErr != nil || currentBinding["artifact_inventory_sha256"] != reviewBinding["artifact_inventory_sha256"] {
-		message := "artifact inventory changed while the independent completion review was running; a new user-triggered execution unit must review the current immutable versions"
-		if evidenceErr != nil {
-			message = "completion review evidence became invalid: " + evidenceErr.Error()
-		}
-		_ = s.finishSessionReviewerFrame(reviewerFrame.ID, "failed", message, reviewIndex)
-		_ = s.checkpointSessionReview(options, run, reviewIndex, "failed", message, map[string]any{"verdict": "revise"})
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(errors.New(message)))
-	}
 	reviewerModel := sessionReviewerModelFromVerifiedBinding(verifiedReviewBinding, reviewerOptions.Model)
+	// Keep the reviewer's original verdict. Disposition describes whether that
+	// finding blocks delivery, not whether the reviewer actually found an issue.
+	verifiedReviewBinding = copyMapAny(verifiedReviewBinding)
+	verifiedReviewBinding["review_disposition"] = "advisory"
 	checkIDs, persistErr := s.persistSessionRunnerReview(
 		rootFrameID, session.ID, reviewerFrame.ID, reviewerModel,
 		result.FinalMessage.Content, review, reviewIndex, verifiedReviewBinding,
@@ -446,39 +441,32 @@ func (s *Server) runVerifiedSessionAgentStrict(
 		finishErr := s.finishSessionReviewerFrame(reviewerFrame.ID, "failed", persistErr.Error(), reviewIndex)
 		_ = s.checkpointSessionReview(options, run, reviewIndex, "failed", persistErr.Error(), map[string]any{"reviewerFrameId": reviewerFrame.ID})
 		if finishErr != nil {
-			return result, wrapSessionRunnerReviewStageError(rejectCandidate(errors.Join(fmt.Errorf("persist completion review: %w", persistErr), fmt.Errorf("finish completion reviewer frame: %w", finishErr))))
+			return result, wrapSessionRunnerReviewStageError(errors.Join(fmt.Errorf("persist completion review: %w", persistErr), fmt.Errorf("finish completion reviewer frame: %w", finishErr)))
 		}
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("persist completion review: %w", persistErr)))
+		return result, wrapSessionRunnerReviewStageError(fmt.Errorf("persist completion review: %w", persistErr))
 	}
 	if err := s.finishSessionReviewerFrame(reviewerFrame.ID, "completed", firstNonEmpty(review.Summary, "independent completion review completed"), reviewIndex); err != nil {
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("finish completion reviewer frame: %w", err)))
+		return result, wrapSessionRunnerReviewStageError(fmt.Errorf("finish completion reviewer frame: %w", err))
 	}
 	if review.Verdict == "pass" {
 		if len(openCheckIDs) > 0 {
 			if err := s.workspaceStore.ResolveVerificationChecks(rootFrameID, openCheckIDs, review.Summary); err != nil {
-				return result, wrapSessionRunnerReviewStageError(rejectCandidate(fmt.Errorf("resolve corrected verification findings: %w", err)))
+				return result, wrapSessionRunnerReviewStageError(fmt.Errorf("resolve corrected verification findings: %w", err))
 			}
 		}
 		if err := s.checkpointSessionReview(options, run, reviewIndex, "completed", firstNonEmpty(review.Summary, "completion review passed"), map[string]any{
 			"verdict": "pass", "checkIds": checkIDs, "sourceRef": verifiedReviewBinding,
 		}); err != nil {
-			return result, wrapSessionRunnerReviewStageError(rejectCandidate(err))
+			return result, wrapSessionRunnerReviewStageError(err)
 		}
 		return result, nil
 	}
-	if err := s.checkpointSessionReview(options, run, reviewIndex, "completed", firstNonEmpty(review.Summary, "completion review requested correction"), map[string]any{
-		"verdict": "revise", "checkIds": checkIDs, "sourceRef": verifiedReviewBinding,
+	if err := s.checkpointSessionReview(options, run, reviewIndex, "completed", firstNonEmpty(review.Summary, "completion review recorded as advisory"), map[string]any{
+		"verdict": review.Verdict, "disposition": "advisory", "checkIds": checkIDs, "sourceRef": verifiedReviewBinding,
 	}); err != nil {
-		return result, wrapSessionRunnerReviewStageError(rejectCandidate(err))
+		return result, wrapSessionRunnerReviewStageError(err)
 	}
-	if !sessionReviewerShouldRequestCorrection(reviewIndex) {
-		return result, nil
-	}
-	return result, sessionRunnerCompletionReviewCorrection{Summary: review.Summary, Issues: review.Issues}
-}
-
-func sessionReviewerShouldRequestCorrection(reviewIndex int) bool {
-	return reviewIndex >= 0 && reviewIndex < sessionReviewerMaxConsecutiveBounces
+	return result, nil
 }
 
 func sessionRunnerEvidenceReviewRequired(session sessionstore.Session, run *sessionRunnerChatRun) (bool, error) {

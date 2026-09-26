@@ -78,21 +78,9 @@ func applyRegisteredExecutionPackEnvironmentContract(
 	if provider != "" && provider != strings.ToLower(strings.TrimSpace(request.Provider)) {
 		return fmt.Errorf("registered execution pack requires provider %s", provider)
 	}
-	condaPackages := make([]string, 0, len(pack.Packages))
-	pipPackages := make([]string, 0, len(pack.Packages))
-	for _, requirement := range pack.Packages {
-		spec := strings.TrimSpace(requirement.Spec)
-		if spec == "" {
-			return errors.New("registered execution pack contains an empty package requirement")
-		}
-		switch strings.ToLower(strings.TrimSpace(requirement.Manager)) {
-		case "conda":
-			condaPackages = append(condaPackages, spec)
-		case "pip":
-			pipPackages = append(pipPackages, spec)
-		default:
-			return fmt.Errorf("registered execution pack uses unsupported package manager %q", requirement.Manager)
-		}
+	condaPackages, pipPackages, err := registeredExecutionPackPackageSpecs(pack)
+	if err != nil {
+		return err
 	}
 	request.Language = strings.ToLower(strings.TrimSpace(pack.Language))
 	request.PythonVersion = ""
@@ -107,6 +95,28 @@ func applyRegisteredExecutionPackEnvironmentContract(
 	request.Channels = append([]string(nil), pack.Channels...)
 	request.ImportNames = append([]string(nil), pack.Imports...)
 	return nil
+}
+
+func registeredExecutionPackPackageSpecs(
+	pack sciencecapability.ExecutionPack,
+) (condaPackages, pipPackages []string, resultErr error) {
+	condaPackages = make([]string, 0, len(pack.Packages))
+	pipPackages = make([]string, 0, len(pack.Packages))
+	for _, requirement := range pack.Packages {
+		spec := strings.TrimSpace(requirement.Spec)
+		if spec == "" {
+			return nil, nil, errors.New("registered execution pack contains an empty package requirement")
+		}
+		switch strings.ToLower(strings.TrimSpace(requirement.Manager)) {
+		case "conda":
+			condaPackages = append(condaPackages, spec)
+		case "pip":
+			pipPackages = append(pipPackages, spec)
+		default:
+			return nil, nil, fmt.Errorf("registered execution pack uses unsupported package manager %q", requirement.Manager)
+		}
+	}
+	return condaPackages, pipPackages, nil
 }
 
 func registeredExecutionPackEnvironmentContractResult(
@@ -1196,7 +1206,7 @@ func managedEnvironmentFailureReceipt(toolName string, err error, metadata ...ma
 	failure := map[string]any{
 		"category": category, "cause": cause, "details": details,
 		"diagnostic_tail": boundedManagedEnvironmentErrorTail(err, 2400),
-		"recovery":        managedEnvironmentFailureRecovery(category),
+		"recovery":        managedEnvironmentFailureRecoveryForDetails(category, details),
 	}
 	receipt := map[string]any{
 		"tool": toolName, "ok": false, "status": "failed",
@@ -1273,12 +1283,36 @@ func managedEnvironmentFailureRecovery(category string) string {
 	}
 }
 
+func managedEnvironmentFailureRecoveryForDetails(category string, details map[string]any) string {
+	if stringValue(details["operation_stage"]) != "restore_previous_pip_packages" {
+		return managedEnvironmentFailureRecovery(category)
+	}
+	intro := "The active source environment remains verified. Restore its previous pip packages inside the unpublished successor using their original sources and build conditions."
+	if boolValue(details["legacy_inventory"], false) {
+		intro += " This older generation lacks a source receipt; supply the previously verified wheel/index source when retrying."
+	}
+	if boolValue(details["requested_package_not_started"], false) {
+		intro += " The requested new package has not been installed yet."
+	}
+	if category == "build_isolation_missing_dependency" {
+		return intro + " Prepare the missing build provider in the successor before rebuilding its dependent package; do not reinstall an already importable package in the active source."
+	}
+	return intro + " " + managedEnvironmentFailureRecovery(category)
+}
+
 func classifyManagedEnvironmentFailure(err error) (category, cause string, details map[string]any) {
 	message := ""
 	if err != nil {
 		message = strings.TrimSpace(err.Error())
 	}
 	details = map[string]any{}
+	var restore *kernelruntime.ManagedPipRestorationError
+	if errors.As(err, &restore) {
+		details["operation_stage"] = "restore_previous_pip_packages"
+		details["source_generation_ready"] = true
+		details["legacy_inventory"] = restore.Legacy
+		details["requested_package_not_started"] = restore.BeforeRequestedPackage
+	}
 	var inactivity *kernelruntime.ManagedEnvironmentInstallerInactivityError
 	if errors.As(err, &inactivity) {
 		details["failure_stage"] = "installer_execution"

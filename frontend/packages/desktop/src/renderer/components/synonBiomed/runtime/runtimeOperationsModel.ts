@@ -183,6 +183,15 @@ export type SynonBiomedAskUserQuestion = {
   question: string;
   multiSelect: boolean;
   options: SynonBiomedAskUserOption[];
+  stageProgress?: SynonBiomedPlanStageProgress | null;
+};
+
+export type SynonBiomedPlanStageProgress = {
+  planVersionId: string;
+  completedCount: number;
+  remainingCount: number;
+  completedSteps: { id: string; title: string; status: string }[];
+  remainingSteps: { id: string; title: string; status: string }[];
 };
 
 const AGENT_CHOICE_LABEL_FRAGMENTS = [
@@ -760,9 +769,53 @@ export function normalizeSynonBiomedAskUserQuestions(value: unknown): SynonBiome
         question,
         multiSelect: item.multi_select === true || item.multiSelect === true,
         options,
+        stageProgress: normalizeSynonBiomedPlanStageProgress(item.stage_progress),
       },
     ];
   });
+}
+
+function normalizeSynonBiomedPlanStageProgress(value: unknown): SynonBiomedPlanStageProgress | null {
+  if (!isRecord(value) || value.schema !== 'synon.plan_stage_progress.v1') return null;
+  const planVersionId = stringValue(value.plan_version_id);
+  const completedCount = finiteNumber(value.completed_count);
+  const remainingCount = finiteNumber(value.remaining_count);
+  if (
+    !planVersionId ||
+    planVersionId.length > 128 ||
+    completedCount === null ||
+    remainingCount === null ||
+    !Number.isInteger(completedCount) ||
+    !Number.isInteger(remainingCount) ||
+    completedCount < 1 ||
+    remainingCount < 1 ||
+    completedCount + remainingCount > 256
+  )
+    return null;
+  const steps = (raw: unknown): SynonBiomedPlanStageProgress['completedSteps'] | null => {
+    if (!Array.isArray(raw) || raw.length > 12) return null;
+    const parsed = raw.map((item) => {
+      if (!isRecord(item)) return null;
+      const id = stringValue(item.id);
+      const title = stringValue(item.title);
+      const status = stringValue(item.status);
+      if (!id || id.length > 128 || !title || title.length > 512) return null;
+      return { id, title, status };
+    });
+    return parsed.some((item) => item === null) ? null : (parsed as SynonBiomedPlanStageProgress['completedSteps']);
+  };
+  const completedSteps = steps(value.completed_steps);
+  const remainingSteps = steps(value.remaining_steps);
+  if (
+    !completedSteps ||
+    !remainingSteps ||
+    completedSteps.length > completedCount ||
+    remainingSteps.length > remainingCount ||
+    completedSteps.some((step) => step.status !== 'completed') ||
+    remainingSteps.some((step) => step.status === 'completed')
+  )
+    return null;
+  return { planVersionId, completedCount, remainingCount, completedSteps, remainingSteps };
 }
 
 export function normalizeSynonBiomedExecutionLog(value: unknown): SynonBiomedExecutionRecord[] {

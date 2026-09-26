@@ -6,7 +6,19 @@ import "strings"
 // terminal message shown in a conversation. Audit and tool receipts keep the
 // exact root cause; the conversation must not expose provider payloads, paths,
 // runtime ownership terms, persistence internals, or construction language.
-func publicSessionRunnerFailureMessage(raw, language string) string {
+func publicSessionRunnerFailureMessage(raw, language string, reasonCodes ...string) string {
+	if len(reasonCodes) > 0 {
+		switch reasonCodes[0] {
+		case sessionRunnerResponseLanguageMismatchReasonCode, sessionRunnerFinalPresentationReasonCode:
+			return localizedSessionRunnerFailureMessage(language, "presentation")
+		case "runner_stop_hook_failed":
+			return localizedSessionRunnerFailureMessage(language, "finalization")
+		case "runner_cleanup_failed":
+			return localizedSessionRunnerFailureMessage(language, "cleanup")
+		case "runner_response_persistence_failed":
+			return localizedSessionRunnerFailureMessage(language, "persistence")
+		}
+	}
 	message := strings.TrimSpace(raw)
 	if message == "" {
 		return localizedSessionRunnerFailureMessage(language, "generic")
@@ -50,6 +62,14 @@ func containsSessionRunnerFailureHint(message string, hints ...string) bool {
 func localizedSessionRunnerFailureMessage(language, kind string) string {
 	if strings.EqualFold(strings.TrimSpace(language), "zh") {
 		switch kind {
+		case "presentation":
+			return "回复的语言或呈现格式未通过校验。已有文件和执行结果已保留，尚不能视为任务完成；可从保存的位置继续修正回复。"
+		case "finalization":
+			return "任务收尾检查未完成。已有结果已保留；请检查运行详情后继续。"
+		case "cleanup":
+			return "任务运行环境的收尾处理失败。已有结果已保留；请检查运行详情后继续。"
+		case "persistence":
+			return "回复保存失败，不能确认本轮已完整结束。已有文件不会因此被重新生成；请恢复存储后继续。"
 		case "execution":
 			return "任务本次运行未能完整结束。当前进度和已有结果均已保存；继续运行会从已保存的位置恢复。"
 		case "quota":
@@ -68,6 +88,14 @@ func localizedSessionRunnerFailureMessage(language, kind string) string {
 	}
 
 	switch kind {
+	case "presentation":
+		return "The response did not pass language or presentation validation. Existing files and execution results were preserved; the task is not complete. Continue from the saved state to correct the response."
+	case "finalization":
+		return "Task finalization checks did not finish. Existing results were preserved; inspect the run details before continuing."
+	case "cleanup":
+		return "Task runtime cleanup failed. Existing results were preserved; inspect the run details before continuing."
+	case "persistence":
+		return "The response could not be saved, so this run is not confirmed complete. Existing files will not be regenerated; restore storage before continuing."
 	case "execution":
 		return "This run did not finish completely. Current progress and existing results were preserved; continuing resumes from the saved position."
 	case "quota":

@@ -125,9 +125,12 @@ func (e Engine) Run(ctx context.Context, request RunRequest) (RunResult, error) 
 				preflight = preflightChecker
 			}
 			message.ToolCalls = namespaceReusedToolCallIDs(modelMessages, message.ToolCalls, toolRounds+1)
-			rejectedToolCalls = collectToolCallRejections(
-				message.ToolCalls, modelRequest.Tools, admission, preflight,
+			rejectedToolCalls, err = collectToolCallRejections(
+				ctx, message.ToolCalls, modelRequest.Tools, admission, preflight,
 			)
+			if err != nil {
+				return RunResult{}, err
+			}
 			applyToolCallRejectionFamilyBudget(message.ToolCalls, rejectedToolCalls, rejectionFamilyAttempts)
 			if consecutivePrivatePreflightRepairs < maxPrivatePreflightRepairAttempts {
 				feedback, repairable, repairErr := privatePreflightRepairMessages(message.ToolCalls, rejectedToolCalls)
@@ -145,28 +148,9 @@ func (e Engine) Run(ctx context.Context, request RunRequest) (RunResult, error) 
 			for index := range rejectedToolCalls {
 				message.ToolCalls[index].RejectedBeforeExecution = true
 			}
-			// Once a preflight family has exhausted its bounded correction budget,
-			// stop advertising a single-purpose tool for the remainder of this
-			// execution unit. REPL is a multiplexed transport for independent local
-			// and host.mcp operations, so one rejected operation must not remove the
-			// whole execution surface. Identical rejected rounds are still bounded by
-			// the semantic no-progress guard below.
-			for index, rejection := range rejectedToolCalls {
-				if rejection.Retryable || index < 0 || index >= len(message.ToolCalls) {
-					continue
-				}
-				key := runtimeToolSchemaKey(message.ToolCalls[index].Name)
-				if key == "" || key == "repl" {
-					continue
-				}
-				filtered := make([]ToolSchema, 0, len(activeTools))
-				for _, schema := range activeTools {
-					if runtimeToolSchemaKey(schema.Name) != key {
-						filtered = append(filtered, schema)
-					}
-				}
-				activeTools = filtered
-			}
+			// Exhaustion closes an invalid proposal family, never a capability.
+			// A corrected native proposal still passes its ordinary admission;
+			// rejection-only rounds yield through the resumable no-progress path.
 			roundHadNarrative = strings.TrimSpace(message.Content) != ""
 			priorToolRoundSignature = lastToolCallRoundSignature
 			priorIdenticalToolRounds = consecutiveIdenticalToolRounds
@@ -216,13 +200,12 @@ func (e Engine) Run(ctx context.Context, request RunRequest) (RunResult, error) 
 			batch, toolErr = e.ExecuteToolBatch(ctx, message.ToolCalls, 0, normalized.MediaPolicy, mediaBytesUsed)
 		}
 		messages = append(messages, batch.Messages...)
-		// A successfully admitted call is real forward progress. Later,
-		// unrelated schema or preflight feedback starts a new bounded repair
-		// sequence instead of inheriting an exhausted task-lifetime counter.
-		// A rejection-only public round deliberately does not reset the counter.
-		if len(rejectedToolCalls) < len(message.ToolCalls) {
+		// Admission alone proves no effect. Reset the private repair window
+		// only after actual progress; retain per-family history until a valid
+		// call to that same operation target succeeds.
+		if !batch.NoProgress {
 			consecutivePrivatePreflightRepairs = 0
-			rejectionFamilyAttempts = make(map[string]int)
+			clearResolvedToolRejectionFamilies(message.ToolCalls, batch.Messages, rejectionFamilyAttempts)
 		}
 		// A reused idempotent read is not new evidence. Count consecutive
 		// repeated read rounds even when the model adds a short narrative around
@@ -251,9 +234,9 @@ func (e Engine) Run(ctx context.Context, request RunRequest) (RunResult, error) 
 			noProgressRecoveryCalls = noProgressRecoveryCalls[:0]
 		}
 		modelMessages = append([]Message(nil), messages...)
-		if batch.NoProgress {
+		if batch.NoProgress && noProgressReceiptsAreSuccessful(batch.Messages) {
 			modelMessages = append(modelMessages, Message{
-				Role: "system", Content: idempotentToolRoundRecoveryInstruction(noProgressRecoveryCalls),
+				Role: "system", Content: idempotentToolRoundRecoveryInstruction(message.ToolCalls),
 			})
 		}
 		mediaBytesUsed = batch.MediaBytesUsed

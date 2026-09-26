@@ -14,6 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"synon-go/internal/httpreliability"
 	"synon-go/internal/mcpdirectory"
 )
 
@@ -26,9 +27,12 @@ const MaxMetadataValueBytes = 4096
 const maxRedirects = 5
 
 type Options struct {
-	ClientForURL   func(context.Context, string) (*http.Client, error)
-	BaseHTTPClient *http.Client
-	Now            func() time.Time
+	HeaderTimeout   time.Duration
+	ReadIdleTimeout time.Duration
+	MaxAttempts     int
+	ClientForURL    func(context.Context, string) (*http.Client, error)
+	BaseHTTPClient  *http.Client
+	Now             func() time.Time
 }
 
 type RedirectHop struct {
@@ -38,31 +42,34 @@ type RedirectHop struct {
 }
 
 type Result struct {
-	RequestedURL      string        `json:"requestedUrl,omitempty"`
-	StatusCode        int           `json:"statusCode"`
-	ContentType       string        `json:"contentType"`
-	Body              string        `json:"body"`
-	RawBodyBase64     string        `json:"rawBodyBase64,omitempty"`
-	URL               string        `json:"url"`
-	BytesRead         int           `json:"bytesRead"`
-	ContentLength     int64         `json:"contentLength,omitempty"`
-	RetrievedAt       string        `json:"retrievedAt,omitempty"`
-	ResponseDate      string        `json:"responseDate,omitempty"`
-	LastModified      string        `json:"lastModified,omitempty"`
-	ETag              string        `json:"etag,omitempty"`
-	ContentLanguage   string        `json:"contentLanguage,omitempty"`
-	ContentLocation   string        `json:"contentLocation,omitempty"`
-	BodySHA256        string        `json:"bodySha256,omitempty"`
-	BodyHashScope     string        `json:"bodyHashScope,omitempty"`
-	Complete          bool          `json:"complete"`
-	Redirects         []RedirectHop `json:"redirects,omitempty"`
-	MetadataTruncated []string      `json:"metadataTruncated,omitempty"`
-	Truncated         bool          `json:"truncated,omitempty"`
-	Binary            bool          `json:"binary,omitempty"`
-	Partial           bool          `json:"partial,omitempty"`
-	Warning           string        `json:"warning,omitempty"`
-	Recovery          string        `json:"recovery,omitempty"`
-	SourceUnavailable bool          `json:"sourceUnavailable,omitempty"`
+	Attempts          []httpreliability.Receipt `json:"attempts,omitempty"`
+	RetryAfterSeconds float64                   `json:"retryAfterSeconds,omitempty"`
+	RequestedURL      string                    `json:"requestedUrl,omitempty"`
+	StatusCode        int                       `json:"statusCode"`
+	ContentType       string                    `json:"contentType"`
+	Body              string                    `json:"body"`
+	RawBodyBase64     string                    `json:"rawBodyBase64,omitempty"`
+	URL               string                    `json:"url"`
+	BytesRead         int                       `json:"bytesRead"`
+	ContentLength     int64                     `json:"contentLength,omitempty"`
+	RetrievedAt       string                    `json:"retrievedAt,omitempty"`
+	ResponseDate      string                    `json:"responseDate,omitempty"`
+	LastModified      string                    `json:"lastModified,omitempty"`
+	ETag              string                    `json:"etag,omitempty"`
+	ContentLanguage   string                    `json:"contentLanguage,omitempty"`
+	ContentLocation   string                    `json:"contentLocation,omitempty"`
+	BodySHA256        string                    `json:"bodySha256,omitempty"`
+	BodyHashScope     string                    `json:"bodyHashScope,omitempty"`
+	Complete          bool                      `json:"complete"`
+	Redirects         []RedirectHop             `json:"redirects,omitempty"`
+	MetadataTruncated []string                  `json:"metadataTruncated,omitempty"`
+	Truncated         bool                      `json:"truncated,omitempty"`
+	Binary            bool                      `json:"binary,omitempty"`
+	Partial           bool                      `json:"partial,omitempty"`
+	Warning           string                    `json:"warning,omitempty"`
+	Recovery          string                    `json:"recovery,omitempty"`
+	Continuation      *DownloadContinuation     `json:"continuation,omitempty"`
+	SourceUnavailable bool                      `json:"sourceUnavailable,omitempty"`
 	// Reused indicates that an identical successful read was served from the
 	// current logical run's bounded read cache. It preserves the full typed
 	// response while making duplicate-fetch suppression observable to the model.
@@ -86,6 +93,9 @@ func Fetch(ctx context.Context, url string, limit int64) (Result, error) {
 }
 
 func FetchWithOptions(ctx context.Context, rawURL string, limit int64, options Options) (Result, error) {
+	if options.HeaderTimeout < 0 || options.ReadIdleTimeout < 0 || options.MaxAttempts < 0 {
+		return Result{}, errors.New("web request budgets must not be negative")
+	}
 	if limit <= 0 {
 		limit = MaxResponseLimit
 	}
@@ -99,26 +109,25 @@ func FetchWithOptions(ctx context.Context, rawURL string, limit int64, options O
 			if base == nil {
 				base = http.DefaultClient
 			}
-			clone := *base
-			if clone.Timeout <= 0 || clone.Timeout > 15*time.Second {
-				clone.Timeout = 15 * time.Second
-			}
-			return mcpdirectory.SecureHTTPClient(requestCtx, target, &clone)
+			return mcpdirectory.SecureHTTPClient(requestCtx, target, base)
 		}
 	}
 	requestedURL := strings.TrimSpace(rawURL)
 	current := requestedURL
 	redirects := []RedirectHop{}
+	var attempts []httpreliability.Receipt
 	now := options.Now
 	if now == nil {
 		now = time.Now
 	}
 	finish := func(result Result, header http.Header, returnedBytes []byte, complete bool) Result {
+		result.Attempts = append([]httpreliability.Receipt(nil), attempts...)
 		result.RequestedURL = requestedURL
 		result.Redirects = append([]RedirectHop(nil), redirects...)
 		result.RetrievedAt = now().UTC().Format(time.RFC3339Nano)
 		result.Complete = complete
 		if header != nil {
+			result.RetryAfterSeconds = httpreliability.RetryAfter(header.Get("Retry-After"), now()).Seconds()
 			assign := func(name, value string) string {
 				bounded, truncated := boundedWebMetadata(value)
 				if truncated {
@@ -140,25 +149,11 @@ func FetchWithOptions(ctx context.Context, rawURL string, limit int64, options O
 		return result
 	}
 	for redirect := 0; redirect <= maxRedirects; redirect++ {
-		client, err := clientForURL(ctx, current)
-		if err != nil {
-			if ctxErr := ctx.Err(); ctxErr != nil {
-				return Result{}, ctxErr
-			}
-			if mcpdirectory.IsPublicDestinationUnavailable(err) {
-				return finish(recoverableSourceUnavailable(
-					current,
-					"Public source address is unavailable or blocked by the local network.",
-				), nil, nil, false), nil
-			}
-			return Result{}, fmt.Errorf("web destination is not an approved public HTTPS origin: %w", err)
+		resp, receipts, err := fetchWebResponse(ctx, current, options, clientForURL)
+		for _, receipt := range receipts {
+			receipt.Attempt = len(attempts) + 1
+			attempts = append(attempts, receipt)
 		}
-		client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, current, nil)
-		if err != nil {
-			return Result{}, fmt.Errorf("build request: %w", err)
-		}
-		resp, err := client.Do(req)
 		if err != nil {
 			if ctxErr := ctx.Err(); ctxErr != nil {
 				return Result{}, ctxErr
@@ -167,6 +162,11 @@ func FetchWithOptions(ctx context.Context, rawURL string, limit int64, options O
 			var networkError net.Error
 			if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &networkError) && networkError.Timeout() {
 				message = "Public source request timed out."
+			}
+			if mcpdirectory.IsPublicDestinationUnavailable(err) {
+				message = "Public source address is unavailable or blocked by the local network."
+			} else if !httpreliability.TransientError(err) {
+				return Result{}, fmt.Errorf("web destination request rejected: %w", err)
 			}
 			return finish(recoverableSourceUnavailable(current, message), nil, nil, false), nil
 		}
@@ -189,8 +189,27 @@ func FetchWithOptions(ctx context.Context, rawURL string, limit int64, options O
 			continue
 		}
 
-		body, readErr := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+		readLimit := limit
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 && webResponseIsBinary(current, resp.Header.Get("Content-Type"), nil, true) {
+			// Inspection establishes source/redirect provenance. The governed
+			// downloader, not a multi-MB preview, acquires complete binary bytes.
+			readLimit = min(readLimit, 4096)
+		}
+		readStarted := time.Now()
+		body, readErr := io.ReadAll(io.LimitReader(resp.Body, readLimit+1))
 		closeErr := resp.Body.Close()
+		if len(attempts) > 0 {
+			last := &attempts[len(attempts)-1]
+			last.DurationMS += time.Since(readStarted).Milliseconds()
+			if readErr != nil {
+				last.Outcome = httpreliability.ErrorKind(readErr)
+			} else if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+				last.Outcome = "complete"
+				if int64(len(body)) > readLimit {
+					last.Outcome = "bounded_prefix"
+				}
+			}
+		}
 		if readErr != nil {
 			if ctxErr := ctx.Err(); ctxErr != nil {
 				return Result{}, ctxErr
@@ -207,8 +226,8 @@ func FetchWithOptions(ctx context.Context, rawURL string, limit int64, options O
 			if result.ContentLength < 0 {
 				result.ContentLength = 0
 			}
-			if int64(len(body)) > limit {
-				body = body[:limit]
+			if int64(len(body)) > readLimit {
+				body = body[:readLimit]
 				result.Truncated = true
 			}
 			result.BytesRead = len(body)
@@ -230,9 +249,9 @@ func FetchWithOptions(ctx context.Context, rawURL string, limit int64, options O
 			}
 			return finish(result, resp.Header, body, false), nil
 		}
-		truncated := int64(len(body)) > limit
+		truncated := int64(len(body)) > readLimit
 		if truncated {
-			body = body[:limit]
+			body = body[:readLimit]
 		}
 		binary := webResponseIsBinary(current, resp.Header.Get("Content-Type"), body, truncated)
 		contentLength := resp.ContentLength
@@ -255,6 +274,9 @@ func FetchWithOptions(ctx context.Context, rawURL string, limit int64, options O
 				result.Warning = "Binary or scientific-file content was omitted from the model context. Use a dedicated governed download or full-text tool with this exact URL."
 			} else {
 				result.Warning = fmt.Sprintf("Response exceeded the bounded reader limit of %d bytes; only the returned prefix is available and must not be treated as the complete source.", limit)
+				if result.StatusCode >= 200 && result.StatusCode < 300 {
+					result.Continuation = htmlDownloadContinuation(requestedURL, result.ContentType)
+				}
 			}
 		} else if closeErr != nil {
 			// The bounded response bytes are already complete. A transport-level

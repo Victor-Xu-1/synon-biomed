@@ -10,6 +10,7 @@ import (
 	"synon-go/internal/agentruntime"
 	transcriptstore "synon-go/internal/persistence/transcript"
 	workspace "synon-go/internal/persistence/workspace"
+	"synon-go/internal/toolcontract"
 )
 
 const sessionRunnerDurableEvidencePageSize = 1000
@@ -51,7 +52,7 @@ func (s *Server) sessionRunnerDurableEvidenceMessages(
 	run *sessionRunnerChatRun,
 ) ([]agentruntime.Message, error) {
 	return s.sessionRunnerDurableToolMessagesPage(
-		ctx, run, sessionRunnerDurableEvidencePageSize, s.sessionRunnerDurableCheckpointEvidenceTool,
+		ctx, run, sessionRunnerDurableEvidencePageSize, false, s.sessionRunnerDurableCheckpointEvidenceTool,
 	)
 }
 
@@ -60,19 +61,20 @@ func (s *Server) sessionRunnerDurableEvidenceMessagesPage(
 	run *sessionRunnerChatRun,
 	pageSize int,
 ) ([]agentruntime.Message, error) {
-	return s.sessionRunnerDurableToolMessagesPage(ctx, run, pageSize, s.sessionRunnerDurableCheckpointEvidenceTool)
+	return s.sessionRunnerDurableToolMessagesPage(ctx, run, pageSize, false, s.sessionRunnerDurableCheckpointEvidenceTool)
 }
 
-// sessionRunnerDurableExplicitToolContractMessages rebuilds only completed,
-// governed tool receipts for the current logical task. These receipts prove
-// that a user-named action ran; they are deliberately separate from scientific
-// source evidence and therefore never authorize claims or citations.
+// sessionRunnerDurableExplicitToolContractMessages rebuilds governed completed
+// and failed tool receipts for the current logical task. Successful receipts
+// prove that a user-named action ran; failed receipts preserve an explicitly
+// requested failure-code report. They are deliberately separate from
+// scientific source evidence and therefore never authorize claims or citations.
 func (s *Server) sessionRunnerDurableExplicitToolContractMessages(
 	ctx context.Context,
 	run *sessionRunnerChatRun,
 ) ([]agentruntime.Message, error) {
 	return s.sessionRunnerDurableToolMessagesPage(
-		ctx, run, sessionRunnerDurableEvidencePageSize, s.sessionRunnerDurableCheckpointExplicitTool,
+		ctx, run, sessionRunnerDurableEvidencePageSize, true, s.sessionRunnerDurableCheckpointExplicitTool,
 	)
 }
 
@@ -80,6 +82,7 @@ func (s *Server) sessionRunnerDurableToolMessagesPage(
 	ctx context.Context,
 	run *sessionRunnerChatRun,
 	pageSize int,
+	includeFailed bool,
 	accept func(sessionRunnerDurableToolCheckpoint) bool,
 ) ([]agentruntime.Message, error) {
 	if run == nil || run.Transcript == nil {
@@ -138,9 +141,11 @@ func (s *Server) sessionRunnerDurableToolMessagesPage(
 				payload = projected.Event.PayloadJSON
 			}
 			var checkpoint sessionRunnerDurableToolCheckpoint
-			if json.Unmarshal(payload, &checkpoint) != nil ||
-				!strings.EqualFold(strings.TrimSpace(checkpoint.ToolPhase), "completed") ||
-				!accept(checkpoint) {
+			if json.Unmarshal(payload, &checkpoint) != nil {
+				continue
+			}
+			phase := strings.ToLower(strings.TrimSpace(checkpoint.ToolPhase))
+			if phase != "completed" && (!includeFailed || phase != "failed") || !accept(checkpoint) {
 				continue
 			}
 			checkpoint.ToolCallID = strings.TrimSpace(checkpoint.ToolCallID)
@@ -154,6 +159,12 @@ func (s *Server) sessionRunnerDurableToolMessagesPage(
 			}
 			result, err = s.restoreDurableEvidencePayload(ctx, authority.Stream, checkpoint, projected.Event.EventID, result)
 			if err != nil {
+				if errors.Is(err, errRunnerLargeToolResultUnavailable) {
+					// Historical externalized evidence may have been pruned. Keep
+					// the immutable checkpoint, but do not synthesize a tool result
+					// from its preview; later execution can reacquire the source.
+					continue
+				}
 				return nil, err
 			}
 			call := agentruntime.ToolCall{
@@ -300,9 +311,21 @@ func validSessionRunnerMCPDurableCheckpoint(checkpoint sessionRunnerDurableToolC
 	}
 	input := bytes.TrimSpace(sessionRunnerDurableExecutedToolInput(checkpoint))
 	result := bytes.TrimSpace(checkpoint.ToolResult)
+	resultSHA := kernelMCPEvidenceSHA256(result)
+	if checkpoint.Schema == "synon.kernel_mcp_evidence.v1" {
+		// The committed nested MCP receipt retains the original result digest.
+		// Its full contents are restored and scope/hash-checked by the normal
+		// durable evidence reader before any scientific consumer receives them.
+		if descriptor, _, externalized, err := toolcontract.DecodeExternalizedResult(result); externalized {
+			if err != nil || descriptor.Outcome != string(agentruntime.ToolResultSucceeded) {
+				return false
+			}
+			resultSHA = descriptor.SHA256
+		}
+	}
 	return json.Valid(input) && json.Valid(result) &&
 		kernelMCPEvidenceSHA256(input) == checkpoint.RequestSHA256 &&
-		kernelMCPEvidenceSHA256(result) == checkpoint.ResultSHA256
+		resultSHA == checkpoint.ResultSHA256
 }
 
 func sessionRunnerDurableExecutedToolInput(checkpoint sessionRunnerDurableToolCheckpoint) json.RawMessage {

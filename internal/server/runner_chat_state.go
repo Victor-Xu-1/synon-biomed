@@ -112,6 +112,7 @@ type sessionRunnerChatRun struct {
 	ScientificEvidenceVerified           bool
 	CorrectionReason                     string
 	CorrectionDetail                     string
+	CorrectionCondition                  *transcriptstore.RunnerCorrectionCondition
 	requiredMCPSourceClass               string
 	phaseMachine                         *runnermachine.Machine
 	// SuppressReviewCheckpoints keeps a detached, user-triggered review from

@@ -358,15 +358,17 @@ END
 
 func TestNormalizeStructureMinimizationFormatUsesSafeOutputNames(t *testing.T) {
 	tests := []struct {
-		filename string
-		input    string
-		output   string
-		name     string
+		filename   string
+		input      string
+		output     string
+		name       string
+		runtimeIn  string
+		runtimeOut string
 	}{
-		{filename: "ligand.sdf", input: "sdf", output: "sdf", name: "ligand-minimized.sdf"},
-		{filename: "ligand.mol", input: "mol", output: "sdf", name: "ligand-minimized.sdf"},
-		{filename: "ligand.mol2", input: "mol2", output: "sdf", name: "ligand-minimized.sdf"},
-		{filename: "receptor.pdb", input: "pdb", output: "pdb", name: "receptor-minimized.pdb"},
+		{filename: "ligand.sdf", input: "sdf", output: "sdf", name: "ligand-minimized.sdf", runtimeIn: "input.sdf", runtimeOut: "output.sdf"},
+		{filename: "ligand.mol", input: "mol", output: "sdf", name: "ligand-minimized.sdf", runtimeIn: "input.mol", runtimeOut: "output.sdf"},
+		{filename: "ligand.mol2", input: "mol2", output: "sdf", name: "ligand-minimized.sdf", runtimeIn: "input.mol2", runtimeOut: "output.sdf"},
+		{filename: "receptor.pdb", input: "pdb", output: "pdb", name: "receptor-minimized.pdb", runtimeIn: "input.pdb", runtimeOut: "output.pdb"},
 	}
 
 	for _, test := range tests {
@@ -375,7 +377,8 @@ func TestNormalizeStructureMinimizationFormatUsesSafeOutputNames(t *testing.T) {
 			if err != nil {
 				t.Fatalf("normalize %s: %v", test.filename, err)
 			}
-			if format.input != test.input || format.output != test.output || format.outputName != test.name {
+			if format.input != test.input || format.output != test.output || format.outputName != test.name ||
+				format.runtimeInputName != test.runtimeIn || format.runtimeOutputName != test.runtimeOut {
 				t.Fatalf("unexpected normalized format: %+v", format)
 			}
 		})

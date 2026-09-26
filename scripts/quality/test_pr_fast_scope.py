@@ -179,10 +179,12 @@ class FrontendProvenanceGateTests(unittest.TestCase):
         ) as invoke:
             self.assertEqual(scope.main(), 0)
         commands = [call.args[1:] for call in invoke.call_args_list]
-        self.assertEqual(len(commands), 9)
+        self.assertEqual(len(commands), 10)
         self.assertIn('audit_frontend_migration.py', commands[0][1])
         self.assertEqual(commands[1:], [
-            ('npm', 'ci', '--ignore-scripts'), ('npm', 'run', 'i18n:types'),
+            ('npm', 'ci', '--ignore-scripts'),
+            ('npx', '--no-install', 'playwright', 'install', 'chromium'),
+            ('npm', 'run', 'i18n:types'),
             ('npm', 'run', 'typecheck'), ('npm', 'run', 'lint'),
             ('npm', 'run', 'format:check'), ('npm', 'run', 'test'),
             ('npm', 'run', 'build'), ('npm', 'run', 'test:packaged'),

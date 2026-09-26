@@ -15,6 +15,11 @@ import (
 
 var errWindowsConfinementPathReplaced = errors.New("Windows kernel confinement path changed")
 
+// Windows grants cannot shadow a fixed Unix mount namespace. Its object ACL,
+// reparse-point, workspace, executable and protected-path boundaries are
+// enforced together by validateWindowsConfinementRequest at worker admission.
+func platformHostMountPathProtected(string) bool { return false }
+
 // The Windows command is a trusted launcher. The untrusted target is created
 // inside an AppContainer only after the launcher belongs to a kill-on-close
 // Job. Unsupported authority remains an error, never a direct worker launch.

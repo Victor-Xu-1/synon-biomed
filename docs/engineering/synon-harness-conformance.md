@@ -203,6 +203,23 @@ The same unavailable outcome does not count as semantic progress at tool
 settlement or durable replay: receiving an unavailable-source response cannot
 clear a previously closed no-progress action. Successful and partial usable
 results retain their existing progress semantics.
+Externalized historical receipts validate owner, stream, frame, call, version,
+digest, size, type and event ordering before opening the stored payload. A
+genuinely missing payload remains unavailable evidence and cannot be replaced
+by its preview; absent authority, mismatched identity, corrupt bytes, permission
+errors and cancellation remain errors. Losing a progress receipt invalidates
+the reconstructed active investigation set until a verified progress receipt
+establishes it again. Its requested transition is not proof of the applied state.
+
+Independent completion review preserves the original verdict and unresolved
+findings, recording advisory delivery disposition separately. A bounded reviewer
+protocol or provider failure may leave an existing candidate deliverable but
+unverified only after its failure checkpoint and reviewer terminal record are
+durable and the artifact inventory is unchanged. Policy, ownership, persistence,
+lease and artifact-identity failures cannot become success merely because a
+candidate contains text. Root cancellation always wins. Presentation adapters
+retain typed provider errors so these decisions do not depend on error text.
+
 Repeated correction counts are folded in constant space from the same complete,
 fenced transcript projection, then carried as private claim-bound replay data.
 The provider history window does not reset this count. A newly typed correction
@@ -876,6 +893,18 @@ conversation so reloads and A-to-B-to-A navigation restore only the matching
 identity set. Direct send, queue, retry, `@` selection, `/Skill` selection and
 artifact “add to chat” preserve that same identity set; filenames or rendered
 Markdown never substitute for an artifact/version or connector ID.
+
+Selected host inputs, browser uploads and verified workspace downloads share
+one root-anchored, bounded, cancellable file-publication mechanism. Attachment
+imports retain the 64 MiB per-file and 256 MiB combined limits; download
+families retain their own declared capacities. Imports validate the opened
+regular file, account for copied bytes and reject sources changed during copy.
+Empty user files remain valid. Publication never overwrites another writer:
+an exact digest/size match is idempotent, a conflicting input basename may use
+its deterministic digest suffix, and a conflicting suffix fails closed.
+Temporary content is removed after success or failure. Directory enumeration
+and input reads stay anchored to the owner-authorized root after path
+validation, including when an intermediate path is replaced by a symlink.
 
 ## Product identity
 

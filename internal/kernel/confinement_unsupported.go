@@ -28,3 +28,7 @@ func replaceKernelDirectory(string, string, bool) error {
 func CopyProviderOperationFile(string, string, io.Writer, int64) (int64, error) {
 	return 0, fmt.Errorf("%w on %s/%s", ErrConfinementUnavailable, runtime.GOOS, runtime.GOARCH)
 }
+
+// There is no local managed-kernel namespace on this platform. Host file
+// grants retain their normal validation; worker launch remains unavailable.
+func platformHostMountPathProtected(string) bool { return false }

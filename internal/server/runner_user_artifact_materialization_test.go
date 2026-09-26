@@ -62,3 +62,30 @@ func TestRunnerVerifiesOriginalAttachmentsWithoutEagerWorkspaceCopies(t *testing
 		t.Fatal("mismatched immutable attachment metadata was accepted")
 	}
 }
+
+func TestRunnerIgnoresExecutionArtifactRefsDuringUserInputPreparation(t *testing.T) {
+	databasePath := filepath.Join(t.TempDir(), "workspace.db")
+	store, manager, app, identity := newKernelHostTestRuntime(t, databasePath, true)
+	defer closeKernelHostTestRuntime(t, app, manager, store)
+	artifact, version := writeKernelInspectionArtifact(
+		t, store, identity.access, "artifact-produced", "pocket-results.json",
+		"application/json", `{"pockets":[]}`, "runner-produced-output",
+	)
+	entry := eventjournal.Entry{SessionID: identity.access.Frame.ID, EventID: 1, Message: eventjournal.Message{
+		"type": "tool_result", "role": "assistant",
+		// Produced/consumed artifact refs in older replay records contain only
+		// their immutable identities. They are not user input attachments.
+		"artifactRefs": []any{map[string]any{
+			"artifact_id": artifact.ID, "version_id": version.ID, "relation": "produced",
+		}},
+	}}
+	projected, err := app.prepareRunnerUserArtifactsForProvider(
+		context.Background(), identity.access.Frame.ID, []eventjournal.Entry{entry},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(projected) != 1 || projected[0].Message["artifactRefs"] == nil {
+		t.Fatalf("execution artifact refs were unexpectedly rewritten: %#v", projected)
+	}
+}

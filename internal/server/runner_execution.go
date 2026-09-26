@@ -129,6 +129,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	}
 	parentCtx := ctx
 	preparationStage := "tool_discovery"
+	preparationSubstage := "checkpoint_tool_discovery"
 	preparationCtx, cancelPreparation := context.WithTimeoutCause(
 		ctx, options.PreparationTimeout, errSessionRunnerPreparationDeadline,
 	)
@@ -142,6 +143,14 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 				stage: preparationStage, timeout: options.PreparationTimeout, cause: context.DeadlineExceeded,
 			}
 		}
+		if preparationActive && err != nil {
+			attempt := 0
+			if run != nil {
+				attempt = run.Attempt
+			}
+			log.Printf("session runner preparation failed session=%q attempt=%d stage=%q substage=%q err_type=%T reason=%q",
+				session.ID, attempt, preparationStage, preparationSubstage, err, sessionRunnerErrorReasonCode(err))
+		}
 	}()
 	checkpointPreparationStage := func(stage string) error {
 		if err := preparationCtx.Err(); err != nil {
@@ -154,6 +163,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		return "", err
 	}
 	configuredAllowedToolCount := len(options.AllowedTools)
+	preparationSubstage = "bind_tool_authority"
 	// Use the authoritative Transcript owner while binding workspace-scoped
 	// tools; the browser user is intentionally not the legacy session fallback.
 	toolAuthority, err := s.bindSessionRunnerToolAuthority(
@@ -168,6 +178,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	if err := checkpointPreparationStage("history_compaction"); err != nil {
 		return "", err
 	}
+	preparationSubstage = "auto_compact_history"
 	updatedEntries, autoCompactResult, err := s.autoCompactSessionForRunner(ctx, options, session, entries, run)
 	if err != nil {
 		log.Printf("session runner history compaction failed session=%s attempt=%d err_type=%T: %v",
@@ -180,13 +191,16 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	if err := checkpointPreparationStage("context_replay"); err != nil {
 		return "", err
 	}
+	preparationSubstage = "checkpoint_input_materialization"
 	if err := checkpointPreparationStage("input_materialization"); err != nil {
 		return "", err
 	}
+	preparationSubstage = "validate_user_artifacts"
 	entries, err = s.prepareRunnerUserArtifactsForProvider(ctx, session.ID, entries)
 	if err != nil {
 		return "", err
 	}
+	preparationSubstage = "build_provider_messages"
 	trustedRuntimeNow := time.Now().UTC()
 	trustedRuntimeContext := sessionRunnerTrustedRuntimeContext(
 		trustedRuntimeNow, sessionRunnerTaskStartedAt(session, run), session, run,
@@ -202,6 +216,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	}
 	currentLogicalEntries := entries
 	if run != nil {
+		preparationSubstage = "load_provider_continuation"
 		// A completed Skill result in the exact provider replay is durable
 		// execution authority. Restore it before constructing a new engine after
 		// approval, AskUser, or process recovery so task-scoped execution routing
@@ -214,12 +229,14 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		if err := s.loadProviderContinuation(ctx, run); err != nil {
 			return "", err
 		}
+		preparationSubstage = "scope_current_logical_input"
 		scientificEntries, err := s.runnerEntriesForCurrentLogicalInput(ctx, entries, run)
 		if err != nil {
 			return "", err
 		}
 		currentLogicalEntries = scientificEntries
 		run.setInputAttachmentReaders(inputAttachmentReaderStatesFromRunnerEntries(scientificEntries))
+		preparationSubstage = "restore_ask_user_selection"
 		run.PlanModeDenials = sessionRunnerPlanModeDenialCount(scientificEntries)
 		// Rehydrate durable capability and Skill authority before validating an
 		// auxiliary resolver. These receipts can be pinned independently of the
@@ -259,6 +276,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	taskIntentID := ""
 	var taskIntentRevision int64
 	if run != nil && run.Transcript != nil {
+		preparationSubstage = "ensure_canonical_task_intent"
 		if run.Transcript.Stream.Kind == transcriptstore.StreamKindFrameRef {
 			intent, found, err := s.transcriptStore.EnsureActiveFrameTaskIntent(ctx, run.Transcript.Stream.UID, run.Transcript.Stream.OwnerID)
 			if err != nil {
@@ -280,6 +298,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 		}
 		currentTaskIntent := taskIntent
 		if continuationEntries := sessionRunnerContinuationEvidenceEntries(currentTaskIntent, entries); len(continuationEntries) > 0 {
+			preparationSubstage = "restore_continuation_evidence"
 			if rootTaskIntent := sessionRunnerContinuationRootTaskIntent(currentTaskIntent, entries); rootTaskIntent != "" {
 				taskIntent = rootTaskIntent
 				taskLanguage = sessionRunnerResponseLanguage(rootTaskIntent)
@@ -304,6 +323,7 @@ func (s *Server) runSessionRunnerChat(ctx context.Context, options SessionRunner
 	var researchModelContext map[string]any
 	_, _, hasCompactBoundary := latestCompactModelContext(entries)
 	if run != nil && (run.Attempt > 1 || hasCompactBoundary) {
+		preparationSubstage = "restore_research_model_context"
 		var researchContextErr error
 		researchModelContext, researchContextErr = s.sessionRunnerResearchModelContext(ctx, run)
 		if researchContextErr != nil {

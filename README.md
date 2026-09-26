@@ -1,41 +1,71 @@
 # Synon Biomed
 
-### From a research question to evidence you can inspect.
-### 从研究问题出发，让证据、执行与交付留在同一处。
+### Research with the evidence in view.
+### 让研究推进，让证据始终可见。
 
-Synon Biomed is an open-source biomedical research workspace. Bring literature,
-molecules, data, tools and project artifacts into one browser-based workflow,
-with a Go backend and explicit execution controls.
+An open-source workspace for biomedical research. Bring research conversations,
+scientific tools and project files together—from exploring a question to
+inspecting the work it produces.
 
-面向生物医药研究者与研发团队：组织研究问题，连接文献与科学工具，
-跟踪任务进展，检查文件、引用和结果来源。
+面向生物医药研究者与研发团队的开源工作台。把研究讨论、科学工具与项目文件组织在一起，
+让研究过程更连贯，也更便于复核。
 
 **[Get started / 开始使用](#get-started--开始使用)** ·
-**[Product guide / 产品指南](docs/product/README.md)** ·
-**[Documentation / 文档](docs/README.md)** ·
-**[Contribute / 参与贡献](CONTRIBUTING.md)**
+**[Explore workflows / 研究工作流](docs/product/README.md)** ·
+**[Documentation / 文档](docs/README.md)**
 
-*Concept illustration / AI 生成的概念图，不是实际界面、运行截图或科学结果。*
+*Concept illustration / AI 生成概念插画，不是实际界面、测量数据或科学结果。*
 
-![Concept illustration of connected evidence and molecular research](docs/assets/synon-biomed-hero-v2.png)
+![Editorial concept illustration connecting scientific material through a teal ribbon form](docs/assets/research-workspace-concept.png)
 
-## What you can do / 工作台能做什么
+## A workspace for the way research unfolds / 围绕研究过程展开
 
-| A research need / 研究需求 | In the workspace / 对应体验 |
+### Explore a question · 梳理问题与证据
+
+Investigate a target, disease or publication. Keep source references and
+follow-up questions with the project.
+
+围绕靶点、疾病或论文展开研究，让来源线索与后续讨论留在项目中。
+
+### Inspect scientific material · 看清分子、结构与数据
+
+Open supported scientific files in their viewers, then choose the tools and
+environments needed for the next step.
+
+查看支持的科学文件，再按研究需要选择工具与计算环境。
+
+### Follow the work · 跟踪分析与执行
+
+Follow task progress, tool feedback and output artifacts. Respond when
+additional input or approval is needed.
+
+跟踪任务进展、工具反馈与输出文件，在需要时补充输入或作出授权。
+
+### Return to the evidence · 回到证据，继续研究
+
+Revisit files, versions and recorded sources before sharing results or asking
+the next question.
+
+分享结果或继续追问前，回看文件、版本与已记录的来源。
+
+**[See the research workflows →](docs/product/README.md#research-workflows--研究工作流)**
+
+## The pieces work together / 将研究环节连接起来
+
+| In the workspace | Role in your work |
 | --- | --- |
-| Explore a target or literature question / 梳理靶点与文献 | Keep the brief, connected sources and follow-up questions in a project. 在项目中保留问题、来源和后续讨论。 |
-| Inspect molecules, structures and files / 查看科学文件 | Open supported artifacts in their viewers; retain files and versions with the work. 查看支持的文件类型，并保留对应版本。 |
-| Select scientific capabilities / 选择科研能力 | Browse Experts, Skills, Connectors and environments in Scientific Toolkit. 按需配置模型、连接器和计算环境。 |
-| Execute and review / 执行与复核 | Follow task status, tool feedback and artifacts; inspect citations and limitations before using a result. 查看任务状态、工具反馈、产物与证据边界。 |
+| **Projects & conversations** | Organize questions, files and follow-up work around a research context. |
+| **Scientific Toolkit** | Discover and configure Experts, Skills, Connectors and scientific environments. |
+| **Task execution** | Follow work through its model, tool and compute boundaries. |
+| **Artifacts & sources** | Inspect outputs, supported previews, versions and recorded evidence. |
 
-Examples and prerequisites: [research workflows](docs/product/README.md#research-workflows--研究工作流).
-Catalog entries describe available integrations, not proof that every service is configured or every scientific method has been validated.
+这些是同一工作台内的不同环节，不是相互孤立的功能清单。
+可用工作流取决于当前实例的模型、连接器、环境与权限配置；科研结论仍需复核。
 
 ## Get started / 开始使用
 
-The documented source workflow uses **Ubuntu or WSL** with Git, Go **>=1.26**,
+The source workflow uses **Ubuntu or WSL**, Git, Go **>=1.26**,
 Node.js **>=22.22 <25**, npm and the Unix utilities checked by the launcher.
-Use a separate checkout and data directory from any existing installation.
 
 ```bash
 git clone https://github.com/Victor-Xu-1/synon-biomed.git
@@ -46,59 +76,64 @@ synon start
 ```
 
 Open the reported `READY_URL`, normally `http://127.0.0.1:8765/#/login`.
-On first use you may be sent to onboarding. There is no default Web password.
+A fresh installation may open onboarding. There is no default Web password.
 
-首次启动需要按引导完成设置，并配置自己的模型提供方；凭据不要写入源码或公开问题。
-Python/R 核心环境首次准备需要网络、时间和磁盘空间，可选科学环境按需选择。
-服务可访问不等于科学环境已经就绪。
-
-- **Stop / 停止：** press `Ctrl+C` in the launching terminal, or use `synon stop` for the hosts owned by that checkout.
-- **Ports / 端口：** the source workflow uses loopback ports 8765/8766. If occupied, inspect the existing instance; do not kill a process merely to make startup pass.
-- **Storage and recovery / 存储与恢复：** follow the [operations runbook](docs/operations-runbook.md#source-startup) and [.env.example](.env.example).
-
-## Before relying on a result / 使用前须知
-
-- This is actively developed **research software**, not evidence of clinical suitability.
-- A configured model/provider and any required credentials remain necessary.
-- Native Python/R preparation and scientific execution are separate: the current
-  scientific kernel confinement path requires **Linux/WSL**.
-- A connected service or installed environment does not prove that an analysis ran.
-  Review the actual sources, parameters, outputs and limitations for each task.
-- Source availability does not mean a prebuilt release exists. Check
-  [GitHub Releases](https://github.com/Victor-Xu-1/synon-biomed/releases);
-  if the desired version is absent, use the documented source workflow.
-
-## Explore the repository / 深入了解
+首次启动按引导完成设置，并配置自己的模型提供方。
+Python/R 核心环境首次准备需要网络、时间和磁盘空间；可选环境按需选择。
+当前科学 kernel 的隔离执行路径要求 Linux/WSL。
 
 <details>
-<summary>Actual application capture / 查看真实页面截图</summary>
+<summary>Setup, operation and research boundaries / 配置、运行与科研边界</summary>
 
-![Real Synon Biomed login page captured from the running application](docs/assets/login-screen.png)
+- Use a separate checkout and state directory from an existing installation.
+  Runtime data and credentials belong outside source.
+- Model and connector access may require your own credentials and external
+  usage allowance. Do not publish keys or confidential research data.
+- Press `Ctrl+C` in the launching terminal, or use `synon stop` for the hosts
+  owned by that checkout.
+- Source startup uses loopback ports 8765/8766. If occupied, inspect the existing
+  instance; do not kill a process merely to make startup pass.
+- Native Python/R installation and scientific execution are separate capabilities.
+  A healthy gateway or an installed environment is not proof that an analysis ran.
+- This is actively developed research software. Review task-specific sources,
+  methods, parameters, outputs and limitations; no clinical suitability is implied.
+- A source checkout is not a prebuilt release. Check
+  [GitHub Releases](https://github.com/Victor-Xu-1/synon-biomed/releases);
+  use the source workflow when the desired package has not been published.
 
-Real browser capture, 2026-09-26; source revision `8e18c838`. The default username
-was cleared in the form; no login was submitted and no task was executed.
-This is the login screen, not a research-result demonstration.
-See [capture provenance](docs/assets/README.md#real-application-capture--真实页面截图).
+Installation, configuration and recovery:
+[Operations runbook](docs/operations-runbook.md#source-startup) ·
+[Environment example](.env.example) ·
+[Product prerequisites](docs/product/README.md#configure-before-running--执行前准备)
 
 </details>
 
-| Reader / 读者 | Start here / 入口 |
-| --- | --- |
-| Researcher / 研究用户 | [Product guide: workflows, prerequisites and limitations](docs/product/README.md) |
-| Developer / 开发者 | [Module index: source entry points and verification](docs/modules/README.md) |
-| Operator / 运维者 | [Installation, providers, health and recovery](docs/operations-runbook.md) |
-| Contributor / 贡献者 | [Setup, scoped tests and pull requests](CONTRIBUTING.md) |
-| Community participant / 社区参与者 | [Code of Conduct](CODE_OF_CONDUCT.md) · [Security reporting](SECURITY.md) |
+## See the actual application / 查看真实页面
 
-The [documentation index](docs/README.md) links the engineering contracts,
-release rules, provenance and operational references. Implementation modules
-are documented once; product pages do not redefine those contracts.
+<details>
+<summary>Real login-page capture / 真实登录页截图</summary>
 
-## License and provenance / 许可与来源
+![Real Synon Biomed login page captured from the running application](docs/assets/login-screen.png)
+
+Real browser capture, 2026-09-26; source revision `8e18c838`.
+The default username was cleared in the form; no login or task was submitted.
+This shows the login entry, not a research-result demonstration.
+[Capture provenance](docs/assets/README.md#real-application-capture--真实页面截图)
+
+</details>
+
+## Go deeper / 深入了解
+
+- **For researchers / 研究用户：** [Product guide](docs/product/README.md)
+- **For developers / 开发者：** [Module guide](docs/modules/README.md) · [Contributing](CONTRIBUTING.md)
+- **For operators / 运维者：** [Operations](docs/operations-runbook.md) · [Security](SECURITY.md)
+- **For the community / 社区参与者：** [Code of Conduct](CODE_OF_CONDUCT.md) · [Documentation index](docs/README.md)
+
+## License / 许可
 
 First-party code is **AGPL-3.0-only**, except where separate component terms apply.
-Compliant commercial use is permitted; the complete terms remain in
-[LICENSE](LICENSE). See [commercial licensing boundaries](COMMERCIAL-LICENSE.md)
-and [third-party components and notices](docs/THIRD_PARTY.md).
+Compliant commercial use is permitted. See the unchanged [LICENSE](LICENSE),
+[commercial licensing boundaries](COMMERCIAL-LICENSE.md) and
+[third-party inventory](docs/THIRD_PARTY.md).
 
-许可证原文不作改写。第三方组件保留各自许可及来源声明；本项目的许可说明不替代它们。
+第三方组件保留各自许可与来源声明；本项目的许可说明不替代它们。

@@ -2,15 +2,23 @@
 
 [Home](../../README.md) · [Documentation](../README.md)
 
-## Concept illustration / 概念图
+## Concept illustrations / 概念插画
 
-`synon-biomed-hero-v2.png` is AI-generated artwork for the product introduction.
-It is not the actual UI, a measured molecular structure, an execution record,
-or a scientific result. Its generation response did not disclose model identity;
-a model name in a prompt is not evidence of which model executed the request.
+The following assets were generated through the native account image-generation
+channel. They use an editorial scientific illustration style, not simulated
+screens or fabricated experimental records. Shapes and textures are metaphors;
+they are not identified molecular structures, microscopy, measurements or results.
+Generation responses did not report backend model identity; no specific model
+version is independently verified by these assets.
 
-- Dimensions: 1672 × 941 pixels.
-- SHA-256: `32a80ce66271278b108c4654e1cb80cba2abd683db0a37f780c80a2406cd55c1`.
+| Asset | Use | Dimensions | SHA-256 |
+| --- | --- | --- | --- |
+| `research-workspace-concept.png` | Product cover: connected scientific material | 2020 × 778 | `3ef5acd36ced7850bad80135dfca7393acb98626c8f77a8abe809e4068a19b7b` |
+| `research-flow-concept.png` | Product guide: evidence, scientific work, reviewable files | 2022 × 778 | `6cf3e4393535acee93d7f4539dbf7f3607be6cd9e26168c9e2738a3b4f6f797c` |
+
+Both compositions use a pearl-white field, teal/graphite accents, a small amount
+of gold, soft daylight and restrained paper/glass-like forms. No text, UI,
+charts, numerical claims, task status or experiment outputs were requested.
 
 ## Real application capture / 真实页面截图
 

@@ -914,6 +914,13 @@ may reacquire the source under the historical digest. Metadata conflicts,
 changed local files and changed upstream bytes remain failures. The missing
 historical version retains its identity and unavailable state.
 
+A host-validated execution receipt reserves its output namespace even when
+the historical directory or snapshot is missing. Such an entry is explicitly
+unavailable, cannot be published or used to augment a result bundle, and still
+blocks general-editor changes inside its owned namespace. It does not block
+unrelated edits or kernel repair commands. Forged ownership, changed digests,
+unsafe links and invalid receipt scope are not classified as missing content.
+
 ## Product identity
 
 Runtime prompts, model-visible Skills, UI, logs, health output, and generated

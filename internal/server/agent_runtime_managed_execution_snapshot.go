@@ -32,6 +32,9 @@ func publishManagedExecutionOutputSnapshot(
 	workspaceRoot string,
 	authority managedExecutionOutputAuthority,
 ) error {
+	if authority.Unavailable {
+		return errManagedExecutionOutputUnavailable
+	}
 	if ctx == nil {
 		ctx = context.Background()
 	}

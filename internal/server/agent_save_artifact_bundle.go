@@ -71,6 +71,9 @@ func (s *Server) augmentAgentSaveArtifactsWithExecutionBundles(
 			continue
 		}
 		for _, authority := range authorities {
+			if authority.Unavailable {
+				continue
+			}
 			if managedExecutionAuthorityContainsPath(authority, resolved) && resolved != authority.Root {
 				ownersByRoot[authority.Root] = authority
 				break
@@ -128,16 +131,24 @@ func (s *Server) augmentAgentSaveArtifactsWithExecutionBundles(
 }
 
 func managedExecutionBundleOutputPath(workspaceRoot, outputRoot, declared string) (string, bool) {
+	relative, valid := managedExecutionBundleOutputLocation(workspaceRoot, outputRoot, declared)
+	if !valid {
+		return "", false
+	}
+	info, err := os.Lstat(filepath.Join(workspaceRoot, filepath.FromSlash(relative)))
+	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+		return "", false
+	}
+	return relative, true
+}
+
+func managedExecutionBundleOutputLocation(workspaceRoot, outputRoot, declared string) (string, bool) {
 	parts := strings.Split(filepath.ToSlash(filepath.Clean(declared)), "/")
 	if len(parts) < 2 {
 		return "", false
 	}
 	candidate := filepath.Join(outputRoot, filepath.FromSlash(strings.Join(parts[1:], "/")))
 	if !managedExecutionPathWithinRoot(outputRoot, candidate) {
-		return "", false
-	}
-	info, err := os.Lstat(candidate)
-	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
 		return "", false
 	}
 	relative, err := filepath.Rel(workspaceRoot, candidate)

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -22,7 +23,12 @@ type managedExecutionOutputAuthority struct {
 	PackID       string
 	ExecutionID  string
 	Digests      map[string]string
+	// Unavailable retains the receipt's reserved ownership without claiming
+	// its historical bytes are readable or eligible for artifact promotion.
+	Unavailable bool
 }
+
+var errManagedExecutionOutputUnavailable = errors.New("managed execution output content is unavailable")
 
 // managedExecutionOutputAuthorities reconstructs immutable output ownership
 // exclusively from host-persisted successful execution receipts. A marker
@@ -84,7 +90,16 @@ func (s *Server) managedExecutionOutputAuthorities(
 						ctx, workspaceRoot, outputRoot, pack.ID, record.ID, writes,
 					)
 					if verifyErr != nil {
-						return nil, verifyErr
+						if !errors.Is(verifyErr, errManagedExecutionOutputUnavailable) {
+							return nil, verifyErr
+						}
+						// The host receipt still reserves this output namespace.
+						// Missing content does not revoke unrelated task capabilities.
+						authorities = append(authorities, managedExecutionOutputAuthority{
+							Root: outputRoot, PackID: pack.ID, ExecutionID: record.ID, Unavailable: true,
+						})
+						log.Printf("managed_execution_output_unavailable frame=%q execution=%q pack=%q", access.Frame.ID, record.ID, pack.ID)
+						continue
 					}
 					if err := publishManagedExecutionOutputSnapshot(ctx, workspaceRoot, authority); err != nil {
 						return nil, err
@@ -133,6 +148,10 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 	if !managedExecutionPathWithinRoot(workspaceRoot, outputRoot) || outputRoot == workspaceRoot {
 		return managedExecutionOutputAuthority{}, errors.New("managed execution output escaped the task workspace")
 	}
+	_, engine, found := s.scienceCapabilities.FindExecutionPack(packID)
+	if !found || engine.ExecutionPack.Mode != "local" || writes[filepath.Join(outputRoot, managedExecutionOutputOwnershipMarker)] == "" {
+		return managedExecutionOutputAuthority{}, errors.New("managed execution output has no matching pack and marker receipt")
+	}
 	// After publication the receipt-bound snapshot is authoritative. The old
 	// workspace path is only a recoverable view; replacing it cannot invalidate
 	// immutable evidence or prevent unrelated kernel operations from starting.
@@ -148,6 +167,21 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 		resolved = candidate
 	} else {
 		info, statErr := os.Lstat(outputRoot)
+		if errors.Is(statErr, os.ErrNotExist) {
+			return managedExecutionOutputAuthority{}, errManagedExecutionOutputUnavailable
+		}
+		if statErr == nil && info.Mode()&os.ModeSymlink != 0 {
+			if target, linkErr := os.Readlink(outputRoot); linkErr == nil {
+				if !filepath.IsAbs(target) {
+					target = filepath.Join(filepath.Dir(outputRoot), target)
+				}
+				if filepath.Clean(target) == filepath.Clean(candidate) {
+					if _, err := os.Lstat(candidate); errors.Is(err, os.ErrNotExist) {
+						return managedExecutionOutputAuthority{}, errManagedExecutionOutputUnavailable
+					}
+				}
+			}
+		}
 		if statErr != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 			return managedExecutionOutputAuthority{}, errors.New("managed execution output directory is unavailable or unsafe")
 		}
@@ -161,12 +195,11 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 		ownershipRoot = resolved
 	}
 	markerPackID, ownership := inspectManagedExecutionOutputOwnership(ownershipRoot)
+	if ownership == managedExecutionOutputOwnershipMissing {
+		return managedExecutionOutputAuthority{}, errManagedExecutionOutputUnavailable
+	}
 	if ownership != managedExecutionOutputOwnershipValid || markerPackID != packID {
 		return managedExecutionOutputAuthority{}, errors.New("managed execution output ownership does not match its successful receipt")
-	}
-	_, engine, found := s.scienceCapabilities.FindExecutionPack(packID)
-	if !found || engine.ExecutionPack.Mode != "local" {
-		return managedExecutionOutputAuthority{}, errors.New("managed execution output references an unavailable execution pack")
 	}
 	pathSet := map[string]bool{}
 	for path := range writes {
@@ -184,7 +217,7 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 		if recoveredSnapshot {
 			lookupRoot = resolved
 		}
-		relative, found := managedExecutionBundleOutputPath(workspaceRoot, lookupRoot, output.Path)
+		relative, found := managedExecutionBundleOutputLocation(workspaceRoot, lookupRoot, output.Path)
 		if !found {
 			return managedExecutionOutputAuthority{}, fmt.Errorf("managed execution output %q is missing", output.Path)
 		}
@@ -220,6 +253,9 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 			digestPath = filepath.Join(resolved, relative)
 		}
 		currentDigest, err := digestManagedExecutionOutputFile(ctx, resolved, digestPath)
+		if errors.Is(err, os.ErrNotExist) {
+			return managedExecutionOutputAuthority{}, errManagedExecutionOutputUnavailable
+		}
 		if err != nil || !strings.EqualFold(currentDigest, receiptDigest) {
 			return managedExecutionOutputAuthority{}, fmt.Errorf("managed execution output no longer matches its successful file-write receipt: %s want=%s got=%s err=%v", filepath.ToSlash(path), receiptDigest, currentDigest, err)
 		}
@@ -233,6 +269,9 @@ func (s *Server) verifyManagedExecutionOutputAuthority(
 
 func digestManagedExecutionOutputFile(ctx context.Context, outputRoot, path string) (string, error) {
 	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
 	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 || info.Size() <= 0 {
 		return "", errors.New("managed execution output file is unavailable or unsafe")
 	}

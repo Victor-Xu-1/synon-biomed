@@ -5,13 +5,13 @@
   "sourceImportManifestSHA256": "8770763a377788d436e3f5a24cd0cb0cf3331f61a3515447d0a2046bb370982e",
   "adaptationFingerprintSHA256": "97d37ddc4daffd85fdf10b84e751848f67a337118e8fec8ae1c374e92ce5b339",
   "removalFingerprintSHA256": "70a676732efea3030080147fc7100096248f3fc0ce13b80256726d97fef98b5c",
-  "additionFingerprintSHA256": "91560d67f941cd4c8db188401c1f54d6ea106321d38877981d012c018a14b02b",
+  "additionFingerprintSHA256": "4874f1906067c6a7fd347c1890c4633bccf9fb1946f01b88e92a5502298b9b69",
   "summary": {
     "sourceFiles": 1354,
     "unchangedSourceFiles": 400,
     "adaptedSourceFiles": 664,
     "removedSourceFiles": 290,
-    "addedFiles": 671
+    "addedFiles": 672
   },
   "adaptations": [
     {
@@ -6406,6 +6406,12 @@
     }
   ],
   "additions": [
+    {
+      "path": "README.md",
+      "sha256": "079da9fcc2f41480c356d64d0bf45e022937748cf589579fc131c1068c68a663",
+      "bytes": 2104,
+      "reason": "Document the browser-only source boundary, dependency authority, scoped checks, and isolated real-backend testing prerequisites."
+    },
     {
       "path": "package-lock.json",
       "sha256": "242ae7cb35458f1c239e9a979989a52f9eaaaf4cc123accc0166678b78c15d41",
